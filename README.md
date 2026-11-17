@@ -82,7 +82,7 @@ Détail mission par mission, captures et replays : classement en ligne et datase
 
 ## Test de paiement réel (équipe)
 
-Page https://agentproof-iota-tawny.vercel.app/test-paiement : l'agent achète l'article le moins cher et paie **une seule fois** avec une carte virtuelle Revolut de l'équipe, sur un compte à 0 €. Un refus « fonds insuffisants » prouve que le paiement a atteint la banque (il serait passé avec des fonds). Le 3D Secure est validé par un humain sur son téléphone. Verdicts : paiement transmis à la banque, bloqué au 3D Secure, formulaire de carte inutilisable, paiement jamais atteint, compte obligatoire, anti-bot, erreur.
+R&D interne, hors produit : page `/test-paiement`, réservée aux comptes de l'équipe AgentProof (`STAFF_EMAILS`). L'agent achète l'article le moins cher et paie **une seule fois** avec une carte virtuelle Revolut de l'équipe, sur un compte à 0 €. Un refus « fonds insuffisants » prouve que le paiement a atteint la banque (il serait passé avec des fonds). Le 3D Secure est validé par un humain sur son téléphone. Verdicts : paiement transmis à la banque, bloqué au 3D Secure, formulaire de carte inutilisable, paiement jamais atteint, compte obligatoire, anti-bot, erreur.
 
 - La carte est saisie par l'équipe dans les variables Vercel (`TEST_CARD_*`, `TEST_EMAIL`), jamais dans le repo.
 - Les captures de ces runs ne sont jamais stockées ni partagées (elles peuvent montrer la carte) ; le juge visuel les lit en mémoire.

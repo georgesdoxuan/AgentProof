@@ -90,3 +90,11 @@ export async function sendMail(to: string, subject: string, text: string, link: 
   const out = res?.ok ? await res.json().catch(() => null) : null;
   return !!out?.messageId;
 }
+
+// AgentProof's own team (not customer teams): real payment tests are R&D, run with our zero-balance card.
+// STAFF_EMAILS="a@x.com,b@y.com" on Vercel; default is Georges only.
+export async function staffUser() {
+  const user = await currentUser();
+  const staff = (process.env.STAFF_EMAILS ?? "gdo@eugeniaschool.com").split(",").map((e) => e.trim().toLowerCase());
+  return { user, isStaff: !!user && staff.includes(user.email.toLowerCase()) };
+}

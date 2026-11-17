@@ -1,9 +1,10 @@
+import { staffUser } from "@/lib/auth";
 import { createPaymentTest } from "@/lib/engine";
 
-// Team only: launches one real payment attempt with the zero-balance test card.
+// AgentProof staff only: launches one real payment attempt with the zero-balance test card.
 export async function POST(req: Request) {
+  if (!(await staffUser()).isStaff) return new Response("Réservé à l'équipe AgentProof.", { status: 403 });
   const form = await req.formData();
-  if (form.get("key") !== process.env.TICK_SECRET) return new Response("Clé incorrecte.", { status: 403 });
   try {
     await createPaymentTest(String(form.get("url") ?? ""));
     return Response.redirect(new URL("/test-paiement", req.url), 303);

@@ -1,4 +1,6 @@
+import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
+import { staffUser } from "@/lib/auth";
 import { PAYMENT_VERDICTS, db } from "@/lib/engine";
 import { StatusBadge } from "@/lib/ui";
 import { AutoRefresh } from "../audit/[id]/refresh";
@@ -13,6 +15,10 @@ const input =
 
 export default async function TestPaiement() {
   await connection();
+  // R&D page for AgentProof's own team: not part of the product, not public.
+  const { user, isStaff } = await staffUser();
+  if (!user) redirect("/connexion?next=/test-paiement");
+  if (!isStaff) notFound();
   const { data: runs } = await db
     .from("runs")
     .select("id, status, success, payment_verdict, bank_seen, agent_answer, judge, steps, duration_s, cost_usd, created_at, missions!inner(slug), audits(sites(name, url))")
@@ -26,7 +32,7 @@ export default async function TestPaiement() {
       {running && <AutoRefresh />}
       <div className="wrap-wide">
         <header className="max-w-[760px]">
-          <p className="type-eyebrow text-ink-2">Équipe · Test de paiement réel</p>
+          <p className="type-eyebrow text-ink-2">R&amp;D interne · Test de paiement réel</p>
           <h1 className="type-h1 mt-3">Le paiement atteint‑il la banque ?</h1>
           <p className="type-intro mt-5 text-ink-2">
             L&apos;agent achète l&apos;article le moins cher et paie avec la carte de test de l&apos;équipe, sur un compte à 0 €. Un refus « fonds insuffisants » prouve que le
@@ -34,9 +40,8 @@ export default async function TestPaiement() {
           </p>
         </header>
 
-        <form action="/api/payment-tests" method="post" className="tile mt-12 grid gap-3 p-6! sm:grid-cols-[1fr_14rem_auto]">
+        <form action="/api/payment-tests" method="post" className="tile mt-12 grid gap-3 p-6! sm:grid-cols-[1fr_auto]">
           <input name="url" required placeholder="site-a-tester.fr" aria-label="Site à tester" className={input} inputMode="url" autoCapitalize="none" spellCheck={false} />
-          <input name="key" type="password" required placeholder="Clé équipe" aria-label="Clé équipe" className={input} autoComplete="off" />
           <button className="btn rounded-[12px]">Lancer le test</button>
         </form>
 
@@ -83,7 +88,6 @@ export default async function TestPaiement() {
                       )}
                     </p>
                     <input type="hidden" name="run" value={r.id} />
-                    <input name="key" type="password" required placeholder="Clé équipe" aria-label="Clé équipe" className={`${input} h-10 text-[15px]`} autoComplete="off" />
                     <div className="flex gap-2">
                       <button name="seen" value="yes" className="btn btn-dark min-h-9 flex-1 text-[14px]">
                         Oui

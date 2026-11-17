@@ -1,3 +1,4 @@
+import { staffUser } from "@/lib/auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
@@ -19,6 +20,8 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const audit = await loadAudit(id);
   if (!audit) notFound();
+  // Real payment tests are internal R&D: only AgentProof staff may open them.
+  if (audit.kind === "payment" && !(await staffUser()).isStaff) notFound();
   const competitor = audit.compare_to ? await loadAudit(audit.compare_to) : null;
 
   const runs = [...audit.runs].sort((a: any, b: any) => a.missions.position - b.missions.position);

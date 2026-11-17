@@ -49,7 +49,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <footer className="bg-bg-2 type-caption text-ink-2">
           <div className="wrap-wide border-t border-line py-5">
             <p className="flex items-start gap-2 py-2">
-              L&apos;agent ne paie jamais, ne saisit aucune donnée personnelle et ne résout aucun captcha. Il s&apos;arrête à la première page du checkout.
+              Pendant un audit, l&apos;agent ne paie jamais, ne saisit aucune donnée personnelle et ne résout aucun captcha. Il s&apos;arrête à la première page du checkout.
             </p>
             <div className="mt-2 flex flex-col gap-2 border-t border-line pt-4 sm:flex-row sm:justify-between">
               <p>AgentProof · Hackathon H Company × Hugging Face, novembre 2026.</p>

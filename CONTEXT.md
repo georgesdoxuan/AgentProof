@@ -92,16 +92,18 @@ En audit payant, le marchand peut fournir un compte de test ou un site de prépr
 
 ## 8. Les 10 missions du MVP (à affiner par Alexandre)
 
-1. Chercher « pull noir » avec la barre de recherche, choisir un article, taille M, ajouter au panier, aller au checkout.
-2. Trouver un jean via le menu de catégories, filtrer par taille, ajouter au panier, checkout.
+1. Chercher « pull noir » avec la barre de recherche (ou un vêtement que le site vend), choisir un article, taille M, ajouter au panier, aller au checkout.
+2. Ouvrir une catégorie de vêtements via le menu, filtrer par taille, ajouter au panier, checkout.
 3. Trouver un article à moins de 60 € avec le filtre de prix, ajouter au panier, checkout.
-4. Choisir une couleur précise d'un produit à variantes, ajouter au panier, checkout.
+4. Choisir une autre couleur que celle par défaut sur un produit à variantes, ajouter au panier, checkout.
 5. Trouver un article en promotion, ajouter au panier, checkout.
 6. Ajouter deux articles différents au panier, checkout.
 7. Ajouter un article, passer la quantité à 2 dans le panier, checkout.
 8. Trouver les frais de livraison pour la France avant le checkout, puis aller au checkout.
 9. Chercher un produit avec une faute de frappe (« pul noir »), ajouter au panier, checkout.
-10. Depuis la page d'accueil sans recherche, trouver un t-shirt blanc taille L, ajouter au panier, checkout.
+10. Depuis la page d'accueil sans recherche, trouver un haut blanc ou clair, ajouter au panier, checkout.
+
+Les missions restent neutres sur le type de produit (pas de « jean homme » chez une marque femme) : une mission impossible sur un site fausserait son score.
 
 ## 9. Technologie
 
