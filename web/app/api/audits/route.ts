@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
-import { attachEmail, auditsFromIp, createAudit, db, normalizeUrl, recentAudit } from "@/lib/engine";
+import { attachEmail, auditsFromIp, createAudit, createPaymentTest, db, normalizeUrl, recentAudit } from "@/lib/engine";
 import { canLaunch, teamContext } from "@/lib/auth";
+import { cardSecret } from "@/lib/cards";
 
 const FORM_MISSIONS = Number(process.env.FORM_MISSIONS ?? 5); // 3 on demo day: one mission per free H slot
 const MAX_PENDING = 20; // refuse new audits when the queue is this long
@@ -30,7 +31,11 @@ export async function POST(req: Request) {
 
     // Same site audited in the last 7 days: show that report instead of spending tokens again.
     // "Relancer pour vérifier" sends force=1: the team fixed something and wants a fresh pass.
-    if (!competitor && form.get("force") !== "1") {
+    // Real payment test: the team's own card, on the main site only (never the competitor), always a fresh audit.
+    const payment = form.get("payment") === "1";
+    if (payment && !(await cardSecret(ctx.team.id))) return fail("Aucune carte utilisable pour l'équipe : ajoute-la dans Espace › Paiement.");
+
+    if (!payment && !competitor && form.get("force") !== "1") {
       const existing = await recentAudit(url, device, ctx.team.id);
       if (existing && email) await attachEmail(existing, email);
       if (existing) return Response.redirect(new URL(`/audit/${existing}`, req.url), 303);
@@ -44,7 +49,8 @@ export async function POST(req: Request) {
     if ((count ?? 0) > MAX_PENDING) return fail("File d'attente pleine, réessaie dans un moment.", 503);
 
     const compareTo = competitor ? await createAudit(competitor, { device, missions: FORM_MISSIONS, ipHash, ...team }) : undefined;
-    const id = await createAudit(url, { device, missions: FORM_MISSIONS, compareTo, email: email || undefined, ipHash, ...team });
+    const paymentTest = payment ? await createPaymentTest(url, team) : undefined;
+    const id = await createAudit(url, { device, missions: FORM_MISSIONS, compareTo, paymentTest, email: email || undefined, ipHash, ...team });
     return Response.redirect(new URL(`/audit/${id}`, req.url), 303);
   } catch (e) {
     return fail(`Erreur : ${(e as Error).message}`);

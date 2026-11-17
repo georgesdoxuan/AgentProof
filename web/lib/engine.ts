@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
+import { cardSecret, type CardSecret } from "./cards";
 
 // ---------- clients ----------
 export const db = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!, {
@@ -68,7 +69,7 @@ export function normalizeUrl(input: string) {
   return { url: `${u.protocol}//${u.hostname}${u.pathname === "/" ? "" : u.pathname}`, domain: u.hostname.replace(/^www\./, "") };
 }
 
-export async function createAudit(input: string, opts: { device?: "desktop" | "mobile"; missions?: number; compareTo?: string; email?: string; ipHash?: string; teamId?: string; createdBy?: string } = {}) {
+export async function createAudit(input: string, opts: { device?: "desktop" | "mobile"; missions?: number; compareTo?: string; paymentTest?: string; email?: string; ipHash?: string; teamId?: string; createdBy?: string } = {}) {
   const { url, domain } = normalizeUrl(input);
   const { data: created, error: e1 } = await db
     .from("sites")
@@ -78,7 +79,7 @@ export async function createAudit(input: string, opts: { device?: "desktop" | "m
   const site = created?.[0] ?? (await db.from("sites").select().eq("domain", domain).single()).data;
   const { data: audit, error: e2 } = await db
     .from("audits")
-    .insert({ site_id: site.id, device: opts.device ?? "desktop", compare_to: opts.compareTo ?? null, email: opts.email ?? null, ip_hash: opts.ipHash ?? null, team_id: opts.teamId ?? null, created_by: opts.createdBy ?? null })
+    .insert({ site_id: site.id, device: opts.device ?? "desktop", compare_to: opts.compareTo ?? null, payment_test: opts.paymentTest ?? null, email: opts.email ?? null, ip_hash: opts.ipHash ?? null, team_id: opts.teamId ?? null, created_by: opts.createdBy ?? null })
     .select()
     .single();
   if (e2) throw e2;
@@ -118,15 +119,14 @@ async function withinTokenBudget() {
   return used < Number(process.env.TOKEN_BUDGET ?? 45_000_000);
 }
 
-// One real payment attempt with the team's zero-balance test card. Launched by hand, never from the public form.
-export async function createPaymentTest(input: string) {
-  for (const k of ["TEST_CARD_NUMBER", "TEST_CARD_EXPIRY", "TEST_CARD_CVC", "TEST_CARD_NAME", "TEST_EMAIL"])
-    if (!process.env[k] || process.env[k] === "A_REMPLIR") throw new Error(`Carte de test non configurée (${k} manquant dans Vercel).`);
+// One real payment attempt with the team's card (team space) or AgentProof's own card (staff R&D page, no team).
+export async function createPaymentTest(input: string, opts: { teamId?: string; createdBy?: string } = {}) {
+  if (!(await cardSecret(opts.teamId ?? null))) throw new Error("Aucune carte utilisable pour ce test de paiement.");
   const { url, domain } = normalizeUrl(input);
   const { error } = await db.from("sites").upsert({ domain, name: domain, url }, { onConflict: "domain", ignoreDuplicates: true });
   if (error) throw error;
   const { data: site } = await db.from("sites").select().eq("domain", domain).single();
-  const { data: audit } = await db.from("audits").insert({ site_id: site!.id, kind: "payment" }).select().single();
+  const { data: audit } = await db.from("audits").insert({ site_id: site!.id, kind: "payment", team_id: opts.teamId ?? null, created_by: opts.createdBy ?? null }).select().single();
   const { data: mission } = await db.from("missions").select("id").eq("slug", "paiement").single();
   await db.from("runs").insert({ audit_id: audit!.id, mission_id: mission!.id });
   return audit!.id as string;
@@ -174,23 +174,24 @@ export async function tick() {
     else if (slots > 0) {
       const { data: todo } = await db
         .from("runs")
-        .select("*, missions(instruction, slug), audits(device, sites(url))")
+        .select("*, missions(instruction, slug), audits(device, team_id, sites(url))")
         .eq("status", "todo")
         .order("created_at")
         .limit(slots);
       for (const run of todo ?? []) {
         // Reserve the run first, so two concurrent ticks never launch it twice.
+        const launchedAt = new Date().toISOString();
         const { data: reserved } = await db
           .from("runs")
-          .update({ status: "launched", launched_at: new Date().toISOString() })
+          .update({ status: "launched", launched_at: launchedAt })
           .eq("id", run.id)
           .eq("status", "todo")
           .select("id");
         if (!reserved?.length) continue;
         budget--;
         try {
-          // Same key on a retry (network timeout) so H never starts a second paid session for one run.
-          const s = await (await h("/sessions", { method: "POST", body: JSON.stringify(sessionRequest(run)), headers: { "Idempotency-Key": `agentproof-run-${run.id}` } })).json();
+          // One key per reservation: a retried request never starts a second paid session, and a run reset to todo can launch again.
+          const s = await (await h("/sessions", { method: "POST", body: JSON.stringify(await sessionRequest(run)), headers: { "Idempotency-Key": `agentproof-run-${run.id}-${launchedAt}` } })).json();
           await db.from("runs").update({ session_id: s.id, agent_view_url: s.agent_view_url }).eq("id", run.id);
           log.push(`launched run ${run.id}`);
         } catch (e) {
@@ -220,9 +221,13 @@ async function markError(id: number, e: unknown) {
     .eq("id", id);
 }
 
-function sessionRequest(run: { id: number; missions: { instruction: string; slug: string }; audits: { device: string; sites: { url: string } } }) {
+async function sessionRequest(run: { id: number; missions: { instruction: string; slug: string }; audits: { device: string; team_id: string | null; sites: { url: string } } }) {
   const url = run.audits.sites.url;
-  if (isPayment(run)) return paymentRequest(run.id, url);
+  if (isPayment(run)) {
+    const card = await cardSecret(run.audits.team_id);
+    if (!card) throw new Error("Carte de paiement retirée avant le lancement.");
+    return paymentRequest(run.id, url, card);
+  }
   const overrides: Record<string, unknown> = { "agent.environments[kind=web].start_url": url };
   if (run.audits.device === "mobile") overrides["agent.environments[kind=web].mode"] = { type: "visual", width: 390, height: 844 };
   return {
@@ -262,14 +267,13 @@ const PAYMENT_FORMAT = {
   required: ["payment_submitted", "result", "three_ds_seen", "site_message", "payment_provider", "payment_methods", "final_url", "steps_summary"],
 };
 
-function paymentRequest(runId: number, url: string) {
-  const e = process.env;
+function paymentRequest(runId: number, url: string, c: CardSecret) {
   return {
     agent: AGENT,
     messages:
       `Site à tester : ${url}\nMission : achète l'article le moins cher disponible et paie par carte (une seule tentative).\n` +
-      `Identité de test : ${e.TEST_CARD_NAME}, e-mail ${e.TEST_EMAIL}, téléphone 0612345678, adresse 12 rue de la Paix, 75002 Paris, France.\n` +
-      `Carte : numéro ${e.TEST_CARD_NUMBER}, expiration ${e.TEST_CARD_EXPIRY}, CVC ${e.TEST_CARD_CVC}, titulaire ${e.TEST_CARD_NAME}.`,
+      `Identité de test : ${c.holder}, e-mail ${c.email}, téléphone 0612345678, adresse ${c.address}.\n` +
+      `Carte : numéro ${c.number}, expiration ${c.expiry}, CVC ${c.cvc}, titulaire ${c.holder}.`,
     overrides: {
       "agent.environments[kind=web].start_url": url,
       "agent.instructions": PAYMENT_INSTRUCTIONS,
@@ -498,7 +502,7 @@ export async function judgeScreenshot(imageUrl: string, mission: string | undefi
             type: "text",
             text:
               `Screenshot of the last page an AI shopping agent saw on an e-commerce site. Mission: ${mission ?? "reach checkout"}. Page URL: ${pageUrl ?? "unknown"}. ` +
-              `A checkout page is the page reached after leaving the cart: it asks for login or guest e-mail, shipping address, delivery or payment (a login or e-mail form shown as a pop-up right after clicking the order button also counts). A cart or basket page listing the chosen items is NOT a checkout page, even with an order button or a login suggestion on it. A product or search page is NOT a checkout page. ` +
+              `is_checkout_page is true when the page asks the shopper to log in, create an account, give an e-mail to continue as a guest, enter a shipping address, choose a delivery or pay. Login pages and login pop-ups count as checkout. is_checkout_page is false for a cart page that only lists the chosen items with a button to order, and for a product, search or home page. ` +
               `Reply with JSON only: {"is_checkout_page": boolean, "blocking_overlay": boolean, "blocker_type": one of ${Object.keys(BLOCKERS).join("|")}, "reason": "short French sentence"}`,
           },
           { type: "image_url", image_url: { url: imageUrl } },

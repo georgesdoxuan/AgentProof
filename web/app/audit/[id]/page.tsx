@@ -1,13 +1,13 @@
-import { staffUser } from "@/lib/auth";
+import { staffUser, teamContext } from "@/lib/auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { db } from "@/lib/engine";
+import { PAYMENT_VERDICTS, db } from "@/lib/engine";
 import { BrowserFrame, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, summarize } from "@/lib/ui";
 import { AutoRefresh } from "./refresh";
 
 const RUN_FIELDS =
-  "id, status, session_id, success, reached_checkout, blocker_type, blocker_detail, screenshot_url, final_url, steps, duration_s, cost_usd, judge, agent_answer, missions(title, position)";
+  "id, status, payment_verdict, session_id, success, reached_checkout, blocker_type, blocker_detail, screenshot_url, final_url, steps, duration_s, cost_usd, judge, agent_answer, missions(title, position)";
 
 async function loadAudit(id: string) {
   const { data } = await db.from("audits").select(`*, sites(domain, name, url), runs(${RUN_FIELDS})`).eq("id", id).maybeSingle();
@@ -20,14 +20,17 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const audit = await loadAudit(id);
   if (!audit) notFound();
-  // Real payment tests are internal R&D: only AgentProof staff may open them.
-  if (audit.kind === "payment" && !(await staffUser()).isStaff) notFound();
+  // Real payment tests: only the team that ran them, or AgentProof staff.
+  const ctx = audit.kind === "payment" || audit.payment_test ? await teamContext() : null;
+  const inTeam = !!audit.team_id && !!ctx?.teams.some((t) => t.id === audit.team_id);
+  if (audit.kind === "payment" && !inTeam && !(await staffUser()).isStaff) notFound();
+  const pay = inTeam && audit.payment_test ? (await loadAudit(audit.payment_test))?.runs[0] : null;
   const competitor = audit.compare_to ? await loadAudit(audit.compare_to) : null;
 
   const runs = [...audit.runs].sort((a: any, b: any) => a.missions.position - b.missions.position);
   const s = summarize(runs);
   const c = competitor ? summarize(competitor.runs) : null;
-  const running = audit.status === "running" || competitor?.status === "running";
+  const running = audit.status === "running" || competitor?.status === "running" || (pay && pay.status !== "done");
   const cost = runs.reduce((t: number, r: any) => t + Number(r.cost_usd ?? 0), 0);
   const maxBlock = s.blockers[0]?.[1] ?? 1;
   const aside = s.excluded + s.unverified + s.errors;
@@ -124,6 +127,34 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             </div>
           )}
         </section>
+
+        {pay && (
+          <section className="tile">
+            <div className="type-small flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="text-ink-2">Test de paiement réel</span>
+              <StatusBadge run={pay} />
+            </div>
+            {pay.status === "done" ? (
+              <>
+                <p className={`type-h3 mt-3 ${["bank_declined", "payment_accepted"].includes(pay.payment_verdict) ? "text-pass" : "text-fail"}`}>
+                  {PAYMENT_VERDICTS[pay.payment_verdict] ?? pay.payment_verdict ?? "Pas de résultat"}
+                </p>
+                {pay.agent_answer?.site_message && <p className="mt-2 text-ink-2">Message du site : « {pay.agent_answer.site_message} »</p>}
+                <p className="type-small mt-2 text-ink-2">
+                  3D Secure : {pay.agent_answer?.three_ds_seen ? "demandé" : "non"} · Prestataire : {pay.agent_answer?.payment_provider || "?"} · Moyens :{" "}
+                  {pay.agent_answer?.payment_methods || "?"}
+                </p>
+                {pay.judge?.result && pay.judge.result !== pay.payment_verdict && (
+                  <p className="type-small mt-2 text-warn">
+                    Juge visuel en désaccord : {PAYMENT_VERDICTS[pay.judge.result] ?? pay.judge.result}. {pay.judge.reason}
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="mt-3 text-ink-2">L&apos;agent achète l&apos;article le moins cher et paie une fois. Garde ton téléphone à portée pour valider le 3D Secure.</p>
+            )}
+          </section>
+        )}
 
         {s.blockers.length > 0 && (
           <section>
