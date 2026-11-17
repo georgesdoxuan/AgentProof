@@ -87,7 +87,7 @@ export async function createAudit(input: string, opts: { device?: "desktop" | "m
 // One real payment attempt with the team's zero-balance test card. Launched by hand, never from the public form.
 export async function createPaymentTest(input: string) {
   for (const k of ["TEST_CARD_NUMBER", "TEST_CARD_EXPIRY", "TEST_CARD_CVC", "TEST_CARD_NAME", "TEST_EMAIL"])
-    if (!process.env[k]) throw new Error(`Carte de test non configurée (${k} manquant dans Vercel).`);
+    if (!process.env[k] || process.env[k] === "A_REMPLIR") throw new Error(`Carte de test non configurée (${k} manquant dans Vercel).`);
   const { url, domain } = normalizeUrl(input);
   const { data: site, error } = await db.from("sites").upsert({ domain, name: domain, url }, { onConflict: "domain" }).select().single();
   if (error) throw error;
