@@ -1,0 +1,23 @@
+# Deploys web/ to Vercel production on every push to main.
+# Vercel's own Git integration needs a GitHub login connection on the Vercel account, so we use the CLI instead.
+name: Deploy production
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+concurrency: deploy-production
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    env:
+      VERCEL_ORG_ID: team_GDkA674pturF8emHlFlIQypJ
+      VERCEL_PROJECT_ID: prj_WOaIyu6PnFfBYwREUwrAIOpL8xTY
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npx vercel@latest deploy --prod --yes --token "${{ secrets.VERCEL_TOKEN }}"
