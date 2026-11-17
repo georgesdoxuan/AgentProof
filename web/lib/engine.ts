@@ -301,7 +301,7 @@ async function finalize(run: any, items: Ev[], state: string) {
   }
 
   // Blind judge: it only sees the screenshot and the mission, never what the agent claims.
-  const judge = screenshot_url ? await judgeScreenshot(screenshot_url, run.missions?.title).catch((e) => ({ error: String(e) })) : null;
+  const judge = screenshot_url ? await judgeScreenshot(screenshot_url, run.missions?.title, obs?.data.metadata?.url).catch((e) => ({ error: String(e) })) : null;
   const agentSays = !!answer?.reached_checkout;
   const verified = !!judge && typeof (judge as any).is_checkout_page === "boolean";
   // Unverified runs (no screenshot, judge down, unreadable answer) get success = null and stay out of the score.
@@ -488,7 +488,7 @@ async function hf(messages: unknown[], max_tokens = 400) {
   throw last;
 }
 
-export async function judgeScreenshot(imageUrl: string, mission: string | undefined) {
+export async function judgeScreenshot(imageUrl: string, mission: string | undefined, pageUrl?: string | null) {
   const out = await hf(
     [
       {
@@ -497,7 +497,7 @@ export async function judgeScreenshot(imageUrl: string, mission: string | undefi
           {
             type: "text",
             text:
-              `Screenshot of the last page an AI shopping agent saw on an e-commerce site. Mission: ${mission ?? "reach checkout"}. ` +
+              `Screenshot of the last page an AI shopping agent saw on an e-commerce site. Mission: ${mission ?? "reach checkout"}. Page URL: ${pageUrl ?? "unknown"}. ` +
               `A checkout page is the page reached after leaving the cart: it asks for login or guest e-mail, shipping address, delivery or payment (a login or e-mail form shown as a pop-up right after clicking the order button also counts). A cart or basket page listing the chosen items is NOT a checkout page, even with an order button or a login suggestion on it. A product or search page is NOT a checkout page. ` +
               `Reply with JSON only: {"is_checkout_page": boolean, "blocking_overlay": boolean, "blocker_type": one of ${Object.keys(BLOCKERS).join("|")}, "reason": "short French sentence"}`,
           },

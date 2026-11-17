@@ -6,14 +6,14 @@ const BLOCKERS = ["none", "cookie_banner", "popup", "search_failed", "filter_fai
 const sb = (path, init = {}) =>
   fetch(`${SUPABASE_URL}/rest/v1/${path}`, { ...init, headers: { apikey: SUPABASE_SECRET_KEY, Authorization: `Bearer ${SUPABASE_SECRET_KEY}`, "Content-Type": "application/json", ...init.headers } });
 
-async function judge(imageUrl, mission) {
+async function judge(imageUrl, mission, pageUrl) {
   const res = await fetch("https://router.huggingface.co/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${HF_TOKEN}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: `${MODEL}:primeintellect`, max_tokens: 200, temperature: 0, chat_template_kwargs: { enable_thinking: false },
       messages: [{ role: "user", content: [
-        { type: "text", text: `Screenshot of the last page an AI shopping agent saw on an e-commerce site. Mission: ${mission}. A checkout page is the page reached after leaving the cart: it asks for login or guest e-mail, shipping address, delivery or payment (a login or e-mail form shown as a pop-up right after clicking the order button also counts). A cart or basket page listing the chosen items is NOT a checkout page, even with an order button or a login suggestion on it. A product or search page is NOT a checkout page. Reply with JSON only: {"is_checkout_page": boolean, "blocking_overlay": boolean, "blocker_type": one of ${BLOCKERS.join("|")}, "reason": "short French sentence"}` },
+        { type: "text", text: `Screenshot of the last page an AI shopping agent saw on an e-commerce site. Mission: ${mission}. Page URL: ${pageUrl ?? "unknown"}. A checkout page is the page reached after leaving the cart: it asks for login or guest e-mail, shipping address, delivery or payment (a login or e-mail form shown as a pop-up right after clicking the order button also counts). A cart or basket page listing the chosen items is NOT a checkout page, even with an order button or a login suggestion on it. A product or search page is NOT a checkout page. Reply with JSON only: {"is_checkout_page": boolean, "blocking_overlay": boolean, "blocker_type": one of ${BLOCKERS.join("|")}, "reason": "short French sentence"}` },
         { type: "image_url", image_url: { url: imageUrl } },
       ] }],
     }),
@@ -24,13 +24,13 @@ async function judge(imageUrl, mission) {
 }
 
 const only = process.argv.includes("--unverified") ? "&success=is.null" : "";
-const runs = await (await sb("runs?status=eq.done&screenshot_url=not.is.null" + only + "&select=id,reached_checkout,blocker_type,agent_answer,missions!inner(title,slug)&missions.slug=neq.paiement")).json();
+const runs = await (await sb("runs?status=eq.done&screenshot_url=not.is.null" + only + "&select=id,reached_checkout,blocker_type,agent_answer,final_url,missions!inner(title,slug)&missions.slug=neq.paiement")).json();
 let agree = 0, changed = 0, failed = 0;
 for (const r of runs) {
   let j;
   for (let attempt = 0; attempt < 3; attempt++) {
     await new Promise((ok) => setTimeout(ok, 4000 * (attempt + 1))); // provider rate limit: stay slow
-    try { j = await judge(`${SUPABASE_URL}/storage/v1/object/public/screenshots/${r.id}.png`, r.missions.title); break; }
+    try { j = await judge(`${SUPABASE_URL}/storage/v1/object/public/screenshots/${r.id}.png`, r.missions.title, r.final_url); break; }
     catch (e) { j = { error: String(e) }; }
   }
   const verified = typeof j.is_checkout_page === "boolean";
