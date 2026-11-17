@@ -25,7 +25,7 @@ export default async function Classement() {
           <p className="type-eyebrow text-ink-2">Classement mode France</p>
           <h1 className="type-h1 mt-3">Qui laisse un agent IA acheter ?</h1>
           <p className="type-intro mt-5 text-ink-2">
-            Part des missions où l&apos;agent atteint le checkout, vérifiée par un juge visuel. Dernier audit de chaque site.
+            Part des missions où l&apos;agent atteint le checkout, vérifiée par un juge visuel. Moyenne des 2 derniers passages de chaque site, car un agent IA n&apos;agit pas toujours pareil.
           </p>
         </header>
 
