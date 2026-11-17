@@ -10,16 +10,23 @@ export function Nav({ signedIn }: { signedIn: boolean }) {
       <Link
         href="/classement"
         aria-current={path === "/classement" ? "page" : undefined}
-        className="inline-flex h-11 items-center px-2 text-ink/80 transition-colors hover:text-ink aria-[current=page]:text-ink-2"
+        className="inline-flex h-11 items-center whitespace-nowrap px-2 text-ink/80 transition-colors hover:text-ink aria-[current=page]:text-ink-2"
       >
         Classement
       </Link>
       <Link
         href={signedIn ? "/espace" : "/connexion"}
-        aria-current={path === "/espace" || path === "/equipe" ? "page" : undefined}
-        className="inline-flex h-11 items-center px-2 text-ink/80 transition-colors hover:text-ink aria-[current=page]:text-ink-2"
+        aria-current={["/espace", "/equipe", "/compte"].includes(path) ? "page" : undefined}
+        className="inline-flex h-11 items-center whitespace-nowrap px-2 text-ink/80 transition-colors hover:text-ink aria-[current=page]:text-ink-2"
       >
-        {signedIn ? "Mon espace" : "Connexion"}
+        {signedIn ? (
+          <>
+            <span className="max-[480px]:hidden">Mon espace</span>
+            <span className="min-[481px]:hidden">Espace</span>
+          </>
+        ) : (
+          "Connexion"
+        )}
       </Link>
       <Link href="/#tester" className="inline-flex h-7 items-center whitespace-nowrap rounded-full bg-blue px-[11px] text-white transition-colors hover:bg-[var(--blue-hover)]">
         Tester<span className="max-[480px]:hidden">&nbsp;mon site</span>

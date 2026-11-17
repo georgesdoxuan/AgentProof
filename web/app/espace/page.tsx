@@ -2,134 +2,202 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/engine";
 import { ROLE_LABEL, canLaunch, teamContext } from "@/lib/auth";
-import { Field, MissionBar, StatusGlyph, scoreTone } from "@/lib/ui";
+import { Chevron, Field, Group, MissionBar, Row, Segmented, Spinner, StatusGlyph, scoreTone, summarize } from "@/lib/ui";
+import { SpaceShell } from "./shell";
 
-export const metadata = { title: "Espace · AgentProof" };
+export const metadata = { title: "Vue d'ensemble · AgentProof" };
 
-type Run = { status: string; success: boolean | null; blocker_type: string | null };
+type Audit = {
+  id: string;
+  created_at: string;
+  device: string;
+  status: string;
+  compare_to: string | null;
+  sites: { domain: string } | null;
+  users: { email: string } | null;
+  runs: { status: string; success: boolean | null; blocker_type: string | null }[];
+};
 
-// Same rule as the site_scores view: out of stock and anti-bot blocks stay out of the score.
-function score(runs: Run[]) {
-  const scored = runs.filter((r) => r.status === "done" && r.success !== null && !["out_of_stock", "captcha_or_bot_block"].includes(r.blocker_type ?? ""));
-  const ok = scored.filter((r) => r.success).length;
-  return { ok, scored: scored.length, total: runs.length, score: scored.length ? Math.round((100 * ok) / scored.length) : null };
-}
+const FILTERS = [
+  ["tous", "Tous"],
+  ["en-cours", "En cours"],
+  ["termines", "Terminés"],
+] as const;
 
-export default async function Espace() {
+const date = (d: string) => new Date(d).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+const deviceLabel = (d: string) => (d === "mobile" ? "Mobile" : "Ordinateur");
+
+export default async function Espace({ searchParams }: { searchParams: Promise<{ vue?: string }> }) {
   const ctx = await teamContext();
   if (!ctx) redirect("/connexion?next=/espace");
   const { user, teams, team } = ctx;
-
   if (!team) return <NoTeam email={user.email} />;
+  const vue = (await searchParams).vue ?? "tous";
 
-  const { data: audits } = await db
+  const { data } = await db
     .from("audits")
     .select("id, created_at, device, status, compare_to, sites(domain), users:created_by(email), runs(status, success, blocker_type)")
     .eq("team_id", team.id)
     .eq("kind", "checkout")
     .order("created_at", { ascending: false })
     .limit(100);
+  const all = (data ?? []) as unknown as Audit[];
   // Competitor audits show inside the main report, not as their own line.
-  const competitors = new Set((audits ?? []).map((a) => a.compare_to).filter(Boolean));
-  const rows = (audits ?? []).filter((a) => !competitors.has(a.id));
+  const competitors = new Set(all.map((a) => a.compare_to).filter(Boolean));
+  const audits = all.filter((a) => !competitors.has(a.id)).map((a) => ({ ...a, s: summarize(a.runs) }));
+
+  // One line per site and device: latest finished score, and how it moved since the audit before.
+  const sites = new Map<string, { latest: (typeof audits)[number]; previous?: number | null }>();
+  for (const a of audits) {
+    if (a.status !== "done" || !a.sites) continue;
+    const key = `${a.sites.domain}|${a.device}`;
+    const seen = sites.get(key);
+    if (!seen) sites.set(key, { latest: a });
+    else if (seen.previous === undefined) seen.previous = a.s.score;
+  }
+
+  const running = audits.filter((a) => a.status !== "done");
+  const shown = vue === "en-cours" ? running : vue === "termines" ? audits.filter((a) => a.status === "done") : audits;
+  const launch = canLaunch(team.role);
 
   return (
-    <div className="bg-bg-2 pb-24 pt-16 max-[734px]:pt-10">
-      <div className="wrap-wide">
-        <header className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="type-eyebrow text-ink-2">Espace d&apos;équipe · {ROLE_LABEL[team.role]}</p>
-            <h1 className="type-h1 mt-2">{team.name}</h1>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            {teams.length > 1 && (
-              <form action="/api/team" method="post" className="flex items-center gap-2">
-                <input type="hidden" name="action" value="switch" />
-                <label className="sr-only" htmlFor="team-switch">Changer d&apos;équipe</label>
-                <select id="team-switch" name="team" defaultValue={team.id} className="h-9 rounded-[8px] border border-line bg-tile px-2 type-small">
-                  {teams.map((t) => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </select>
-                <button className="btn btn-secondary type-small">Ouvrir</button>
-              </form>
-            )}
-            <Link href="/equipe" className="more">Équipe et accès</Link>
-            <form action="/api/auth" method="post">
-              <input type="hidden" name="action" value="logout" />
-              <button className="type-small text-ink-2 hover:text-ink">Déconnexion ({user.email})</button>
-            </form>
-          </div>
-        </header>
-
-        {canLaunch(team.role) ? (
-          <form action="/api/audits" method="post" className="tile mt-10 grid gap-4">
-            <h2 className="type-h3">Nouvel audit</h2>
-            <div className="grid gap-4 sm:grid-cols-2">
+    <SpaceShell
+      team={team}
+      teams={teams}
+      title="Vue d'ensemble"
+      intro={audits.length ? `${audits.length} audit${audits.length > 1 ? "s" : ""} · ${sites.size} site${sites.size > 1 ? "s" : ""} suivi${sites.size > 1 ? "s" : ""}${running.length ? ` · ${running.length} en cours` : ""}` : undefined}
+    >
+      {launch ? (
+        <Group title="Nouvel audit" footer={`Cinq missions, 10 à 20 minutes. Le rapport arrive aussi par e-mail à ${user.email}.`}>
+          <form action="/api/audits" method="post" className="grid gap-4 p-5 sm:p-6">
+            <div className="grid gap-4 md:grid-cols-2">
               <Field label="Adresse du site" name="url" required />
               <Field label="Un concurrent (facultatif)" name="competitor" />
             </div>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <label className="flex items-center gap-2 text-ink-2">
-                Appareil
-                <select name="device" className="h-9 rounded-[8px] border border-line bg-tile px-2 text-ink">
-                  <option value="desktop">Ordinateur</option>
-                  <option value="mobile">Mobile</option>
-                </select>
-              </label>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <Segmented
+                name="device"
+                label="Appareil"
+                value="desktop"
+                options={[
+                  ["desktop", "Ordinateur"],
+                  ["mobile", "Mobile"],
+                ]}
+              />
               <button className="btn">Lancer l&apos;audit</button>
             </div>
-            <p className="type-small text-ink-2">Le rapport arrive aussi par e-mail à {user.email}.</p>
           </form>
-        ) : (
-          <p className="tile mt-10 text-ink-2">Accès lecteur : tu consultes les rapports de l&apos;équipe. Un admin ou le propriétaire lance les audits.</p>
-        )}
+        </Group>
+      ) : (
+        <Group>
+          <Row className="text-ink-2">Accès {ROLE_LABEL.viewer.toLowerCase()} : tu consultes les rapports de l&apos;équipe. Un admin ou le propriétaire lance les audits.</Row>
+        </Group>
+      )}
 
-        <h2 className="type-h3 mt-14">Audits de l&apos;équipe</h2>
-        {rows.length ? (
-          <ol className="mt-5 overflow-hidden rounded-[18px] bg-tile">
-            {rows.map((a: any) => {
-              const s = score(a.runs);
-              return (
-                <li key={a.id} className="border-b border-hairline last:border-0">
-                  <Link
-                    href={`/audit/${a.id}`}
-                    className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-2 px-6 py-5 transition-colors duration-200 hover:bg-bg-2/60 max-[734px]:px-5 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_10rem_5rem]"
-                  >
-                    <span className="min-w-0">
-                      <span className="type-headline block truncate">
-                        {a.sites?.domain}
-                        {a.compare_to && <span className="text-ink-2"> · avec concurrent</span>}
+      {sites.size > 0 && (
+        <Group title="Sites suivis" footer="Dernier audit terminé de chaque site, et l'écart avec l'audit précédent.">
+          {[...sites.values()].map(({ latest: a, previous }) => {
+            const delta = previous != null && a.s.score != null ? a.s.score - previous : null;
+            return (
+              <Link key={a.id} href={`/audit/${a.id}`} className="group block border-b border-hairline last:border-0 hover:bg-bg-2/60">
+                <div className="grid min-h-[68px] grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-5 px-5 py-3 sm:grid-cols-[minmax(0,1fr)_8rem_5rem_5.5rem_1rem]">
+                  <span className="min-w-0">
+                    <span className="type-headline block truncate">{a.sites!.domain}</span>
+                    <span className="type-small text-ink-2">
+                      {deviceLabel(a.device)} · {date(a.created_at)}
+                    </span>
+                  </span>
+                  <span className="hidden sm:block">
+                    <MissionBar ok={a.s.ok} done={a.s.done} total={a.s.total} size="sm" />
+                  </span>
+                  <span className={`type-small whitespace-nowrap text-right tnum ${delta == null || delta === 0 ? "text-ink-2" : delta > 0 ? "text-pass" : "text-fail"}`}>
+                    {delta == null ? "" : delta === 0 ? "Stable" : `${delta > 0 ? "+" : "−"}${Math.abs(delta)} pts`}
+                  </span>
+                  <span className="type-headline flex items-center justify-end gap-2 whitespace-nowrap tnum">
+                    <StatusGlyph tone={scoreTone(a.s.score)} className="h-4 w-4" />
+                    {a.s.score ?? "—"} %
+                  </span>
+                  <Chevron className="hidden h-3 w-3 text-ink-2 sm:block" />
+                </div>
+              </Link>
+            );
+          })}
+        </Group>
+      )}
+
+      <section>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3 px-1">
+          <h2 className="type-headline">Historique</h2>
+          {audits.length > 0 && (
+            <nav aria-label="Filtrer l'historique" className="inline-flex rounded-[10px] bg-fill p-[3px]">
+              {FILTERS.map(([v, l]) => (
+                <Link
+                  key={v}
+                  href={v === "tous" ? "/espace" : `/espace?vue=${v}`}
+                  scroll={false}
+                  aria-current={vue === v ? "true" : undefined}
+                  className="type-small flex h-8 items-center rounded-[8px] px-3.5 font-semibold text-ink-2 transition-colors aria-[current=true]:bg-tile aria-[current=true]:text-ink aria-[current=true]:shadow-[0_1px_3px_rgb(0_0_0/0.12)] dark:aria-[current=true]:bg-[#636366]"
+                >
+                  {l}
+                </Link>
+              ))}
+            </nav>
+          )}
+        </div>
+        <div className="overflow-hidden rounded-[18px] bg-tile">
+          {shown.length ? (
+            shown.map((a) => (
+              <Link key={a.id} href={`/audit/${a.id}`} className="block border-b border-hairline last:border-0 hover:bg-bg-2/60">
+                <div className="grid min-h-[68px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-5 px-5 py-3 md:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_8rem_5.5rem_1rem]">
+                  <span className="min-w-0">
+                    <span className="block truncate font-semibold">
+                      {a.sites?.domain ?? "Site supprimé"}
+                      {a.compare_to && <span className="font-normal text-ink-2"> · avec concurrent</span>}
+                    </span>
+                    <span className="type-small text-ink-2">
+                      {date(a.created_at)} · {deviceLabel(a.device)}
+                    </span>
+                  </span>
+                  <span className="type-small hidden truncate text-ink-2 md:block">{a.users?.email === user.email ? "Toi" : a.users?.email ?? "—"}</span>
+                  <span className="hidden md:block">
+                    <MissionBar ok={a.s.ok} done={a.s.done} total={a.s.total} size="sm" />
+                  </span>
+                  <span className="flex items-center justify-end gap-2 whitespace-nowrap tnum">
+                    {a.status === "done" ? (
+                      <>
+                        <StatusGlyph tone={scoreTone(a.s.score)} className="h-4 w-4" />
+                        <span className="font-semibold">{a.s.score ?? "—"} %</span>
+                      </>
+                    ) : (
+                      <span className="type-small flex items-center gap-2 text-ink-2">
+                        <Spinner className="h-3.5 w-3.5" />
+                        {a.s.finished} sur {a.s.total}
                       </span>
-                      <span className="type-small text-ink-2">
-                        {new Date(a.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} ·{" "}
-                        {a.device === "mobile" ? "Mobile" : "Ordinateur"}
-                      </span>
-                    </span>
-                    <span className="type-small hidden truncate text-ink-2 md:block">{a.users?.email ?? "—"}</span>
-                    <span className="col-span-2 md:col-span-1">
-                      <MissionBar ok={s.ok} done={s.scored} total={s.total} size="sm" />
-                    </span>
-                    <span className="row-start-1 col-start-2 flex items-center justify-end gap-2 type-headline tnum md:col-start-auto">
-                      {a.status === "done" ? (
-                        <>
-                          <StatusGlyph tone={scoreTone(s.score)} className="h-4 w-4" />
-                          {s.score ?? "—"} %
-                        </>
-                      ) : (
-                        <span className="type-small text-ink-2">En cours</span>
-                      )}
-                    </span>
+                    )}
+                  </span>
+                  <Chevron className="hidden h-3 w-3 text-ink-2 md:block" />
+                </div>
+              </Link>
+            ))
+          ) : (
+            <div className="px-6 py-14 text-center">
+              <p className="type-headline">{audits.length ? "Aucun audit dans cette vue." : "Aucun audit pour l'instant."}</p>
+              <p className="mt-1 text-ink-2">
+                {audits.length ? (
+                  <Link href="/espace" className="text-link hover:underline">
+                    Voir tous les audits
                   </Link>
-                </li>
-              );
-            })}
-          </ol>
-        ) : (
-          <p className="tile mt-5 text-center text-ink-2">Aucun audit pour l&apos;instant.</p>
-        )}
-      </div>
-    </div>
+                ) : launch ? (
+                  "Lance le premier avec le formulaire ci-dessus."
+                ) : (
+                  "Les audits de l'équipe apparaîtront ici."
+                )}
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
+    </SpaceShell>
   );
 }
 
@@ -143,30 +211,31 @@ async function NoTeam({ email }: { email: string }) {
     .gt("expires_at", new Date().toISOString());
   return (
     <div className="bg-bg-2 py-24 max-[734px]:py-14">
-      <div className="mx-auto grid w-[min(560px,87.5%)] gap-6">
-        <h1 className="type-h1 text-center">Ton espace</h1>
+      <div className="mx-auto grid w-[min(560px,87.5%)] gap-10">
+        <header className="text-center">
+          <h1 className="type-h1">Ton espace.</h1>
+          <p className="type-intro mt-3 text-ink-2">Rejoins une équipe ou crée la tienne pour lancer des audits.</p>
+        </header>
         {!!invites?.length && (
-          <div className="tile">
-            <h2 className="type-h3">Invitations en attente</h2>
-            <ul className="mt-3 grid gap-1 text-ink-2">
-              {invites.map((i: any) => (
-                <li key={i.id}>
-                  {i.teams?.name} · {ROLE_LABEL[i.role as "admin" | "viewer"]}
-                </li>
-              ))}
-            </ul>
-            <p className="type-small mt-3 text-ink-2">Ouvre le lien reçu par e-mail pour rejoindre l&apos;équipe.</p>
-          </div>
+          <Group title="Invitations en attente" footer="Ouvre le lien reçu par e-mail pour rejoindre l'équipe.">
+            {invites.map((i: any) => (
+              <Row key={i.id}>
+                <span className="flex-1 font-semibold">{i.teams?.name}</span>
+                <span className="type-small text-ink-2">{ROLE_LABEL[i.role as "admin" | "viewer"]}</span>
+              </Row>
+            ))}
+          </Group>
         )}
-        <form action="/api/team" method="post" className="tile grid gap-4">
-          <h2 className="type-h3">Créer une équipe</h2>
-          <input type="hidden" name="action" value="create" />
-          <Field label="Nom de l'équipe" name="name" type="text" required />
-          <button className="btn">Créer</button>
-        </form>
+        <Group title="Créer une équipe">
+          <form action="/api/team" method="post" className="grid gap-4 p-5 sm:p-6">
+            <input type="hidden" name="action" value="create" />
+            <Field label="Nom de l'équipe" name="name" type="text" required />
+            <button className="btn justify-self-end">Créer l&apos;équipe</button>
+          </form>
+        </Group>
         <form action="/api/auth" method="post" className="text-center">
           <input type="hidden" name="action" value="logout" />
-          <button className="type-small text-ink-2 hover:text-ink">Déconnexion ({email})</button>
+          <button className="type-small text-link hover:underline">Se déconnecter de {email}</button>
         </form>
       </div>
     </div>

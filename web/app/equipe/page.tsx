@@ -1,13 +1,17 @@
-import Link from "next/link";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/engine";
 import { ROLE_LABEL, type Role, teamContext } from "@/lib/auth";
-import { Field } from "@/lib/ui";
+import { Avatar, Field, Group, Row, Segmented } from "@/lib/ui";
+import { AutoSubmitSelect, ConfirmButton, CopyField } from "../espace/controls";
+import { SpaceShell } from "../espace/shell";
 
 export const metadata = { title: "Équipe · AgentProof" };
 
-const select = "h-9 rounded-[8px] border border-line bg-tile px-2 type-small";
+const ROLES: [string, string][] = [
+  ["viewer", "Lecteur"],
+  ["admin", "Admin"],
+];
 
 function Hidden({ action, ...rest }: { action: string } & Record<string, string>) {
   return (
@@ -24,7 +28,7 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
   const ctx = await teamContext();
   if (!ctx) redirect("/connexion?next=/equipe");
   if (!ctx.team) redirect("/espace");
-  const { user, team } = ctx;
+  const { user, teams, team } = ctx;
   const isOwner = team.role === "owner";
   const sp = await searchParams;
 
@@ -38,118 +42,117 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
   const base = process.env.PUBLIC_URL || `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
 
   return (
-    <div className="bg-bg-2 pb-24 pt-16 max-[734px]:pt-10">
-      <div className="mx-auto grid w-[min(760px,87.5%)] gap-6">
-        <header>
-          <Link href="/espace" className="more type-small">Retour à l&apos;espace</Link>
-          <h1 className="type-h1 mt-3">{team.name}</h1>
-          <p className="type-intro mt-3 text-ink-2">
-            Admin : lance des audits et consulte les rapports. Lecteur : consulte les rapports. Seul le propriétaire gère les membres.
-          </p>
-        </header>
-
-        {sp.invite && (
-          <div role="status" className="tile grid gap-2">
-            <p className="type-headline">
-              {sp.envoye === "1" ? `Invitation envoyée à ${sp.email}.` : `Invitation créée pour ${sp.email}, mais l'e-mail n'est pas parti.`}
-            </p>
-            <p className="type-small text-ink-2">Lien à partager si besoin (valable 7 jours, réservé à cette adresse) :</p>
-            <input readOnly value={`${base}/invitation/${sp.invite}`} className="h-10 w-full rounded-[8px] border border-line bg-bg-2 px-3 type-small" aria-label="Lien d'invitation" />
+    <SpaceShell
+      team={team}
+      teams={teams}
+      title="Équipe"
+      intro="Admin : lance des audits et lit les rapports. Lecteur : lit les rapports. Seul le propriétaire gère les membres."
+    >
+      {sp.invite && (
+        <Group
+          title={sp.envoye === "1" ? `Invitation envoyée à ${sp.email}` : `Invitation créée pour ${sp.email}`}
+          footer={sp.envoye === "1" ? "Lien valable 7 jours, réservé à cette adresse." : "L'e-mail n'est pas parti. Partage ce lien toi-même : valable 7 jours, réservé à cette adresse."}
+        >
+          <div role="status" className="p-4">
+            <CopyField value={`${base}/invitation/${sp.invite}`} label="Lien d'invitation" />
           </div>
-        )}
+        </Group>
+      )}
 
-        <section className="tile">
-          <h2 className="type-h3">Membres</h2>
-          <ul className="mt-4 divide-y divide-hairline">
-            {(members ?? []).map((m: any) => (
-              <li key={m.users.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-                <span className="min-w-0 truncate">
+      <Group title={`Membres · ${members?.length ?? 0}`}>
+        {(members ?? []).map((m: any) => {
+          const me = m.users.id === user.id;
+          return (
+            <Row key={m.users.id}>
+              <Avatar email={m.users.email} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate">
                   {m.users.email}
-                  {m.users.id === user.id && <span className="text-ink-2"> (toi)</span>}
+                  {me && <span className="text-ink-2"> · toi</span>}
                 </span>
-                {isOwner && m.role !== "owner" ? (
-                  <span className="flex items-center gap-2">
-                    <form action="/api/team" method="post" className="flex items-center gap-2">
-                      <Hidden action="role" user={m.users.id} />
-                      <select name="role" defaultValue={m.role} className={select} aria-label={`Rôle de ${m.users.email}`}>
-                        <option value="admin">Admin</option>
-                        <option value="viewer">Lecteur</option>
-                      </select>
-                      <button className="type-small text-link">Enregistrer</button>
-                    </form>
-                    <form action="/api/team" method="post">
-                      <Hidden action="remove" user={m.users.id} />
-                      <button className="type-small text-fail">Retirer</button>
-                    </form>
-                  </span>
-                ) : (
-                  <span className="type-small text-ink-2">{ROLE_LABEL[m.role as Role]}</span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
+                <span className="type-small text-ink-2">Depuis le {new Date(m.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}</span>
+              </span>
+              {isOwner && m.role !== "owner" ? (
+                <span className="flex items-center gap-3">
+                  <form action="/api/team" method="post">
+                    <Hidden action="role" user={m.users.id} />
+                    <AutoSubmitSelect name="role" defaultValue={m.role} label={`Accès de ${m.users.email}`} options={ROLES} />
+                  </form>
+                  <form action="/api/team" method="post">
+                    <Hidden action="remove" user={m.users.id} />
+                    <ConfirmButton message={`Retirer ${m.users.email} de l'équipe ${team.name} ?`} className="type-small inline-flex min-h-11 items-center px-1 text-fail hover:underline">
+                      Retirer
+                    </ConfirmButton>
+                  </form>
+                </span>
+              ) : (
+                <span className="type-small text-ink-2">{ROLE_LABEL[m.role as Role]}</span>
+              )}
+            </Row>
+          );
+        })}
+      </Group>
 
-        {isOwner && (
-          <>
-            <form action="/api/team" method="post" className="tile grid gap-4">
-              <h2 className="type-h3">Inviter un membre</h2>
+      {isOwner && (
+        <>
+          <Group title="Inviter un membre" footer="La personne reçoit un lien par e-mail et se connecte avec cette adresse.">
+            <form action="/api/team" method="post" className="grid gap-4 p-5 sm:p-6">
               <Hidden action="invite" />
               <Field label="E-mail du membre" name="email" type="email" required />
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <label className="flex items-center gap-2 text-ink-2">
-                  Accès
-                  <select name="role" defaultValue="viewer" className={select}>
-                    <option value="viewer">Lecteur</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </label>
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <Segmented name="role" label="Accès" value="viewer" options={ROLES} />
                 <button className="btn">Envoyer l&apos;invitation</button>
               </div>
             </form>
+          </Group>
 
-            {!!invites?.length && (
-              <section className="tile">
-                <h2 className="type-h3">Invitations en attente</h2>
-                <ul className="mt-4 divide-y divide-hairline">
-                  {invites.map((i: any) => (
-                    <li key={i.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-                      <span className="min-w-0 truncate">
-                        {i.email} <span className="text-ink-2">· {ROLE_LABEL[i.role as Role]}{new Date(i.expires_at) < new Date() ? " · expirée" : ""}</span>
+          {!!invites?.length && (
+            <Group title="Invitations en attente">
+              {invites.map((i: any) => {
+                const expired = new Date(i.expires_at) < new Date();
+                return (
+                  <Row key={i.id}>
+                    <Avatar email={i.email} className="h-9 w-9 opacity-50" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate">{i.email}</span>
+                      <span className={`type-small ${expired ? "text-fail" : "text-ink-2"}`}>
+                        {ROLE_LABEL[i.role as Role]} · {expired ? "expirée" : `expire le ${new Date(i.expires_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}`}
                       </span>
-                      <form action="/api/team" method="post">
-                        <Hidden action="revoke" invitation={i.id} />
-                        <button className="type-small text-fail">Annuler</button>
-                      </form>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
+                    </span>
+                    <form action="/api/team" method="post">
+                      <Hidden action="revoke" invitation={i.id} />
+                      <ConfirmButton message={`Annuler l'invitation de ${i.email} ?`} className="type-small inline-flex min-h-11 items-center px-1 text-fail hover:underline">
+                        Annuler
+                      </ConfirmButton>
+                    </form>
+                  </Row>
+                );
+              })}
+            </Group>
+          )}
 
-            <form action="/api/team" method="post" className="tile grid gap-4">
-              <h2 className="type-h3">Renommer l&apos;équipe</h2>
+          <Group title="Nom de l'équipe">
+            <form action="/api/team" method="post" className="flex flex-wrap items-center gap-3 p-5 sm:p-6">
               <Hidden action="rename" />
-              <Field label="Nom de l'équipe" name="name" type="text" required defaultValue={team.name} />
-              <button className="btn justify-self-start">Renommer</button>
+              <div className="min-w-[220px] flex-1">
+                <Field label="Nom" name="name" type="text" required defaultValue={team.name} />
+              </div>
+              <button className="btn btn-secondary">Renommer</button>
             </form>
-          </>
-        )}
+          </Group>
+        </>
+      )}
 
-        <form action="/api/team" method="post" className="tile grid gap-4">
-          <h2 className="type-h3">Créer une autre équipe</h2>
-          <Hidden action="create" />
-          <Field label="Nom de la nouvelle équipe" name="name" type="text" required />
-          <button className="btn justify-self-start">Créer</button>
-        </form>
-
-        {!isOwner && (
-          <form action="/api/team" method="post" className="text-center">
+      {!isOwner && (
+        <Group footer="Tu perds l'accès aux rapports de l'équipe. Le propriétaire peut t'inviter à nouveau.">
+          <form action="/api/team" method="post">
             <Hidden action="leave" />
-            <button className="type-small text-fail">Quitter l&apos;équipe</button>
+            <ConfirmButton message={`Quitter l'équipe ${team.name} ?`} className="flex min-h-[60px] w-full items-center px-5 text-left text-fail hover:bg-bg-2/60">
+              Quitter l&apos;équipe
+            </ConfirmButton>
           </form>
-        )}
-      </div>
-    </div>
+        </Group>
+      )}
+    </SpaceShell>
   );
 }

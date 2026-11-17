@@ -203,3 +203,51 @@ export function Field({ label, name, required, type = "url", defaultValue }: { l
   );
 }
 
+
+// ---------- controls shared by the team space ----------
+// Segmented control (radio group): one look for every short exclusive choice, as on the home form.
+export function Segmented({ name, options, value, label }: { name: string; options: [string, string][]; value: string; label: string }) {
+  return (
+    <fieldset className="inline-grid auto-cols-fr grid-flow-col rounded-[10px] bg-fill p-[3px]">
+      <legend className="sr-only">{label}</legend>
+      {options.map(([v, l]) => (
+        <label key={v} className="relative cursor-pointer">
+          <input type="radio" name={name} value={v} defaultChecked={v === value} className="peer sr-only" />
+          <span className="type-small flex h-9 items-center justify-center whitespace-nowrap rounded-[8px] px-4 font-semibold text-ink-2 transition-colors duration-200 peer-checked:bg-tile peer-checked:text-ink peer-checked:shadow-[0_1px_3px_rgb(0_0_0/0.12)] peer-focus-visible:outline-2 peer-focus-visible:outline-blue dark:peer-checked:bg-[#636366]">
+            {l}
+          </span>
+        </label>
+      ))}
+    </fieldset>
+  );
+}
+
+// Inset grouped list, like iOS Settings: a titled group of rows separated by hairlines.
+export function Group({ title, footer, aside, children }: { title?: string; footer?: React.ReactNode; aside?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <section>
+      {(title || aside) && (
+        <div className="mb-3 flex items-baseline justify-between gap-4 px-1">
+          {title && <h2 className="type-headline">{title}</h2>}
+          {aside}
+        </div>
+      )}
+      <div className="overflow-hidden rounded-[18px] bg-tile">{children}</div>
+      {footer && <p className="type-small mt-2.5 px-1 text-ink-2">{footer}</p>}
+    </section>
+  );
+}
+
+export function Row({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return <div className={`flex min-h-[60px] flex-wrap items-center gap-x-4 gap-y-2 border-b border-hairline px-5 py-3 last:border-0 ${className}`}>{children}</div>;
+}
+
+// Initials in a circle: tells members apart at a glance without photos.
+export function Avatar({ email, className = "h-9 w-9" }: { email: string; className?: string }) {
+  const hue = [...email].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 0);
+  return (
+    <span className={`grid shrink-0 place-items-center rounded-full type-small font-semibold text-white ${className}`} style={{ background: `hsl(${hue} 42% 40%)` }} aria-hidden>
+      {email[0]?.toUpperCase()}
+    </span>
+  );
+}

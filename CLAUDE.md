@@ -7,3 +7,7 @@ Règles :
 - Toute consigne envoyée à l'agent inclut les règles de CONTEXT.md § 7 (jamais payer, jamais de données perso, jamais de captcha).
 - Aucun secret dans le repo : clés dans `.env` (ignoré par git).
 - Noter chaque surprise de l'Agent API dans la section « Retours » du README.
+
+Accès local pour Claude (sans e-mail ni mot de passe) :
+- `npm --prefix web run dev`, puis ouvrir `http://localhost:3123/api/auth/dev?email=claude@agentproof.test&next=/espace` : session ouverte et équipe créée si besoin. La route répond 404 hors `next dev`.
+- Clés : `web/.env.local` (Supabase, H, HF) et `~/.config/agentproof/.env` (Vercel, HF, H). Ne jamais les committer.
