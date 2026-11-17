@@ -114,10 +114,11 @@ En audit payant, le marchand peut fournir un compte de test ou un site de prépr
 - Trajectoire : `GET /sessions/{id}/events` (ce que l'agent a vu et fait). Statut, nombre d'étapes, tokens : `GET /sessions/{id}/status`.
 - Vue live partageable (pour la démo) : `sessions/share`.
 - Webhooks et long-poll `changes` pour éviter le polling.
-- Limites plan Free : 3 sessions en parallèle, 60 M tokens / mois (Builder 20 $ : 10 sessions, 1 Md tokens). Lire les vraies valeurs via `GET /sessions/quota` et `GET /quota/tokens`.
+- Limites plan Free : **5 requêtes/min par clé**, 3 sessions en parallèle, 60 M tokens / mois (Builder 20 $ : 10 sessions, 1 Md tokens). Lire les vraies valeurs via `GET /sessions/quota` et `GET /quota/tokens`.
 - Docs : https://hub.hcompany.ai/agents-api/quickstart.md · index : https://hub.hcompany.ai/llms.txt · SDK : https://github.com/hcompai/hai-agents-python
 
-Exemple minimal :
+
+Exemple minimal (Python ; l'app utilise l'API REST directement) :
 
 ```python
 from pydantic import BaseModel
@@ -139,40 +140,46 @@ print(r.status, r.answer)
 ```
 
 ### Hugging Face (obligatoire)
-- **Inference Providers** (API compatible OpenAI, `https://router.huggingface.co/v1`) : génère le plan de corrections à partir des blocages. Comparer 2–3 modèles (qualité, coût, latence).
-- **Hub** : publier le dataset du classement (runs, blocages) = preuve de données réelles.
-- **Spaces** : héberger le moteur Python (FastAPI) accessible par lien.
+- **Inference Providers** (`https://router.huggingface.co/v1`, compatible OpenAI) avec le modèle léger `Qwen/Qwen3.5-9B` : juge visuel sur la dernière capture, et plan de corrections en fin d'audit.
+- **Hub** : dataset public des runs (`georgesdoxuan/agentproof-runs`), exporté par `scripts/export-hf.sh`.
 
-### Stack
+### Stack (en production)
 | Brique | Outil | Responsable |
 |---|---|---|
-| Moteur (missions, runs, scoring) | Python + `hai-agents` | Alexandre |
-| Plan de corrections (LLM) | HF Inference Providers | Alexandre |
-| Base de données | Supabase (Postgres) | Adonaï |
-| Analyse, métriques, dataset | Pandas, HF Hub | Adonaï |
-| Automatisations (formulaire, lancement, e-mails, suivi mensuel, alertes) | n8n | Mehdi |
-| Front (landing, classement, rapport) | Next.js via v0, déployé sur Vercel | Georges |
-| Hébergement moteur | Hugging Face Space (Docker / FastAPI) | Georges |
+| Agent | H Agents API, agent catalogue `agentproof-shopper`, modèle `holo4-35b-a3b`, écran 1024×640 (390×844 en mobile) | Alexandre |
+| App (front + API) | Next.js 16 + Tailwind, déployé sur Vercel | Georges |
+| Base + captures | Supabase (Postgres + Storage public `screenshots`) | Adonaï |
+| Ordonnanceur + notifications | n8n : appel de `/api/tick` chaque minute, Telegram quand un audit finit | Mehdi |
+| Juge + corrections | HF Inference Providers, `Qwen/Qwen3.5-9B` | Alexandre |
+
+Modèles choisis pour leur coût : environ 0,01 à 0,02 $ par mission côté H, quelques millièmes côté HF.
 
 ### Architecture
 
 ```
-[Front Next.js · Vercel]  ──lit──>  [Supabase : sites, missions, runs]
-   │ « Teste mon site »                      ▲
-   ▼                                         │ écrit les runs
-[n8n] ──POST /audit──> [Moteur Python · HF Space] ──run_session──> [H Agents API · web-surfer]
-   │  formulaire, e-mail rapport,             │
-   │  cron mensuel, alerte score              └──plan de corrections──> [HF Inference Providers]
+Navigateur ──> Next.js (Vercel) ──> Supabase
+                  ▲   │
+ n8n chaque min ──┘   ├──> H Agents API (sessions, événements, captures, replay)
+                      └──> HF Inference Providers (juge, corrections)
 ```
 
-Plan B démo : le moteur tourne aussi en CLI local (`python run.py --site ...`) si le Space ou n8n tombe.
+Flux d'un audit :
+1. Formulaire → `POST /api/audits` : crée le site, l'audit et 5 runs `todo` (10 pour le benchmark).
+2. n8n appelle `GET /api/tick` chaque minute (en-tête `x-tick-secret`). Budget : 5 requêtes H par tick (limite des clés Free).
+   - vérifie au plus 2 runs lancés via leurs événements ; si fini : télécharge la capture, la range dans Supabase, la fait juger, enregistre réponse, tokens, coût, durée ;
+   - lance des runs `todo` tant qu'il reste des places (3 sessions max) et du budget ;
+   - clôt les audits finis, écrit le plan de corrections, prévient n8n (Telegram).
+3. `/audit/[id]` affiche score, concurrent, top blocages, corrections, captures ; « Voir le replay » crée le lien public H à la demande.
 
-### Modèle de données (Supabase)
+**Succès** = l'agent dit avoir atteint le checkout ET le juge visuel confirme sur la capture.
 
-- `sites` : id, domain, name, sector, competitor_site_id
-- `missions` : id, slug, instruction
-- `runs` : id, site_id, mission_id, session_id, status, reached_checkout, blocker_type, blocker_detail, screenshot_url, steps, tokens, duration_s, share_url, created_at
-- vue `site_scores` : site, score, nb_runs, top blocages
+### Modèle de données (Supabase, projet `agentproof`, ref `jlhmgsubvoqopvntzmvp`, eu-west-3)
+
+- `sites` : domain, name, url, sector
+- `missions` : slug, title, instruction, position, active
+- `audits` : site_id, compare_to (audit du concurrent), device, status, recommendations
+- `runs` : audit_id, mission_id, status (todo → launched → done), session_id, success, reached_checkout, blocker_type, blocker_detail, agent_answer, judge, final_url, screenshot_url, share_url, steps, tokens, cost_usd, duration_s
+- vue `site_scores` : dernier audit terminé par site et appareil, avec le score
 
 ## 10. Contraintes du hackathon
 
