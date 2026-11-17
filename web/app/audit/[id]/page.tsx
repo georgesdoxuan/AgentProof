@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { db } from "@/lib/engine";
-import { BrowserFrame, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, summarize } from "@/lib/ui";
+import { BrowserFrame, Chevron, MissionBar, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, summarize } from "@/lib/ui";
 import { AutoRefresh } from "./refresh";
 
 const RUN_FIELDS =
@@ -222,6 +222,47 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
           </div>
         </section>
       </div>
+    </div>
+  );
+}
+
+// The LLM writes "1. Problème : … / Correction : …". Show each pair as a card; fall back to plain text.
+function Recommendations({ text }: { text: string }) {
+  const intro: string[] = [];
+  const items: { problem: string; fix: string[] }[] = [];
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    if (!line) continue;
+    const p = line.match(/^\d+[.)]\s*(?:\*\*)?(?:Probl[eè]me\s*(?:\*\*)?\s*:\s*(?:\*\*)?)?(.*)$/i);
+    const f = line.match(/^(?:[-*]\s*)?(?:\*\*)?Correction\s*(?:\*\*)?\s*:?\s*(.*)$/i);
+    if (p) {
+      // "Problème … → Correction : …" sometimes arrives on one line.
+      const [problem, ...fix] = p[1].split(/\s*(?:→|->)?\s*(?:\*\*)?Correction\s*(?:\*\*)?\s*:\s*/i);
+      items.push({ problem: problem.replace(/\*\*/g, ""), fix: fix.filter(Boolean) });
+    }
+    else if (f && items.length) items[items.length - 1].fix.push(f[1]);
+    else if (items.length) items[items.length - 1].fix.push(line);
+    else intro.push(line);
+  }
+  if (!items.length) return <p className="tile type-intro whitespace-pre-line">{text}</p>;
+
+  return (
+    <div className="space-y-6">
+      {intro.length > 0 && <p className="type-intro max-w-[760px] text-ink-2">{intro.join(" ")}</p>}
+      <ol className="grid gap-5 md:grid-cols-3">
+        {items.map((it, i) => (
+          <li key={i} className="tile flex flex-col p-7!">
+            <span className="type-small text-ink-2">Correction {i + 1}</span>
+            <p className="mt-3 font-semibold">{it.problem}</p>
+            {it.fix.length > 0 && (
+              <p className="mt-4 flex gap-2 text-ink-2">
+                <Chevron className="mt-[0.45em] h-3 w-3 text-link" />
+                <span>{it.fix.join(" ")}</span>
+              </p>
+            )}
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }
