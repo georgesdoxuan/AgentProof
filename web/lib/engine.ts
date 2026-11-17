@@ -61,11 +61,14 @@ const isPayment = (run: any) => run.missions?.slug === "paiement";
 // ---------- audits ----------
 export function normalizeUrl(input: string) {
   const u = new URL(/^https?:\/\//.test(input.trim()) ? input.trim() : `https://${input.trim()}`);
-  if (!["http:", "https:"].includes(u.protocol) || !u.hostname.includes(".")) throw new Error("URL invalide");
+  const host = u.hostname.toLowerCase();
+  // Public domain names only: no IP address, no localhost or internal names.
+  if (!["http:", "https:"].includes(u.protocol) || !/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(host) || /^[\d.]+$/.test(host) || /(^|\.)(localhost|local|internal|lan|home)$/.test(host))
+    throw new Error("URL invalide : indique le domaine public d'un site e-commerce.");
   return { url: `${u.protocol}//${u.hostname}${u.pathname === "/" ? "" : u.pathname}`, domain: u.hostname.replace(/^www\./, "") };
 }
 
-export async function createAudit(input: string, opts: { device?: "desktop" | "mobile"; missions?: number; compareTo?: string; email?: string } = {}) {
+export async function createAudit(input: string, opts: { device?: "desktop" | "mobile"; missions?: number; compareTo?: string; email?: string; ipHash?: string } = {}) {
   const { url, domain } = normalizeUrl(input);
   const { data: site, error: e1 } = await db
     .from("sites")
@@ -75,13 +78,43 @@ export async function createAudit(input: string, opts: { device?: "desktop" | "m
   if (e1) throw e1;
   const { data: audit, error: e2 } = await db
     .from("audits")
-    .insert({ site_id: site.id, device: opts.device ?? "desktop", compare_to: opts.compareTo ?? null, email: opts.email ?? null })
+    .insert({ site_id: site.id, device: opts.device ?? "desktop", compare_to: opts.compareTo ?? null, email: opts.email ?? null, ip_hash: opts.ipHash ?? null })
     .select()
     .single();
   if (e2) throw e2;
   const { data: missions } = await db.from("missions").select("id").eq("active", true).order("position").limit(opts.missions ?? 10);
   await db.from("runs").insert(missions!.map((m) => ({ audit_id: audit.id, mission_id: m.id })));
   return audit.id as string;
+}
+
+// Same site and device audited in the last 7 days: reuse that report instead of spending tokens again.
+export async function recentAudit(input: string, device: string) {
+  const { domain } = normalizeUrl(input);
+  const since = new Date(Date.now() - 7 * 86400_000).toISOString();
+  const { data } = await db
+    .from("audits")
+    .select("id, sites!inner(domain)")
+    .eq("sites.domain", domain)
+    .eq("kind", "checkout")
+    .eq("device", device)
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(1);
+  return (data?.[0]?.id as string) ?? null;
+}
+
+export async function auditsFromIp(ipHash: string) {
+  const since = new Date(Date.now() - 3600_000).toISOString();
+  const { count } = await db.from("audits").select("id", { count: "exact", head: true }).eq("ip_hash", ipHash).gte("created_at", since);
+  return count ?? 0;
+}
+
+// Stay inside the free monthly H allowance (60M tokens): stop launching once our own runs used TOKEN_BUDGET.
+async function withinTokenBudget() {
+  const since = new Date(Date.now() - 30 * 86400_000).toISOString();
+  const { data } = await db.from("runs").select("input_tokens, output_tokens").gte("finished_at", since);
+  const used = (data ?? []).reduce((t, r) => t + (r.input_tokens ?? 0) + (r.output_tokens ?? 0), 0);
+  return used < Number(process.env.TOKEN_BUDGET ?? 45_000_000);
 }
 
 // One real payment attempt with the team's zero-balance test card. Launched by hand, never from the public form.
@@ -102,35 +135,41 @@ export async function createPaymentTest(input: string) {
 const MAX_ACTIVE = 3; // H Free plan: 3 concurrent sessions
 const STALE_MIN = 20;
 
+const TERMINAL = new Set(["completed", "idle", "failed", "timed_out", "interrupted"]);
+
 export async function tick() {
   let budget = Number(process.env.H_BUDGET_PER_TICK ?? 5);
   const log: string[] = [];
   try {
-    // 1. check launched runs, oldest checked first (1 request each, +1 for the screenshot when done)
-    const { data: launched } = await db
-      .from("runs")
-      .select("*, missions(title, slug), audits(device)")
-      .eq("status", "launched")
-      .order("checked_at", { ascending: true, nullsFirst: true })
-      .limit(2);
-    for (const run of launched ?? []) {
-      if (budget < 2) break;
+    // 1. One request lists recent sessions; only finished runs cost more (events + screenshot).
+    const { data: launched } = await db.from("runs").select("*, missions(title, slug), audits(device)").eq("status", "launched");
+    if (launched?.length) {
       budget--;
-      const events = await (await h(`/sessions/${run.session_id}/events?sort=-timestamp&size=15`)).json();
-      const done = finishedState(events.items, run);
-      if (!done) {
-        await db.from("runs").update({ checked_at: new Date().toISOString() }).eq("id", run.id);
-        continue;
+      const page = await (await h("/sessions?size=100&sort=-created_at")).json();
+      const status = new Map<string, string>(page.items.map((x: { id: string; status: string }) => [x.id, x.status]));
+      for (const run of launched) {
+        const st = status.get(run.session_id) ?? "";
+        const stale = Date.now() - new Date(run.launched_at).getTime() > STALE_MIN * 60_000;
+        if (!TERMINAL.has(st) && !stale) continue;
+        if (budget < 2) break;
+        budget -= 2;
+        try {
+          const events = await (await h(`/sessions/${run.session_id}/events?sort=-timestamp&size=15`)).json();
+          await finalize(run, events.items, !TERMINAL.has(st) ? "stale" : ["completed", "idle"].includes(st) ? "completed" : "error");
+          log.push(`finalized run ${run.id}`);
+        } catch (e) {
+          if (e instanceof RateLimited) throw e;
+          await markError(run.id, e);
+          log.push(`run ${run.id} error`);
+        }
       }
-      budget--;
-      await finalize(run, events.items, done);
-      log.push(`finalized run ${run.id}`);
     }
 
-    // 2. launch todo runs while slots and budget remain
+    // 2. Launch todo runs while there are free slots, request budget and token budget.
     const { count: active } = await db.from("runs").select("id", { count: "exact", head: true }).eq("status", "launched");
     const slots = Math.min(MAX_ACTIVE - (active ?? 0), budget);
-    if (slots > 0) {
+    if (slots > 0 && !(await withinTokenBudget())) log.push("token budget reached, nothing launched");
+    else if (slots > 0) {
       const { data: todo } = await db
         .from("runs")
         .select("*, missions(instruction, slug), audits(device, sites(url))")
@@ -138,14 +177,27 @@ export async function tick() {
         .order("created_at")
         .limit(slots);
       for (const run of todo ?? []) {
-        budget--;
-        const res = await h("/sessions", { method: "POST", body: JSON.stringify(sessionRequest(run)) });
-        const s = await res.json();
-        await db
+        // Reserve the run first, so two concurrent ticks never launch it twice.
+        const { data: reserved } = await db
           .from("runs")
-          .update({ status: "launched", session_id: s.id, agent_view_url: s.agent_view_url, launched_at: new Date().toISOString() })
-          .eq("id", run.id);
-        log.push(`launched run ${run.id}`);
+          .update({ status: "launched", launched_at: new Date().toISOString() })
+          .eq("id", run.id)
+          .eq("status", "todo")
+          .select("id");
+        if (!reserved?.length) continue;
+        budget--;
+        try {
+          const s = await (await h("/sessions", { method: "POST", body: JSON.stringify(sessionRequest(run)) })).json();
+          await db.from("runs").update({ session_id: s.id, agent_view_url: s.agent_view_url }).eq("id", run.id);
+          log.push(`launched run ${run.id}`);
+        } catch (e) {
+          if (e instanceof RateLimited) {
+            await db.from("runs").update({ status: "todo", launched_at: null }).eq("id", run.id);
+            throw e;
+          }
+          await markError(run.id, e);
+          log.push(`run ${run.id} could not start`);
+        }
       }
     }
   } catch (e) {
@@ -153,9 +205,16 @@ export async function tick() {
     log.push("rate limited, next tick");
   }
 
-  // 3. close finished audits (no H request)
+  // 3. Close finished audits (no H request).
   await closeAudits(log);
   return { log, budgetLeft: budget };
+}
+
+async function markError(id: number, e: unknown) {
+  await db
+    .from("runs")
+    .update({ status: "error", error: String(e).slice(0, 300), blocker_detail: "Erreur technique côté AgentProof : mission non jouée.", finished_at: new Date().toISOString() })
+    .eq("id", id);
 }
 
 function sessionRequest(run: { id: number; missions: { instruction: string; slug: string }; audits: { device: string; sites: { url: string } } }) {
@@ -220,13 +279,6 @@ function paymentRequest(runId: number, url: string) {
 
 type Ev = { type: string; data: Record<string, any>; timestamp: string };
 
-function finishedState(items: Ev[], run: { launched_at: string }) {
-  if (items.some((e) => e.type === "AgentErrorEvent")) return "error";
-  if (items.some((e) => e.type === "AgentCompletionEvent")) return "completed";
-  if (Date.now() - new Date(run.launched_at).getTime() > STALE_MIN * 60_000) return "stale";
-  return null;
-}
-
 async function finalize(run: any, items: Ev[], state: string) {
   const obs = items.find((e) => e.type === "AgentEvent" && e.data.kind === "observation_event" && e.data.image?.source);
   const answerEv = items.find((e) => e.type === "AgentEvent" && e.data.kind === "tool_result" && e.data.tool_req?.tool_name === "answer");
@@ -243,10 +295,15 @@ async function finalize(run: any, items: Ev[], state: string) {
     screenshot_url = db.storage.from("screenshots").getPublicUrl(path).data.publicUrl;
   }
 
-  const judge = screenshot_url ? await judgeScreenshot(screenshot_url, run.missions?.title, answer).catch((e) => ({ error: String(e) })) : null;
+  // Blind judge: it only sees the screenshot and the mission, never what the agent claims.
+  const judge = screenshot_url ? await judgeScreenshot(screenshot_url, run.missions?.title).catch((e) => ({ error: String(e) })) : null;
   const agentSays = !!answer?.reached_checkout;
-  const judgeSays = judge && "is_checkout_page" in judge ? !!judge.is_checkout_page : agentSays;
-  const blocker = answer?.blocker_type ?? (state === "error" ? "page_error_or_timeout" : "other");
+  const verified = !!judge && typeof (judge as any).is_checkout_page === "boolean";
+  // Unverified runs (no screenshot, judge down, unreadable answer) get success = null and stay out of the score.
+  const success: boolean | null = verified ? !!(judge as any).is_checkout_page : null;
+  let blocker = success ? "none" : answer?.blocker_type ?? (state === "error" ? "page_error_or_timeout" : "other");
+  if (success === false && agentSays) blocker = (judge as any).blocker_type ?? "other";
+  if (success === false && (!blocker || blocker === "none")) blocker = "other";
 
   await db
     .from("runs")
@@ -254,8 +311,8 @@ async function finalize(run: any, items: Ev[], state: string) {
       status: "done",
       h_status: state,
       reached_checkout: agentSays,
-      success: agentSays && judgeSays,
-      blocker_type: agentSays && judgeSays ? "none" : agentSays ? (judge as any)?.blocker_type ?? "other" : blocker,
+      success,
+      blocker_type: success === null && agentSays ? null : blocker,
       blocker_detail: answer?.blocker_detail ?? (state === "stale" ? "Session trop longue, arrêtée." : "L'agent n'a pas rendu de réponse."),
       agent_answer: answer,
       judge,
@@ -270,6 +327,17 @@ async function finalize(run: any, items: Ev[], state: string) {
       finished_at: new Date().toISOString(),
     })
     .eq("id", run.id);
+  await skipIfBotBlocked(run, success === false ? blocker : null);
+}
+
+// Anti-bot: once a site blocks the agent, the other missions of the audit would end the same way. Skip them.
+async function skipIfBotBlocked(run: any, blocker: string | null) {
+  if (blocker !== "captcha_or_bot_block") return;
+  await db
+    .from("runs")
+    .update({ status: "done", h_status: "skipped", success: false, blocker_type: "captcha_or_bot_block", blocker_detail: "Mission non lancée : le site a bloqué l'agent (anti-bot) sur une mission précédente.", finished_at: new Date().toISOString() })
+    .eq("audit_id", run.audit_id)
+    .eq("status", "todo");
 }
 
 // Payment runs: the screenshot may show the card, so it is judged inline and never stored.
@@ -285,7 +353,7 @@ async function finalizePayment(run: any, items: Ev[], state: string, obs: Ev | u
             {
               type: "text",
               text:
-                `Last screenshot after an AI agent tried to pay by card on an e-commerce site. Agent claims result=${answer?.result}, site message="${answer?.site_message}". ` +
+                `Last screenshot after an AI agent tried to pay by card on an e-commerce site. Classify what the page shows. ` +
                 `Reply with JSON only: {"result": one of ${Object.keys(PAYMENT_VERDICTS).join("|")}, "reason": "short French sentence"}`,
             },
             { type: "image_url", image_url: { url: `data:image/png;base64,${img}` } },
@@ -302,14 +370,15 @@ async function finalizePayment(run: any, items: Ev[], state: string, obs: Ev | u
     if (typeof answer[k] === "string") (answer as any)[k] = (answer[k] as string).replace(/\d[\d ]{10,}\d/g, "[carte masquée]");
   const verdict = answer?.result ?? (state === "error" ? "technical_error" : "other");
   const reachedBank = ["bank_declined", "payment_accepted"].includes(verdict);
-  const judgeAgrees = !judge?.result || judge.result === verdict;
+  // Blind judge; if it is unavailable the run is unverified (success = null).
+  const success: boolean | null = judge?.result ? reachedBank && judge.result === verdict : null;
   await db
     .from("runs")
     .update({
       status: "done",
       h_status: state,
       payment_verdict: verdict,
-      success: reachedBank && judgeAgrees,
+      success,
       reached_checkout: answer?.payment_submitted ?? false,
       blocker_detail: answer?.site_message ?? "L'agent n'a pas rendu de réponse.",
       agent_answer: answer,
@@ -330,16 +399,22 @@ async function closeAudits(log: string[]) {
   const { data: audits } = await db.from("audits").select("id, kind, sites(domain), runs(status, success, blocker_type, blocker_detail, missions(title))").eq("status", "running");
   for (const a of audits ?? []) {
     if (a.runs.some((r: any) => r.status === "todo" || r.status === "launched")) continue;
-    const recommendations = a.kind === "payment" ? null : await writeRecommendations((a.sites as any).domain, a.runs).catch((e) => `Plan de corrections indisponible (${e}).`);
-    await db.from("audits").update({ status: "done", finished_at: new Date().toISOString(), recommendations }).eq("id", a.id);
+    // Reserve first: two concurrent ticks must not close and notify the same audit twice.
+    const { data: closed } = await db.from("audits").update({ status: "done", finished_at: new Date().toISOString() }).eq("id", a.id).eq("status", "running").select("id");
+    if (!closed?.length) continue;
+    if (a.kind !== "payment") {
+      const recommendations = await writeRecommendations((a.sites as any).domain, a.runs).catch((e) => `Plan de corrections indisponible (${e}).`);
+      await db.from("audits").update({ recommendations }).eq("id", a.id);
+    }
     log.push(`audit ${a.id} done`);
     if (process.env.N8N_NOTIFY_URL) {
-      const done = a.runs.length;
-      const ok = a.runs.filter((r: any) => r.success).length;
+      const scored = a.runs.filter((r: any) => r.status === "done" && r.success !== null && !["out_of_stock", "captcha_or_bot_block"].includes(r.blocker_type));
+      const done = scored.length;
+      const ok = scored.filter((r: any) => r.success).length;
       await fetch(process.env.N8N_NOTIFY_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ audit_id: a.id, domain: (a.sites as any).domain, score: Math.round((100 * ok) / Math.max(done, 1)), runs: done, url: `${process.env.PUBLIC_URL ?? ""}/audit/${a.id}` }),
+        body: JSON.stringify({ audit_id: a.id, domain: (a.sites as any).domain, score: done ? Math.round((100 * ok) / done) : null, runs: done, url: `${process.env.PUBLIC_URL ?? ""}/audit/${a.id}` }),
       }).catch(() => {});
     }
   }
@@ -358,7 +433,7 @@ async function hf(messages: unknown[], max_tokens = 400) {
   return text.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
 }
 
-export async function judgeScreenshot(imageUrl: string, mission: string | undefined, answer: Answer | null) {
+export async function judgeScreenshot(imageUrl: string, mission: string | undefined) {
   const out = await hf(
     [
       {
@@ -368,7 +443,6 @@ export async function judgeScreenshot(imageUrl: string, mission: string | undefi
             type: "text",
             text:
               `Screenshot of the last page an AI shopping agent saw on an e-commerce site. Mission: ${mission ?? "reach checkout"}. ` +
-              `The agent claims reached_checkout=${answer?.reached_checkout}. ` +
               `A checkout page asks for login, email, shipping address or payment after leaving the cart. ` +
               `Reply with JSON only: {"is_checkout_page": boolean, "blocking_overlay": boolean, "blocker_type": one of ${Object.keys(BLOCKERS).join("|")}, "reason": "short French sentence"}`,
           },
@@ -382,7 +456,7 @@ export async function judgeScreenshot(imageUrl: string, mission: string | undefi
 }
 
 async function writeRecommendations(domain: string, runs: any[]) {
-  const lines = runs.map((r) => `- ${r.missions?.title}: ${r.success ? "réussi" : `échec (${r.blocker_type}) ${r.blocker_detail ?? ""}`}`).join("\n");
+  const lines = runs.map((r) => `- ${r.missions?.title}: ${r.success === null ? "non vérifié" : r.success ? "réussi" : `échec (${r.blocker_type}) ${r.blocker_detail ?? ""}`}`).join("\n");
   return hf(
     [
       {

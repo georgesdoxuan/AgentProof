@@ -52,7 +52,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
         <div className="flex items-center gap-3 rounded-2xl bg-accent-soft px-5 py-4 text-[15px] text-accent" role="status">
           <span className="ap-spin h-4 w-4 shrink-0 rounded-full border-2 border-current border-t-transparent" aria-hidden />
           <span>
-            <span className="font-semibold">Audit en cours : {s.done} missions terminées sur {s.total}.</span> La page se met à jour toute seule.
+            <span className="font-semibold">Audit en cours : {s.finished} missions terminées sur {s.total}.</span> La page se met à jour toute seule.
           </span>
         </div>
       )}
@@ -71,7 +71,9 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <MissionDots ok={s.ok} done={s.done} total={s.total} />
             <span className="text-[15px] text-ink-2">
-              {s.ok} missions réussies sur {s.done} terminées{s.total > s.done && ` (${s.total} prévues)`}
+              {s.ok} missions réussies sur {s.done} comptées
+              {s.excluded > 0 && ` · ${s.excluded} hors score (rupture de stock ou anti-bot)`}
+              {s.unverified + s.errors > 0 && ` · ${s.unverified + s.errors} non vérifiée${s.unverified + s.errors > 1 ? "s" : ""}`}
             </span>
           </div>
         </div>

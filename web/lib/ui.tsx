@@ -75,7 +75,9 @@ export function StatusBadge({ run }: { run: { status: string; success: boolean |
       ? ["En attente", "bg-card-2 text-ink-2", <span key="i" className="h-1.5 w-1.5 rounded-full bg-ink-3" />]
       : run.status === "launched"
         ? ["En cours", "bg-accent-soft text-accent", <span key="i" className="ap-spin h-3 w-3 rounded-full border-2 border-current border-t-transparent" />]
-        : run.success
+        : run.status === "error" || run.success === null
+          ? ["Non vérifiée", "bg-card-2 text-ink-2", <span key="i" className="h-1.5 w-1.5 rounded-full bg-ink-3" />]
+          : run.success
           ? ["Réussie", "bg-pass-soft text-pass", <ToneIcon key="i" tone="pass" />]
           : ["Bloquée", "bg-fail-soft text-fail", <ToneIcon key="i" tone="fail" />];
   return (
@@ -137,13 +139,27 @@ export const blockerLabel = (b: string | null) => (b ? BLOCKERS[b] ?? b : "—")
 
 type Run = { status: string; success: boolean | null; blocker_type: string | null };
 
+// Outcomes that say nothing about the site's interface are shown but kept out of the score.
+export const EXCLUDED = ["out_of_stock", "captcha_or_bot_block"];
+
 export function summarize(runs: Run[]) {
-  const done = runs.filter((r) => r.status === "done");
-  const ok = done.filter((r) => r.success).length;
+  const finished = runs.filter((r) => r.status === "done" || r.status === "error");
+  const scored = runs.filter((r) => r.status === "done" && r.success !== null && !EXCLUDED.includes(r.blocker_type ?? ""));
+  const ok = scored.filter((r) => r.success).length;
   const counts: Record<string, number> = {};
-  for (const r of done) if (!r.success && r.blocker_type) counts[r.blocker_type] = (counts[r.blocker_type] ?? 0) + 1;
+  for (const r of finished) if (r.success === false && r.blocker_type) counts[r.blocker_type] = (counts[r.blocker_type] ?? 0) + 1;
   const blockers = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-  return { total: runs.length, done: done.length, ok, score: done.length ? Math.round((100 * ok) / done.length) : null, blockers };
+  return {
+    total: runs.length,
+    finished: finished.length,
+    done: scored.length,
+    ok,
+    score: scored.length ? Math.round((100 * ok) / scored.length) : null,
+    blockers,
+    unverified: runs.filter((r) => r.status === "done" && r.success === null).length,
+    excluded: runs.filter((r) => r.status === "done" && r.success === false && EXCLUDED.includes(r.blocker_type ?? "")).length,
+    errors: runs.filter((r) => r.status === "error").length,
+  };
 }
 
 export function Eyebrow({ children }: { children: React.ReactNode }) {

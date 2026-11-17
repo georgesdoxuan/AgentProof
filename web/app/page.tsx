@@ -5,7 +5,7 @@ import { AgentCursor, BrowserFrame, Eyebrow, MissionDots, ScoreBar, SectionTitle
 
 export default async function Home() {
   await connection();
-  const { data: top } = await db.from("site_scores").select("*").eq("device", "desktop").order("score", { ascending: false }).limit(5);
+  const { data: top } = await db.from("site_scores").select("*").eq("device", "desktop").order("score", { ascending: false, nullsFirst: false }).limit(5);
 
   return (
     <div className="space-y-24 sm:space-y-28">
@@ -146,7 +146,7 @@ export default async function Home() {
                   <span className="text-[17px] font-semibold">{s.name}</span>
                   <span className={`text-right text-[17px] font-semibold tnum sm:order-last ${scoreColor(s.score)}`}>{s.score ?? "—"} %</span>
                   <span className="hidden sm:block">
-                    <MissionDots ok={s.runs_success ?? 0} done={s.runs_done ?? 0} total={s.runs_done ?? 0} />
+                    <MissionDots ok={s.runs_success ?? 0} done={s.runs_scored ?? 0} total={s.runs_scored ?? 0} />
                   </span>
                   <span className="hidden sm:block">
                     <ScoreBar score={s.score} />

@@ -7,7 +7,7 @@ export const metadata = { title: "Classement — AgentProof" };
 
 export default async function Classement() {
   await connection();
-  const { data: scores } = await db.from("site_scores").select("*").order("score", { ascending: false });
+  const { data: scores } = await db.from("site_scores").select("*").order("score", { ascending: false, nullsFirst: false });
   const auditIds = (scores ?? []).map((s) => s.audit_id);
   const { data: fails } = await db.from("runs").select("audit_id, blocker_type").in("audit_id", auditIds).eq("success", false);
   const topBlocker = (id: string) => {
@@ -56,13 +56,17 @@ export default async function Classement() {
                     <span className="text-[15px]"> %</span>
                   </span>
                   <span className="col-span-3 flex items-center gap-3 md:col-span-1">
-                    <MissionDots ok={s.runs_success ?? 0} done={s.runs_done ?? 0} total={s.runs_done ?? 0} />
+                    <MissionDots ok={s.runs_success ?? 0} done={s.runs_scored ?? 0} total={s.runs_scored ?? 0} />
                     <span className="text-[13px] text-ink-3 tnum">
-                      {s.runs_success}/{s.runs_done}
+                      {s.runs_success}/{s.runs_scored}{s.runs_bot_blocked > 0 && " · anti-bot"}
                     </span>
                   </span>
                   <span className="col-span-3 md:col-span-1">
-                    <ToneLabel score={s.score} />
+                    {s.score == null && s.runs_bot_blocked > 0 ? (
+                      <span className="inline-flex rounded-full bg-card-2 px-2.5 py-1 text-[13px] font-semibold text-ink-2">Anti-bot : hors classement</span>
+                    ) : (
+                      <ToneLabel score={s.score} />
+                    )}
                   </span>
                   <span className="col-span-3 text-[15px] text-ink-2 md:col-span-1">
                     <span className="md:hidden text-ink-3">Blocage principal : </span>
