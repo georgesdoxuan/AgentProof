@@ -1,12 +1,12 @@
 #!/bin/bash
-# Publishes finished runs (no personal data) as a Hugging Face dataset.
+# Publishes finished audit runs (no personal data, no real payment tests) as a Hugging Face dataset.
 # Needs SUPABASE_URL, SUPABASE_SECRET_KEY in ~/.config/agentproof/.env and `hf` logged in.
 set -euo pipefail
 set -a; . "$HOME/.config/agentproof/.env"; set +a
 REPO="${1:-georgesdoxuan/agentproof-runs}"
 OUT="$(mktemp -d)"
-COLS="id,success,reached_checkout,blocker_type,blocker_detail,final_url,screenshot_url,steps,duration_s,cost_usd,input_tokens,output_tokens,finished_at,missions(slug,title),audits(device,sites(domain))"
-curl -sf "$SUPABASE_URL/rest/v1/runs?status=eq.done&select=$COLS" \
+COLS="id,success,reached_checkout,blocker_type,blocker_detail,final_url,screenshot_url,steps,duration_s,cost_usd,input_tokens,output_tokens,finished_at,missions!inner(slug,title),audits(device,sites(domain))"
+curl -sf "$SUPABASE_URL/rest/v1/runs?status=eq.done&missions.slug=neq.paiement&select=$COLS" \
   -H "apikey: $SUPABASE_SECRET_KEY" -H "Authorization: Bearer $SUPABASE_SECRET_KEY" \
   | python3 -c "
 import json, sys

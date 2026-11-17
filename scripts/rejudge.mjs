@@ -13,7 +13,7 @@ async function judge(imageUrl, mission) {
     body: JSON.stringify({
       model: `${MODEL}:primeintellect`, max_tokens: 200, temperature: 0, chat_template_kwargs: { enable_thinking: false },
       messages: [{ role: "user", content: [
-        { type: "text", text: `Screenshot of the last page an AI shopping agent saw on an e-commerce site. Mission: ${mission}. A checkout page asks for login, email, shipping address or payment after leaving the cart. Reply with JSON only: {"is_checkout_page": boolean, "blocking_overlay": boolean, "blocker_type": one of ${BLOCKERS.join("|")}, "reason": "short French sentence"}` },
+        { type: "text", text: `Screenshot of the last page an AI shopping agent saw on an e-commerce site. Mission: ${mission}. A checkout page is the page reached after leaving the cart: it asks for login or guest e-mail, shipping address, delivery or payment (a login or e-mail form shown as a pop-up right after clicking the order button also counts). A cart or basket page listing the chosen items is NOT a checkout page, even with an order button or a login suggestion on it. A product or search page is NOT a checkout page. Reply with JSON only: {"is_checkout_page": boolean, "blocking_overlay": boolean, "blocker_type": one of ${BLOCKERS.join("|")}, "reason": "short French sentence"}` },
         { type: "image_url", image_url: { url: imageUrl } },
       ] }],
     }),

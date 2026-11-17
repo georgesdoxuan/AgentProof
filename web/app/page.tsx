@@ -140,7 +140,8 @@ export default async function Home() {
             </fieldset>
             <button className="btn mt-4 min-h-[56px] w-full rounded-[12px]">Lancer l&apos;audit</button>
             <p className="type-small text-center text-ink-2">
-              {user ? "L'audit est rangé dans ton espace d'équipe." : "Connexion par e-mail, sans mot de passe. L'audit est rangé dans ton espace d'équipe."} Pendant l&apos;audit, l&apos;agent ne paie jamais et ne saisit aucune donnée personnelle.
+              {user ? "L'audit est rangé dans ton espace d'équipe." : "Connexion par e-mail, sans mot de passe. L'audit est rangé dans ton espace d'équipe."} Pendant l&apos;audit, l&apos;agent ne paie jamais et ne saisit aucune donnée personnelle. Ton e-mail sert uniquement à t&apos;envoyer le rapport :{" "}
+              <Link href="/confidentialite" className="text-link hover:underline">confidentialité</Link>.
             </p>
           </form>
         </div>

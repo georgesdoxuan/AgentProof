@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { currentUser, safeNext } from "@/lib/auth";
 import { Field } from "@/lib/ui";
@@ -47,6 +48,10 @@ export default async function Connexion({ searchParams }: { searchParams: Promis
               </p>
             )}
             <button className="btn min-h-[52px] w-full rounded-[12px]">Recevoir mon lien</button>
+            <p className="type-small text-center text-ink-2">
+              Ton e-mail sert à te connecter et à recevoir tes rapports, rien d&apos;autre :{" "}
+              <Link href="/confidentialite" className="text-link hover:underline">confidentialité</Link>.
+            </p>
           </form>
         )}
       </div>

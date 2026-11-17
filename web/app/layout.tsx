@@ -53,7 +53,11 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             </p>
             <div className="mt-2 flex flex-col gap-2 border-t border-line pt-4 sm:flex-row sm:justify-between">
               <p>AgentProof · Hackathon H Company × Hugging Face, novembre 2026.</p>
-              <p>Agent : Holo, H Company. Juge visuel : Hugging Face.</p>
+              <p className="flex flex-wrap gap-x-4 gap-y-1">
+                <span>Agent : Holo, H Company. Juge visuel : Hugging Face.</span>
+                <Link href="/methode" className="hover:text-ink hover:underline">Méthode</Link>
+                <Link href="/confidentialite" className="hover:text-ink hover:underline">Confidentialité et mentions légales</Link>
+              </p>
             </div>
           </div>
         </footer>
