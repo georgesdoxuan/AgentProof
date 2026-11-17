@@ -118,7 +118,7 @@ export function BlockerItem({ site, b, canEdit, compact = false }: { site: SiteV
             )
           )}
           {b.run && (
-            <Link href={`/replay/${b.run.id}`} className="type-small text-link hover:underline">
+            <Link href={`/replay/${b.run.id}?a=${site.latest?.id}`} className="type-small text-link hover:underline">
               Voir le replay
             </Link>
           )}

@@ -72,7 +72,7 @@ export default async function Rapports({ searchParams }: { searchParams: Promise
                   <span className="min-w-0">
                     <span className="block truncate font-semibold">
                       {a.sites?.domain ?? "Site supprimé"}
-                      {a.compare_to && <span className="font-normal text-ink-2"> · avec concurrent</span>}
+                      {a.compare_to && <span className="font-normal text-ink-2"> · {a.model ? "deux modèles" : "avec concurrent"}</span>}
                     </span>
                     <span className="type-small text-ink-2">
                       {date(a.created_at)} · {deviceLabel(a.device)}

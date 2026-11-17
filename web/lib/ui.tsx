@@ -1,4 +1,4 @@
-import { BLOCKERS } from "./engine";
+import { BLOCKERS, EXCLUDED } from "./engine";
 
 // ---------- score ----------
 // Never color alone: every tone has a word and a glyph.
@@ -148,8 +148,6 @@ export const blockerLabel = (b: string | null) => (b ? BLOCKERS[b] ?? b : "—")
 
 type Run = { status: string; success: boolean | null; blocker_type: string | null };
 
-// Outcomes that say nothing about the site's interface are shown but kept out of the score.
-export const EXCLUDED = ["out_of_stock", "captcha_or_bot_block"];
 
 export function summarize(runs: Run[]) {
   const finished = runs.filter((r) => r.status === "done" || r.status === "error");

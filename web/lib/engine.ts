@@ -37,8 +37,18 @@ export const BLOCKERS: Record<string, string> = {
   login_required: "Compte obligatoire",
   out_of_stock: "Rupture de stock",
   page_error_or_timeout: "Erreur ou page trop lente",
+  mission_not_applicable: "Mission impossible sur ce catalogue",
+  agent_out_of_steps: "L'agent a manqué d'étapes",
   other: "Autre",
 };
+// Outcomes that say nothing about the site's interface: shown in the report, kept out of the score.
+export const EXCLUDED = ["out_of_stock", "captcha_or_bot_block", "mission_not_applicable", "agent_out_of_steps"];
+// Only the agent knows these (catalogue, step count): the screenshot judge never picks them.
+const AGENT_ONLY = ["mission_not_applicable", "agent_out_of_steps"];
+
+// Agent models: the catalog agent's own model (agent/agent.json), and the one a "compare models" audit runs against it.
+export const DEFAULT_MODEL = "holo4-35b-a3b";
+export const COMPARE_MODEL = "holo4-27b";
 
 type Answer = { reached_checkout: boolean; blocker_type: string; blocker_detail: string; final_url: string; steps_summary: string };
 
@@ -73,7 +83,7 @@ const isPayment = (run: any) => run.missions?.slug === "paiement";
 // Messages that anti-bot systems (Akamai, DataDome, Cloudflare...) show instead of a normal answer. A site that says
 // "disable your extensions" or "we could not process your request" right after a click is blocking the agent, not broken.
 const BOT_TEXT =
-  /d[ée]sactiv\S* (toutes )?(les |tes |vos )?extensions|disable (all |your )?(browser )?extensions|n'avons pas pu r[ée]pondre [àa] ta demande|request (could not|cannot|can't) be (processed|completed)|access denied|acc[èe]s (refus[ée]|interdit)|requ[êe]te (a [ée]t[ée] )?bloqu[ée]e|request (was |has been )?blocked|unusual (traffic|activity)|activit[ée] inhabituelle|are you a robot|[êe]tes[- ]vous un robot|pardon our interruption|verify (that )?you are (a )?human|press (&|and) hold|appuyez et maintenez/i;
+  /d[ée]sactiv\S* (toutes )?(les |tes |vos )?extensions|disable (all |your )?(browser )?extensions|n'avons pas pu r[ée]pondre [àa] ta demande|request (could not|cannot|can't) be (processed|completed)|access denied|acc[èe]s (refus[ée]|interdit)|requ[êe]te (a [ée]t[ée] )?bloqu[ée]e|request (was |has been )?blocked|unusual (traffic|activity)|activit[ée] inhabituelle|are you a robot|[êe]tes[- ]vous un robot|pardon our interruption|verify (that )?you are (a )?human|press (&|and) hold|appuyez et maintenez|anti-?bot (protection|system)|protection anti-?bot/i;
 export const looksLikeBotBlock = (text?: string | null) => !!text && BOT_TEXT.test(text);
 
 // ---------- audits ----------
@@ -86,7 +96,7 @@ export function normalizeUrl(input: string) {
   return { url: `${u.protocol}//${u.hostname}${u.pathname === "/" ? "" : u.pathname}`, domain: u.hostname.replace(/^www\./, "") };
 }
 
-export async function createAudit(input: string, opts: { device?: "desktop" | "mobile"; missions?: number; compareTo?: string; paymentTest?: string; email?: string; ipHash?: string; teamId?: string; createdBy?: string } = {}) {
+export async function createAudit(input: string, opts: { device?: "desktop" | "mobile"; missions?: number; compareTo?: string; paymentTest?: string; model?: string; email?: string; ipHash?: string; teamId?: string; createdBy?: string } = {}) {
   const { url, domain } = normalizeUrl(input);
   const { data: created, error: e1 } = await db
     .from("sites")
@@ -96,7 +106,7 @@ export async function createAudit(input: string, opts: { device?: "desktop" | "m
   const site = created?.[0] ?? (await db.from("sites").select().eq("domain", domain).single()).data;
   const { data: audit, error: e2 } = await db
     .from("audits")
-    .insert({ site_id: site.id, device: opts.device ?? "desktop", compare_to: opts.compareTo ?? null, payment_test: opts.paymentTest ?? null, email: opts.email ?? null, ip_hash: opts.ipHash ?? null, team_id: opts.teamId ?? null, created_by: opts.createdBy ?? null })
+    .insert({ site_id: site.id, device: opts.device ?? "desktop", compare_to: opts.compareTo ?? null, payment_test: opts.paymentTest ?? null, model: opts.model ?? null, email: opts.email ?? null, ip_hash: opts.ipHash ?? null, team_id: opts.teamId ?? null, created_by: opts.createdBy ?? null })
     .select()
     .single();
   if (e2) throw e2;
@@ -213,6 +223,7 @@ async function loginVault(teamId: string | null, siteId: number) {
 // ---------- tick: the only place that calls H, max 5 requests per call ----------
 // ponytail: one global budget per tick, driven by an n8n cron every minute. Free H keys allow 5 req/min.
 const MAX_ACTIVE = 3; // H Free plan: 3 concurrent sessions
+const MISSION_STEPS = 30;
 const STALE_MIN = 20;
 const PAY_STEPS = 80; // a checkout form alone can take 15 steps; payment tests are rare, so they get more room
 const PAY_STALE_MIN = 30;
@@ -253,7 +264,7 @@ export async function tick() {
     if (slots > 0) {
       const { data: todo } = await db
         .from("runs")
-        .select("*, missions(instruction, slug), audits(device, team_id, sites(id, url))")
+        .select("*, missions(instruction, slug), audits(device, team_id, model, sites(id, url))")
         .eq("status", "todo")
         .order("created_at")
         .limit(slots);
@@ -307,7 +318,7 @@ async function markError(id: number, e: unknown) {
     .eq("id", id);
 }
 
-async function sessionRequest(run: { id: number; missions: { instruction: string; slug: string }; audits: { device: string; team_id: string | null; sites: { id: number; url: string } } }) {
+async function sessionRequest(run: { id: number; missions: { instruction: string; slug: string }; audits: { device: string; team_id: string | null; model: string | null; sites: { id: number; url: string } } }) {
   const url = run.audits.sites.url;
   if (isPayment(run)) {
     const card = await cardSecret(run.audits.team_id);
@@ -318,11 +329,12 @@ async function sessionRequest(run: { id: number; missions: { instruction: string
   }
   const overrides: Record<string, unknown> = { "agent.environments[kind=web].start_url": url };
   if (run.audits.device === "mobile") overrides["agent.environments[kind=web].mode"] = { type: "visual", width: 390, height: 844 };
+  if (run.audits.model) overrides["agent.model"] = run.audits.model;
   return {
     agent: AGENT,
     messages: `Site à tester : ${url}\nMission : ${run.missions.instruction}`,
     overrides,
-    max_steps: 30,
+    max_steps: MISSION_STEPS,
     max_time_s: 480,
     group_id: `agentproof-${run.id}`,
   };
@@ -452,6 +464,8 @@ async function finalize(run: any, items: Ev[], state: string) {
   if (success === false && (!blocker || blocker === "none")) blocker = "other";
   // An anti-bot message is a verdict by itself, even when the judge could not read the screenshot.
   if (success !== true && looksLikeBotBlock(answer?.blocker_detail)) (blocker = "captcha_or_bot_block"), (success = false);
+  // Out of steps with no named blocker: the agent ran out of room, the site is not proven guilty (same rule as payment tests).
+  if (success !== true && blocker === "other" && (state === "stale" || (metrics?.steps ?? 0) >= MISSION_STEPS)) blocker = "agent_out_of_steps";
 
   await db
     .from("runs")
@@ -573,7 +587,7 @@ export async function notifyDone(auditId: string) {
     .eq("id", auditId)
     .single();
   if (!a) return;
-  const scored = a.runs.filter((r: any) => r.status === "done" && r.success !== null && !["out_of_stock", "captcha_or_bot_block"].includes(r.blocker_type));
+  const scored = a.runs.filter((r: any) => r.status === "done" && r.success !== null && !EXCLUDED.includes(r.blocker_type));
   const ok = scored.filter((r: any) => r.success).length;
   const counts: Record<string, number> = {};
   for (const r of scored) if (!r.success && r.blocker_type) counts[r.blocker_type] = (counts[r.blocker_type] ?? 0) + 1;
@@ -648,7 +662,7 @@ export async function judgeScreenshot(imageUrl: string, mission: string | undefi
               `Screenshot of the last page an AI shopping agent saw on an e-commerce site. Mission: ${mission ?? "reach checkout"}. Page URL: ${pageUrl ?? "unknown"}. ` +
               `is_checkout_page is true when the page asks the shopper to log in, create an account, give an e-mail to continue as a guest, enter a shipping address, choose a delivery or pay. Login pages and login pop-ups count as checkout. is_checkout_page is false for a cart page that only lists the chosen items with a button to order, and for a product, search or home page. ` +
               `A message saying access is denied, the request was blocked or could not be processed, or asking to disable browser extensions means captcha_or_bot_block. ` +
-              `Reply with JSON only: {"is_checkout_page": boolean, "blocking_overlay": boolean, "blocker_type": one of ${Object.keys(BLOCKERS).join("|")}, "reason": "short French sentence"}`,
+              `Reply with JSON only: {"is_checkout_page": boolean, "blocking_overlay": boolean, "blocker_type": one of ${Object.keys(BLOCKERS).filter((k) => !AGENT_ONLY.includes(k)).join("|")}, "reason": "short French sentence"}`,
           },
           { type: "image_url", image_url: { url: imageUrl } },
         ],

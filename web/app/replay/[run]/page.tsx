@@ -18,12 +18,15 @@ const ACTIONS: Record<string, string> = {
   answer: "Réponse finale",
 };
 
-export default async function Replay({ params }: { params: Promise<{ run: string }> }) {
+export default async function Replay({ params, searchParams }: { params: Promise<{ run: string }>; searchParams: Promise<{ a?: string }> }) {
   await connection();
   const id = Number((await params).run);
-  if (!Number.isInteger(id)) notFound();
+  const { a } = await searchParams;
+  // Run ids follow each other: the link must also carry the audit's unguessable id, like the report it comes from.
+  // Otherwise anyone could walk /replay/1, /replay/2… and spend the H request budget creating share links.
+  if (!Number.isInteger(id) || !a || !/^[0-9a-f-]{36}$/.test(a)) notFound();
   const { data: run } = await db.from("runs").select("id, audit_id, status, success, blocker_type, missions(title), audits(sites(name))").eq("id", id).maybeSingle();
-  if (!run) notFound();
+  if (!run || run.audit_id !== a) notFound();
 
   const live = (run as any).status === "launched";
   let replay: Awaited<ReturnType<typeof getReplay>> = null;

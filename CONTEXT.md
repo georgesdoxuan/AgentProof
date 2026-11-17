@@ -77,8 +77,8 @@ Le classement gratuit attire, l'audit convertit, le suivi crée du récurrent.
 - **Run** : une mission exécutée par l'agent sur un site = une session H.
 - **Succès** : l'agent atteint la **première page du checkout** (page où le site demande e-mail / adresse, ou page de paiement). On ne saisit aucune donnée personnelle et on ne paie jamais.
 - **Blocage** : la raison de l'échec, dans une liste fermée :
-  `cookie_banner`, `popup`, `search_failed`, `filter_failed`, `size_selector`, `button_unresponsive`, `captcha_or_bot_block`, `login_required`, `out_of_stock`, `page_error_or_timeout`, `other`.
-- **Score agent** = runs réussis / runs total, par site.
+  `cookie_banner`, `popup`, `search_failed`, `filter_failed`, `size_selector`, `button_unresponsive`, `captcha_or_bot_block`, `login_required`, `out_of_stock`, `page_error_or_timeout`, `mission_not_applicable` (le catalogue ne propose pas ce que demande la mission), `agent_out_of_steps` (l'agent a épuisé ses 30 étapes sans nommer de blocage ; attribué par le moteur), `other`.
+- **Score agent** = runs réussis / runs comptés, par site. Hors score : runs non vérifiés par le juge, `out_of_stock`, `captcha_or_bot_block`, `mission_not_applicable`, `agent_out_of_steps`.
 
 ## 7. Règles de l'agent (non négociables)
 

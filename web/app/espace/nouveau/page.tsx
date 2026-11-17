@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { cardView } from "@/lib/cards";
+import { COMPARE_MODEL, DEFAULT_MODEL } from "@/lib/engine";
 import { Field, Group, Segmented } from "@/lib/ui";
 import { SpaceShell } from "../shell";
 
@@ -31,6 +32,15 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
           )}
           <Field label="Adresse du site" name="url" required defaultValue={url} />
           <Field label="Un concurrent (facultatif)" name="competitor" />
+          <label className="type-small flex items-start gap-3 rounded-[12px] bg-bg-2 p-4 dark:bg-[#2c2c2e]">
+            <input type="checkbox" name="models" value="1" className="mt-0.5 h-4 w-4 shrink-0 accent-blue" />
+            <span>
+              <span className="font-semibold">Comparer deux modèles d&apos;agent</span>
+              <span className="block text-ink-2">
+                Les mêmes missions jouées par {DEFAULT_MODEL} (rapide) et {COMPARE_MODEL} (le plus capable de H) : réussite, durée et coût côte à côte. Double le coût de l&apos;audit, sans concurrent.
+              </span>
+            </span>
+          </label>
           {card && !card.missing && (
             <label className="type-small flex items-start gap-3 rounded-[12px] bg-bg-2 p-4 dark:bg-[#2c2c2e]">
               <input type="checkbox" name="payment" value="1" className="mt-0.5 h-4 w-4 shrink-0 accent-blue" />

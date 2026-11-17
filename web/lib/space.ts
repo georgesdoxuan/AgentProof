@@ -19,6 +19,7 @@ export type SpaceAudit = {
   device: string;
   status: string;
   compare_to: string | null;
+  model: string | null;
   recommendations: string | null;
   site_id: number;
   sites: { domain: string; name: string; url: string } | null;
@@ -65,7 +66,7 @@ export async function loadSpace(teamId: string) {
     db
       .from("audits")
       .select(
-        "id, created_at, device, status, compare_to, recommendations, site_id, payment_test, sites(domain, name, url), users:created_by(email), runs(id, status, success, blocker_type, blocker_detail, screenshot_url, final_url)",
+        "id, created_at, device, status, compare_to, model, recommendations, site_id, payment_test, sites(domain, name, url), users:created_by(email), runs(id, status, success, blocker_type, blocker_detail, screenshot_url, final_url)",
       )
       .eq("team_id", teamId)
       .eq("kind", "checkout")
@@ -123,7 +124,7 @@ export async function loadSpace(teamId: string) {
 
   for (const v of sites.values()) {
     const done = v.audits.filter((a) => a.status === "done");
-    v.competitor = done.map((a) => a.compare_to && byId.get(a.compare_to)).find((c) => c && c.status === "done") || undefined;
+    v.competitor = done.map((a) => a.compare_to && byId.get(a.compare_to)).find((c) => c && c.status === "done" && c.site_id !== v.site_id) || undefined; // same site = model comparison, not a competitor
     if (!v.latest) continue;
     const latestAt = Date.parse(v.latest.created_at);
     const siteFixes = (fixes ?? []).filter((f) => f.site_id === v.site_id && f.device === v.device);
@@ -162,6 +163,8 @@ export const FIX_HINT: Record<string, string> = {
   captcha_or_bot_block: "Laisser passer les agents d'achat identifiés, ou réserver le captcha aux comportements vraiment suspects.",
   login_required: "Proposer la commande en invité avant toute création de compte.",
   out_of_stock: "Masquer ou signaler clairement les produits en rupture dans les listes et la recherche.",
+  mission_not_applicable: "Rien à corriger : la mission demande un produit que le catalogue ne propose pas. Elle sort du score.",
+  agent_out_of_steps: "L'agent a manqué d'étapes avant de conclure. Ouvrir le replay : un parcours trop long vers le checkout coûte aussi des ventes.",
   page_error_or_timeout: "Réduire le temps de chargement des pages produit et panier, et corriger les erreurs serveur.",
   other: "Ouvrir le replay de la mission pour voir l'écran exact où l'agent s'arrête.",
 };

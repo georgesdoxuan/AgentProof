@@ -2,12 +2,18 @@ import { staffUser, teamContext } from "@/lib/auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { PAYMENT_STAGES, PAYMENT_VERDICTS, db } from "@/lib/engine";
+import { DEFAULT_MODEL, PAYMENT_STAGES, PAYMENT_VERDICTS, db } from "@/lib/engine";
 import { BrowserFrame, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, summarize } from "@/lib/ui";
 import { AutoRefresh } from "./refresh";
 
 const RUN_FIELDS =
   "id, status, payment_verdict, with_login, session_id, success, reached_checkout, blocker_type, blocker_detail, screenshot_url, final_url, steps, duration_s, cost_usd, judge, agent_answer, missions(title, position)";
+
+// Average duration and agent cost per finished mission: what a model comparison is about.
+function perMission(runs: any[]) {
+  const d = runs.filter((r) => r.status === "done" && r.duration_s);
+  return d.length ? { s: Math.round(d.reduce((t, r) => t + r.duration_s, 0) / d.length), usd: d.reduce((t, r) => t + Number(r.cost_usd ?? 0), 0) / d.length } : null;
+}
 
 async function loadAudit(id: string) {
   const { data } = await db.from("audits").select(`*, sites(domain, name, url), runs(${RUN_FIELDS})`).eq("id", id).maybeSingle();
@@ -37,12 +43,16 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   const aside = s.excluded + s.unverified + s.errors;
 
   const paymentOnly = runs.length === 0 && pays.length > 0;
+  // A linked audit of the same site is a model comparison, not a competitor.
+  const modelCompare = !!competitor && competitor.site_id === audit.site_id;
   return (
     <div className="bg-bg-2 pb-24 pt-16 max-[734px]:pt-10">
       {running && <AutoRefresh />}
       <div className="wrap-wide space-y-20 max-[734px]:space-y-14">
         <header>
-          <p className="type-eyebrow text-ink-2">{paymentOnly ? "Test de paiement" : "Rapport d\u2019audit"} · {audit.device === "mobile" ? "Mobile" : "Ordinateur"}</p>
+          <p className="type-eyebrow text-ink-2">{paymentOnly ? "Test de paiement" : "Rapport d\u2019audit"} · {audit.device === "mobile" ? "Mobile" : "Ordinateur"}
+            {audit.model && ` · Modèle ${audit.model}`}
+          </p>
           <h1 className="type-h1 mt-3 break-words">{audit.sites.name}</h1>
           <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-ink-2">
             <a href={audit.sites.url} className="text-link hover:underline" target="_blank" rel="noreferrer">
@@ -101,24 +111,31 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
 
           {competitor && c ? (
             <Link href={`/audit/${competitor.id}`} className="tile group flex flex-col transition-colors duration-200 hover:bg-tile/80">
-              <h2 className="type-headline">Face au concurrent</h2>
+              <h2 className="type-headline">{modelCompare ? "Deux modèles, mêmes missions" : "Face au concurrent"}</h2>
               <div className="mt-8 space-y-6">
                 {(
                   [
-                    [audit.sites.name, s, true],
-                    [competitor.sites.name, c, false],
+                    [modelCompare ? audit.model ?? DEFAULT_MODEL : audit.sites.name, s, true, perMission(runs)],
+                    [modelCompare ? competitor.model ?? DEFAULT_MODEL : competitor.sites.name, c, false, perMission(competitor.runs)],
                   ] as const
-                ).map(([name, x, self]) => (
+                ).map(([name, x, self, pm]) => (
                   <div key={name} className="space-y-2.5">
                     <div className="flex items-baseline justify-between gap-3">
                       <span className={`truncate ${self ? "font-semibold" : "text-ink-2"}`}>{name}</span>
                       <span className="text-[21px] font-semibold tnum">{x.score ?? "—"} %</span>
                     </div>
                     <MissionBar ok={x.ok} done={x.done} total={x.total} />
+                    {modelCompare && pm && (
+                      <p className="type-small text-ink-2 tnum">
+                        {pm.s} s · {pm.usd.toFixed(3)} $ par mission
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
-              <span className="more mt-auto pt-6 group-hover:underline">Rapport de {competitor.sites.name}</span>
+              <span className="more mt-auto pt-6 group-hover:underline">
+                {modelCompare ? `Rapport ${competitor.model ?? DEFAULT_MODEL}` : `Rapport de ${competitor.sites.name}`}
+              </span>
             </Link>
           ) : (
             <div className="tile flex flex-col justify-center">
@@ -211,7 +228,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                   <h3 className="type-h3 mt-3">{r.missions.title}</h3>
                   {r.status === "launched" && r.session_id && (
                     <div className="mt-auto pt-6">
-                      <Link href={`/replay/${r.id}`} className="btn min-h-[40px] gap-2 px-[18px] text-[15px]">
+                      <Link href={`/replay/${r.id}?a=${audit.id}`} className="btn min-h-[40px] gap-2 px-[18px] text-[15px]">
                         <span className="relative flex h-2 w-2" aria-hidden>
                           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-70 motion-reduce:hidden" />
                           <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
@@ -231,7 +248,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                         </p>
                       )}
                       <div className="mt-auto flex flex-wrap items-center gap-x-5 gap-y-2 pt-6">
-                        <Link href={`/replay/${r.id}`} className="btn btn-dark min-h-[40px] px-[18px] text-[15px]">
+                        <Link href={`/replay/${r.id}?a=${audit.id}`} className="btn btn-dark min-h-[40px] px-[18px] text-[15px]">
                           <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="currentColor" aria-hidden>
                             <path d="M2.5 1.3v9.4L10.6 6z" />
                           </svg>

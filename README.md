@@ -92,7 +92,7 @@ R&D interne, hors produit : page `/test-paiement`, réservée aux comptes de l'�
 ## Fiabilité et sobriété
 
 - **Accord juge / agent** : sur 140 runs vérifiés à l'aveugle (capture + URL de la page, jamais l'avis de l'agent), le juge donne le même verdict que l'agent dans 114 cas (81 %). Les écarts sont surtout des pages panier que l'agent croyait être le checkout. Accord juge / humain : vérification manuelle à faire.
-- **Score honnête** : seuls les runs vérifiés comptent. Rupture de stock et blocage anti-bot (IP de datacenter) sont affichés à part, hors score.
+- **Score honnête** : seuls les runs vérifiés comptent. Rupture de stock, blocage anti-bot (IP de datacenter), mission impossible sur le catalogue (ex. un site de porte-clés) et agent à court d'étapes sont affichés à part, hors score.
 - **Répétabilité** : 10 sites joués deux fois, même verdict pour 30 missions sur 37 comparables (81 %). Le classement public fait donc la moyenne des 2 derniers passages de chaque site.
 - **Sobriété** : le moteur interroge le quota H et ne lance plus rien quand il reste moins de 10 M de tokens gratuits (`TOKEN_RESERVE`) ; un site bloqué par l'anti-bot n'use qu'une mission ; un site audité depuis moins de 7 jours renvoie au rapport existant.
 - **Robustesse** : une requête liste l'état de toutes les sessions ; un run en erreur ne bloque plus la file ; chaque run est réservé avant lancement (pas de doublon) ; chaque audit n'est clôturé et notifié qu'une fois.

@@ -15,7 +15,7 @@ export default async function Home() {
       .select("screenshot_url, final_url, blocker_type")
       .eq("success", false)
       .not("screenshot_url", "is", null)
-      .not("blocker_type", "in", "(captcha_or_bot_block,out_of_stock,other)")
+      .not("blocker_type", "in", "(captcha_or_bot_block,out_of_stock,mission_not_applicable,agent_out_of_steps,other)")
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),

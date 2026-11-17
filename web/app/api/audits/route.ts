@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { attachEmail, auditsFromIp, createAudit, createPaymentTest, db, normalizeUrl, recentAudit } from "@/lib/engine";
+import { COMPARE_MODEL, DEFAULT_MODEL, attachEmail, auditsFromIp, createAudit, createPaymentTest, db, normalizeUrl, recentAudit } from "@/lib/engine";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { cardSecret } from "@/lib/cards";
 
@@ -20,6 +20,9 @@ export async function POST(req: Request) {
   const url = String(form.get("url") ?? "");
   const competitor = String(form.get("competitor") ?? "").trim();
   const device = form.get("device") === "mobile" ? "mobile" : "desktop";
+  // Compare models: same site, same missions, one audit per Holo model, linked like a competitor audit.
+  const models = form.get("models") === "1" && form.get("mode") !== "payment";
+  if (models && competitor) return fail("Choisis entre un concurrent et la comparaison de modèles : les deux à la fois doubleraient encore le coût.");
   const email = String(form.get("email") ?? "").trim().toLowerCase() || ctx.user.email;
   if (email && (email.length > 200 || !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(email))) return fail("Adresse e-mail invalide.");
 
@@ -36,7 +39,7 @@ export async function POST(req: Request) {
     const payment = paymentOnly || form.get("payment") === "1";
     if (payment && !(await cardSecret(ctx.team.id))) return fail("Aucune carte utilisable pour l'équipe : ajoute-la dans Espace › Paiement.");
 
-    if (!payment && !competitor && form.get("force") !== "1") {
+    if (!payment && !competitor && !models && form.get("force") !== "1") {
       const existing = await recentAudit(url, device, ctx.team.id);
       if (existing && email) await attachEmail(existing, email);
       if (existing) return Response.redirect(new URL(`/audit/${existing}`, req.url), 303);
@@ -50,9 +53,13 @@ export async function POST(req: Request) {
     if ((count ?? 0) > MAX_PENDING) return fail("File d'attente pleine, réessaie dans un moment.", 503);
 
     // Payment only: no missions, no competitor, just the real payment test.
-    const compareTo = competitor && !paymentOnly ? await createAudit(competitor, { device, missions: FORM_MISSIONS, ipHash, ...team }) : undefined;
+    const compareTo = models
+      ? await createAudit(url, { device, missions: FORM_MISSIONS, model: COMPARE_MODEL, ipHash, ...team })
+      : competitor && !paymentOnly
+        ? await createAudit(competitor, { device, missions: FORM_MISSIONS, ipHash, ...team })
+        : undefined;
     const paymentTest = payment ? await createPaymentTest(url, team) : undefined;
-    const id = await createAudit(url, { device, missions: paymentOnly ? 0 : FORM_MISSIONS, compareTo, paymentTest, email: email || undefined, ipHash, ...team });
+    const id = await createAudit(url, { device, missions: paymentOnly ? 0 : FORM_MISSIONS, compareTo, paymentTest, model: models ? DEFAULT_MODEL : undefined, email: email || undefined, ipHash, ...team });
     return Response.redirect(new URL(`/audit/${id}`, req.url), 303);
   } catch (e) {
     return fail(`Erreur : ${(e as Error).message}`);
