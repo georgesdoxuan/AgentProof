@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { db, getReplay } from "@/lib/engine";
-import { blockerLabel } from "@/lib/ui";
+import { AgentCursor, BrowserFrame, Eyebrow, Stamp, blockerLabel } from "@/lib/ui";
 
 const ACTIONS: Record<string, string> = {
   click_web: "Clic",
@@ -28,47 +28,69 @@ export default async function Replay({ params }: { params: Promise<{ run: string
   try {
     replay = await getReplay(id);
   } catch {
-    return <p className="text-stone-600">Replay momentanément indisponible (limite de l&apos;API H). Réessaie dans une minute.</p>;
+    return (
+      <div className="mx-auto max-w-md rounded-2xl border border-line bg-card p-8 text-center">
+        <p className="font-semibold">Replay momentanément indisponible</p>
+        <p className="mt-1 text-[15px] text-ink-2">L&apos;API de l&apos;agent limite le nombre de requêtes. Réessaie dans une minute.</p>
+      </div>
+    );
   }
   if (!replay) notFound();
   const r = run as any;
+  const last = replay.steps.length - 1;
 
   return (
-    <div className="space-y-8">
-      <div>
-        <Link href={`/audit/${r.audit_id}`} className="text-sm text-emerald-700 hover:underline">← Retour au rapport</Link>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight">Replay : {r.missions.title}</h1>
-        <p className="mt-1 text-stone-600">
-          {r.audits.sites.name} · {replay.steps.length} étapes ·{" "}
-          {r.success ? <span className="font-semibold text-emerald-700">checkout atteint</span> : <span className="font-semibold text-red-700">bloqué : {blockerLabel(r.blocker_type)}</span>}
-        </p>
-        <p className="mt-3 whitespace-pre-line rounded-lg bg-stone-100 p-3 text-sm text-stone-700">{replay.objective}</p>
-      </div>
+    <div className="space-y-10">
+      <header className="space-y-4">
+        <Link href={`/audit/${r.audit_id}`} className="inline-flex h-11 items-center gap-1.5 text-[15px] font-semibold text-accent hover:underline">
+          <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M10 3L5 8l5 5" />
+          </svg>
+          Rapport {r.audits.sites.name}
+        </Link>
+        <Eyebrow>Replay · {replay.steps.length} étapes</Eyebrow>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
+          <h1 className="font-display text-[34px] font-semibold leading-tight tracking-[-0.03em] sm:text-[44px]">{r.missions.title}</h1>
+          <Stamp success={!!r.success} label={r.success ? undefined : blockerLabel(r.blocker_type)} />
+        </div>
+        <details className="group max-w-3xl rounded-2xl border border-line bg-card">
+          <summary className="flex h-12 cursor-pointer list-none items-center justify-between px-5 text-[15px] font-semibold [&::-webkit-details-marker]:hidden">
+            Consigne donnée à l&apos;agent
+            <svg viewBox="0 0 16 16" className="h-4 w-4 text-ink-3 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+              <path d="M4 6l4 4 4-4" />
+            </svg>
+          </summary>
+          <p className="whitespace-pre-line border-t border-line px-5 py-4 text-[14px] leading-relaxed text-ink-2">{replay.objective}</p>
+        </details>
+      </header>
 
-      <ol className="space-y-6">
+      <ol className="relative space-y-10 before:absolute before:bottom-4 before:left-[15px] before:top-4 before:w-px before:bg-line md:before:left-[19px]">
         {replay.steps.map((s, i) => (
-          <li key={i} className="grid gap-4 rounded-xl border border-stone-200 bg-white p-4 md:grid-cols-[1fr_320px]">
-            <div className="relative">
+          <li key={i} className="relative grid gap-4 pl-12 md:grid-cols-[minmax(0,1fr)_300px] md:gap-8 md:pl-14">
+            <span
+              className={`absolute left-0 top-0 grid h-8 w-8 place-items-center rounded-full border font-mono text-[12px] font-semibold tnum md:h-10 md:w-10 md:text-[13px] ${
+                i === last ? (r.success ? "border-pass bg-pass text-card" : "border-fail bg-fail text-card") : "border-line bg-card text-ink-2"
+              }`}
+              aria-hidden
+            >
+              {i + 1}
+            </span>
+            <BrowserFrame url={s.url}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={s.image} alt={`Étape ${i + 1} : ${s.url}`} className="w-full rounded-lg border border-stone-200" loading="lazy" />
-              {s.x != null && s.y != null && (
-                <span
-                  className="absolute h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-red-500/80 shadow"
-                  style={{ left: `${s.x * 100}%`, top: `${s.y * 100}%` }}
-                  aria-hidden
-                />
-              )}
-            </div>
-            <div className="space-y-2 text-sm">
-              <p className="font-semibold">Étape {i + 1}</p>
-              <p className="break-all text-xs text-stone-500">{s.url}</p>
+              <img src={s.image} alt={`Étape ${i + 1} : ${s.url}`} className="block w-full" loading="lazy" />
+              {s.x != null && s.y != null && <AgentCursor x={s.x} y={s.y} />}
+            </BrowserFrame>
+            <div className="space-y-3 md:sticky md:top-20 md:self-start">
+              <p className="text-[13px] font-semibold uppercase tracking-[0.06em] text-ink-3">Étape {i + 1}</p>
               {s.action && (
-                <p>
-                  <span className="font-medium">{ACTIONS[s.action] ?? s.action}</span>
-                  {s.element && <> : {s.element}</>}
+                <p className="text-[17px]">
+                  <span className="font-semibold">{ACTIONS[s.action] ?? s.action}</span>
+                  {s.element && <span className="text-ink-2"> : {s.element}</span>}
                 </p>
               )}
-              {s.thought && <p className="text-stone-600">{s.thought}</p>}
+              {s.thought && (
+                <blockquote className="border-l-2 border-accent pl-4 text-[15px] leading-relaxed text-ink-2">{s.thought}</blockquote>
+              )}
             </div>
           </li>
         ))}
