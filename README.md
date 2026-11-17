@@ -61,10 +61,33 @@ npm install && npm run dev
 curl localhost:3000/api/tick -H "x-tick-secret: $TICK_SECRET"   # fait avancer les audits
 ```
 
-## Résultats
+## Résultats (benchmark du 17 nov 2026)
 
-Premiers runs (17 nov) : sur Celio, l'agent va jusqu'au checkout en 7 à 13 étapes, 40 à 70 s, **0,01 à 0,02 $ par mission** avec `holo4-35b-a3b`. Un audit de 10 missions coûte environ 0,20 $.
-Benchmark 10 sites × 5 missions : voir le classement en ligne et le dataset.
+10 sites mode français × 5 missions, agent `holo4-35b-a3b`, ordinateur. **36 missions réussies sur 52 (69 %)**, environ 90 s et 19 étapes par mission, **1,68 $ au total** (0,03 $ par mission en moyenne).
+
+| Site | Réussies | Blocages relevés |
+|---|---|---|
+| Asphalte | 5/5 | — |
+| Jules | 5/5 | — |
+| Celio | 6/7 | compte obligatoire |
+| Bonobo | 3/5 | sélecteur de taille, compte obligatoire |
+| Sézane | 3/5 | autre |
+| Balibaris | 3/5 | rupture de stock, autre |
+| Le Slip Français | 3/5 | autre |
+| Promod | 3/5 | bouton qui ne réagit pas, autre |
+| Etam | 2/5 | compte obligatoire, autre |
+| Kiabi | 0/5 | captcha / anti-bot, autre |
+
+Détail mission par mission, captures et replays : classement en ligne et dataset Hugging Face.
+
+## Test de paiement réel (équipe)
+
+Page https://agentproof-iota-tawny.vercel.app/test-paiement : l'agent achète l'article le moins cher et paie **une seule fois** avec une carte virtuelle Revolut de l'équipe, sur un compte à 0 €. Un refus « fonds insuffisants » prouve que le paiement a atteint la banque (il serait passé avec des fonds). Le 3D Secure est validé par un humain sur son téléphone. Verdicts : paiement transmis à la banque, bloqué au 3D Secure, formulaire de carte inutilisable, paiement jamais atteint, compte obligatoire, anti-bot, erreur.
+
+- La carte est saisie par l'équipe dans les variables Vercel (`TEST_CARD_*`, `TEST_EMAIL`), jamais dans le repo.
+- Les captures de ces runs ne sont jamais stockées ni partagées (elles peuvent montrer la carte) ; le juge visuel les lit en mémoire.
+- Règle : 1 à 2 tentatives par site au maximum, jamais de faux numéro de carte.
+- Prochaine étape : cartes émises par nous (Stripe Issuing, Adyen, Swan) avec autorisation refusée en temps réel, pour automatiser la preuve bancaire.
 
 ## Limites et suite
 
