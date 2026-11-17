@@ -435,7 +435,7 @@ export async function notifyDone(auditId: string) {
     .map(([k, n]) => `${BLOCKERS[k] ?? k} (${n} mission${n > 1 ? "s" : ""})`);
   await fetch(process.env.N8N_NOTIFY_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "x-agentproof-secret": process.env.TICK_SECRET ?? "" },
     body: JSON.stringify({
       audit_id: a.id,
       kind: a.kind,
