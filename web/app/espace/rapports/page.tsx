@@ -17,7 +17,7 @@ const FILTERS = [
 const date = (d: string) => new Date(d).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
 // One line for the real payment test linked to an audit.
-function PayLine({ pay }: { pay: { status: string; verdict: string | null } }) {
+function PayLine({ pay, multi }: { pay: { status: string; verdict: string | null; with_login: boolean }; multi: boolean }) {
   const reached = pay.verdict === "bank_declined" || pay.verdict === "payment_accepted";
   const [text, cls] =
     pay.status !== "done" && pay.status !== "error"
@@ -27,7 +27,8 @@ function PayLine({ pay }: { pay: { status: string; verdict: string | null } }) {
         : pay.verdict === "inconclusive" || pay.verdict === "three_ds_timeout"
           ? [`Paiement : ${PAYMENT_VERDICTS[pay.verdict!].toLowerCase()}`, "text-warn"]
           : [`Paiement : ${(PAYMENT_VERDICTS[pay.verdict ?? ""] ?? "erreur").toLowerCase()}`, "text-fail"];
-  return <span className={`type-small block font-semibold ${cls}`}>{text}</span>;
+  const who = multi || pay.with_login ? (pay.with_login ? " (connecté)" : " (sans compte)") : "";
+  return <span className={`type-small block font-semibold ${cls}`}>{text}{who}</span>;
 }
 
 // Every audit of the team, newest first.
@@ -76,7 +77,7 @@ export default async function Rapports({ searchParams }: { searchParams: Promise
                     <span className="type-small text-ink-2">
                       {date(a.created_at)} · {deviceLabel(a.device)}
                     </span>
-                    {a.pay && <PayLine pay={a.pay} />}
+                    {a.pay.map((p, i) => <PayLine key={i} pay={p} multi={a.pay.length > 1} />)}
                   </span>
                   <span className="type-small hidden truncate text-ink-2 md:block">{a.users?.email === user.email ? "Toi" : a.users?.email ?? "—"}</span>
                   <span className="hidden md:block">

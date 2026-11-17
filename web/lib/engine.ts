@@ -138,8 +138,67 @@ export async function createPaymentTest(input: string, opts: { teamId?: string; 
   const { data: site } = await db.from("sites").select().eq("domain", domain).single();
   const { data: audit } = await db.from("audits").insert({ site_id: site!.id, kind: "payment", team_id: opts.teamId ?? null, created_by: opts.createdBy ?? null }).select().single();
   const { data: mission } = await db.from("missions").select("id").eq("slug", "paiement").single();
-  await db.from("runs").insert({ audit_id: audit!.id, mission_id: mission!.id });
+  // With a test account for this site: one run as a stranger, one signed in, to tell "blocks agents" from "payment broken".
+  const withLogin = !!(await loginVault(opts.teamId ?? null, site!.id));
+  await db.from("runs").insert(
+    [false, ...(withLogin ? [true] : [])].map((w) => ({ audit_id: audit!.id, mission_id: mission!.id, with_login: w })),
+  );
   return audit!.id as string;
+}
+
+// ---------- test accounts (sites that require a login before paying) ----------
+// One H-hosted vault per team. Passwords go straight to H and never touch our database or the agent's context:
+// the agent fills them with fill_secret_at on pages matching the item's URLs.
+async function teamVault(teamId: string) {
+  const { data: team } = await db.from("teams").select("h_vault_id").eq("id", teamId).single();
+  if (team?.h_vault_id) return team.h_vault_id as string;
+  const v = await (await h("/vaults", { method: "POST", body: JSON.stringify({ name: `agentproof-team-${teamId}`, provider_config: { provider: "internal" } }) })).json();
+  await db.from("teams").update({ h_vault_id: v.id }).eq("id", teamId);
+  return v.id as string;
+}
+
+const maskLogin = (l: string) => (l.includes("@") ? `${l[0]}•••@${l.split("@")[1]}` : `${l.slice(0, 2)}•••`);
+
+export async function addSiteLogin(teamId: string, siteInput: string, login: string, password: string, createdBy?: string) {
+  if (!login || !password || login.length > 200 || password.length > 200) throw new Error("Identifiant ou mot de passe invalide.");
+  const { url, domain } = normalizeUrl(siteInput);
+  await db.from("sites").upsert({ domain, name: domain, url }, { onConflict: "domain", ignoreDuplicates: true });
+  const { data: site } = await db.from("sites").select("id").eq("domain", domain).single();
+  const vault = await teamVault(teamId);
+  const host = new URL(url).hostname.replace(/^www\./, "");
+  const item = await (
+    await h(`/vaults/${vault}/items`, {
+      method: "POST",
+      body: JSON.stringify({ name: domain, urls: [`https://${host}`], values: { username: login, email: login, password } }),
+    })
+  ).json();
+  // One login per site and team: replace the previous one.
+  const { data: old } = await db.from("site_logins").select("h_item_id").eq("team_id", teamId).eq("site_id", site!.id).maybeSingle();
+  if (old) await h(`/vaults/${vault}/items/${old.h_item_id}`, { method: "DELETE" }).catch(() => {});
+  await db
+    .from("site_logins")
+    .upsert({ team_id: teamId, site_id: site!.id, h_item_id: item.id, login_hint: maskLogin(login), created_by: createdBy ?? null }, { onConflict: "team_id,site_id" });
+}
+
+export async function deleteSiteLogin(teamId: string, id: number) {
+  const { data: row } = await db.from("site_logins").select("h_item_id").eq("id", id).eq("team_id", teamId).maybeSingle();
+  if (!row) return;
+  const vault = await teamVault(teamId);
+  await h(`/vaults/${vault}/items/${row.h_item_id}`, { method: "DELETE" }).catch(() => {});
+  await db.from("site_logins").delete().eq("id", id).eq("team_id", teamId);
+}
+
+export async function listSiteLogins(teamId: string) {
+  const { data } = await db.from("site_logins").select("id, login_hint, created_at, sites(domain)").eq("team_id", teamId).order("created_at", { ascending: false });
+  return (data ?? []) as unknown as { id: number; login_hint: string; created_at: string; sites: { domain: string } }[];
+}
+
+async function loginVault(teamId: string | null, siteId: number) {
+  if (!teamId) return null;
+  const { data } = await db.from("site_logins").select("id").eq("team_id", teamId).eq("site_id", siteId).maybeSingle();
+  if (!data) return null;
+  const { data: team } = await db.from("teams").select("h_vault_id").eq("id", teamId).single();
+  return (team?.h_vault_id as string) ?? null;
 }
 
 // ---------- tick: the only place that calls H, max 5 requests per call ----------
@@ -241,7 +300,9 @@ async function sessionRequest(run: { id: number; missions: { instruction: string
   if (isPayment(run)) {
     const card = await cardSecret(run.audits.team_id);
     if (!card) throw new Error("Carte de paiement retirée avant le lancement.");
-    return paymentRequest(run.id, await paymentStart(run.audits.sites.id, url), card);
+    const vault = (run as any).with_login ? await loginVault(run.audits.team_id, run.audits.sites.id) : null;
+    if ((run as any).with_login && !vault) throw new Error("Compte de test retiré avant le lancement.");
+    return paymentRequest(run.id, await paymentStart(run.audits.sites.id, url), card, vault);
   }
   const overrides: Record<string, unknown> = { "agent.environments[kind=web].start_url": url };
   if (run.audits.device === "mobile") overrides["agent.environments[kind=web].mode"] = { type: "visual", width: 390, height: 844 };
@@ -326,18 +387,22 @@ const START_HINT: Record<PaymentStart["how"], string> = {
   home: "Prends le premier article disponible, n'importe lequel : le prix n'a aucune importance.",
 };
 
-function paymentRequest(runId: number, start: PaymentStart, c: CardSecret) {
+function paymentRequest(runId: number, start: PaymentStart, c: CardSecret, vault: string | null = null) {
   const url = start.url;
   return {
     agent: AGENT,
     messages:
       `Site à tester : ${url}\nMission : achète un article et paie par carte (une seule tentative). ${START_HINT[start.how]}\n` +
+      (vault
+        ? "Un compte de test existe pour ce site : si le site demande de se connecter, connecte-toi avec les identifiants enregistrés (action fill_secret_at pour l'e-mail ou l'identifiant, puis le mot de passe). Ne crée jamais de compte.\n"
+        : "") +
       `Identité de test : ${c.holder}, e-mail ${c.email}, téléphone 0612345678, adresse ${c.address}.\n` +
       `Carte : numéro ${c.number}, expiration ${c.expiry}, CVC ${c.cvc}, titulaire ${c.holder}.`,
     overrides: {
       "agent.environments[kind=web].start_url": url,
       "agent.instructions": PAYMENT_INSTRUCTIONS,
       "agent.answer_format": PAYMENT_FORMAT,
+      ...(vault ? { "agent.environments[kind=web].vault_id": vault } : {}),
     },
     max_steps: PAY_STEPS,
     max_time_s: 1200,

@@ -14,6 +14,7 @@ const SECTIONS = [
   ["/espace/sites", "Mes sites"],
   ["/espace/rapports", "Rapports"],
   ["/espace/paiement", "Paiement"],
+  ["/espace/comptes", "Comptes de test"],
   ["/espace/classement", "Classement"],
   ["/equipe", "Équipe"],
   ["/compte", "Compte"],

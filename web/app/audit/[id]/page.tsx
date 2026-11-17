@@ -7,7 +7,7 @@ import { BrowserFrame, MissionBar, Recommendations, Spinner, StatusBadge, ToneLa
 import { AutoRefresh } from "./refresh";
 
 const RUN_FIELDS =
-  "id, status, payment_verdict, session_id, success, reached_checkout, blocker_type, blocker_detail, screenshot_url, final_url, steps, duration_s, cost_usd, judge, agent_answer, missions(title, position)";
+  "id, status, payment_verdict, with_login, session_id, success, reached_checkout, blocker_type, blocker_detail, screenshot_url, final_url, steps, duration_s, cost_usd, judge, agent_answer, missions(title, position)";
 
 async function loadAudit(id: string) {
   const { data } = await db.from("audits").select(`*, sites(domain, name, url), runs(${RUN_FIELDS})`).eq("id", id).maybeSingle();
@@ -24,13 +24,14 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   const ctx = audit.kind === "payment" || audit.payment_test ? await teamContext() : null;
   const inTeam = !!audit.team_id && !!ctx?.teams.some((t) => t.id === audit.team_id);
   if (audit.kind === "payment" && !inTeam && !(await staffUser()).isStaff) notFound();
-  const pay = inTeam && audit.payment_test ? (await loadAudit(audit.payment_test))?.runs[0] : null;
+  // One run without account, plus one signed in when the team saved a test account for the site.
+  const pays: any[] = inTeam && audit.payment_test ? [...((await loadAudit(audit.payment_test))?.runs ?? [])].sort((a: any, b: any) => +a.with_login - +b.with_login) : [];
   const competitor = audit.compare_to ? await loadAudit(audit.compare_to) : null;
 
   const runs = [...audit.runs].sort((a: any, b: any) => a.missions.position - b.missions.position);
   const s = summarize(runs);
   const c = competitor ? summarize(competitor.runs) : null;
-  const running = audit.status === "running" || competitor?.status === "running" || (pay && pay.status !== "done");
+  const running = audit.status === "running" || competitor?.status === "running" || pays.some((p) => p.status !== "done");
   const cost = runs.reduce((t: number, r: any) => t + Number(r.cost_usd ?? 0), 0);
   const maxBlock = s.blockers[0]?.[1] ?? 1;
   const aside = s.excluded + s.unverified + s.errors;
@@ -128,10 +129,12 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
           )}
         </section>
 
-        {pay && (
-          <section className="tile">
+        {pays.map((pay) => (
+          <section key={pay.id} className="tile">
             <div className="type-small flex flex-wrap items-center gap-x-3 gap-y-1">
-              <span className="text-ink-2">Test de paiement réel</span>
+              <span className="text-ink-2">
+                Test de paiement réel{pays.length > 1 || pay.with_login ? (pay.with_login ? " · connecté avec le compte de test" : " · sans compte") : ""}
+              </span>
               <StatusBadge run={pay} />
             </div>
             {pay.status === "done" ? (
@@ -156,10 +159,10 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                 )}
               </>
             ) : (
-              <p className="mt-3 text-ink-2">L&apos;agent achète l&apos;article le moins cher et paie une fois. Garde ton téléphone à portée pour valider le 3D Secure.</p>
+              <p className="mt-3 text-ink-2">L&apos;agent part au plus près du checkout, prend le premier article disponible et paie une fois. Garde ton téléphone à portée pour valider le 3D Secure.</p>
             )}
           </section>
-        )}
+        ))}
 
         {s.blockers.length > 0 && (
           <section>
