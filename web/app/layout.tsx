@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { Nav } from "./nav";
+import { currentUser } from "@/lib/auth";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -25,7 +26,7 @@ function Mark({ className = "h-[22px] w-[22px]" }: { className?: string }) {
   );
 }
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="fr">
       <body className="min-h-screen antialiased">
@@ -41,7 +42,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               <Mark />
               <span className="text-[21px] font-semibold leading-none tracking-[0.011em] max-[734px]:text-[19px]">AgentProof</span>
             </Link>
-            <Nav />
+            <Nav signedIn={!!(await currentUser())} />
           </nav>
         </header>
         <main id="contenu">{children}</main>

@@ -179,3 +179,27 @@ export function Chevron({ dir = "right", className = "h-[0.7em] w-[0.7em]" }: { 
     </svg>
   );
 }
+
+// apple.com form field: the label sits in the field and floats up once it has focus or text.
+export function Field({ label, name, required, type = "url", defaultValue }: { label: string; name: string; required?: boolean; type?: "url" | "email" | "text"; defaultValue?: string }) {
+  return (
+    <label className="relative block">
+      <input
+        name={name}
+        required={required}
+        defaultValue={defaultValue}
+        type={type === "email" ? "email" : "text"}
+        placeholder=" "
+        inputMode={type}
+        autoComplete={type === "text" ? "off" : type}
+        autoCapitalize="none"
+        spellCheck={false}
+        className="peer h-14 w-full rounded-[12px] border border-[#86868b] bg-tile px-4 pt-[18px] text-[17px] transition-[border-color,box-shadow] duration-200 focus:border-blue focus:shadow-[0_0_0_4px_rgb(0_113_227/0.3)] focus:outline-none dark:border-line"
+      />
+      <span className="pointer-events-none absolute left-4 top-[9px] type-caption text-ink-2 transition-all duration-200 peer-placeholder-shown:top-[17px] peer-placeholder-shown:text-[17px] peer-focus:top-[9px] peer-focus:text-[12px]">
+        {label}
+      </span>
+    </label>
+  );
+}
+

@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { db } from "@/lib/engine";
-import { AgentCursor, BrowserFrame, MissionBar, StatusGlyph, Verdict, blockerLabel, scoreTone } from "@/lib/ui";
+import { currentUser } from "@/lib/auth";
+import { AgentCursor, BrowserFrame, Field, MissionBar, StatusGlyph, Verdict, blockerLabel, scoreTone } from "@/lib/ui";
 
 export default async function Home() {
   await connection();
-  const [{ data: top }, { data: proof }] = await Promise.all([
+  const [user, { data: top }, { data: proof }] = await Promise.all([
+    currentUser(),
     db.from("site_scores").select("*").eq("device", "desktop").order("score", { ascending: false, nullsFirst: false }).limit(5),
     // A real blocked mission for the "Preuves" tile: evidence over illustration.
     db
@@ -116,7 +118,7 @@ export default async function Home() {
               <Field label="Adresse de ton site" name="url" required />
               <Field label="Un concurrent (facultatif)" name="competitor" />
             </div>
-            <Field label="Ton e-mail, pour recevoir le rapport (facultatif)" name="email" type="email" />
+            <Field label="E-mail du rapport (par défaut : ton adresse de connexion)" name="email" type="email" />
             <fieldset className="mt-2 flex flex-wrap items-center justify-between gap-3">
               <legend className="sr-only">Appareil</legend>
               <span className="text-ink-2" aria-hidden>
@@ -137,7 +139,9 @@ export default async function Home() {
               </div>
             </fieldset>
             <button className="btn mt-4 min-h-[56px] w-full rounded-[12px]">Lancer l&apos;audit</button>
-            <p className="type-small text-center text-ink-2">L&apos;agent ne paie jamais et ne saisit aucune donnée personnelle.</p>
+            <p className="type-small text-center text-ink-2">
+              {user ? "L'audit est rangé dans ton espace d'équipe." : "Connexion par e-mail, sans mot de passe. L'audit est rangé dans ton espace d'équipe."} L&apos;agent ne paie jamais et ne saisit aucune donnée personnelle.
+            </p>
           </form>
         </div>
       </section>
@@ -196,28 +200,6 @@ export default async function Home() {
         </ol>
       </div>
     </>
-  );
-}
-
-// apple.com form field: the label sits in the field and floats up once it has focus or text.
-function Field({ label, name, required, type = "url" }: { label: string; name: string; required?: boolean; type?: "url" | "email" }) {
-  return (
-    <label className="relative block">
-      <input
-        name={name}
-        required={required}
-        type={type === "email" ? "email" : "text"}
-        placeholder=" "
-        inputMode={type}
-        autoComplete={type}
-        autoCapitalize="none"
-        spellCheck={false}
-        className="peer h-14 w-full rounded-[12px] border border-[#86868b] bg-tile px-4 pt-[18px] text-[17px] transition-[border-color,box-shadow] duration-200 focus:border-blue focus:shadow-[0_0_0_4px_rgb(0_113_227/0.3)] focus:outline-none dark:border-line"
-      />
-      <span className="pointer-events-none absolute left-4 top-[9px] type-caption text-ink-2 transition-all duration-200 peer-placeholder-shown:top-[17px] peer-placeholder-shown:text-[17px] peer-focus:top-[9px] peer-focus:text-[12px]">
-        {label}
-      </span>
-    </label>
   );
 }
 

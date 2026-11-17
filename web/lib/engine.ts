@@ -68,7 +68,7 @@ export function normalizeUrl(input: string) {
   return { url: `${u.protocol}//${u.hostname}${u.pathname === "/" ? "" : u.pathname}`, domain: u.hostname.replace(/^www\./, "") };
 }
 
-export async function createAudit(input: string, opts: { device?: "desktop" | "mobile"; missions?: number; compareTo?: string; email?: string; ipHash?: string } = {}) {
+export async function createAudit(input: string, opts: { device?: "desktop" | "mobile"; missions?: number; compareTo?: string; email?: string; ipHash?: string; teamId?: string; createdBy?: string } = {}) {
   const { url, domain } = normalizeUrl(input);
   const { data: created, error: e1 } = await db
     .from("sites")
@@ -78,7 +78,7 @@ export async function createAudit(input: string, opts: { device?: "desktop" | "m
   const site = created?.[0] ?? (await db.from("sites").select().eq("domain", domain).single()).data;
   const { data: audit, error: e2 } = await db
     .from("audits")
-    .insert({ site_id: site.id, device: opts.device ?? "desktop", compare_to: opts.compareTo ?? null, email: opts.email ?? null, ip_hash: opts.ipHash ?? null })
+    .insert({ site_id: site.id, device: opts.device ?? "desktop", compare_to: opts.compareTo ?? null, email: opts.email ?? null, ip_hash: opts.ipHash ?? null, team_id: opts.teamId ?? null, created_by: opts.createdBy ?? null })
     .select()
     .single();
   if (e2) throw e2;
@@ -87,14 +87,15 @@ export async function createAudit(input: string, opts: { device?: "desktop" | "m
   return audit.id as string;
 }
 
-// Same site and device audited in the last 7 days: reuse that report instead of spending tokens again.
-export async function recentAudit(input: string, device: string) {
+// Same site and device audited by this team in the last 7 days: reuse that report instead of spending tokens again.
+export async function recentAudit(input: string, device: string, teamId: string) {
   const { domain } = normalizeUrl(input);
   const since = new Date(Date.now() - 7 * 86400_000).toISOString();
   const { data } = await db
     .from("audits")
     .select("id, sites!inner(domain)")
     .eq("sites.domain", domain)
+    .eq("team_id", teamId)
     .eq("kind", "checkout")
     .eq("device", device)
     .gte("created_at", since)

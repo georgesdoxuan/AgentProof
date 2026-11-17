@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { attachEmail, auditsFromIp, createAudit, db, normalizeUrl, recentAudit } from "@/lib/engine";
+import { canLaunch, teamContext } from "@/lib/auth";
 
 const FORM_MISSIONS = Number(process.env.FORM_MISSIONS ?? 5); // 3 on demo day: one mission per free H slot
 const MAX_PENDING = 20; // refuse new audits when the queue is this long
@@ -8,11 +9,17 @@ const MAX_AUDITS_PER_HOUR = 6; // per IP, competitor audits included
 const fail = (msg: string, status = 400) => new Response(msg, { status, headers: { "Content-Type": "text/plain; charset=utf-8" } });
 
 export async function POST(req: Request) {
+  // Audits belong to a team: signed in, and owner or admin of the current team.
+  const ctx = await teamContext();
+  if (!ctx) return Response.redirect(new URL("/connexion?next=/espace", req.url), 303);
+  if (!ctx.team) return Response.redirect(new URL("/espace", req.url), 303);
+  if (!canLaunch(ctx.team.role)) return fail("Ton rôle (lecteur) permet de consulter les rapports, pas de lancer un audit.", 403);
+  const team = { teamId: ctx.team.id, createdBy: ctx.user.id };
   const form = await req.formData();
   const url = String(form.get("url") ?? "");
   const competitor = String(form.get("competitor") ?? "").trim();
   const device = form.get("device") === "mobile" ? "mobile" : "desktop";
-  const email = String(form.get("email") ?? "").trim().toLowerCase();
+  const email = String(form.get("email") ?? "").trim().toLowerCase() || ctx.user.email;
   if (email && (email.length > 200 || !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(email))) return fail("Adresse e-mail invalide.");
 
   try {
@@ -23,7 +30,7 @@ export async function POST(req: Request) {
 
     // Same site audited in the last 7 days: show that report instead of spending tokens again.
     if (!competitor) {
-      const existing = await recentAudit(url, device);
+      const existing = await recentAudit(url, device, ctx.team.id);
       if (existing && email) await attachEmail(existing, email);
       if (existing) return Response.redirect(new URL(`/audit/${existing}`, req.url), 303);
     }
@@ -35,8 +42,8 @@ export async function POST(req: Request) {
     const { count } = await db.from("runs").select("id", { count: "exact", head: true }).in("status", ["todo", "launched"]);
     if ((count ?? 0) > MAX_PENDING) return fail("File d'attente pleine, réessaie dans un moment.", 503);
 
-    const compareTo = competitor ? await createAudit(competitor, { device, missions: FORM_MISSIONS, ipHash }) : undefined;
-    const id = await createAudit(url, { device, missions: FORM_MISSIONS, compareTo, email: email || undefined, ipHash });
+    const compareTo = competitor ? await createAudit(competitor, { device, missions: FORM_MISSIONS, ipHash, ...team }) : undefined;
+    const id = await createAudit(url, { device, missions: FORM_MISSIONS, compareTo, email: email || undefined, ipHash, ...team });
     return Response.redirect(new URL(`/audit/${id}`, req.url), 303);
   } catch (e) {
     return fail(`Erreur : ${(e as Error).message}`);
