@@ -26,6 +26,6 @@ Each row is one mission run by an AI shopping agent (H Company Holo, Agents API)
 stopping at the first checkout page. `success` = the agent reached checkout and a visual judge (Qwen3.5-9B on Hugging Face) confirmed it.
 Source: https://github.com/georgesdoxuan/AgentProof
 MD
-hf repo create "$REPO" --repo-type dataset --exist-ok >/dev/null
+hf repos create "$REPO" --repo-type dataset --public --exist-ok >/dev/null
 hf upload "$REPO" "$OUT" . --repo-type dataset --commit-message "Update runs"
 echo "https://huggingface.co/datasets/$REPO ($(wc -l < "$OUT/runs.jsonl") runs)"
