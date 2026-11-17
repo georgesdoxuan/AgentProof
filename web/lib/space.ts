@@ -24,6 +24,8 @@ export type SpaceAudit = {
   sites: { domain: string; name: string; url: string } | null;
   users: { email: string } | null;
   runs: SpaceRun[];
+  payment_test: string | null;
+  pay: { status: string; verdict: string | null } | null; // real payment test linked to this audit
   s: ReturnType<typeof summarize>;
 };
 
@@ -63,7 +65,7 @@ export async function loadSpace(teamId: string) {
     db
       .from("audits")
       .select(
-        "id, created_at, device, status, compare_to, recommendations, site_id, sites(domain, name, url), users:created_by(email), runs(id, status, success, blocker_type, blocker_detail, screenshot_url, final_url)",
+        "id, created_at, device, status, compare_to, recommendations, site_id, payment_test, sites(domain, name, url), users:created_by(email), runs(id, status, success, blocker_type, blocker_detail, screenshot_url, final_url)",
       )
       .eq("team_id", teamId)
       .eq("kind", "checkout")
@@ -73,7 +75,13 @@ export async function loadSpace(teamId: string) {
     db.from("site_scores").select("domain, device, score").order("score", { ascending: false, nullsFirst: false }),
   ]);
 
-  const all = ((data ?? []) as unknown as Omit<SpaceAudit, "s">[]).map((a) => ({ ...a, s: summarize(a.runs) }));
+  // Real payment tests are separate audits linked by payment_test: one extra read for their verdicts.
+  const payIds = (data ?? []).map((a: any) => a.payment_test).filter(Boolean);
+  const { data: payRuns } = payIds.length
+    ? await db.from("runs").select("audit_id, status, payment_verdict").in("audit_id", payIds)
+    : { data: [] as { audit_id: string; status: string; payment_verdict: string | null }[] };
+  const payBy = new Map((payRuns ?? []).map((r) => [r.audit_id, { status: r.status, verdict: r.payment_verdict }]));
+  const all = ((data ?? []) as unknown as Omit<SpaceAudit, "s" | "pay">[]).map((a) => ({ ...a, pay: a.payment_test ? payBy.get(a.payment_test) ?? null : null, s: summarize(a.runs) }));
   const byId = new Map(all.map((a) => [a.id, a]));
   // Competitor audits show inside the main site, not as sites of their own.
   const competitorIds = new Set(all.map((a) => a.compare_to).filter(Boolean));

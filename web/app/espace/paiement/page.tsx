@@ -20,7 +20,7 @@ export default async function Paiement() {
       team={team}
       teams={teams}
       title="Moyen de paiement"
-      intro="La carte que l'agent utilise pour le test de paiement réel. Il achète l'article le moins cher de ton site et paie une seule fois. Avec une carte approvisionnée, la commande est réelle."
+      intro="La carte que l'agent utilise pour le test de paiement réel. Il part au plus près du checkout, prend le premier article disponible et paie une seule fois. Avec une carte approvisionnée, la commande est réelle."
     >
       {card ? (
         <Group title="Carte enregistrée" footer={card.source === "env" ? "Carte de l'équipe AgentProof, gardée dans la configuration du serveur, jamais en base." : "Numéro, date et cryptogramme chiffrés. Ils ne sont plus jamais affichés."}>

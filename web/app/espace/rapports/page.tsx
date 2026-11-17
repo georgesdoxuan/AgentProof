@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { canLaunch, teamContext } from "@/lib/auth";
+import { PAYMENT_VERDICTS } from "@/lib/engine";
 import { deviceLabel, loadSpace } from "@/lib/space";
 import { Chevron, MissionBar, Spinner, StatusGlyph, scoreTone } from "@/lib/ui";
 import { SpaceShell } from "../shell";
@@ -14,6 +15,20 @@ const FILTERS = [
 ] as const;
 
 const date = (d: string) => new Date(d).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+
+// One line for the real payment test linked to an audit.
+function PayLine({ pay }: { pay: { status: string; verdict: string | null } }) {
+  const reached = pay.verdict === "bank_declined" || pay.verdict === "payment_accepted";
+  const [text, cls] =
+    pay.status !== "done" && pay.status !== "error"
+      ? ["Paiement : test en cours", "text-ink-2"]
+      : reached
+        ? ["Paiement : transmis à la banque", "text-pass"]
+        : pay.verdict === "inconclusive" || pay.verdict === "three_ds_timeout"
+          ? [`Paiement : ${PAYMENT_VERDICTS[pay.verdict!].toLowerCase()}`, "text-warn"]
+          : [`Paiement : ${(PAYMENT_VERDICTS[pay.verdict ?? ""] ?? "erreur").toLowerCase()}`, "text-fail"];
+  return <span className={`type-small block font-semibold ${cls}`}>{text}</span>;
+}
 
 // Every audit of the team, newest first.
 export default async function Rapports({ searchParams }: { searchParams: Promise<{ vue?: string }> }) {
@@ -61,6 +76,7 @@ export default async function Rapports({ searchParams }: { searchParams: Promise
                     <span className="type-small text-ink-2">
                       {date(a.created_at)} · {deviceLabel(a.device)}
                     </span>
+                    {a.pay && <PayLine pay={a.pay} />}
                   </span>
                   <span className="type-small hidden truncate text-ink-2 md:block">{a.users?.email === user.email ? "Toi" : a.users?.email ?? "—"}</span>
                   <span className="hidden md:block">
