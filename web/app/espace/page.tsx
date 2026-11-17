@@ -35,7 +35,7 @@ export default async function Accueil() {
     : [
         `${sites.length} site${sites.length > 1 ? "s" : ""} suivi${sites.length > 1 ? "s" : ""}`,
         running.length ? `${running.length} audit${running.length > 1 ? "s" : ""} en cours` : null,
-        openCount ? `${openCount} blocage${openCount > 1 ? "s" : ""} à corriger` : "aucun blocage ouvert",
+        openCount ? `${openCount} blocage${openCount > 1 ? "s" : ""} à corriger` : sites.some((s) => s.latest) ? "aucun blocage ouvert" : null,
       ]
         .filter(Boolean)
         .join(" · ") + ".";
