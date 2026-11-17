@@ -93,7 +93,7 @@ Page https://agentproof-iota-tawny.vercel.app/test-paiement : l'agent achète l'
 
 - **Accord juge / agent** : sur 51 runs vérifiés à l'aveugle, le juge donne le même verdict que l'agent dans 49 cas (96 %). Accord juge / humain : vérification manuelle en cours.
 - **Score honnête** : seuls les runs vérifiés comptent. Rupture de stock et blocage anti-bot (IP de datacenter) sont affichés à part, hors score.
-- **Répétabilité** : 3 sites rejoués une deuxième fois (résultats ci-dessous dès la fin du run).
+- **Répétabilité** : 3 sites (Bonobo, Promod, Sézane) rejoués une deuxième fois : même verdict pour 10 missions sur 14 comparables (71 %). Sur les 4 écarts, 3 échecs sont devenus des réussites. Un seul passage est donc bruité : le classement devrait s'appuyer sur 2 passages par mission.
 - **Sobriété** : le moteur s'arrête avant d'épuiser les 60 M de tokens gratuits du mois chez H (`TOKEN_BUDGET`) ; un site bloqué par l'anti-bot n'use qu'une mission ; un site audité depuis moins de 7 jours renvoie au rapport existant.
 - **Robustesse** : une requête liste l'état de toutes les sessions ; un run en erreur ne bloque plus la file ; chaque run est réservé avant lancement (pas de doublon) ; chaque audit n'est clôturé et notifié qu'une fois.
 - **Formulaire protégé** : domaines publics uniquement, 6 audits par heure et par connexion, liste de domaines autorisés pour la démo (`ALLOWED_DOMAINS`), `FORM_MISSIONS=3` le jour de la démo.
