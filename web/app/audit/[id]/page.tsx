@@ -2,7 +2,7 @@ import { staffUser, teamContext } from "@/lib/auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { PAYMENT_VERDICTS, db } from "@/lib/engine";
+import { PAYMENT_STAGES, PAYMENT_VERDICTS, db } from "@/lib/engine";
 import { BrowserFrame, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, summarize } from "@/lib/ui";
 import { AutoRefresh } from "./refresh";
 
@@ -136,10 +136,15 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             </div>
             {pay.status === "done" ? (
               <>
-                <p className={`type-h3 mt-3 ${["bank_declined", "payment_accepted"].includes(pay.payment_verdict) ? "text-pass" : "text-fail"}`}>
+                <p className={`type-h3 mt-3 ${["bank_declined", "payment_accepted"].includes(pay.payment_verdict) ? "text-pass" : ["inconclusive", "three_ds_timeout"].includes(pay.payment_verdict) ? "text-warn" : "text-fail"}`}>
                   {PAYMENT_VERDICTS[pay.payment_verdict] ?? pay.payment_verdict ?? "Pas de résultat"}
                 </p>
                 {pay.agent_answer?.site_message && <p className="mt-2 text-ink-2">Message du site : « {pay.agent_answer.site_message} »</p>}
+                {pay.agent_answer?.furthest_stage && (
+                  <p className="mt-2">
+                    Étape la plus loin atteinte : <span className="font-semibold">{PAYMENT_STAGES[pay.agent_answer.furthest_stage] ?? pay.agent_answer.furthest_stage}</span>
+                  </p>
+                )}
                 <p className="type-small mt-2 text-ink-2">
                   3D Secure : {pay.agent_answer?.three_ds_seen ? "demandé" : "non"} · Prestataire : {pay.agent_answer?.payment_provider || "?"} · Moyens :{" "}
                   {pay.agent_answer?.payment_methods || "?"}

@@ -1,14 +1,14 @@
 import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 import { staffUser } from "@/lib/auth";
-import { PAYMENT_VERDICTS, db } from "@/lib/engine";
+import { PAYMENT_STAGES, PAYMENT_VERDICTS, db } from "@/lib/engine";
 import { StatusBadge } from "@/lib/ui";
 import { AutoRefresh } from "../audit/[id]/refresh";
 
 export const metadata = { title: "Test de paiement · AgentProof" };
 
 const tone = (v: string | null) =>
-  v === "bank_declined" || v === "payment_accepted" ? "text-pass" : v === "three_ds_timeout" ? "text-warn" : "text-fail";
+  v === "bank_declined" || v === "payment_accepted" ? "text-pass" : v === "three_ds_timeout" || v === "inconclusive" ? "text-warn" : "text-fail";
 
 const input =
   "h-12 w-full rounded-[12px] border border-[#86868b] bg-tile px-4 text-[17px] placeholder:text-ink-2 transition-[border-color,box-shadow] duration-200 focus:border-blue focus:shadow-[0_0_0_4px_rgb(0_113_227/0.3)] focus:outline-none dark:border-line";
@@ -60,6 +60,11 @@ export default async function TestPaiement() {
                     <>
                       <p className={`type-headline ${tone(r.payment_verdict)}`}>{PAYMENT_VERDICTS[r.payment_verdict] ?? r.payment_verdict}</p>
                       {a.site_message && <p className="text-ink-2">Message du site : « {a.site_message} »</p>}
+                      {a.furthest_stage && (
+                        <p>
+                          Étape la plus loin atteinte : <span className="font-semibold">{PAYMENT_STAGES[a.furthest_stage] ?? a.furthest_stage}</span>
+                        </p>
+                      )}
                       <p className="type-small text-ink-2">
                         3D Secure : {a.three_ds_seen ? "demandé" : "non"} · Prestataire : {a.payment_provider || "?"} · Moyens : {a.payment_methods || "?"}
                       </p>
