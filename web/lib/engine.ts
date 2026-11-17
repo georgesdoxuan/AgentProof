@@ -346,7 +346,8 @@ async function hf(messages: unknown[], max_tokens = 400) {
   const res = await fetch("https://router.huggingface.co/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${process.env.HF_TOKEN}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: JUDGE_MODEL, messages, max_tokens, temperature: 0 }),
+    // Thinking off: otherwise reasoning can eat the whole token budget and leave an empty answer.
+    body: JSON.stringify({ model: JUDGE_MODEL, messages, max_tokens, temperature: 0, chat_template_kwargs: { enable_thinking: false } }),
   });
   if (!res.ok) throw new Error(`HF ${res.status}: ${(await res.text()).slice(0, 200)}`);
   const text: string = (await res.json()).choices[0].message.content ?? "";
