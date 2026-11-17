@@ -180,6 +180,7 @@ const PAYMENT_INSTRUCTIONS = `You test whether an AI agent can complete a real c
 4. Submit the payment ONCE. Never submit twice, never try another card or another payment method, never retry after a refusal.
 5. If a 3-D Secure or bank verification page appears, type nothing: wait (wait_web) up to 3 minutes in total for the cardholder to approve on their phone, then report what the site shows.
 6. Never solve a CAPTCHA or bot challenge: stop and report bot_block.
+7. Never repeat the card number, expiry or CVC in your answer.
 result values: bank_declined (after submitting, the site shows the payment was refused, declined or insufficient funds), payment_accepted (order confirmed), three_ds_timeout (stuck on bank verification), card_form_unusable (cannot type in or submit the card form), not_reached_payment (never reached the card step), login_required, bot_block, technical_error, other.`;
 
 const PAYMENT_FORMAT = {
@@ -296,6 +297,9 @@ async function finalizePayment(run: any, items: Ev[], state: string, obs: Ev | u
       .then((out) => JSON.parse(out.slice(out.indexOf("{"), out.lastIndexOf("}") + 1)))
       .catch((e) => ({ error: String(e) }));
   }
+  // Never store card details: the agent sometimes repeats them in its free-text fields.
+  if (answer) for (const k of Object.keys(answer) as (keyof PaymentAnswer)[])
+    if (typeof answer[k] === "string") (answer as any)[k] = (answer[k] as string).replace(/\d[\d ]{10,}\d/g, "[carte masquée]");
   const verdict = answer?.result ?? (state === "error" ? "technical_error" : "other");
   const reachedBank = ["bank_declined", "payment_accepted"].includes(verdict);
   const judgeAgrees = !judge?.result || judge.result === verdict;
