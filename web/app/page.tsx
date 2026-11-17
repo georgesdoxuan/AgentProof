@@ -116,6 +116,7 @@ export default async function Home() {
               <Field label="Adresse de ton site" name="url" required />
               <Field label="Un concurrent (facultatif)" name="competitor" />
             </div>
+            <Field label="Ton e-mail, pour recevoir le rapport (facultatif)" name="email" type="email" />
             <fieldset className="mt-2 flex flex-wrap items-center justify-between gap-3">
               <legend className="sr-only">Appareil</legend>
               <span className="text-ink-2" aria-hidden>
@@ -199,15 +200,16 @@ export default async function Home() {
 }
 
 // apple.com form field: the label sits in the field and floats up once it has focus or text.
-function Field({ label, name, required }: { label: string; name: string; required?: boolean }) {
+function Field({ label, name, required, type = "url" }: { label: string; name: string; required?: boolean; type?: "url" | "email" }) {
   return (
     <label className="relative block">
       <input
         name={name}
         required={required}
+        type={type === "email" ? "email" : "text"}
         placeholder=" "
-        inputMode="url"
-        autoComplete="url"
+        inputMode={type}
+        autoComplete={type}
         autoCapitalize="none"
         spellCheck={false}
         className="peer h-14 w-full rounded-[12px] border border-[#86868b] bg-tile px-4 pt-[18px] text-[17px] transition-[border-color,box-shadow] duration-200 focus:border-blue focus:shadow-[0_0_0_4px_rgb(0_113_227/0.3)] focus:outline-none dark:border-line"

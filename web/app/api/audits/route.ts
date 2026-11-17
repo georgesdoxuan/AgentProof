@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { auditsFromIp, createAudit, db, normalizeUrl, recentAudit } from "@/lib/engine";
+import { attachEmail, auditsFromIp, createAudit, db, normalizeUrl, recentAudit } from "@/lib/engine";
 
 const FORM_MISSIONS = Number(process.env.FORM_MISSIONS ?? 5); // 3 on demo day: one mission per free H slot
 const MAX_PENDING = 20; // refuse new audits when the queue is this long
@@ -12,6 +12,8 @@ export async function POST(req: Request) {
   const url = String(form.get("url") ?? "");
   const competitor = String(form.get("competitor") ?? "").trim();
   const device = form.get("device") === "mobile" ? "mobile" : "desktop";
+  const email = String(form.get("email") ?? "").trim().toLowerCase();
+  if (email && (email.length > 200 || !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(email))) return fail("Adresse e-mail invalide.");
 
   try {
     const domains = [url, competitor].filter(Boolean).map((u) => normalizeUrl(u).domain);
@@ -22,6 +24,7 @@ export async function POST(req: Request) {
     // Same site audited in the last 7 days: show that report instead of spending tokens again.
     if (!competitor) {
       const existing = await recentAudit(url, device);
+      if (existing && email) await attachEmail(existing, email);
       if (existing) return Response.redirect(new URL(`/audit/${existing}`, req.url), 303);
     }
 
@@ -33,7 +36,7 @@ export async function POST(req: Request) {
     if ((count ?? 0) > MAX_PENDING) return fail("File d'attente pleine, réessaie dans un moment.", 503);
 
     const compareTo = competitor ? await createAudit(competitor, { device, missions: FORM_MISSIONS, ipHash }) : undefined;
-    const id = await createAudit(url, { device, missions: FORM_MISSIONS, compareTo, ipHash });
+    const id = await createAudit(url, { device, missions: FORM_MISSIONS, compareTo, email: email || undefined, ipHash });
     return Response.redirect(new URL(`/audit/${id}`, req.url), 303);
   } catch (e) {
     return fail(`Erreur : ${(e as Error).message}`);

@@ -411,17 +411,49 @@ async function closeAudits(log: string[]) {
       await db.from("audits").update({ recommendations }).eq("id", a.id);
     }
     log.push(`audit ${a.id} done`);
-    if (process.env.N8N_NOTIFY_URL) {
-      const scored = a.runs.filter((r: any) => r.status === "done" && r.success !== null && !["out_of_stock", "captcha_or_bot_block"].includes(r.blocker_type));
-      const done = scored.length;
-      const ok = scored.filter((r: any) => r.success).length;
-      await fetch(process.env.N8N_NOTIFY_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ audit_id: a.id, domain: (a.sites as any).domain, score: done ? Math.round((100 * ok) / done) : null, runs: done, url: `${process.env.PUBLIC_URL ?? ""}/audit/${a.id}` }),
-      }).catch(() => {});
-    }
+    await notifyDone(a.id);
   }
+}
+
+// Tells n8n an audit is finished: Telegram for the team, and the report e-mail when the visitor left an address.
+export async function notifyDone(auditId: string) {
+  if (!process.env.N8N_NOTIFY_URL) return;
+  const { data: a } = await db
+    .from("audits")
+    .select("id, kind, email, recommendations, sites(domain), runs(status, success, blocker_type)")
+    .eq("id", auditId)
+    .single();
+  if (!a) return;
+  const scored = a.runs.filter((r: any) => r.status === "done" && r.success !== null && !["out_of_stock", "captcha_or_bot_block"].includes(r.blocker_type));
+  const ok = scored.filter((r: any) => r.success).length;
+  const counts: Record<string, number> = {};
+  for (const r of scored) if (!r.success && r.blocker_type) counts[r.blocker_type] = (counts[r.blocker_type] ?? 0) + 1;
+  const blockers = Object.entries(counts)
+    .sort((x, y) => y[1] - x[1])
+    .slice(0, 3)
+    .map(([k, n]) => `${BLOCKERS[k] ?? k} (${n} mission${n > 1 ? "s" : ""})`);
+  await fetch(process.env.N8N_NOTIFY_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      audit_id: a.id,
+      kind: a.kind,
+      domain: (a.sites as any).domain,
+      score: scored.length ? Math.round((100 * ok) / scored.length) : null,
+      runs: scored.length,
+      ok,
+      blockers,
+      recommendations: a.recommendations ?? "",
+      email: a.email ?? null,
+      url: `${process.env.PUBLIC_URL ?? ""}/audit/${a.id}`,
+    }),
+  }).catch(() => {});
+}
+
+// Visitor asks for a report we already have (site audited < 7 days ago): keep their address, and send it now if the audit is finished.
+export async function attachEmail(auditId: string, email: string) {
+  const { data } = await db.from("audits").update({ email }).eq("id", auditId).select("status").single();
+  if (data?.status === "done") await notifyDone(auditId);
 }
 
 // ---------- Hugging Face (light models) ----------
