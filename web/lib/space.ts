@@ -116,6 +116,7 @@ export async function loadSpace(teamId: string) {
     }
     v.audits.push(a);
     if (a.status !== "done") v.running ??= a;
+    else if (!a.runs.length) continue; // payment-only test: no missions, must not hide the latest real audit
     else if (!v.latest) v.latest = a;
     else v.previous ??= a;
   }

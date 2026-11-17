@@ -32,7 +32,8 @@ export async function POST(req: Request) {
     // Same site audited in the last 7 days: show that report instead of spending tokens again.
     // "Relancer pour vérifier" sends force=1: the team fixed something and wants a fresh pass.
     // Real payment test: the team's own card, on the main site only (never the competitor), always a fresh audit.
-    const payment = form.get("payment") === "1";
+    const paymentOnly = form.get("mode") === "payment";
+    const payment = paymentOnly || form.get("payment") === "1";
     if (payment && !(await cardSecret(ctx.team.id))) return fail("Aucune carte utilisable pour l'équipe : ajoute-la dans Espace › Paiement.");
 
     if (!payment && !competitor && form.get("force") !== "1") {
@@ -48,9 +49,10 @@ export async function POST(req: Request) {
     const { count } = await db.from("runs").select("id", { count: "exact", head: true }).in("status", ["todo", "launched"]);
     if ((count ?? 0) > MAX_PENDING) return fail("File d'attente pleine, réessaie dans un moment.", 503);
 
-    const compareTo = competitor ? await createAudit(competitor, { device, missions: FORM_MISSIONS, ipHash, ...team }) : undefined;
+    // Payment only: no missions, no competitor, just the real payment test.
+    const compareTo = competitor && !paymentOnly ? await createAudit(competitor, { device, missions: FORM_MISSIONS, ipHash, ...team }) : undefined;
     const paymentTest = payment ? await createPaymentTest(url, team) : undefined;
-    const id = await createAudit(url, { device, missions: FORM_MISSIONS, compareTo, paymentTest, email: email || undefined, ipHash, ...team });
+    const id = await createAudit(url, { device, missions: paymentOnly ? 0 : FORM_MISSIONS, compareTo, paymentTest, email: email || undefined, ipHash, ...team });
     return Response.redirect(new URL(`/audit/${id}`, req.url), 303);
   } catch (e) {
     return fail(`Erreur : ${(e as Error).message}`);

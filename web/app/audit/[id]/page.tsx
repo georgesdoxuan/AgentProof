@@ -36,12 +36,13 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   const maxBlock = s.blockers[0]?.[1] ?? 1;
   const aside = s.excluded + s.unverified + s.errors;
 
+  const paymentOnly = runs.length === 0 && pays.length > 0;
   return (
     <div className="bg-bg-2 pb-24 pt-16 max-[734px]:pt-10">
       {running && <AutoRefresh />}
       <div className="wrap-wide space-y-20 max-[734px]:space-y-14">
         <header>
-          <p className="type-eyebrow text-ink-2">Rapport d&apos;audit · {audit.device === "mobile" ? "Mobile" : "Ordinateur"}</p>
+          <p className="type-eyebrow text-ink-2">{paymentOnly ? "Test de paiement" : "Rapport d\u2019audit"} · {audit.device === "mobile" ? "Mobile" : "Ordinateur"}</p>
           <h1 className="type-h1 mt-3 break-words">{audit.sites.name}</h1>
           <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-ink-2">
             <a href={audit.sites.url} className="text-link hover:underline" target="_blank" rel="noreferrer">
@@ -52,7 +53,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
               {new Date(audit.created_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris", dateStyle: "long", timeStyle: "short" })}
             </time>
           </p>
-          {running && (
+          {running && !paymentOnly && (
             <p className="mt-6 inline-flex items-center gap-2.5 rounded-full bg-tile px-4 py-2 type-small" role="status">
               <Spinner className="h-3.5 w-3.5 text-ink-2" />
               <span>
@@ -66,6 +67,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
         </header>
 
         {/* Verdict */}
+        {!paymentOnly && (
         <section className="grid gap-5 lg:grid-cols-[1.5fr_1fr]" aria-label="Score">
           <div className="tile">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -128,6 +130,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             </div>
           )}
         </section>
+        )}
 
         {pays.map((pay) => (
           <section key={pay.id} className="tile">
@@ -191,6 +194,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
           </section>
         )}
 
+        {!paymentOnly && (
         <section>
           <div className="mb-8 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
             <h2 className="type-h2">Missions.</h2>
@@ -260,6 +264,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             ))}
           </div>
         </section>
+        )}
       </div>
     </div>
   );

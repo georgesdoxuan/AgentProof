@@ -94,8 +94,11 @@ export async function createAudit(input: string, opts: { device?: "desktop" | "m
     .select()
     .single();
   if (e2) throw e2;
-  const { data: missions } = await db.from("missions").select("id").eq("active", true).order("position").limit(opts.missions ?? 10);
-  await db.from("runs").insert(missions!.map((m) => ({ audit_id: audit.id, mission_id: m.id })));
+  // missions: 0 = payment test only (the audit just carries the payment_test link).
+  if (opts.missions !== 0) {
+    const { data: missions } = await db.from("missions").select("id").eq("active", true).order("position").limit(opts.missions ?? 10);
+    await db.from("runs").insert(missions!.map((m) => ({ audit_id: audit.id, mission_id: m.id })));
+  }
   return audit.id as string;
 }
 
@@ -539,7 +542,7 @@ async function closeAudits(log: string[]) {
     // Reserve first: two concurrent ticks must not close and notify the same audit twice.
     const { data: closed } = await db.from("audits").update({ status: "done", finished_at: new Date().toISOString() }).eq("id", a.id).eq("status", "running").select("id");
     if (!closed?.length) continue;
-    if (a.kind !== "payment") {
+    if (a.kind !== "payment" && a.runs.length) {
       const recommendations = await writeRecommendations((a.sites as any).domain, a.runs).catch((e) => `Plan de corrections indisponible (${e}).`);
       await db.from("audits").update({ recommendations }).eq("id", a.id);
     }
