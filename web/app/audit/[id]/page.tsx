@@ -6,7 +6,7 @@ import { BrowserFrame, Chevron, MissionBar, Spinner, StatusBadge, ToneLabel, Ver
 import { AutoRefresh } from "./refresh";
 
 const RUN_FIELDS =
-  "id, status, success, reached_checkout, blocker_type, blocker_detail, screenshot_url, final_url, steps, duration_s, cost_usd, judge, agent_answer, missions(title, position)";
+  "id, status, session_id, success, reached_checkout, blocker_type, blocker_detail, screenshot_url, final_url, steps, duration_s, cost_usd, judge, agent_answer, missions(title, position)";
 
 async function loadAudit(id: string) {
   const { data } = await db.from("audits").select(`*, sites(domain, name, url), runs(${RUN_FIELDS})`).eq("id", id).maybeSingle();
@@ -162,6 +162,17 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                     <StatusBadge run={r} />
                   </div>
                   <h3 className="type-h3 mt-3">{r.missions.title}</h3>
+                  {r.status === "launched" && r.session_id && (
+                    <div className="mt-auto pt-6">
+                      <Link href={`/replay/${r.id}`} className="btn min-h-[40px] gap-2 px-[18px] text-[15px]">
+                        <span className="relative flex h-2 w-2" aria-hidden>
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-70 motion-reduce:hidden" />
+                          <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+                        </span>
+                        Regarder l&apos;agent en direct
+                      </Link>
+                    </div>
+                  )}
                   {r.status === "done" && (
                     <>
                       {!r.success && r.success !== null && <p className="mt-4 font-semibold">{blockerLabel(r.blocker_type)}</p>}

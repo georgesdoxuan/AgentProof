@@ -530,11 +530,12 @@ async function writeRecommendations(domain: string, runs: any[]) {
 // ---------- replay: public trajectory, step by step ----------
 export type ReplayStep = { url: string; image: string; action: string | null; element: string | null; x: number | null; y: number | null; thought: string | null };
 
-export async function getReplay(runId: number) {
+export async function getReplay(runId: number, live = false) {
   const shareUrl = await shareRun(runId);
   if (!shareUrl) return null;
   // Shared trajectories and their screenshots are public: no key, no rate limit.
-  const t = await (await fetch(shareUrl, { next: { revalidate: 3600 } })).json();
+  // The shared trajectory grows while the session runs: no cache for a live view.
+  const t = await (await fetch(shareUrl, live ? { cache: "no-store" } : { next: { revalidate: 3600 } })).json();
   const steps: ReplayStep[] = [];
   for (const e of t.events ?? []) {
     const ev = e.data?.event;
