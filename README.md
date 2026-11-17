@@ -19,7 +19,7 @@ Contexte complet : [CONTEXT.md](CONTEXT.md) · Plan d'action : [PLAN.md](PLAN.md
 
 1. **Missions** : 10 parcours d'achat réalistes (recherche, menu, filtre prix, variante, promo, panier…).
 2. **Score** : part des missions où l'agent atteint le checkout.
-3. **Preuves** : dernière capture de l'agent + replay public de la session H.
+3. **Preuves** : dernière capture de l'agent + replay étape par étape (écran, action, point cliqué, raisonnement).
 4. **Juge visuel** : un modèle de vision Hugging Face vérifie la capture, pour ne pas croire l'agent sur parole.
 5. **Corrections** : blocages classés par impact et plan de corrections écrit par un LLM.
 
