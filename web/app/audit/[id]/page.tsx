@@ -7,7 +7,7 @@ import { BrowserFrame, MissionBar, Recommendations, Spinner, StatusBadge, ToneLa
 import { AutoRefresh } from "./refresh";
 
 const RUN_FIELDS =
-  "id, status, payment_verdict, with_login, session_id, success, reached_checkout, blocker_type, blocker_detail, screenshot_url, final_url, steps, duration_s, cost_usd, judge, agent_answer, missions(title, position)";
+  "id, status, payment_verdict, with_login, session_id, success, reached_checkout, blocker_type, blocker_detail, screenshot_url, final_url, steps, duration_s, cost_usd, judge, agent_answer, attempts, first_attempt, missions(title, position)";
 
 // Average duration and agent cost per finished mission: what a model comparison is about.
 function perMission(runs: any[]) {
@@ -226,6 +226,12 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                     <StatusBadge run={r} />
                   </div>
                   <h3 className="type-h3 mt-3">{r.missions.title}</h3>
+                  {r.first_attempt && (
+                    <p className="type-small mt-3 text-ink-2">
+                      Mission rejouée : le premier essai a échoué ({r.first_attempt.blocker_type ? blockerLabel(r.first_attempt.blocker_type) : "erreur technique"}).
+                      {r.status === "done" && r.success !== null && (r.success ? " Le second a réussi : l’échec n’était pas reproductible." : " Le second confirme l’échec.")}
+                    </p>
+                  )}
                   {r.status === "launched" && r.session_id && (
                     <div className="mt-auto pt-6">
                       <Link href={`/replay/${r.id}?a=${audit.id}`} className="btn min-h-[40px] gap-2 px-[18px] text-[15px]">

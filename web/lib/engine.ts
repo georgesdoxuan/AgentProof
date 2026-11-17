@@ -448,7 +448,7 @@ async function finalize(run: any, items: Ev[], state: string) {
   let screenshot_url: string | null = null;
   if (obs) {
     const img = await h(obs.data.image.source);
-    const path = `${run.id}.png`;
+    const path = run.attempts > 1 ? `${run.id}-${run.attempts}.png` : `${run.id}.png`; // a replayed mission keeps its first screenshot
     await db.storage.from("screenshots").upload(path, await img.arrayBuffer(), { contentType: "image/png", upsert: true });
     screenshot_url = db.storage.from("screenshots").getPublicUrl(path).data.publicUrl;
   }
@@ -467,6 +467,8 @@ async function finalize(run: any, items: Ev[], state: string) {
   // Out of steps with no named blocker: the agent ran out of room, the site is not proven guilty (same rule as payment tests).
   if (success !== true && blocker === "other" && (state === "stale" || (metrics?.steps ?? 0) >= MISSION_STEPS)) blocker = "agent_out_of_steps";
 
+  const cost = metrics?.total_cost ?? usage.total_cost;
+  const firstCost = Number(run.first_attempt?.cost_usd ?? 0);
   await db
     .from("runs")
     .update({
@@ -484,7 +486,7 @@ async function finalize(run: any, items: Ev[], state: string) {
       input_tokens: usage.input_tokens ?? null,
       cached_tokens: usage.cached_tokens ?? null,
       output_tokens: usage.output_tokens ?? null,
-      cost_usd: metrics?.total_cost ?? usage.total_cost ?? null,
+      cost_usd: cost == null && !firstCost ? null : Number(cost ?? 0) + firstCost, // a replayed mission costs both attempts
       duration_s: (new Date(items[0]?.timestamp ?? Date.now()).getTime() - new Date(run.launched_at).getTime()) / 1000,
       finished_at: new Date().toISOString(),
     })
@@ -562,10 +564,50 @@ async function finalizePayment(run: any, items: Ev[], state: string, obs: Ev | u
     .eq("id", run.id);
 }
 
+// A failure counts only if it happens twice: each failed mission is replayed once before the audit closes.
+// Outcomes that a replay cannot change (anti-bot, out of stock, account wall, mission impossible here) are not replayed.
+const NO_RETRY = ["captcha_or_bot_block", "out_of_stock", "login_required", "mission_not_applicable"];
+
+async function retryFailures(a: any) {
+  if (a.kind === "payment") return 0;
+  let replayed = 0;
+  for (const r of a.runs) {
+    const failed = r.status === "error" || (r.status === "done" && r.success === false && !NO_RETRY.includes(r.blocker_type));
+    if (!failed || r.attempts > 1) continue;
+    // Guarded on attempts = 1: two concurrent ticks never replay the same mission twice.
+    const { data } = await db
+      .from("runs")
+      .update({
+        status: "todo",
+        attempts: 2,
+        first_attempt: {
+          session_id: r.session_id, success: r.success, blocker_type: r.blocker_type, blocker_detail: r.blocker_detail,
+          screenshot_url: r.screenshot_url, share_url: r.share_url, steps: r.steps, cost_usd: r.cost_usd, error: r.error,
+        },
+        launched_at: null, session_id: null, agent_view_url: null, share_url: null, h_status: null, finished_at: null,
+        success: null, blocker_type: null, blocker_detail: null, screenshot_url: null, judge: null, agent_answer: null, final_url: null, error: null,
+      })
+      .eq("id", r.id)
+      .eq("attempts", 1)
+      .in("status", ["done", "error"])
+      .select("id");
+    replayed += data?.length ?? 0;
+  }
+  return replayed;
+}
+
 async function closeAudits(log: string[]) {
-  const { data: audits } = await db.from("audits").select("id, kind, sites(domain), runs(status, success, blocker_type, blocker_detail, missions(title))").eq("status", "running");
+  const { data: audits } = await db
+    .from("audits")
+    .select("id, kind, sites(domain), runs(id, status, success, blocker_type, blocker_detail, attempts, session_id, screenshot_url, share_url, steps, cost_usd, error, missions(title))")
+    .eq("status", "running");
   for (const a of audits ?? []) {
     if (a.runs.some((r: any) => r.status === "todo" || r.status === "launched")) continue;
+    const replayed = await retryFailures(a);
+    if (replayed) {
+      log.push(`audit ${a.id}: ${replayed} failed mission(s) replayed`);
+      continue;
+    }
     // Reserve first: two concurrent ticks must not close and notify the same audit twice.
     const { data: closed } = await db.from("audits").update({ status: "done", finished_at: new Date().toISOString() }).eq("id", a.id).eq("status", "running").select("id");
     if (!closed?.length) continue;

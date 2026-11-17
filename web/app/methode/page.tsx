@@ -48,6 +48,10 @@ export default function Methode() {
             Une rupture de stock ou un blocage anti-bot ne compte pas dans le score : ils sont affichés à part. Dans le classement, le score d&apos;un site est la moyenne de ses
             deux derniers passages publics, pour lisser une mission ratée par hasard.
           </p>
+          <p>
+            Un échec ne compte que s&apos;il se reproduit : chaque mission ratée est rejouée une fois avant la fin de l&apos;audit, et c&apos;est le second essai qui fait foi. On ne
+            rejoue pas ce qu&apos;un nouvel essai ne changerait pas : anti-bot, rupture de stock, compte obligatoire, mission impossible sur le catalogue.
+          </p>
         </Section>
 
         <Section title="Les limites">
