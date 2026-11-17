@@ -111,12 +111,11 @@ export async function auditsFromIp(ipHash: string) {
   return count ?? 0;
 }
 
-// Stay inside the free monthly H allowance (60M tokens): stop launching once our own runs used TOKEN_BUDGET.
+// Stay inside the free monthly H allowance (60M tokens): ask H itself, keep TOKEN_RESERVE untouched.
+// (Our own token columns include cached input, which H does not count: they overstate usage about 3x.)
 async function withinTokenBudget() {
-  const since = new Date(Date.now() - 30 * 86400_000).toISOString();
-  const { data } = await db.from("runs").select("input_tokens, output_tokens").gte("finished_at", since);
-  const used = (data ?? []).reduce((t, r) => t + (r.input_tokens ?? 0) + (r.output_tokens ?? 0), 0);
-  return used < Number(process.env.TOKEN_BUDGET ?? 45_000_000);
+  const q = await (await h("/quota/tokens")).json();
+  return q.remaining > Number(process.env.TOKEN_RESERVE ?? 10_000_000);
 }
 
 // One real payment attempt with the team's card (team space) or AgentProof's own card (staff R&D page, no team).
@@ -169,16 +168,19 @@ export async function tick() {
 
     // 2. Launch todo runs while there are free slots, request budget and token budget.
     const { count: active } = await db.from("runs").select("id", { count: "exact", head: true }).eq("status", "launched");
-    const slots = Math.min(MAX_ACTIVE - (active ?? 0), budget);
-    if (slots > 0 && !(await withinTokenBudget())) log.push("token budget reached, nothing launched");
-    else if (slots > 0) {
+    const slots = Math.min(MAX_ACTIVE - (active ?? 0), budget - 1); // -1: the quota check below
+    if (slots > 0) {
       const { data: todo } = await db
         .from("runs")
         .select("*, missions(instruction, slug), audits(device, team_id, sites(url))")
         .eq("status", "todo")
         .order("created_at")
         .limit(slots);
-      for (const run of todo ?? []) {
+      // One request to H's quota, only when there is something to launch.
+      if (todo?.length) budget--;
+      const launchable = todo?.length && (await withinTokenBudget()) ? todo : [];
+      if (todo?.length && !launchable.length) log.push("token reserve reached, nothing launched");
+      for (const run of launchable) {
         // Reserve the run first, so two concurrent ticks never launch it twice.
         const launchedAt = new Date().toISOString();
         const { data: reserved } = await db
