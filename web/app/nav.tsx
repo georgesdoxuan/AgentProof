@@ -2,40 +2,21 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const LINKS = [
-  ["/classement", "Classement"],
-  ["/#tester", "Tester mon site"],
-] as const;
-
+// apple.com local nav: small links, one small blue pill for the primary action.
 export function Nav() {
   const path = usePathname();
   return (
-    <div className="flex items-center gap-1 text-[15px] font-medium">
-      {LINKS.map(([href, label]) => {
-        const current = href === path;
-        const primary = href === "/#tester";
-        return (
-          <Link
-            key={href}
-            href={href}
-            aria-current={current ? "page" : undefined}
-            className={
-              primary
-                ? "ml-1 inline-flex h-9 items-center whitespace-nowrap rounded-full bg-ink px-4 text-paper transition-opacity hover:opacity-85"
-                : `inline-flex h-11 items-center rounded-full px-3 transition-colors hover:text-ink ${current ? "text-ink" : "text-ink-2"}`
-            }
-          >
-            {primary ? (
-              <>
-                <span className="sm:hidden">Tester</span>
-                <span className="hidden sm:inline">{label}</span>
-              </>
-            ) : (
-              label
-            )}
-          </Link>
-        );
-      })}
+    <div className="flex items-center gap-1 type-caption sm:gap-3">
+      <Link
+        href="/classement"
+        aria-current={path === "/classement" ? "page" : undefined}
+        className="inline-flex h-11 items-center px-2 text-ink/80 transition-colors hover:text-ink aria-[current=page]:text-ink-2"
+      >
+        Classement
+      </Link>
+      <Link href="/#tester" className="inline-flex h-7 items-center rounded-full bg-blue px-[11px] text-white transition-colors hover:bg-[var(--blue-hover)]">
+        Tester mon site
+      </Link>
     </div>
   );
 }

@@ -70,12 +70,12 @@ export function normalizeUrl(input: string) {
 
 export async function createAudit(input: string, opts: { device?: "desktop" | "mobile"; missions?: number; compareTo?: string; email?: string; ipHash?: string } = {}) {
   const { url, domain } = normalizeUrl(input);
-  const { data: site, error: e1 } = await db
+  const { data: created, error: e1 } = await db
     .from("sites")
-    .upsert({ domain, name: domain, url }, { onConflict: "domain", ignoreDuplicates: false })
-    .select()
-    .single();
+    .upsert({ domain, name: domain, url }, { onConflict: "domain", ignoreDuplicates: true })
+    .select();
   if (e1) throw e1;
+  const site = created?.[0] ?? (await db.from("sites").select().eq("domain", domain).single()).data;
   const { data: audit, error: e2 } = await db
     .from("audits")
     .insert({ site_id: site.id, device: opts.device ?? "desktop", compare_to: opts.compareTo ?? null, email: opts.email ?? null, ip_hash: opts.ipHash ?? null })
@@ -122,9 +122,10 @@ export async function createPaymentTest(input: string) {
   for (const k of ["TEST_CARD_NUMBER", "TEST_CARD_EXPIRY", "TEST_CARD_CVC", "TEST_CARD_NAME", "TEST_EMAIL"])
     if (!process.env[k] || process.env[k] === "A_REMPLIR") throw new Error(`Carte de test non configurée (${k} manquant dans Vercel).`);
   const { url, domain } = normalizeUrl(input);
-  const { data: site, error } = await db.from("sites").upsert({ domain, name: domain, url }, { onConflict: "domain" }).select().single();
+  const { error } = await db.from("sites").upsert({ domain, name: domain, url }, { onConflict: "domain", ignoreDuplicates: true });
   if (error) throw error;
-  const { data: audit } = await db.from("audits").insert({ site_id: site.id, kind: "payment" }).select().single();
+  const { data: site } = await db.from("sites").select().eq("domain", domain).single();
+  const { data: audit } = await db.from("audits").insert({ site_id: site!.id, kind: "payment" }).select().single();
   const { data: mission } = await db.from("missions").select("id").eq("slug", "paiement").single();
   await db.from("runs").insert({ audit_id: audit!.id, mission_id: mission!.id });
   return audit!.id as string;
@@ -421,16 +422,34 @@ async function closeAudits(log: string[]) {
 }
 
 // ---------- Hugging Face (light models) ----------
+// Some providers ignore "thinking off" and spend the whole budget reasoning, leaving an empty answer.
+// So: a pinned provider that honours it first, then the default route with room for reasoning.
+const HF_ATTEMPTS = [process.env.HF_PROVIDER ?? "primeintellect", ""];
+
 async function hf(messages: unknown[], max_tokens = 400) {
-  const res = await fetch("https://router.huggingface.co/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${process.env.HF_TOKEN}`, "Content-Type": "application/json" },
-    // Thinking off: otherwise reasoning can eat the whole token budget and leave an empty answer.
-    body: JSON.stringify({ model: JUDGE_MODEL, messages, max_tokens, temperature: 0, chat_template_kwargs: { enable_thinking: false } }),
-  });
-  if (!res.ok) throw new Error(`HF ${res.status}: ${(await res.text()).slice(0, 200)}`);
-  const text: string = (await res.json()).choices[0].message.content ?? "";
-  return text.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+  let last: unknown;
+  for (const [i, provider] of HF_ATTEMPTS.entries()) {
+    try {
+      const res = await fetch("https://router.huggingface.co/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${process.env.HF_TOKEN}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: provider ? `${JUDGE_MODEL}:${provider}` : JUDGE_MODEL,
+          messages,
+          max_tokens: i === 0 ? max_tokens : max_tokens + 1500,
+          temperature: 0,
+          chat_template_kwargs: { enable_thinking: false },
+        }),
+      });
+      if (!res.ok) throw new Error(`HF ${res.status}: ${(await res.text()).slice(0, 200)}`);
+      const text = ((await res.json()).choices[0].message.content ?? "").replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+      if (text) return text;
+      last = new Error("HF: empty answer");
+    } catch (e) {
+      last = e;
+    }
+  }
+  throw last;
 }
 
 export async function judgeScreenshot(imageUrl: string, mission: string | undefined) {

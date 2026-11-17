@@ -1,132 +1,307 @@
 @import "tailwindcss";
 
-/* AgentProof tokens. One color, one meaning:
-   accent = the agent and interactive things, pass / warn / fail = audit outcome only.
-   Contrast figures are against --card. */
+/* AgentProof design tokens, modeled on apple.com.
+   One color, one meaning: blue = action, pass / warn / fail = audit outcome only.
+   Contrast ratios are text on --bg / on --bg-2. */
 :root {
-  --paper: #f5f4f0;
-  --card: #ffffff;
-  --card-2: #efede7;
-  --line: rgb(20 22 27 / 0.1);
-  --ink: #14161b; /* 18.4:1 */
-  --ink-2: #484d57; /* 8.7:1 */
-  --ink-3: #686d77; /* 5.2:1 */
-  --accent: #2847d6; /* 7.1:1 */
-  --accent-soft: rgb(40 71 214 / 0.1);
-  --pass: #0b7445; /* 5.9:1 */
-  --pass-soft: rgb(11 116 69 / 0.1);
-  --warn: #8f5400; /* 6.0:1 */
-  --warn-soft: rgb(176 104 0 / 0.12);
-  --fail: #bb2a1b; /* 6.1:1 */
-  --fail-soft: rgb(187 42 27 / 0.1);
-  --shadow: 0 1px 2px rgb(20 22 27 / 0.04), 0 8px 24px -12px rgb(20 22 27 / 0.12);
+  --bg: #ffffff;
+  --bg-2: #f5f5f7; /* alternate sections, grouped pages */
+  --tile: #ffffff; /* tiles sitting on --bg-2 */
+  --fill: #e8e8ed; /* control tracks, segmented control */
+  --line: #d2d2d7;
+  --hairline: rgb(0 0 0 / 0.08);
+  --ink: #1d1d1f; /* 16.8 / 15.5 */
+  --ink-2: #6e6e73; /* 5.1 / 4.7 */
+  --link: #0066cc; /* 5.6 / 5.1 */
+  --blue: #0071e3; /* white on it 4.7 */
+  --blue-hover: #0076df; /* white on it 4.5 */
+  --pass: #00792e; /* 5.6 / 5.1 */
+  --warn: #b25000; /* 5.2 / 4.8 */
+  --fail: #d70015; /* 5.4 / 4.9 */
+  --nav: rgb(255 255 255 / 0.72);
+  --glass: rgb(255 255 255 / 0.78);
+  --shot-shadow: 0 2px 6px rgb(0 0 0 / 0.04), 0 24px 60px -20px rgb(0 0 0 / 0.22);
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --paper: #0d0e11;
-    --card: #16181d;
-    --card-2: #1e2127;
-    --line: rgb(255 255 255 / 0.09);
-    --ink: #f1f0ec; /* 16.2:1 */
-    --ink-2: #b3b6bd; /* 8.9:1 */
-    --ink-3: #8b8f98; /* 5.5:1 */
-    --accent: #8aa2ff; /* 7.4:1 */
-    --accent-soft: rgb(138 162 255 / 0.14);
-    --pass: #45d08f; /* 9.3:1 */
-    --pass-soft: rgb(69 208 143 / 0.13);
-    --warn: #f0b04e; /* 9.6:1 */
-    --warn-soft: rgb(240 176 78 / 0.14);
-    --fail: #ff8070; /* 6.9:1 */
-    --fail-soft: rgb(255 128 112 / 0.13);
-    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 32px -16px rgb(0 0 0 / 0.6);
+    --bg: #000000;
+    --bg-2: #000000;
+    --tile: #1c1c1e;
+    --fill: #2c2c2e;
+    --line: #424245;
+    --hairline: rgb(255 255 255 / 0.1);
+    --ink: #f5f5f7; /* 19.3 / 15.6 on tile */
+    --ink-2: #98989d; /* 7.3 / 5.9 on tile */
+    --link: #2997ff; /* 7.0 / 5.6 on tile */
+    --blue: #0071e3;
+    --blue-hover: #0076df;
+    --pass: #30d158;
+    --warn: #ff9f0a;
+    --fail: #ff6961;
+    --nav: rgb(22 22 23 / 0.72);
+    --glass: rgb(28 28 30 / 0.78);
+    --shot-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 24px 60px -20px rgb(0 0 0 / 0.8);
     color-scheme: dark;
   }
 }
 
 @media (prefers-contrast: more) {
   :root {
-    --line: color-mix(in srgb, var(--ink) 35%, transparent);
-    --ink-3: var(--ink-2);
+    --line: var(--ink-2);
+    --hairline: var(--ink-2);
+    --ink-2: color-mix(in srgb, var(--ink) 75%, var(--bg));
   }
 }
 
 @theme inline {
-  --color-paper: var(--paper);
-  --color-card: var(--card);
-  --color-card-2: var(--card-2);
+  --color-bg: var(--bg);
+  --color-bg-2: var(--bg-2);
+  --color-tile: var(--tile);
+  --color-fill: var(--fill);
   --color-line: var(--line);
+  --color-hairline: var(--hairline);
   --color-ink: var(--ink);
   --color-ink-2: var(--ink-2);
-  --color-ink-3: var(--ink-3);
-  --color-accent: var(--accent);
-  --color-accent-soft: var(--accent-soft);
+  --color-link: var(--link);
+  --color-blue: var(--blue);
   --color-pass: var(--pass);
-  --color-pass-soft: var(--pass-soft);
   --color-warn: var(--warn);
-  --color-warn-soft: var(--warn-soft);
   --color-fail: var(--fail);
-  --color-fail-soft: var(--fail-soft);
-  --shadow-card: var(--shadow);
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, sans-serif;
-  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", Roboto, sans-serif;
+  --color-glass: var(--glass);
+  /* SF Pro on Apple devices through the system font: optical sizes switch on their own. Never shipped as a webfont. */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --ease-apple: cubic-bezier(0.4, 0, 0.6, 1);
+  --ease-color: cubic-bezier(0.28, 0.11, 0.32, 1);
 }
 
 html {
-  background: var(--paper);
+  background: var(--bg);
   -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--paper);
+  background: var(--bg);
   color: var(--ink);
   font-family: var(--font-sans);
-  font-size: 1.0625rem; /* 17px body */
-  line-height: 1.5;
-  font-feature-settings: "cv11", "ss01";
+  font-size: 17px;
+  line-height: 1.47059;
+  letter-spacing: -0.022em;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--blue) 24%, transparent);
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--blue);
   outline-offset: 3px;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
-.tnum {
+/* ---------- Type scale: apple.com sizes, weights, leading and tracking ---------- */
+@utility type-hero {
+  font-size: 80px;
+  line-height: 1.05;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+  @media (max-width: 1068px) { font-size: 64px; line-height: 1.0625; letter-spacing: -0.009em; }
+  @media (max-width: 734px) { font-size: 44px; line-height: 1.0909; letter-spacing: -0.004em; }
+}
+@utility type-h1 {
+  font-size: 56px;
+  line-height: 1.07143;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  text-wrap: balance;
+  @media (max-width: 1068px) { font-size: 48px; line-height: 1.08349; letter-spacing: -0.003em; }
+  @media (max-width: 734px) { font-size: 36px; line-height: 1.1111; letter-spacing: 0; }
+}
+@utility type-h2 {
+  font-size: 40px;
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-wrap: balance;
+  @media (max-width: 734px) { font-size: 32px; line-height: 1.125; letter-spacing: 0.004em; }
+}
+@utility type-h3 {
+  font-size: 28px;
+  line-height: 1.14286;
+  font-weight: 600;
+  letter-spacing: 0.007em;
+  text-wrap: balance;
+  @media (max-width: 734px) { font-size: 24px; line-height: 1.16667; letter-spacing: 0.009em; }
+}
+@utility type-subhead {
+  font-size: 28px;
+  line-height: 1.14286;
+  font-weight: 400;
+  letter-spacing: 0.007em;
+  text-wrap: balance;
+  @media (max-width: 734px) { font-size: 21px; line-height: 1.381; letter-spacing: 0.011em; }
+}
+@utility type-intro {
+  font-size: 21px;
+  line-height: 1.381;
+  font-weight: 400;
+  letter-spacing: 0.011em;
+  text-wrap: pretty;
+  @media (max-width: 734px) { font-size: 19px; line-height: 1.4211; letter-spacing: 0.012em; }
+}
+@utility type-eyebrow {
+  font-size: 21px;
+  line-height: 1.19048;
+  font-weight: 600;
+  letter-spacing: 0.011em;
+  @media (max-width: 734px) { font-size: 17px; line-height: 1.23536; letter-spacing: -0.022em; }
+}
+@utility type-headline {
+  font-size: 19px;
+  line-height: 1.21053;
+  font-weight: 600;
+  letter-spacing: 0.012em;
+}
+@utility type-body {
+  font-size: 17px;
+  line-height: 1.47059;
+  letter-spacing: -0.022em;
+}
+@utility type-small {
+  font-size: 14px;
+  line-height: 1.42859;
+  letter-spacing: -0.016em;
+}
+@utility type-caption {
+  font-size: 12px;
+  line-height: 1.33337;
+  letter-spacing: -0.01em;
+}
+@utility tnum {
   font-variant-numeric: tabular-nums;
 }
 
-/* Signature: the agent's cursor. Same mark on the home page and in every replay. */
-@keyframes ap-pulse {
-  0% { transform: scale(0.6); opacity: 0.9; }
-  100% { transform: scale(2.4); opacity: 0; }
+/* ---------- Layout ---------- */
+@utility wrap {
+  width: min(980px, 87.5%);
+  margin-inline: auto;
 }
+@utility wrap-wide {
+  width: min(1200px, 87.5%);
+  margin-inline: auto;
+}
+/* Product-page tile: radius 30 / 25 / 20, padding 40 / 30. */
+@utility tile {
+  border-radius: 30px;
+  background: var(--tile);
+  padding: 40px;
+  overflow: hidden;
+  @media (max-width: 1068px) { border-radius: 25px; }
+  @media (max-width: 734px) { border-radius: 20px; padding: 28px 24px; }
+}
+@utility section {
+  padding-block: 120px;
+  @media (max-width: 734px) { padding-block: 72px; }
+}
+
+/* ---------- Controls ---------- */
+@utility btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 48px;
+  padding: 0 22px;
+  border-radius: 980px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 400;
+  letter-spacing: -0.022em;
+  white-space: nowrap;
+  transition: background-color 0.24s var(--ease-color), color 0.24s var(--ease-color);
+  &:hover { background: var(--blue-hover); }
+}
+@utility btn-secondary {
+  background: transparent;
+  color: var(--link);
+  box-shadow: inset 0 0 0 1px var(--link);
+  &:hover { background: var(--link); color: var(--bg); }
+}
+@utility btn-dark {
+  background: var(--ink);
+  color: var(--bg);
+  &:hover { background: color-mix(in srgb, var(--ink) 82%, var(--bg)); }
+}
+/* "En savoir plus ›" text link, the way apple.com writes secondary actions. */
+@utility more {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 44px;
+  color: var(--link);
+  &:hover { text-decoration: underline; text-underline-offset: 0.18em; }
+  &::after {
+    content: "";
+    width: 0.5em;
+    height: 0.5em;
+    margin-left: 0.25em;
+    border-right: 1.6px solid currentColor;
+    border-top: 1.6px solid currentColor;
+    transform: rotate(45deg) translateY(0.02em);
+    flex: none;
+  }
+}
+
+/* ---------- Signature: the agent hits a cookie banner (home hero, plays once) ---------- */
 @keyframes ap-travel {
-  0% { transform: translate(-150%, -120%); opacity: 0; }
-  15% { opacity: 1; }
-  55%, 100% { transform: translate(0, 0); opacity: 1; }
+  0% { transform: translate(-260px, -150px); opacity: 0; }
+  12% { opacity: 1; }
+  48%, 100% { transform: translate(0, 0); opacity: 1; }
 }
-@keyframes ap-stamp {
-  0%, 60% { transform: rotate(-8deg) scale(1.6); opacity: 0; }
-  72% { transform: rotate(-8deg) scale(0.96); opacity: 1; }
-  100% { transform: rotate(-8deg) scale(1); opacity: 1; }
+@keyframes ap-tap {
+  0%, 46% { transform: scale(0.4); opacity: 0; }
+  52% { transform: scale(1); opacity: 0.55; }
+  70%, 100% { transform: scale(2.2); opacity: 0; }
+}
+@keyframes ap-banner {
+  0%, 56% { transform: translateY(102%); }
+  74%, 100% { transform: translateY(0); }
+}
+@keyframes ap-verdict {
+  0%, 78% { transform: translateY(8px) scale(0.96); opacity: 0; }
+  90%, 100% { transform: none; opacity: 1; }
+}
+@keyframes ap-ring {
+  0% { transform: scale(0.6); opacity: 0.7; }
+  100% { transform: scale(2.4); opacity: 0; }
 }
 @keyframes ap-spin {
   to { transform: rotate(360deg); }
 }
-.ap-pulse { animation: ap-pulse 1.6s ease-out infinite; }
-.ap-travel { animation: ap-travel 2.8s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-.ap-stamp { animation: ap-stamp 2.8s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-.ap-spin { animation: ap-spin 0.9s linear infinite; }
+/* Hero copy fades in once on load, the way apple.com product heroes do. Nothing else on the site enters. */
+@keyframes ap-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@utility ap-fade { animation: ap-fade 1.2s ease-out both; }
+@utility ap-travel { animation: ap-travel 3.2s var(--ease-apple) 0.4s both; }
+@utility ap-tap { animation: ap-tap 3.2s var(--ease-apple) 0.4s both; }
+@utility ap-banner { animation: ap-banner 3.2s var(--ease-apple) 0.4s both; }
+@utility ap-verdict { animation: ap-verdict 3.2s var(--ease-apple) 0.4s both; }
+@utility ap-ring { animation: ap-ring 1.8s var(--ease-apple) infinite; }
+@utility ap-spin { animation: ap-spin 0.9s linear infinite; }
 
 @media (prefers-reduced-motion: reduce) {
-  .ap-pulse, .ap-spin { animation: none; }
-  .ap-travel, .ap-stamp { animation-duration: 1ms; }
-  html { scroll-behavior: auto; }
+  .ap-fade, .ap-travel, .ap-tap, .ap-banner, .ap-verdict { animation-duration: 1ms; animation-delay: 0s !important; }
+  .ap-ring, .ap-spin { animation: none; }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  html { scroll-behavior: smooth; }
+@media (prefers-reduced-transparency: reduce) {
+  :root { --nav: var(--bg); --glass: var(--tile); }
 }
