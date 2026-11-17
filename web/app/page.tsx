@@ -67,8 +67,8 @@ export default async function Home() {
       <section className="section bg-bg-2">
         <div className="wrap-wide">
           <h2 className="type-h1 mb-12 max-[734px]:mb-8">Ce que tu reçois.</h2>
-          <div className="grid gap-5 lg:grid-cols-2">
-            <article className="tile grid items-center gap-10 lg:col-span-2 lg:grid-cols-[1fr_1.1fr]">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-2">
+            <article className="tile grid grid-cols-[minmax(0,1fr)] items-center gap-10 lg:col-span-2 lg:grid-cols-[1fr_1.1fr]">
               <div>
                 <p className="type-eyebrow text-ink-2">Missions</p>
                 <h3 className="type-h2 mt-3">Cinq achats réels, jusqu&apos;au checkout.</h3>
@@ -283,7 +283,7 @@ function FixesVisual() {
 // A product page as the agent sees it. Plays once: the agent taps "Ajouter au panier", a cookie banner slides over it.
 function ProductMock() {
   return (
-    <div className="relative flex aspect-[16/9] select-none flex-col bg-tile text-left text-ink max-[734px]:aspect-[4/3.6]" aria-hidden>
+    <div className="scheme-light relative flex aspect-[16/9] select-none flex-col bg-tile text-left text-ink max-[734px]:aspect-[4/3.6]" aria-hidden>
       <div className="flex items-center justify-between border-b border-hairline px-8 py-4 max-[734px]:px-4 max-[734px]:py-2.5">
         <span className="text-[13px] font-semibold tracking-[0.32em]">MAISON</span>
         <span className="flex gap-6 text-[12px] text-ink-2 max-[734px]:hidden">
@@ -294,7 +294,7 @@ function ProductMock() {
         </span>
       </div>
       <div className="grid min-h-0 flex-1 grid-cols-[1.1fr_1fr] gap-10 p-8 max-[734px]:gap-4 max-[734px]:p-4">
-        <div className="relative overflow-hidden rounded-[6px] bg-[#ececee] dark:bg-[#2c2c2e]">
+        <div className="relative overflow-hidden rounded-[6px] bg-[#ececee]">
           <svg viewBox="0 0 100 125" className="absolute inset-0 h-full w-full" preserveAspectRatio="xMidYMid meet">
             <path d="M31 30l12-6h14l12 6 13 24-11 6-6-10v52H35V50l-6 10-11-6z" fill="#1d1d1f" />
             <path d="M43 24c2 5 12 5 14 0" fill="none" stroke="#3a3a3c" strokeWidth="1" />
@@ -331,12 +331,12 @@ function ProductMock() {
           Nous utilisons des cookies pour améliorer votre expérience, mesurer l&apos;audience et personnaliser les contenus. Vous pouvez modifier vos choix à tout moment.
         </p>
         <div className="mt-4 flex gap-2 max-[734px]:mt-2">
-          <span className="flex h-9 items-center rounded-[6px] bg-bg-2 px-4 text-[12px] text-ink-2 max-[734px]:h-6 max-[734px]:px-2 max-[734px]:text-[9px] dark:bg-[#2c2c2e]">Paramétrer</span>
-          <span className="flex h-9 items-center rounded-[6px] bg-bg-2 px-4 text-[12px] text-ink-2 max-[734px]:h-6 max-[734px]:px-2 max-[734px]:text-[9px] dark:bg-[#2c2c2e]">Continuer sans accepter</span>
+          <span className="flex h-9 items-center rounded-[6px] bg-bg-2 px-4 text-[12px] text-ink-2 max-[734px]:h-6 max-[734px]:px-2 max-[734px]:text-[9px]">Paramétrer</span>
+          <span className="flex h-9 items-center rounded-[6px] bg-bg-2 px-4 text-[12px] text-ink-2 max-[734px]:h-6 max-[734px]:px-2 max-[734px]:text-[9px]">Continuer sans accepter</span>
         </div>
       </div>
 
-      <span className="absolute bottom-[24%] right-[4%] z-30 max-[734px]:bottom-[30%] max-[734px]:right-[3%]">
+      <span className="absolute bottom-[24%] right-[4%] z-30 max-[734px]:inset-x-0 max-[734px]:bottom-auto max-[734px]:top-[15%] max-[734px]:flex max-[734px]:justify-center">
         <span className="ap-verdict">
           <Verdict success={false} label="Bandeau cookies" />
         </span>

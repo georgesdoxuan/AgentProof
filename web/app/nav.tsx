@@ -14,8 +14,8 @@ export function Nav() {
       >
         Classement
       </Link>
-      <Link href="/#tester" className="inline-flex h-7 items-center rounded-full bg-blue px-[11px] text-white transition-colors hover:bg-[var(--blue-hover)]">
-        Tester mon site
+      <Link href="/#tester" className="inline-flex h-7 items-center whitespace-nowrap rounded-full bg-blue px-[11px] text-white transition-colors hover:bg-[var(--blue-hover)]">
+        Tester<span className="max-[480px]:hidden">&nbsp;mon site</span>
       </Link>
     </div>
   );

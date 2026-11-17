@@ -27,7 +27,7 @@ export default async function TestPaiement() {
       <div className="wrap-wide">
         <header className="max-w-[760px]">
           <p className="type-eyebrow text-ink-2">Équipe · Test de paiement réel</p>
-          <h1 className="type-h1 mt-3">Le paiement atteint-il la banque ?</h1>
+          <h1 className="type-h1 mt-3">Le paiement atteint‑il la banque ?</h1>
           <p className="type-intro mt-5 text-ink-2">
             L&apos;agent achète l&apos;article le moins cher et paie avec la carte de test de l&apos;équipe, sur un compte à 0 €. Un refus « fonds insuffisants » prouve que le
             paiement a atteint la banque. Une seule tentative par test. Garde ton téléphone à portée pour valider le 3D Secure.

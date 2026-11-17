@@ -47,6 +47,20 @@
   }
 }
 
+/* Third-party web pages drawn inside a browser frame stay light, like real screenshots. */
+.scheme-light {
+  --bg: #ffffff;
+  --bg-2: #f5f5f7;
+  --tile: #ffffff;
+  --fill: #e8e8ed;
+  --line: #d2d2d7;
+  --hairline: rgb(0 0 0 / 0.08);
+  --ink: #1d1d1f;
+  --ink-2: #6e6e73;
+  --glass: rgb(255 255 255 / 0.78);
+  color-scheme: light;
+}
+
 @media (prefers-contrast: more) {
   :root {
     --line: var(--ink-2);
