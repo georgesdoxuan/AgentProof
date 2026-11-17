@@ -10,7 +10,9 @@ const popUp =
   "bg-[url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M2 5l3-3 3 3M2 9l3 3 3-3' fill='none' stroke='%2386868b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")]";
 
 const SECTIONS = [
-  ["/espace", "Vue d'ensemble"],
+  ["/espace", "Accueil"],
+  ["/espace/sites", "Mes sites"],
+  ["/espace/rapports", "Rapports"],
   ["/equipe", "Équipe"],
   ["/compte", "Compte"],
 ] as const;
@@ -22,7 +24,8 @@ export function SpaceNav() {
     <nav aria-label="Espace" className="max-lg:-mx-1 max-lg:overflow-x-auto">
       <ul className="flex gap-1 lg:flex-col max-lg:inline-flex max-lg:rounded-[10px] max-lg:bg-fill max-lg:p-[3px]">
         {SECTIONS.map(([href, label]) => {
-          const current = path === href;
+          // "Mes sites" stays lit on a site page; "Accueil" only on itself.
+          const current = href === "/espace" ? path === href : path === href || path.startsWith(`${href}/`);
           return (
             <li key={href}>
               <Link

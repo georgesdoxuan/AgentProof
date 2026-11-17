@@ -16,7 +16,7 @@ export function Nav({ signedIn }: { signedIn: boolean }) {
       </Link>
       <Link
         href={signedIn ? "/espace" : "/connexion"}
-        aria-current={["/espace", "/equipe", "/compte"].includes(path) ? "page" : undefined}
+        aria-current={/^\/(espace|equipe|compte)(\/|$)/.test(path) ? "page" : undefined}
         className="inline-flex h-11 items-center whitespace-nowrap px-2 text-ink/80 transition-colors hover:text-ink aria-[current=page]:text-ink-2"
       >
         {signedIn ? (

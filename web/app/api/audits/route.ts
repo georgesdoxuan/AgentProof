@@ -29,7 +29,8 @@ export async function POST(req: Request) {
     if (allowed?.length && domains.some((d) => !allowed.includes(d))) return fail("Ce site n'est pas ouvert aux audits pour le moment.", 403);
 
     // Same site audited in the last 7 days: show that report instead of spending tokens again.
-    if (!competitor) {
+    // "Relancer pour vérifier" sends force=1: the team fixed something and wants a fresh pass.
+    if (!competitor && form.get("force") !== "1") {
       const existing = await recentAudit(url, device, ctx.team.id);
       if (existing && email) await attachEmail(existing, email);
       if (existing) return Response.redirect(new URL(`/audit/${existing}`, req.url), 303);
