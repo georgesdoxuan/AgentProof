@@ -1,5 +1,5 @@
 import { ROLE_LABEL, type TeamRow } from "@/lib/auth";
-import { AutoSubmitSelect, SpaceNav } from "./controls";
+import { AutoSubmitSelect, HistoryButtons, SpaceNav } from "./controls";
 
 // One frame for every page of the team space: team and sections on the left, the page on the right.
 export function SpaceShell({
@@ -42,6 +42,9 @@ export function SpaceShell({
         <div className="min-w-0 space-y-12 max-[734px]:space-y-10">
           <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
             <div className="min-w-0">
+              <div className="mb-5">
+                <HistoryButtons />
+              </div>
               <h1 className="type-h2">{title}</h1>
               {intro && <p className="mt-3 max-w-[620px] text-ink-2">{intro}</p>}
             </div>

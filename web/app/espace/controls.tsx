@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 // lib/ui pulls in the server engine, so client controls keep their own styles.
 // Pop-up button look for native <select>: keeps the system menu, drops the default chrome.
@@ -14,6 +14,7 @@ const SECTIONS = [
   ["/espace/sites", "Mes sites"],
   ["/espace/rapports", "Rapports"],
   ["/espace/paiement", "Paiement"],
+  ["/espace/classement", "Classement"],
   ["/equipe", "Équipe"],
   ["/compte", "Compte"],
 ] as const;
@@ -82,6 +83,33 @@ export function CopyField({ value, label }: { value: string; label: string }) {
         aria-live="polite"
       >
         {copied ? "Copié" : "Copier"}
+      </button>
+    </div>
+  );
+}
+
+// Back / forward, like a browser toolbar. Uses the Navigation API when available to grey out a dead end.
+export function HistoryButtons() {
+  const router = useRouter();
+  const path = usePathname();
+  const [can, setCan] = useState({ back: true, forward: true });
+  useEffect(() => {
+    const nav = (window as unknown as { navigation?: { canGoBack: boolean; canGoForward: boolean } }).navigation;
+    if (nav) setCan({ back: nav.canGoBack, forward: nav.canGoForward });
+  }, [path]);
+  const btn =
+    "grid h-9 w-9 place-items-center rounded-full bg-fill text-ink transition-colors hover:bg-line/60 disabled:cursor-default disabled:opacity-35 focus-visible:outline-2 focus-visible:outline-blue";
+  return (
+    <div className="flex gap-2">
+      <button type="button" className={btn} onClick={() => router.back()} disabled={!can.back} aria-label="Page précédente" title="Page précédente">
+        <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M10 3L5 8l5 5" />
+        </svg>
+      </button>
+      <button type="button" className={btn} onClick={() => router.forward()} disabled={!can.forward} aria-label="Page suivante" title="Page suivante">
+        <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M6 3l5 5-5 5" />
+        </svg>
       </button>
     </div>
   );
