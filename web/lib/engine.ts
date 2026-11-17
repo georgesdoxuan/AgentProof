@@ -266,7 +266,33 @@ async function writeRecommendations(domain: string, runs: any[]) {
   );
 }
 
-// ---------- replay link (1 H request, on demand) ----------
+// ---------- replay: public trajectory, step by step ----------
+export type ReplayStep = { url: string; image: string; action: string | null; element: string | null; x: number | null; y: number | null; thought: string | null };
+
+export async function getReplay(runId: number) {
+  const shareUrl = await shareRun(runId);
+  if (!shareUrl) return null;
+  // Shared trajectories and their screenshots are public: no key, no rate limit.
+  const t = await (await fetch(shareUrl, { next: { revalidate: 3600 } })).json();
+  const steps: ReplayStep[] = [];
+  for (const e of t.events ?? []) {
+    const ev = e.data?.event;
+    if (ev?.kind === "observation_event" && ev.observation?.image?.source) {
+      steps.push({ url: ev.observation.url, image: ev.observation.image.source, action: null, element: null, x: null, y: null, thought: null });
+    } else if (ev?.kind === "policy_event" && steps.length) {
+      const last = steps[steps.length - 1];
+      const req = ev.tool_reqs?.[0];
+      last.action = req?.tool_name ?? null;
+      last.element = req?.args?.element ?? req?.args?.text ?? req?.args?.url ?? null;
+      last.x = typeof req?.args?.x === "number" ? req.args.x : null;
+      last.y = typeof req?.args?.y === "number" ? req.args.y : null;
+      last.thought = ev.message?.reasoning_content?.trim() || ev.message?.content?.trim() || null;
+    }
+  }
+  return { objective: t.objective as string, answer: t.answer, steps };
+}
+
+// ---------- share link (1 H request, once per run) ----------
 export async function shareRun(runId: number) {
   const { data: run } = await db.from("runs").select("id, session_id, share_url").eq("id", runId).single();
   if (!run?.session_id) return null;

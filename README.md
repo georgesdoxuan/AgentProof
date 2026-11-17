@@ -37,14 +37,15 @@ Navigateur ──> Next.js (Vercel) ──lit/écrit──> Supabase (Postgres +
 |---|---|
 | Config de l'agent H (consignes, règles, schéma de réponse) | [agent/agent.json](agent/agent.json) |
 | Moteur : création d'audit, tick, juge, corrections, replay | [web/lib/engine.ts](web/lib/engine.ts) |
-| Routes API | [web/app/api](web/app/api) |
+| Routes API (audits, tick) | [web/app/api](web/app/api) |
+| Replay étape par étape | [web/app/replay/[run]/page.tsx](web/app/replay/[run]/page.tsx) |
 | Pages (accueil, classement, rapport) | [web/app](web/app) |
 | Export du dataset Hugging Face | [scripts/export-hf.sh](scripts/export-hf.sh) |
 | Workflow n8n « AgentProof — moteur et notifications » | sur l'instance n8n de l'équipe |
 
 ### Pourquoi un tick et pas des webhooks
 
-Les clés H du plan Free sont limitées à 5 requêtes par minute et 3 sessions en parallèle. Un seul point d'entrée (`/api/tick`, appelé chaque minute par n8n) dépense ce budget : 1 requête pour vérifier une session (ses derniers événements contiennent la réponse, les tokens, le coût et la dernière capture), 1 pour télécharger la capture, 1 pour lancer une session. Les replays publics sont créés à la demande.
+Les clés H du plan Free sont limitées à 5 requêtes par minute et 3 sessions en parallèle. Un seul point d'entrée (`/api/tick`, appelé chaque minute par n8n) dépense ce budget : 1 requête pour vérifier une session (ses derniers événements contiennent la réponse, les tokens, le coût et la dernière capture), 1 pour télécharger la capture, 1 pour lancer une session. Les replays sont créés à la demande (1 requête par run, une seule fois) : la trajectoire partagée et ses captures sont ensuite publiques, sans clé ni limite.
 
 ## Comment tester
 

@@ -96,7 +96,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                     <p className="text-xs text-stone-500">
                       {r.steps ?? "?"} étapes · {r.duration_s ? `${Math.round(r.duration_s)} s` : "?"}
                       {r.cost_usd != null && ` · ${Number(r.cost_usd).toFixed(3)} $`} ·{" "}
-                      <a href={`/api/replay/${r.id}`} target="_blank" rel="noreferrer" className="text-emerald-700 hover:underline">Voir le replay</a>
+                      <a href={`/replay/${r.id}`} className="text-emerald-700 hover:underline">Voir le replay</a>
                     </p>
                   </>
                 )}
