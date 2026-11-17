@@ -10,4 +10,5 @@ Règles :
 
 Accès local pour Claude (sans e-mail ni mot de passe) :
 - `npm --prefix web run dev`, puis ouvrir `http://localhost:3123/api/auth/dev?email=claude@agentproof.test&next=/espace` : session ouverte et équipe créée si besoin. La route répond 404 hors `next dev`.
+- Équipe de Georges : `claude@agentproof.test` est **admin** de son équipe « Espace de gdo ». Après la connexion dev ci-dessus, choisir « Espace de gdo » dans le sélecteur d'équipe (barre de gauche) pour voir son espace comme lui. Le local utilise la base Supabase de production : lancer un audit ou cocher une correction y est réel (crédits H dépensés). Demander avant de lancer un audit.
 - Clés : `web/.env.local` (Supabase, H, HF) et `~/.config/agentproof/.env` (Vercel, HF, H). Ne jamais les committer.
