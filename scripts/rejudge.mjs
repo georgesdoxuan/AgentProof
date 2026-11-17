@@ -13,7 +13,7 @@ async function judge(imageUrl, mission, pageUrl) {
     body: JSON.stringify({
       model: `${MODEL}:primeintellect`, max_tokens: 200, temperature: 0, chat_template_kwargs: { enable_thinking: false },
       messages: [{ role: "user", content: [
-        { type: "text", text: `Screenshot of the last page an AI shopping agent saw on an e-commerce site. Mission: ${mission}. Page URL: ${pageUrl ?? "unknown"}. A checkout page is the page reached after leaving the cart: it asks for login or guest e-mail, shipping address, delivery or payment (a login or e-mail form shown as a pop-up right after clicking the order button also counts). A cart or basket page listing the chosen items is NOT a checkout page, even with an order button or a login suggestion on it. A product or search page is NOT a checkout page. Reply with JSON only: {"is_checkout_page": boolean, "blocking_overlay": boolean, "blocker_type": one of ${BLOCKERS.join("|")}, "reason": "short French sentence"}` },
+        { type: "text", text: `Screenshot of the last page an AI shopping agent saw on an e-commerce site. Mission: ${mission}. Page URL: ${pageUrl ?? "unknown"}. is_checkout_page is true when the page asks the shopper to log in, create an account, give an e-mail to continue as a guest, enter a shipping address, choose a delivery or pay. Login pages and login pop-ups count as checkout. is_checkout_page is false for a cart page that only lists the chosen items with a button to order, and for a product, search or home page. Reply with JSON only: {"is_checkout_page": boolean, "blocking_overlay": boolean, "blocker_type": one of ${BLOCKERS.join("|")}, "reason": "short French sentence"}` },
         { type: "image_url", image_url: { url: imageUrl } },
       ] }],
     }),
@@ -23,7 +23,9 @@ async function judge(imageUrl, mission, pageUrl) {
   return JSON.parse(out.slice(out.indexOf("{"), out.lastIndexOf("}") + 1));
 }
 
-const only = process.argv.includes("--unverified") ? "&success=is.null" : "";
+const arg = (n) => process.argv.find((a) => a.startsWith(`--${n}=`))?.split("=")[1];
+const dry = process.argv.includes("--dry"); // print verdicts, write nothing
+const only = (process.argv.includes("--unverified") ? "&success=is.null" : "") + (arg("ids") ? `&id=in.(${arg("ids")})` : "");
 const runs = await (await sb("runs?status=eq.done&screenshot_url=not.is.null" + only + "&select=id,reached_checkout,blocker_type,agent_answer,final_url,missions!inner(title,slug)&missions.slug=neq.paiement")).json();
 let agree = 0, changed = 0, failed = 0;
 for (const r of runs) {
@@ -41,6 +43,7 @@ for (const r of runs) {
   if (!verified) failed++;
   else if (success === !!r.reached_checkout) agree++;
   else changed++;
+  if (dry) { console.log(r.id, "agent", !!r.reached_checkout, "judge", success, "|", j.reason); continue; }
   await sb(`runs?id=eq.${r.id}`, { method: "PATCH", body: JSON.stringify({ judge: j, success, blocker_type: success === null && r.reached_checkout ? null : blocker }) });
 }
 console.log(JSON.stringify({ runs: runs.length, judge_agrees_with_agent: agree, judge_overrules_agent: changed, unverified: failed }));
