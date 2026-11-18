@@ -2,21 +2,29 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/engine";
 import { ROLE_LABEL, canLaunch, teamContext } from "@/lib/auth";
-import { loadSpace, priorities, shortDate, deviceLabel } from "@/lib/space";
-import { Chevron, Field, Group, MissionBar, Row, Spinner } from "@/lib/ui";
+import { loadSpace, priorities, shortDate, deviceLabel, type SiteView } from "@/lib/space";
+import { Chevron, Field, Group, MissionBar, Row, Spinner, StatusGlyph, scoreTone, toneWord } from "@/lib/ui";
 import { AutoRefresh } from "../audit/[id]/refresh";
 import { SpaceShell } from "./shell";
-import { BlockerItem, SiteCard } from "./parts";
+import { BlockerItem, Delta, sitePath } from "./parts";
 
 export const metadata = { title: "Accueil · AgentProof" };
 
-// "georges.doxuan@…" -> "Georges". Short or numeric local parts give a plain greeting.
-function firstName(email: string) {
-  const w = email.split("@")[0].split(/[._+-]/)[0];
-  return /^[a-zà-ÿ]{3,}$/i.test(w) ? w[0].toUpperCase() + w.slice(1).toLowerCase() : null;
+const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? "s" : ""}`;
+
+// The page title answers the product's question: can agents buy on my sites?
+function headline(sites: SiteView[]) {
+  const scored = sites.filter((s) => s.latest?.s.score != null);
+  const n = scored.length;
+  const ready = scored.filter((s) => scoreTone(s.latest!.s.score) === "pass").length;
+  if (!n) return "Premier audit en cours.";
+  if (n === 1) return ready ? "Les agents achètent sur ton site." : `Les agents réussissent ${scored[0].latest!.s.score} % des achats sur ton site.`;
+  if (ready === n) return `Les agents achètent sur tes ${n} sites.`;
+  if (!ready) return `Aucun de tes ${n} sites n'est prêt pour les agents.`;
+  return `Les agents achètent sur ${ready} site${ready > 1 ? "s" : ""} sur ${n}.`;
 }
 
-// Home of the team space: what is running, what to fix first, the sites at a glance.
+// Home of the team space: the sites' scores, what is running, what to fix first.
 export default async function Accueil() {
   const ctx = await teamContext();
   if (!ctx) redirect("/connexion?next=/espace");
@@ -26,16 +34,18 @@ export default async function Accueil() {
   const { audits, sites } = await loadSpace(team.id);
   const running = audits.filter((a) => a.status !== "done");
   const todo = priorities(sites);
-  const openCount = sites.reduce((n, s) => n + s.blockers.filter((b) => b.state !== "check").length, 0);
+  const open = sites.flatMap((s) => s.blockers.filter((b) => b.state !== "check"));
+  const lost = open.reduce((n, b) => n + b.missions, 0);
+  const last = audits.find((a) => a.status === "done" && a.runs.length);
   const launch = canLaunch(team.role);
-  const name = firstName(user.email);
 
   const status = !audits.length
-    ? "Ton espace est prêt. Lance un premier audit pour voir si un agent IA peut acheter sur ton site."
+    ? "Lance un premier audit pour voir si un agent IA peut acheter sur ton site."
     : [
-        `${sites.length} site${sites.length > 1 ? "s" : ""} suivi${sites.length > 1 ? "s" : ""}`,
-        running.length ? `${running.length} audit${running.length > 1 ? "s" : ""} en cours` : null,
-        openCount ? `${openCount} blocage${openCount > 1 ? "s" : ""} à corriger` : sites.some((s) => s.latest) ? "aucun blocage ouvert" : null,
+        plural(sites.length, "site") + (sites.length > 1 ? " suivis" : " suivi"),
+        running.length ? `${plural(running.length, "audit")} en cours` : null,
+        open.length ? `${plural(open.length, "blocage")} à corriger · ${plural(lost, "mission")} perdue${lost > 1 ? "s" : ""}` : sites.some((s) => s.latest) ? "aucun blocage ouvert" : null,
+        last ? `dernier audit le ${shortDate(last.created_at)}` : null,
       ]
         .filter(Boolean)
         .join(" · ") + ".";
@@ -44,7 +54,7 @@ export default async function Accueil() {
     <SpaceShell
       team={team}
       teams={teams}
-      title={name ? `Bonjour ${name}.` : "Bonjour."}
+      title={audits.length ? headline(sites) : "Ton espace est prêt."}
       intro={status}
       actions={
         launch && audits.length > 0 ? (
@@ -84,6 +94,41 @@ export default async function Accueil() {
         </section>
       )}
 
+      {sites.length > 0 && (
+        <section>
+          <div className="mb-3 flex items-baseline justify-between gap-4 px-1">
+            <h2 className="type-headline">Sites</h2>
+            <Link href="/espace/sites" className="type-small text-link hover:underline">
+              Tout voir
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-4 max-[734px]:gap-3 xl:grid-cols-4">
+            {sites.slice(0, 4).map((s) => {
+              const score = s.latest?.s.score ?? null;
+              const tone = scoreTone(score);
+              return (
+                <Link key={s.key} href={sitePath(s)} className="tile flex flex-col gap-3 rounded-[20px]! p-5! transition-colors duration-200 hover:bg-tile/80">
+                  <span className="flex items-baseline justify-between gap-3">
+                    <span className="min-w-0">
+                      <span className="block truncate font-semibold">{s.domain}</span>
+                      <span className="type-caption text-ink-2">{deviceLabel(s.device)}</span>
+                    </span>
+                    <Delta site={s} />
+                  </span>
+                  <span className="flex items-center gap-2 text-[32px] font-semibold leading-none tnum">
+                    <span className="sr-only">{toneWord[tone]} :</span>
+                    <StatusGlyph tone={tone} className="h-5 w-5" />
+                    {score ?? "—"}
+                    <span className="-ml-1 text-[17px] text-ink-2">%</span>
+                  </span>
+                  {s.latest ? <MissionBar ok={s.latest.s.ok} done={s.latest.s.done} total={s.latest.s.total} size="sm" /> : <span className="type-caption text-ink-2">Premier audit en cours</span>}
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {running.length > 0 && (
         <Group title="En cours" footer="La page se met à jour toute seule. Ouvre un audit pour regarder l'agent en direct.">
           {running.map((a) => (
@@ -118,22 +163,6 @@ export default async function Accueil() {
           <div className={`grid gap-5 ${todo.length > 1 ? "md:grid-cols-2 xl:grid-cols-3" : ""}`}>
             {todo.map(({ site, b }) => (
               <BlockerItem key={`${site.key}:${b.type}`} site={site} b={b} canEdit={false} compact />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {sites.length > 0 && (
-        <section>
-          <div className="mb-3 flex items-baseline justify-between gap-4 px-1">
-            <h2 className="type-headline">Mes sites</h2>
-            <Link href="/espace/sites" className="type-small text-link hover:underline">
-              Tout voir
-            </Link>
-          </div>
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {sites.slice(0, 3).map((s) => (
-              <SiteCard key={s.key} site={s} />
             ))}
           </div>
         </section>

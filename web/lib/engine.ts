@@ -50,7 +50,7 @@ export function scoreOf(runs: { status: string; success: boolean | null; blocker
 }
 
 // Only the agent knows these (catalogue, step count): the screenshot judge never picks them.
-const AGENT_ONLY = ["mission_not_applicable", "agent_out_of_steps"];
+export const AGENT_ONLY = ["mission_not_applicable", "agent_out_of_steps"];
 
 // Agent models: the catalog agent's own model (agent/agent.json), and the one a "compare models" audit runs against it.
 export const DEFAULT_MODEL = "holo4-35b-a3b";

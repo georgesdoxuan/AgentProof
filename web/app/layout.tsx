@@ -33,7 +33,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               <Mark />
               <span className="text-[21px] font-semibold leading-none tracking-[0.011em] max-[734px]:text-[19px]">AgentProof</span>
             </Link>
-            <Nav signedIn={!!(await currentUser())} />
+            <Nav email={(await currentUser())?.email ?? null} />
           </nav>
         </header>
         <main id="contenu">{children}</main>

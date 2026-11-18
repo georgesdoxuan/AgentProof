@@ -5,7 +5,7 @@ import { loadSpace } from "@/lib/space";
 import { SpaceShell } from "../shell";
 import { SiteCard } from "../parts";
 
-export const metadata = { title: "Mes sites · AgentProof" };
+export const metadata = { title: "Sites · AgentProof" };
 
 export default async function Sites() {
   const ctx = await teamContext();
@@ -18,7 +18,7 @@ export default async function Sites() {
     <SpaceShell
       team={team}
       teams={teams}
-      title="Mes sites"
+      title="Sites"
       intro="Le dernier score de chaque site, son évolution et ce qu'il reste à corriger."
       actions={
         canLaunch(team.role) ? (

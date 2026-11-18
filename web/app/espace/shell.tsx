@@ -20,7 +20,7 @@ export function SpaceShell({
   return (
     <div className="min-h-[70vh] bg-bg-2 pb-24 pt-12 max-[734px]:pt-8">
       <div className="wrap-wide grid gap-10 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-14">
-        <aside className="space-y-6 lg:sticky lg:top-[76px] lg:self-start">
+        <aside className="min-w-0 space-y-6 lg:sticky lg:top-[76px] lg:self-start">
           <div className="flex items-center gap-3 lg:px-3">
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px] bg-ink type-headline text-bg" aria-hidden>
               {team.name[0]?.toUpperCase()}
