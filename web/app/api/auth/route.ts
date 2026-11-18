@@ -1,5 +1,6 @@
 import { db } from "@/lib/engine";
 import { baseUrl, createTeam, endSession, hashToken, newToken, normalizeEmail, safeNext, sendMail, startSession } from "@/lib/auth";
+import { msg } from "@/lib/lang";
 
 const go = (req: Request, path: string) => Response.redirect(new URL(path, req.url), 303);
 const back = (req: Request, params: Record<string, string>) => go(req, `/connexion?${new URLSearchParams(params)}`);
@@ -25,7 +26,15 @@ export async function POST(req: Request) {
     const token = newToken();
     await db.from("login_tokens").insert({ token_hash: hashToken(token), email, next });
     const link = `${baseUrl(req)}/connexion?token=${token}`;
-    const sent = await sendMail(email, "Ton lien de connexion AgentProof", `Clique pour te connecter à AgentProof (valable 15 minutes) :\n${link}\n\nSi tu n'as rien demandé, ignore cet e-mail.`, link);
+    const sent = await sendMail(
+      email,
+      await msg("Ton lien de connexion AgentProof", "Your AgentProof sign-in link"),
+      await msg(
+        `Clique pour te connecter à AgentProof (valable 15 minutes) :\n${link}\n\nSi tu n'as rien demandé, ignore cet e-mail.`,
+        `Click to sign in to AgentProof (valid for 15 minutes):\n${link}\n\nIf you did not ask for this, ignore this e-mail.`,
+      ),
+      link,
+    );
     // Local dev without a mail sender: log in straight away.
     if (!sent && process.env.NODE_ENV !== "production") return go(req, `/connexion?token=${token}`);
     if (!sent) return back(req, { erreur: "envoi", next });
@@ -54,5 +63,5 @@ export async function POST(req: Request) {
     return go(req, safeNext(tok.next));
   }
 
-  return new Response("Action inconnue.", { status: 400 });
+  return new Response(await msg("Action inconnue.", "Unknown action."), { status: 400 });
 }

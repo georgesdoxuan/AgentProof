@@ -1,5 +1,6 @@
 import { db } from "@/lib/engine";
 import { baseUrl, createTeam, hashToken, newToken, normalizeEmail, sendMail, setTeam, teamContext } from "@/lib/auth";
+import { msg } from "@/lib/lang";
 
 const go = (req: Request, path: string) => Response.redirect(new URL(path, req.url), 303);
 const fail = (msg: string, status = 400) => new Response(msg, { status, headers: { "Content-Type": "text/plain; charset=utf-8" } });
@@ -16,13 +17,13 @@ export async function POST(req: Request) {
 
   if (action === "create") {
     const name = str("name");
-    if (!name) return fail("Donne un nom à l'équipe.");
+    if (!name) return fail(await msg("Donne un nom à l'équipe.", "Give the team a name."));
     await setTeam(await createTeam(name, user.id));
     return go(req, "/equipe");
   }
 
   if (action === "switch") {
-    if (!teams.some((t) => t.id === str("team"))) return fail("Tu ne fais pas partie de cette équipe.", 403);
+    if (!teams.some((t) => t.id === str("team"))) return fail(await msg("Tu ne fais pas partie de cette équipe.", "You are not part of this team."), 403);
     await setTeam(str("team"));
     return go(req, "/espace");
   }
@@ -35,8 +36,8 @@ export async function POST(req: Request) {
       .is("accepted_at", null)
       .gt("expires_at", new Date().toISOString())
       .maybeSingle();
-    if (!inv) return fail("Invitation invalide ou expirée.", 404);
-    if (inv.email !== user.email) return fail(`Cette invitation est pour ${inv.email}. Connecte-toi avec cette adresse.`, 403);
+    if (!inv) return fail(await msg("Invitation invalide ou expirée.", "Invalid or expired invitation."), 404);
+    if (inv.email !== user.email) return fail(await msg(`Cette invitation est pour ${inv.email}. Connecte-toi avec cette adresse.`, `This invitation is for ${inv.email}. Sign in with that address.`), 403);
     await db.from("memberships").upsert({ team_id: inv.team_id, user_id: user.id, role: inv.role }, { onConflict: "team_id,user_id", ignoreDuplicates: true });
     await db.from("invitations").update({ accepted_at: new Date().toISOString() }).eq("id", inv.id);
     await setTeam(inv.team_id);
@@ -46,32 +47,35 @@ export async function POST(req: Request) {
   if (!team) return go(req, "/espace");
 
   if (action === "leave") {
-    if (team.role === "owner") return fail("Le propriétaire ne peut pas quitter son équipe.");
+    if (team.role === "owner") return fail(await msg("Le propriétaire ne peut pas quitter son équipe.", "The owner cannot leave their team."));
     await db.from("memberships").delete().eq("team_id", team.id).eq("user_id", user.id);
     return go(req, "/espace");
   }
 
-  if (team.role !== "owner") return fail("Seul le propriétaire de l'équipe gère les membres.", 403);
+  if (team.role !== "owner") return fail(await msg("Seul le propriétaire de l'équipe gère les membres.", "Only the team owner manages members."), 403);
 
   if (action === "invite") {
     const email = normalizeEmail(form.get("email"));
     const role = str("role");
-    if (!email) return fail("Adresse e-mail invalide.");
-    if (!ROLES.includes(role)) return fail("Rôle invalide.");
+    if (!email) return fail(await msg("Adresse e-mail invalide.", "Invalid e-mail address."));
+    if (!ROLES.includes(role)) return fail(await msg("Rôle invalide.", "Invalid role."));
     const { data: member } = await db.from("memberships").select("user_id, users!inner(email)").eq("team_id", team.id).eq("users.email", email).maybeSingle();
-    if (member) return fail("Cette personne fait déjà partie de l'équipe.");
+    if (member) return fail(await msg("Cette personne fait déjà partie de l'équipe.", "This person is already in the team."));
     const token = newToken();
     // Re-inviting the same address replaces the old link.
     const { error } = await db.from("invitations").upsert(
       { team_id: team.id, email, role, token_hash: hashToken(token), invited_by: user.id, created_at: new Date().toISOString(), expires_at: new Date(Date.now() + 7 * 86400_000).toISOString(), accepted_at: null },
       { onConflict: "team_id,email" },
     );
-    if (error) return fail(`Erreur : ${error.message}`);
+    if (error) return fail(`${await msg("Erreur", "Error")} : ${error.message}`);
     const link = `${baseUrl(req)}/invitation/${token}`;
     const sent = await sendMail(
       email,
-      `${user.email} t'invite dans l'équipe ${team.name} sur AgentProof`,
-      `${user.email} t'invite à rejoindre l'équipe « ${team.name} » sur AgentProof (${role === "admin" ? "admin : lancer des audits" : "lecteur : consulter les rapports"}).\n\nRejoindre l'équipe (lien valable 7 jours) :\n${link}`,
+      await msg(`${user.email} t'invite dans l'équipe ${team.name} sur AgentProof`, `${user.email} invites you to the team ${team.name} on AgentProof`),
+      await msg(
+        `${user.email} t'invite à rejoindre l'équipe « ${team.name} » sur AgentProof (${role === "admin" ? "admin : lancer des audits" : "lecteur : consulter les rapports"}).\n\nRejoindre l'équipe (lien valable 7 jours) :\n${link}`,
+        `${user.email} invites you to join the team “${team.name}” on AgentProof (${role === "admin" ? "admin: run audits" : "viewer: read reports"}).\n\nJoin the team (link valid for 7 days):\n${link}`,
+      ),
       link,
     );
     // The owner sees the link once, to share it by hand if the e-mail does not arrive.
@@ -79,14 +83,14 @@ export async function POST(req: Request) {
   }
 
   if (action === "role") {
-    if (!ROLES.includes(str("role"))) return fail("Rôle invalide.");
-    if (str("user") === team.owner_id) return fail("Le rôle du propriétaire ne change pas.");
+    if (!ROLES.includes(str("role"))) return fail(await msg("Rôle invalide.", "Invalid role."));
+    if (str("user") === team.owner_id) return fail(await msg("Le rôle du propriétaire ne change pas.", "The owner's role does not change."));
     await db.from("memberships").update({ role: str("role") }).eq("team_id", team.id).eq("user_id", str("user"));
     return go(req, "/equipe");
   }
 
   if (action === "remove") {
-    if (str("user") === team.owner_id) return fail("Le propriétaire ne peut pas être retiré.");
+    if (str("user") === team.owner_id) return fail(await msg("Le propriétaire ne peut pas être retiré.", "The owner cannot be removed."));
     await db.from("memberships").delete().eq("team_id", team.id).eq("user_id", str("user"));
     return go(req, "/equipe");
   }
@@ -100,16 +104,16 @@ export async function POST(req: Request) {
   if (action === "brand") {
     const name = str("brand_name").slice(0, 80);
     const logo = str("brand_logo");
-    if (logo && (logo.length > 500 || !/^https:\/\/[^\s"'<>]+$/.test(logo))) return fail("Le logo doit être une adresse https vers une image.");
+    if (logo && (logo.length > 500 || !/^https:\/\/[^\s"'<>]+$/.test(logo))) return fail(await msg("Le logo doit être une adresse https vers une image.", "The logo must be an https address of an image."));
     await db.from("teams").update({ brand_name: name || null, brand_logo: name && logo ? logo : null }).eq("id", team.id);
     return go(req, "/equipe");
   }
 
   if (action === "rename") {
-    if (!str("name")) return fail("Donne un nom à l'équipe.");
+    if (!str("name")) return fail(await msg("Donne un nom à l'équipe.", "Give the team a name."));
     await db.from("teams").update({ name: str("name").slice(0, 80) }).eq("id", team.id);
     return go(req, "/equipe");
   }
 
-  return fail("Action inconnue.");
+  return fail(await msg("Action inconnue.", "Unknown action."));
 }
