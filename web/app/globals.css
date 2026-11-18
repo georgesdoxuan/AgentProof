@@ -319,3 +319,40 @@ body {
 @media (prefers-reduced-transparency: reduce) {
   :root { --nav: var(--bg); --glass: var(--tile); }
 }
+
+/* PDF report (browser "Save as PDF"): always light, no navigation, no buttons, tiles kept whole. */
+@media print {
+  :root {
+    --bg: #ffffff;
+    --bg-2: #ffffff;
+    --tile: #ffffff;
+    --fill: #e8e8ed;
+    --line: #d2d2d7;
+    --hairline: rgb(0 0 0 / 0.12);
+    --ink: #1d1d1f;
+    --ink-2: #6e6e73;
+    --link: #0066cc;
+    --pass: #00792e;
+    --warn: #b25000;
+    --fail: #d70015;
+    --shot-shadow: none;
+    color-scheme: light;
+  }
+  body > header,
+  body > footer,
+  .no-print {
+    display: none !important;
+  }
+  .tile,
+  article,
+  li {
+    break-inside: avoid;
+  }
+  .tile {
+    border: 1px solid var(--line);
+  }
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

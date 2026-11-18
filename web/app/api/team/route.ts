@@ -96,6 +96,15 @@ export async function POST(req: Request) {
     return go(req, "/equipe");
   }
 
+  // White label for agencies: their name and logo on the team's public reports, instead of AgentProof's.
+  if (action === "brand") {
+    const name = str("brand_name").slice(0, 80);
+    const logo = str("brand_logo");
+    if (logo && (logo.length > 500 || !/^https:\/\/[^\s"'<>]+$/.test(logo))) return fail("Le logo doit être une adresse https vers une image.");
+    await db.from("teams").update({ brand_name: name || null, brand_logo: name && logo ? logo : null }).eq("id", team.id);
+    return go(req, "/equipe");
+  }
+
   if (action === "rename") {
     if (!str("name")) return fail("Donne un nom à l'équipe.");
     await db.from("teams").update({ name: str("name").slice(0, 80) }).eq("id", team.id);

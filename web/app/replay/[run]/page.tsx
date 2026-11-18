@@ -18,20 +18,21 @@ const ACTIONS: Record<string, string> = {
   answer: "Réponse finale",
 };
 
-export default async function Replay({ params, searchParams }: { params: Promise<{ run: string }>; searchParams: Promise<{ a?: string }> }) {
+export default async function Replay({ params, searchParams }: { params: Promise<{ run: string }>; searchParams: Promise<{ a?: string; essai?: string }> }) {
   await connection();
   const id = Number((await params).run);
-  const { a } = await searchParams;
+  const { a, essai } = await searchParams;
+  const first = essai === "1"; // first attempt of a mission that was replayed
   // Run ids follow each other: the link must also carry the audit's unguessable id, like the report it comes from.
   // Otherwise anyone could walk /replay/1, /replay/2… and spend the H request budget creating share links.
   if (!Number.isInteger(id) || !a || !/^[0-9a-f-]{36}$/.test(a)) notFound();
-  const { data: run } = await db.from("runs").select("id, audit_id, status, success, blocker_type, missions(title), audits(sites(name))").eq("id", id).maybeSingle();
+  const { data: run } = await db.from("runs").select("id, audit_id, status, success, blocker_type, first_attempt, missions(title), audits(sites(name))").eq("id", id).maybeSingle();
   if (!run || run.audit_id !== a) notFound();
 
-  const live = (run as any).status === "launched";
+  const live = !first && (run as any).status === "launched";
   let replay: Awaited<ReturnType<typeof getReplay>> = null;
   try {
-    replay = await getReplay(id, live);
+    replay = await getReplay(id, live, first);
   } catch {
     return (
       <div className="bg-bg-2 py-32">
@@ -44,7 +45,8 @@ export default async function Replay({ params, searchParams }: { params: Promise
     );
   }
   if (!replay) notFound();
-  const r = run as any;
+  // The first attempt shows its own verdict, kept when the mission was replayed.
+  const r = first ? { ...(run as any), ...(run as any).first_attempt } : (run as any);
   const last = replay.steps.length - 1;
   // Live: newest step first, page refreshes itself.
   const steps = replay.steps.map((s, i) => ({ s, i }));
@@ -68,7 +70,9 @@ export default async function Replay({ params, searchParams }: { params: Promise
               En direct · étape {replay.steps.length}
             </p>
           ) : (
-            <p className="type-eyebrow mt-6 text-ink-2">Replay · {replay.steps.length} étapes</p>
+            <p className="type-eyebrow mt-6 text-ink-2">
+              Replay{first ? " du premier essai" : ""} · {replay.steps.length} étapes
+            </p>
           )}
           <h1 className="type-h1 mt-3">{r.missions.title}</h1>
           {r.success !== null && <Verdict success={!!r.success} label={r.success ? undefined : blockerLabel(r.blocker_type)} className="mt-5" />}

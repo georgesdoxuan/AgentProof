@@ -32,11 +32,12 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
   const isOwner = team.role === "owner";
   const sp = await searchParams;
 
-  const [{ data: members }, { data: invites }] = await Promise.all([
+  const [{ data: members }, { data: invites }, { data: brand }] = await Promise.all([
     db.from("memberships").select("role, created_at, users(id, email)").eq("team_id", team.id).order("created_at"),
     isOwner
       ? db.from("invitations").select("id, email, role, expires_at").eq("team_id", team.id).is("accepted_at", null).order("created_at", { ascending: false })
       : Promise.resolve({ data: [] as any[] }),
+    db.from("teams").select("brand_name, brand_logo").eq("id", team.id).single(),
   ]);
   const h = await headers();
   const base = process.env.PUBLIC_URL || `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
@@ -138,6 +139,20 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
                 <Field label="Nom" name="name" type="text" required defaultValue={team.name} />
               </div>
               <button className="btn btn-secondary">Renommer</button>
+            </form>
+          </Group>
+
+          <Group
+            title="Marque blanche"
+            footer="Pour les agences : ton nom et ton logo remplacent AgentProof sur les rapports de l'équipe (page web et PDF). Laisse le nom vide pour revenir à AgentProof."
+          >
+            <form action="/api/team" method="post" className="grid gap-4 p-5 sm:p-6">
+              <Hidden action="brand" />
+              <Field label="Nom affiché sur les rapports" name="brand_name" type="text" defaultValue={brand?.brand_name ?? ""} />
+              <Field label="Logo (adresse https d'une image)" name="brand_logo" type="url" defaultValue={brand?.brand_logo ?? ""} />
+              <div>
+                <button className="btn btn-secondary">Enregistrer</button>
+              </div>
             </form>
           </Group>
         </>

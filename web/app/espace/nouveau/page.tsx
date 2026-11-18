@@ -53,6 +53,20 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
               </span>
             </label>
           )}
+          <div className="grid gap-2">
+            <span className="type-small text-ink-2">Modèle de l&apos;agent (sans effet si tu compares les deux)</span>
+            <div>
+              <Segmented
+                name="model"
+                label="Modèle de l'agent"
+                value="fast"
+                options={[
+                  ["fast", `Rapide · ${DEFAULT_MODEL}`],
+                  ["precise", `Précis · ${COMPARE_MODEL}`],
+                ]}
+              />
+            </div>
+          </div>
           <div className="flex flex-wrap items-center justify-between gap-4 pt-1">
             <Segmented
               name="device"

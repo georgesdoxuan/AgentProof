@@ -4,7 +4,10 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { DEFAULT_MODEL, PAYMENT_STAGES, PAYMENT_VERDICTS, db } from "@/lib/engine";
 import { BrowserFrame, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, summarize } from "@/lib/ui";
-import { AutoRefresh } from "./refresh";
+import { headers } from "next/headers";
+import { CopyField } from "@/app/espace/controls";
+import { StatusGlyph } from "@/lib/ui";
+import { AutoRefresh, PrintButton } from "./refresh";
 
 const RUN_FIELDS =
   "id, status, payment_verdict, with_login, session_id, success, reached_checkout, blocker_type, blocker_detail, screenshot_url, final_url, steps, duration_s, cost_usd, judge, agent_answer, attempts, first_attempt, missions(title, position)";
@@ -33,6 +36,13 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   // One run without account, plus one signed in when the team saved a test account for the site.
   const pays: any[] = inTeam && audit.payment_test ? [...((await loadAudit(audit.payment_test))?.runs ?? [])].sort((a: any, b: any) => +a.with_login - +b.with_login) : [];
   const competitor = audit.compare_to ? await loadAudit(audit.compare_to) : null;
+  // Agency white label: their name and logo replace AgentProof's on this report.
+  const { data: brand } = audit.team_id ? await db.from("teams").select("brand_name, brand_logo").eq("id", audit.team_id).maybeSingle() : { data: null };
+  const branded = !!brand?.brand_name;
+  const h = await headers();
+  const base = process.env.PUBLIC_URL || `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
+  const statik = audit.static_check as { items?: { key: string; label: string; tone: "pass" | "warn" | "fail" | "none"; detail: string }[] } | null;
+  const alert = audit.score_alert as { from: number; to: number; previous: string } | null;
 
   const runs = [...audit.runs].sort((a: any, b: any) => a.missions.position - b.missions.position);
   const s = summarize(runs);
@@ -48,8 +58,16 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   return (
     <div className="bg-bg-2 pb-24 pt-16 max-[734px]:pt-10">
       {running && <AutoRefresh />}
+      {branded && <style>{"body > header, body > footer { display: none; }"}</style>}
       <div className="wrap-wide space-y-20 max-[734px]:space-y-14">
         <header>
+          {branded && (
+            <p className="mb-10 flex items-center gap-3 type-headline">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {brand!.brand_logo && <img src={brand!.brand_logo} alt="" className="h-10 w-auto max-w-[160px] object-contain" />}
+              <span>Rapport préparé par {brand!.brand_name}</span>
+            </p>
+          )}
           <p className="type-eyebrow text-ink-2">{paymentOnly ? "Test de paiement" : "Rapport d\u2019audit"} · {audit.device === "mobile" ? "Mobile" : "Ordinateur"}
             {audit.model && ` · Modèle ${audit.model}`}
           </p>
@@ -62,7 +80,16 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             <time dateTime={audit.created_at}>
               {new Date(audit.created_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris", dateStyle: "long", timeStyle: "short" })}
             </time>
+            {!running && !paymentOnly && <PrintButton />}
           </p>
+          {alert && (
+            <p className="mt-6 rounded-[12px] bg-tile px-4 py-3 type-small" role="alert">
+              <span className="font-semibold text-fail">Le score baisse : {alert.from} % → {alert.to} %.</span>{" "}
+              <Link href={`/audit/${alert.previous}`} className="text-link hover:underline">
+                Voir l&apos;audit précédent
+              </Link>
+            </p>
+          )}
           {running && !paymentOnly && (
             <p className="mt-6 inline-flex items-center gap-2.5 rounded-full bg-tile px-4 py-2 type-small" role="status">
               <Spinner className="h-3.5 w-3.5 text-ink-2" />
@@ -184,6 +211,32 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
           </section>
         ))}
 
+        {!paymentOnly && (statik?.items || (running && audit.kind === "checkout")) && (
+          <section>
+            <h2 className="type-h2">Ce que lit un robot, sans navigateur.</h2>
+            <p className="mt-3 mb-8 max-w-[680px] text-ink-2">
+              Lecture gratuite du code du site, comme les outils qui notent un site sans le tester. Elle complète l&apos;agent, elle ne compte pas dans le score.
+            </p>
+            {statik?.items ? (
+              <ul className="overflow-hidden rounded-[18px] bg-tile">
+                {statik.items.map((it) => (
+                  <li key={it.key} className="flex items-start gap-3 border-b border-hairline px-6 py-4 last:border-0">
+                    <StatusGlyph tone={it.tone} className="mt-0.5 h-5 w-5" />
+                    <span>
+                      <span className="font-semibold">{it.label}</span>
+                      <span className="type-small block text-ink-2">{it.detail}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="type-small flex items-center gap-2 text-ink-2">
+                <Spinner className="h-3.5 w-3.5" /> Lecture en cours…
+              </p>
+            )}
+          </section>
+        )}
+
         {s.blockers.length > 0 && (
           <section>
             <h2 className="type-h2 mb-8">Ce qui arrête l&apos;agent.</h2>
@@ -230,11 +283,19 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                     <p className="type-small mt-3 text-ink-2">
                       Mission rejouée : le premier essai a échoué ({r.first_attempt.blocker_type ? blockerLabel(r.first_attempt.blocker_type) : "erreur technique"}).
                       {r.status === "done" && r.success !== null && (r.success ? " Le second a réussi : l’échec n’était pas reproductible." : " Le second confirme l’échec.")}
+                      {r.first_attempt.session_id && (
+                        <>
+                          {" "}
+                          <Link href={`/replay/${r.id}?a=${audit.id}&essai=1`} className="no-print text-link hover:underline">
+                            Voir le premier essai
+                          </Link>
+                        </>
+                      )}
                     </p>
                   )}
                   {r.status === "launched" && r.session_id && (
                     <div className="mt-auto pt-6">
-                      <Link href={`/replay/${r.id}?a=${audit.id}`} className="btn min-h-[40px] gap-2 px-[18px] text-[15px]">
+                      <Link href={`/replay/${r.id}?a=${audit.id}`} className="no-print btn min-h-[40px] gap-2 px-[18px] text-[15px]">
                         <span className="relative flex h-2 w-2" aria-hidden>
                           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-70 motion-reduce:hidden" />
                           <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
@@ -254,7 +315,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                         </p>
                       )}
                       <div className="mt-auto flex flex-wrap items-center gap-x-5 gap-y-2 pt-6">
-                        <Link href={`/replay/${r.id}?a=${audit.id}`} className="btn btn-dark min-h-[40px] px-[18px] text-[15px]">
+                        <Link href={`/replay/${r.id}?a=${audit.id}`} className="no-print btn btn-dark min-h-[40px] px-[18px] text-[15px]">
                           <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="currentColor" aria-hidden>
                             <path d="M2.5 1.3v9.4L10.6 6z" />
                           </svg>
@@ -272,7 +333,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                   <a href={r.screenshot_url} target="_blank" rel="noreferrer" className="block rounded-[12px]" aria-label={`Ouvrir la capture : ${r.missions.title}`}>
                     <BrowserFrame url={r.final_url}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={r.screenshot_url} alt={`Dernier écran vu par l'agent : ${r.missions.title}`} className="block w-full" loading="lazy" />
+                      <img src={r.screenshot_url} alt={`Dernier écran vu par l'agent : ${r.missions.title}`} className="block w-full" />
                       {r.status === "done" && r.success !== null && (
                         <Verdict success={!!r.success} label={r.success ? undefined : blockerLabel(r.blocker_type)} className="absolute bottom-3 left-3" />
                       )}
@@ -287,6 +348,23 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             ))}
           </div>
         </section>
+        )}
+
+        {!paymentOnly && audit.status === "done" && s.score != null && (
+          <section className="no-print tile grid gap-6 md:grid-cols-[auto_1fr] md:items-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={`/badge/${audit.id}.svg`} alt={`Badge AgentProof : ${s.score} %`} height={28} className="h-7 w-auto" />
+            <div className="min-w-0">
+              <h2 className="type-headline">Badge à afficher sur ton site.</h2>
+              <p className="type-small mt-1 text-ink-2">Il affiche le score de cet audit et renvoie vers ce rapport.</p>
+              <div className="mt-4">
+                <CopyField
+                  label="Code HTML du badge"
+                  value={`<a href="${base}/audit/${audit.id}"><img src="${base}/badge/${audit.id}.svg" alt="Score AgentProof : ${s.score} %" height="28"></a>`}
+                />
+              </div>
+            </div>
+          </section>
         )}
       </div>
     </div>

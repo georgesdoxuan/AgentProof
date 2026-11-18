@@ -27,10 +27,12 @@ export async function POST(req: Request) {
       if ((count ?? 0) + urls.length > MAX_PER_TEAM) return fail(`${MAX_PER_TEAM} pages suivies au maximum par équipe.`);
       const { error } = await db
         .from("automations")
-        .upsert(urls.map((url) => ({ team_id: teamId, url, created_by: ctx.user.id, ...settings })), { onConflict: "team_id,url", ignoreDuplicates: true });
+        .upsert(urls.map((url) => ({ team_id: teamId, url, created_by: ctx.user.id, monthly: form.get("monthly") === "1", ...settings })), { onConflict: "team_id,url", ignoreDuplicates: true });
       if (error) throw error;
     } else if (action === "state") {
       await db.from("automations").update(settings).eq("id", id).eq("team_id", teamId);
+    } else if (action === "monthly") {
+      await db.from("automations").update({ monthly: form.get("monthly") === "1" }).eq("id", id).eq("team_id", teamId);
     } else if (action === "delete") {
       await db.from("automations").delete().eq("id", id).eq("team_id", teamId);
     } else if (action === "check") {

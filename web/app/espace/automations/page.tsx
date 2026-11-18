@@ -19,7 +19,12 @@ const CHECK: Record<string, [Tone, string]> = {
   same: ["pass", "Aucun changement"],
   changed: ["warn", "Site modifié"],
   error: ["fail", "Vérification impossible"],
+  monthly: ["none", "Audit mensuel"],
 };
+const MONTHLY: [string, string][] = [
+  ["0", "Sans audit mensuel"],
+  ["1", "Audit tous les 30 jours"],
+];
 
 export default async function Automations() {
   const ctx = await teamContext();
@@ -34,7 +39,7 @@ export default async function Automations() {
       team={team}
       teams={teams}
       title="Automations"
-      intro="Une fois par jour, AgentProof relit chaque page suivie et la compare à la veille : scripts tiers (captcha, bandeau cookies), formulaires, boutons et champs. Prix et produits ne comptent pas. Si la page a changé, tu es prévenu ici et par e-mail, et un audit peut repartir tout seul."
+      intro="Une fois par jour, AgentProof relit chaque page suivie et la compare à la veille : scripts tiers (captcha, bandeau cookies), formulaires, boutons et champs. Prix et produits ne comptent pas. Si la page a changé, tu es prévenu ici et par e-mail, et un audit peut repartir tout seul. Avec le suivi mensuel, un audit complet repart tous les 30 jours, et tu reçois une alerte si le score baisse de 10 points ou plus."
     >
       {items.length ? (
         items.map((a: any) => {
@@ -50,6 +55,11 @@ export default async function Automations() {
                       <input type="hidden" name="action" value="state" />
                       <input type="hidden" name="id" value={a.id} />
                       <AutoSubmitSelect name="state" defaultValue={state} label="Mode de l'automation" options={STATES} />
+                    </form>
+                    <form action="/api/automations" method="post">
+                      <input type="hidden" name="action" value="monthly" />
+                      <input type="hidden" name="id" value={a.id} />
+                      <AutoSubmitSelect name="monthly" defaultValue={a.monthly ? "1" : "0"} label="Suivi mensuel" options={MONTHLY} />
                     </form>
                     <form action="/api/automations" method="post">
                       <input type="hidden" name="action" value="check" />
@@ -70,7 +80,7 @@ export default async function Automations() {
                 !a.enabled
                   ? "Désactivée : aucune vérification."
                   : a.last_checked_at
-                    ? `Dernière vérification ${shortDate(a.last_checked_at)}. Prochaine dans les 24 h.`
+                    ? `Dernière vérification ${shortDate(a.last_checked_at)}. Prochaine dans les 24 h.${a.monthly ? (a.last_audit_at ? ` Audit mensuel : dernier le ${shortDate(a.last_audit_at)}.` : " Audit mensuel : le premier part dans la minute.") : ""}`
                     : "Première vérification dans la minute : elle enregistre la page de référence."
               }
             >
@@ -127,6 +137,13 @@ export default async function Automations() {
                 <Segmented name="state" label="Quand une page change" value="notify" options={STATES.slice(0, 2)} />
               </div>
             </div>
+            <label className="type-small flex items-start gap-3 rounded-[12px] bg-bg-2 p-4 dark:bg-[#2c2c2e]">
+              <input type="checkbox" name="monthly" value="1" className="mt-0.5 h-4 w-4 shrink-0 accent-blue" />
+              <span>
+                <span className="font-semibold">Suivi mensuel</span>
+                <span className="block text-ink-2">Un audit complet tous les 30 jours, et une alerte par e-mail si le score baisse de 10 points ou plus.</span>
+              </span>
+            </label>
             <div>
               <button className="btn">Activer l&apos;automation</button>
             </div>

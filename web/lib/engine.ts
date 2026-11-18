@@ -43,6 +43,12 @@ export const BLOCKERS: Record<string, string> = {
 };
 // Outcomes that say nothing about the site's interface: shown in the report, kept out of the score.
 export const EXCLUDED = ["out_of_stock", "captcha_or_bot_block", "mission_not_applicable", "agent_out_of_steps"];
+// Score of one audit: successful runs over verified runs, excluded outcomes left out. null when nothing counts yet.
+export function scoreOf(runs: { status: string; success: boolean | null; blocker_type: string | null }[]) {
+  const scored = runs.filter((r) => r.status === "done" && r.success !== null && !EXCLUDED.includes(r.blocker_type ?? ""));
+  return scored.length ? Math.round((100 * scored.filter((r) => r.success).length) / scored.length) : null;
+}
+
 // Only the agent knows these (catalogue, step count): the screenshot judge never picks them.
 const AGENT_ONLY = ["mission_not_applicable", "agent_out_of_steps"];
 
@@ -129,6 +135,7 @@ export async function recentAudit(input: string, device: string, teamId: string)
     .eq("team_id", teamId)
     .eq("kind", "checkout")
     .eq("device", device)
+    .or(`model.is.null,model.eq.${DEFAULT_MODEL}`)
     .gte("created_at", since)
     .order("created_at", { ascending: false })
     .limit(1);
@@ -307,7 +314,10 @@ export async function tick() {
   await closeAudits(log);
 
   // 4. Daily site watch (no H request; an audit it starts is launched by a later tick).
-  await (await import("./automations")).runDueAutomations(log).catch((e) => log.push(`automations error: ${e}`));
+  const auto = await import("./automations");
+  await auto.runStaticChecks(log).catch((e) => log.push(`static check error: ${e}`));
+  await auto.runMonthlyAudits(log).catch((e) => log.push(`monthly audits error: ${e}`));
+  await auto.runDueAutomations(log).catch((e) => log.push(`automations error: ${e}`));
   return { log, budgetLeft: budget };
 }
 
@@ -616,8 +626,48 @@ async function closeAudits(log: string[]) {
       await db.from("audits").update({ recommendations }).eq("id", a.id);
     }
     log.push(`audit ${a.id} done`);
+    if (a.kind !== "payment") await scoreAlert(a.id).catch((e) => log.push(`score alert error: ${e}`));
     await notifyDone(a.id);
   }
+}
+
+// Score drop alert (monthly follow-up): same team, site, device and model as the previous finished audit,
+// down by ALERT_DROP points or more. Stored on the audit for the report, and e-mailed to whoever launched it.
+const ALERT_DROP = 10;
+async function scoreAlert(auditId: string) {
+  const { data: a } = await db
+    .from("audits")
+    .select("id, team_id, site_id, device, model, email, created_at, sites(domain), runs(status, success, blocker_type)")
+    .eq("id", auditId)
+    .single();
+  if (!a?.team_id || !a.runs.length) return;
+  const { data: prev } = await db
+    .from("audits")
+    .select("id, model, runs(status, success, blocker_type)")
+    .eq("team_id", a.team_id)
+    .eq("site_id", a.site_id)
+    .eq("device", a.device)
+    .eq("kind", "checkout")
+    .eq("status", "done")
+    .neq("id", a.id)
+    .lt("created_at", a.created_at)
+    .order("created_at", { ascending: false })
+    .limit(5);
+  const before = prev?.find((p) => (p.model ?? DEFAULT_MODEL) === (a.model ?? DEFAULT_MODEL) && p.runs.length);
+  const now = scoreOf(a.runs);
+  const was = before ? scoreOf(before.runs) : null;
+  if (now == null || was == null || was - now < ALERT_DROP) return;
+  await db.from("audits").update({ score_alert: { from: was, to: now, previous: before!.id } }).eq("id", a.id);
+  if (!a.email) return;
+  const domain = (a.sites as any).domain;
+  const link = `${process.env.PUBLIC_URL ?? ""}/audit/${a.id}`;
+  const { sendMail } = await import("./auth");
+  await sendMail(
+    a.email,
+    `AgentProof : le score de ${domain} baisse (${was} % → ${now} %)`,
+    `Le dernier audit de ${domain} donne ${now} %, contre ${was} % au précédent. Un agent IA achète moins bien sur le site qu'avant.\n\nLe rapport montre les missions qui bloquent, avec les captures et les replays :\n${link}`,
+    link,
+  );
 }
 
 // Tells n8n an audit is finished: Telegram for the team, and the report e-mail when the visitor left an address.
@@ -735,8 +785,8 @@ async function writeRecommendations(domain: string, runs: any[]) {
 // ---------- replay: public trajectory, step by step ----------
 export type ReplayStep = { url: string; image: string; action: string | null; element: string | null; x: number | null; y: number | null; thought: string | null };
 
-export async function getReplay(runId: number, live = false) {
-  const shareUrl = await shareRun(runId);
+export async function getReplay(runId: number, live = false, first = false) {
+  const shareUrl = await shareRun(runId, first);
   if (!shareUrl) return null;
   // Shared trajectories and their screenshots are public: no key, no rate limit.
   // The shared trajectory grows while the session runs: no cache for a live view.
@@ -760,9 +810,19 @@ export async function getReplay(runId: number, live = false) {
 }
 
 // ---------- share link (1 H request, once per run) ----------
-export async function shareRun(runId: number) {
-  const { data: run } = await db.from("runs").select("id, session_id, share_url, missions(slug)").eq("id", runId).single();
-  if (!run?.session_id || isPayment(run)) return null; // payment replays would expose the test card
+export async function shareRun(runId: number, first = false) {
+  const { data: run } = await db.from("runs").select("id, session_id, share_url, first_attempt, missions(slug)").eq("id", runId).single();
+  if (!run || isPayment(run)) return null; // payment replays would expose the test card
+  // A replayed mission keeps its first session in first_attempt: same rule, one share link created once.
+  if (first) {
+    const fa = run.first_attempt as { session_id?: string; share_url?: string } | null;
+    if (!fa?.session_id) return null;
+    if (fa.share_url) return fa.share_url;
+    const { share_url } = await (await h(`/sessions/${fa.session_id}/share`, { method: "POST" })).json();
+    await db.from("runs").update({ first_attempt: { ...fa, share_url: `${H}${share_url}` } }).eq("id", run.id);
+    return `${H}${share_url}`;
+  }
+  if (!run.session_id) return null;
   if (run.share_url) return run.share_url as string;
   const { share_url } = await (await h(`/sessions/${run.session_id}/share`, { method: "POST" })).json();
   const full = `${H}${share_url}`;
