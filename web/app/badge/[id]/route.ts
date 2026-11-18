@@ -1,4 +1,5 @@
 import { db, scoreOf } from "@/lib/engine";
+import { MARK_ACCENT, MARK_DOTS, MARK_R } from "@/lib/ui";
 
 // "Agent-ready" badge for one finished audit: /badge/<audit id>.svg, to embed on the merchant's site.
 // By audit id, not by domain: a team's audits stay private unless the team shares the report link.
@@ -14,9 +15,9 @@ function badgeSvg(score: number | null) {
 <title>AgentProof : ${right}</title>
 <clipPath id="r"><rect width="${w}" height="28" rx="6"/></clipPath>
 <g clip-path="url(#r)"><rect width="${lw}" height="28" fill="#1d1d1f"/><rect x="${lw}" width="${rw}" height="28" fill="${COLORS[tone]}"/></g>
-<g transform="translate(7 6) scale(0.25)"><path d="M14 10.5V39l6.6-6.4 5.2 11.6 4-1.6-5.1-11.4H34z" fill="#fff" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/><circle cx="41.5" cy="42" r="12" fill="#0071e3" stroke="#1d1d1f" stroke-width="3.5"/><path d="M36 42.3l3.8 3.8 7.2-7.8" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g>
+<g transform="translate(7 6) scale(0.25)">${MARK_DOTS.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="${MARK_R}" fill="#fff"/>`).join("")}<circle cx="${MARK_ACCENT[0]}" cy="${MARK_ACCENT[1]}" r="${MARK_R}" fill="#2997ff"/></g>
 <g fill="#fff" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="600">
-<text x="${lw / 2 + 9}" y="18" text-anchor="middle">AgentProof</text><text x="${lw + rw / 2}" y="18" text-anchor="middle">${right}</text></g>
+<text x="${lw / 2 + 9}" y="18" text-anchor="middle">Agent<tspan fill="#2997ff">Proof</tspan></text><text x="${lw + rw / 2}" y="18" text-anchor="middle">${right}</text></g>
 </svg>`;
 }
 

@@ -8,7 +8,7 @@ import { getLang } from "@/lib/lang";
 import { BrowserFrame, Chevron, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, hurdles, summarize } from "@/lib/ui";
 import { headers } from "next/headers";
 import { CopyField } from "@/app/espace/controls";
-import { Mark, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
+import { Mark, Wordmark, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
 import { AutoRefresh, PrintButton } from "./refresh";
 
 const RUN_FIELDS =
@@ -99,9 +99,9 @@ function PrintCover(p: {
             {p.brand.brand_name}
           </span>
         ) : (
-          <span className="flex items-center gap-2.5 text-[15pt] font-semibold tracking-[0.011em]">
+          <span className="flex items-center gap-2.5 text-[15pt]">
             <Mark className="h-7 w-7" />
-            AgentProof
+            <Wordmark />
           </span>
         )}
         <span className="text-right text-[9pt] leading-snug text-ink-2">

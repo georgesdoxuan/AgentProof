@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { Nav } from "./nav";
 import { currentUser } from "@/lib/auth";
-import { Mark } from "@/lib/ui";
+import { Mark, Wordmark } from "@/lib/ui";
 import { getDict, getLang } from "@/lib/lang";
 import "./globals.css";
 
@@ -39,7 +39,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           <nav className="wrap-wide flex h-[52px] items-center justify-between" aria-label={t.navLabel}>
             <Link href="/" aria-label={t.home} className="-ml-1 flex items-center gap-2.5 rounded-md px-1 py-2">
               <Mark />
-              <span className="text-[21px] font-semibold leading-none tracking-[0.011em] max-[734px]:text-[19px]">AgentProof</span>
+              <Wordmark className="text-[21px] leading-none max-[734px]:text-[19px]" />
             </Link>
             <Nav email={(await currentUser())?.email ?? null} t={t.nav} />
           </nav>

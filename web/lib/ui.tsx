@@ -1,4 +1,3 @@
-import { useId } from "react";
 import { EXCLUDED, blockerNames } from "./engine";
 import type { Lang } from "./i18n";
 import { getLang, getT } from "./lang";
@@ -151,29 +150,27 @@ export function AgentCursor({ x, y, animate = false, className = "" }: { x: numb
   );
 }
 
-// AgentProof mark: the agent's cursor heading for the blue dot (the checkout).
-// The AgentProof mark: the agent's cursor, stamped with a blue "verified" check. Follows the theme
-// (dark tile in light mode, light tile in dark mode); app/icon.svg is the fixed-color favicon copy.
+// The AgentProof mark: dots that land in a "V" (the agent's path to a verified purchase), with the
+// blue dot top right. Dots follow the theme (--ink); app/icon.svg is the favicon copy.
+export const MARK_DOTS: [number, number][] = [[7, 19], [19.5, 31.5], [32, 44], [44.5, 31.5]];
+export const MARK_ACCENT: [number, number] = [57, 19];
+export const MARK_R = 6.2;
+
 export function Mark({ className = "h-[24px] w-[24px]" }: { className?: string }) {
-  const id = useId();
   return (
     <svg viewBox="0 0 64 64" className={className} aria-hidden>
-      <defs>
-        <linearGradient id={`${id}s`} x2="0" y2="1">
-          <stop offset="0" stopColor="#fff" stopOpacity="0.16" />
-          <stop offset="1" stopColor="#fff" stopOpacity="0" />
-        </linearGradient>
-        <linearGradient id={`${id}b`} x2="0" y2="1">
-          <stop offset="0" stopColor="#2997ff" />
-          <stop offset="1" stopColor="#0071e3" />
-        </linearGradient>
-      </defs>
-      <rect width="64" height="64" rx="14.5" fill="var(--ink)" />
-      <rect width="64" height="64" rx="14.5" fill={`url(#${id}s)`} />
-      <path d="M14 10.5V39l6.6-6.4 5.2 11.6 4-1.6-5.1-11.4H34z" fill="var(--bg)" stroke="var(--bg)" strokeWidth="2.5" strokeLinejoin="round" />
-      <circle cx="41.5" cy="42" r="12" fill={`url(#${id}b)`} stroke="var(--ink)" strokeWidth="3.5" />
-      <path d="M36 42.3l3.8 3.8 7.2-7.8" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
+      {MARK_DOTS.map(([cx, cy]) => <circle key={cx} cx={cx} cy={cy} r={MARK_R} fill="var(--ink)" />)}
+      <circle cx={MARK_ACCENT[0]} cy={MARK_ACCENT[1]} r={MARK_R} fill="var(--blue)" />
     </svg>
+  );
+}
+
+// "Agent" in ink, "Proof" in blue, bold: the wordmark next to the mark.
+export function Wordmark({ className = "" }: { className?: string }) {
+  return (
+    <span className={`font-bold tracking-[-0.01em] ${className}`}>
+      Agent<span className="text-blue">Proof</span>
+    </span>
   );
 }
 

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 64" width="300" height="64" role="img" aria-label="AgentProof">
+  <title>AgentProof</title>
+  <g fill="#f5f5f7"><circle cx="7" cy="19" r="6.2"/><circle cx="19.5" cy="31.5" r="6.2"/><circle cx="32" cy="44" r="6.2"/><circle cx="44.5" cy="31.5" r="6.2"/></g>
+  <circle cx="57" cy="19" r="6.2" fill="#0071e3"/>
+  <text x="80" y="45.5" font-family="-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI','Helvetica Neue',Helvetica,Arial,sans-serif" font-size="40" font-weight="700" letter-spacing="-0.4" fill="#f5f5f7">Agent<tspan fill="#0071e3">Proof</tspan></text>
+</svg>
