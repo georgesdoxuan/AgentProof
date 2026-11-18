@@ -94,7 +94,7 @@ export function ConfirmButton({ message, children, className = "" }: { message: 
   );
 }
 
-export function CopyField({ value, label }: { value: string; label: string }) {
+export function CopyField({ value, label, lang = "fr" }: { value: string; label: string; lang?: "fr" | "en" }) {
   const [copied, setCopied] = useState(false);
   return (
     <div className="flex items-center gap-2 rounded-[12px] bg-bg-2 p-1.5 pl-4 dark:bg-[#2c2c2e]">
@@ -105,7 +105,7 @@ export function CopyField({ value, label }: { value: string; label: string }) {
         className="btn btn-dark min-h-9 px-4 text-[14px]"
         aria-live="polite"
       >
-        {copied ? "Copié" : "Copier"}
+        {lang === "en" ? (copied ? "Copied" : "Copy") : copied ? "Copié" : "Copier"}
       </button>
     </div>
   );

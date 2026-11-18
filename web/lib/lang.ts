@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { DEFAULT_LANG, LANG_COOKIE, dict, isLang, type Lang } from "./i18n";
+import { DEFAULT_LANG, LANG_COOKIE, dict, isLang, tr, type Lang } from "./i18n";
 
 // The interface language chosen on the account page, kept in a cookie so it works signed in or not.
 export async function getLang(): Promise<Lang> {
@@ -8,3 +8,8 @@ export async function getLang(): Promise<Lang> {
 }
 
 export const getDict = async () => dict(await getLang());
+
+export const getT = async () => tr(await getLang());
+
+// One-off server message (API error, e-mail) in the requester's language.
+export const msg = async (fr: string, en: string) => ((await getLang()) === "en" ? en : fr);
