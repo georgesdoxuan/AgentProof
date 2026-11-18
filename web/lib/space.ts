@@ -1,5 +1,5 @@
 import "server-only";
-import { db } from "./engine";
+import { AGENT_ONLY, db } from "./engine";
 import { summarize } from "./ui";
 
 // Everything the team space shows comes from one read: the team's audits, grouped by site.
@@ -128,7 +128,8 @@ export async function loadSpace(teamId: string) {
     if (!v.latest) continue;
     const latestAt = Date.parse(v.latest.created_at);
     const siteFixes = (fixes ?? []).filter((f) => f.site_id === v.site_id && f.device === v.device);
-    v.blockers = v.latest.s.blockers.map(([type, missions]) => {
+    // Agent-only outcomes (catalogue, step count) are nothing the site can fix: kept in the report, out of the checklist.
+    v.blockers = v.latest.s.blockers.filter(([type]) => !AGENT_ONLY.includes(type)).map(([type, missions]) => {
       const fix = siteFixes.find((f) => f.blocker_type === type);
       return {
         type,

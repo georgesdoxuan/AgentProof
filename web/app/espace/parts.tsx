@@ -70,22 +70,26 @@ export function SiteCard({ site }: { site: SiteView }) {
   );
 }
 
-const STATE: Record<Blocker["state"], [string, string]> = {
-  todo: ["À faire", "bg-fail/12 text-fail"],
-  back: ["Toujours présent", "bg-warn/15 text-warn"],
+// Every open blocker is "to do": only the states that differ get a pill. Red stays for failed missions.
+// Light text darkened for 4.5:1 on the tinted pill (#9c4600: 5.2, #0066cc: 4.7); dark tokens already pass.
+const STATE: Record<Blocker["state"], [string, string] | null> = {
+  todo: null,
+  back: ["Toujours présent", "bg-warn/15 text-[#9c4600] dark:text-warn"],
   check: ["Corrigé · à vérifier", "bg-blue/12 text-link"],
 };
 
 // The checklist line: what stops the agent, the proof, the fix, and the team's progress on it.
 export function BlockerItem({ site, b, canEdit, compact = false }: { site: SiteView; b: Blocker; canEdit: boolean; compact?: boolean }) {
-  const [word, pill] = STATE[b.state];
+  const state = STATE[b.state];
   return (
     <article className={`tile grid min-w-0 gap-7 p-7! ${compact ? "" : "md:grid-cols-[1fr_minmax(0,360px)]"}`}>
       <div className="flex flex-col">
         <div className="type-small flex flex-wrap items-center gap-x-3 gap-y-1.5">
-          <span className={`rounded-full px-2.5 py-0.5 font-semibold ${pill}`}>{word}</span>
+          {state && <span className={`rounded-full px-2.5 py-0.5 font-semibold ${state[1]}`}>{state[0]}</span>}
           <span className="text-ink-2">
-            {b.missions} mission{b.missions > 1 ? "s" : ""} bloquée{b.missions > 1 ? "s" : ""}
+            <span className="font-semibold text-ink">
+              {b.missions} mission{b.missions > 1 ? "s" : ""} perdue{b.missions > 1 ? "s" : ""}
+            </span>
             {compact && ` · ${site.domain}`}
           </span>
         </div>
