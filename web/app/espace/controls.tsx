@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import type { Dict } from "@/lib/i18n";
 
 // lib/ui pulls in the server engine, so client controls keep their own styles.
 // Pop-up button look for native <select>: keeps the system menu, drops the default chrome.
@@ -9,25 +10,16 @@ const popUp =
   "h-9 cursor-pointer appearance-none rounded-[8px] bg-fill bg-[length:10px] bg-[right_10px_center] bg-no-repeat pl-3 pr-8 type-small font-semibold text-ink transition-colors hover:bg-line/60 focus-visible:outline-2 focus-visible:outline-blue " +
   "bg-[url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M2 5l3-3 3 3M2 9l3 3 3-3' fill='none' stroke='%2386868b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")]";
 
-const SECTIONS = [
-  ["/espace", "Accueil"],
-  ["/espace/sites", "Mes sites"],
-  ["/espace/rapports", "Rapports"],
-  ["/espace/paiement", "Paiement"],
-  ["/espace/comptes", "Comptes de test"],
-  ["/espace/automations", "Automations"],
-  ["/espace/classement", "Classement"],
-  ["/equipe", "Équipe"],
-  ["/compte", "Compte"],
-] as const;
+// Order of the sections; their names come from the dictionary.
+const SECTIONS = ["/espace", "/espace/sites", "/espace/rapports", "/espace/paiement", "/espace/comptes", "/espace/automations", "/espace/classement", "/equipe", "/compte"] as const;
 
 // Sidebar on wide screens, segmented tabs on narrow ones. Tabs navigate, they never act.
-export function SpaceNav() {
+export function SpaceNav({ t }: { t: Dict["space"] }) {
   const path = usePathname();
   return (
-    <nav aria-label="Espace" className="max-lg:-mx-1 max-lg:overflow-x-auto">
+    <nav aria-label={t.label} className="max-lg:-mx-1 max-lg:overflow-x-auto">
       <ul className="flex gap-1 lg:flex-col max-lg:inline-flex max-lg:rounded-[10px] max-lg:bg-fill max-lg:p-[3px]">
-        {SECTIONS.map(([href, label]) => {
+        {SECTIONS.map((href) => {
           // "Mes sites" stays lit on a site page; "Accueil" only on itself.
           const current = href === "/espace" ? path === href : path === href || path.startsWith(`${href}/`);
           return (
@@ -41,7 +33,7 @@ export function SpaceNav() {
                     : "text-ink-2 hover:bg-tile/60 hover:text-ink max-lg:hover:bg-transparent"
                 }`}
               >
-                {label}
+                {t.sections[href]}
               </Link>
             </li>
           );
@@ -91,7 +83,7 @@ export function CopyField({ value, label }: { value: string; label: string }) {
 }
 
 // Back / forward, like a browser toolbar. Uses the Navigation API when available to grey out a dead end.
-export function HistoryButtons() {
+export function HistoryButtons({ back, forward }: { back: string; forward: string }) {
   const router = useRouter();
   const path = usePathname();
   const [can, setCan] = useState({ back: true, forward: true });
@@ -103,12 +95,12 @@ export function HistoryButtons() {
     "grid h-9 w-9 place-items-center rounded-full bg-fill text-ink transition-colors hover:bg-line/60 disabled:cursor-default disabled:opacity-35 focus-visible:outline-2 focus-visible:outline-blue";
   return (
     <div className="flex gap-2">
-      <button type="button" className={btn} onClick={() => router.back()} disabled={!can.back} aria-label="Page précédente" title="Page précédente">
+      <button type="button" className={btn} onClick={() => router.back()} disabled={!can.back} aria-label={back} title={back}>
         <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d="M10 3L5 8l5 5" />
         </svg>
       </button>
-      <button type="button" className={btn} onClick={() => router.forward()} disabled={!can.forward} aria-label="Page suivante" title="Page suivante">
+      <button type="button" className={btn} onClick={() => router.forward()} disabled={!can.forward} aria-label={forward} title={forward}>
         <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d="M6 3l5 5-5 5" />
         </svg>

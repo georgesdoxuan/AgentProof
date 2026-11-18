@@ -1,8 +1,9 @@
-import { ROLE_LABEL, type TeamRow } from "@/lib/auth";
+import type { TeamRow } from "@/lib/auth";
+import { getDict } from "@/lib/lang";
 import { AutoSubmitSelect, HistoryButtons, SpaceNav } from "./controls";
 
 // One frame for every page of the team space: team and sections on the left, the page on the right.
-export function SpaceShell({
+export async function SpaceShell({
   team,
   teams,
   title,
@@ -17,6 +18,7 @@ export function SpaceShell({
   actions?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const t = await getDict();
   return (
     <div className="min-h-[70vh] bg-bg-2 pb-24 pt-12 max-[734px]:pt-8">
       <div className="wrap-wide grid gap-10 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-14">
@@ -27,23 +29,23 @@ export function SpaceShell({
             </span>
             <span className="min-w-0">
               <span className="type-headline block break-words">{team.name}</span>
-              <span className="type-small text-ink-2">{ROLE_LABEL[team.role]}</span>
+              <span className="type-small text-ink-2">{t.roles[team.role]}</span>
             </span>
           </div>
           {teams.length > 1 && (
             <form action="/api/team" method="post" className="lg:px-3">
               <input type="hidden" name="action" value="switch" />
-              <AutoSubmitSelect name="team" defaultValue={team.id} label="Changer d'équipe" options={teams.map((t) => [t.id, t.name])} />
+              <AutoSubmitSelect name="team" defaultValue={team.id} label={t.space.switchTeam} options={teams.map((t) => [t.id, t.name])} />
             </form>
           )}
-          <SpaceNav />
+          <SpaceNav t={t.space} />
         </aside>
 
         <div className="min-w-0 space-y-12 max-[734px]:space-y-10">
           <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
             <div className="min-w-0">
               <div className="mb-5">
-                <HistoryButtons />
+                <HistoryButtons back={t.space.back} forward={t.space.forward} />
               </div>
               <h1 className="type-h2">{title}</h1>
               {intro && <p className="mt-3 max-w-[620px] text-ink-2">{intro}</p>}
