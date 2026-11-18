@@ -27,7 +27,7 @@ Avant de commencer : un onglet sur l'accueil, un 2e onglet sur le rapport Promod
 
 Côté technique, on a réglé plusieurs problèmes. L'agent croyait parfois avoir réussi alors qu'il était seulement sur le panier : un juge visuel vérifie maintenant chaque résultat à l'aveugle. Un même site ne donnait pas toujours le même résultat : on rejoue chaque échec et on fait la moyenne de deux passages. Et quand l'agent H se trompe lui-même, ses erreurs sont mises à part au lieu de pénaliser le site.
 
-Ce qui reste : un audit prend encore jusqu'à 17 minutes, parce que notre compte H ne fait tourner que 3 agents en même temps. Notre correctif est prêt et sera en ligne demain. Les sites avec un anti-bot bloquent encore notre agent. Le mobile ne simule que la taille de l'écran. Et on doit prouver que notre juge est d'accord avec un humain : on le mesure demain.
+Ce qui reste : un audit prend encore 7 à 17 minutes, alors qu'une mission ne dure qu'une minute et demie. La cause : notre moteur ne passait qu'une fois par minute, il lançait une seule mission à chaque passage, et il attendait la fin de l'audit pour rejouer les échecs. Notre correctif passe toutes les 10 secondes, lance les missions dès qu'une place se libère, et rejoue un échec tout de suite. Le but : un audit en 5 minutes environ, avec exactement les mêmes missions et le même juge. Il est prêt, on le met en ligne demain. Les sites avec un anti-bot bloquent encore notre agent. Le mobile ne simule que la taille de l'écran. Et on doit prouver que notre juge est d'accord avec un humain : on le mesure demain.
 
 Vendredi, on fait la démo live devant vous. Merci ! »
 
