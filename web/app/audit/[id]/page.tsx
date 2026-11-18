@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { DEFAULT_MODEL, EXCLUDED, PAYMENT_STAGES, PAYMENT_VERDICTS, db } from "@/lib/engine";
-import { BrowserFrame, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, summarize } from "@/lib/ui";
+import { BrowserFrame, Chevron, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, summarize } from "@/lib/ui";
 import { headers } from "next/headers";
 import { CopyField } from "@/app/espace/controls";
 import { Mark, StatusGlyph, scoreTone, toneWord } from "@/lib/ui";
@@ -154,6 +154,19 @@ function PrintCover(p: {
   );
 }
 
+// Report section heading: one size for every section, a one-line purpose under it, an optional figure on the trailing side.
+function SectionHead({ title, intro, aside }: { title: string; intro?: string; aside?: React.ReactNode }) {
+  return (
+    <div className="section-head mb-6 flex flex-wrap items-end justify-between gap-x-8 gap-y-2">
+      <div className="min-w-0 max-w-[680px]">
+        <h2 className="type-h3">{title}</h2>
+        {intro && <p className="mt-2 text-ink-2">{intro}</p>}
+      </div>
+      {aside}
+    </div>
+  );
+}
+
 async function loadAudit(id: string) {
   const { data } = await db.from("audits").select(`*, sites(domain, name, url), runs(${RUN_FIELDS})`).eq("id", id).maybeSingle();
   return data;
@@ -213,7 +226,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
           />
         </>
       )}
-      <div className="wrap-wide space-y-20 max-[734px]:space-y-14 print:space-y-[9mm]">
+      <div className="wrap-wide space-y-16 max-[734px]:space-y-12 print:space-y-[9mm]">
         <header className={paymentOnly ? undefined : "print:hidden"}>
           {branded && (
             <p className="mb-10 flex items-center gap-3 type-headline">
@@ -257,37 +270,40 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
           )}
         </header>
 
-        {/* Verdict */}
+        {/* 1. Verdict: the score, then either the comparison or every mission at a glance. */}
         {!paymentOnly && (
-        <section className="grid gap-5 lg:grid-cols-[1.5fr_1fr] print:block" aria-label="Score">
-          <div className="tile print:hidden">
+        <section className="grid gap-5 lg:grid-cols-[3fr_2fr] print:block" aria-label="Score">
+          <div className="tile flex flex-col print:hidden">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="type-headline">Score agent</h2>
               {s.score == null && audit.status === "done" ? <span className="type-small font-semibold text-ink-2">À confirmer</span> : <ToneLabel score={s.score} />}
             </div>
-            <p className="mt-6 text-[96px] font-semibold leading-none tracking-[-0.015em] tnum max-[734px]:text-[72px]">
+            <p className="mt-5 text-[96px] font-semibold leading-none tracking-[-0.015em] tnum max-[734px]:text-[72px]">
               {s.score ?? "—"}
               <span className="ml-1 text-[40px] font-semibold text-ink-2 max-[734px]:text-[32px]">%</span>
             </p>
-            <div className="mt-8">
+            <p className="mt-3 text-ink-2">
+              Entrée du checkout atteinte dans <span className="font-semibold text-ink tnum">{s.ok} mission{s.ok > 1 ? "s" : ""} sur {s.done}</span> comptée{s.done > 1 ? "s" : ""}.
+            </p>
+            <div className="mt-auto pt-8">
               <MissionBar ok={s.ok} done={s.done} total={s.total} size="lg" />
-              <ul className="type-small mt-4 flex flex-wrap gap-x-6 gap-y-1 text-ink-2">
-                <li className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-pass" aria-hidden />
+              <ul className="type-small mt-3 flex flex-wrap gap-x-5 gap-y-1 text-ink-2 tnum">
+                <li className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-pass" aria-hidden />
                   {s.ok} réussie{s.ok > 1 ? "s" : ""}
                 </li>
-                <li className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-fail" aria-hidden />
+                <li className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-fail" aria-hidden />
                   {s.done - s.ok} bloquée{s.done - s.ok > 1 ? "s" : ""}
                 </li>
                 {aside > 0 && (
-                  <li className="flex items-center gap-2">
-                    <span className="h-2.5 w-2.5 rounded-full bg-fill" aria-hidden />
+                  <li className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-fill shadow-[inset_0_0_0_1px_var(--line)]" aria-hidden />
                     {aside} hors score
                   </li>
                 )}
               </ul>
-              <p className="type-small mt-4 max-w-[560px] text-ink-2">{scope}</p>
+              <p className="type-small mt-5 border-t border-hairline pt-4 text-ink-2">{scope}</p>
             </div>
           </div>
 
@@ -320,13 +336,25 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
               </span>
             </Link>
           ) : (
-            <div className="tile flex flex-col justify-center print:hidden">
-              <h2 className="type-headline">Pas de concurrent dans cet audit.</h2>
-              <p className="mt-2 text-ink-2">Compare ce score avec les autres sites mode.</p>
-              <Link href="/classement" className="more mt-2">
-                Voir le classement
+            <nav className="tile flex flex-col p-0! print:hidden" aria-label="Missions en bref">
+              <h2 className="type-headline px-7 pt-7 pb-3 max-[734px]:px-6">Missions en bref</h2>
+              <ol>
+                {runs.map((r: any, i: number) => (
+                  <li key={r.id} className="border-t border-hairline first:border-0">
+                    <a href={`#mission-${i + 1}`} className="flex min-h-[52px] items-center gap-3 px-7 py-2.5 transition-colors hover:bg-bg-2/70 max-[734px]:px-6 dark:hover:bg-white/5">
+                      <span className="w-4 shrink-0 type-small text-ink-2 tnum">{i + 1}</span>
+                      <span className="min-w-0 flex-1 truncate">{r.missions.title}</span>
+                      <span className="type-small shrink-0">
+                        <StatusBadge run={r} />
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ol>
+              <Link href="/classement" className="more mt-auto border-t border-hairline px-7 max-[734px]:px-6">
+                Comparer au classement
               </Link>
-            </div>
+            </nav>
           )}
         </section>
         )}
@@ -366,76 +394,71 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
           </section>
         ))}
 
-        {!paymentOnly && (statik?.items || (running && audit.kind === "checkout")) && (
-          <section>
-            <h2 className="type-h2">Ce que lit un robot, sans navigateur.</h2>
-            <p className="mt-3 mb-8 max-w-[680px] text-ink-2">
-              Lecture gratuite du code du site, comme les outils qui notent un site sans le tester. Elle complète l&apos;agent, elle ne compte pas dans le score.
-            </p>
-            {statik?.items ? (
-              <ul className="overflow-hidden rounded-[18px] bg-tile">
-                {statik.items.map((it) => (
-                  <li key={it.key} className="flex items-start gap-3 border-b border-hairline px-6 py-4 last:border-0">
-                    <StatusGlyph tone={it.tone} className="mt-0.5 h-5 w-5" />
-                    <span>
-                      <span className="font-semibold">{it.label}</span>
-                      <span className="type-small block text-ink-2">{it.detail}</span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="type-small flex items-center gap-2 text-ink-2">
-                <Spinner className="h-3.5 w-3.5" /> Lecture en cours…
-              </p>
-            )}
-          </section>
-        )}
-
+        {/* 2. Diagnosis: what blocks, then what to fix. */}
         {s.blockers.length > 0 && (
           <section>
-            <h2 className="type-h2 mb-8">Ce qui arrête l&apos;agent.</h2>
+            <SectionHead title="Ce qui arrête l'agent." intro="Blocages relevés pendant les missions, du plus fréquent au moins fréquent. Ceux marqués hors score ne comptent ni pour ni contre le site." />
             <ol className="overflow-hidden rounded-[18px] bg-tile">
-              {s.blockers.slice(0, 3).map(([b, n]) => (
-                <li key={b} className="grid grid-cols-[1fr_auto] items-center gap-x-6 gap-y-3 border-b border-hairline px-6 py-5 last:border-0 sm:grid-cols-[minmax(0,16rem)_1fr_auto]">
-                  <span className="type-headline">{blockerLabel(b)}</span>
-                  <span className="col-span-2 row-start-2 block h-2 overflow-hidden rounded-full bg-fill sm:col-span-1 sm:row-start-auto" aria-hidden>
-                    <span className="block h-full rounded-full bg-fail" style={{ width: `${(100 * n) / maxBlock}%` }} />
-                  </span>
-                  <span className="text-ink-2 tnum">
-                    {n} mission{n > 1 ? "s" : ""}
-                  </span>
-                </li>
-              ))}
+              {s.blockers.slice(0, 3).map(([b, n]) => {
+                const out = EXCLUDED.includes(b);
+                return (
+                  <li key={b} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-2.5 border-b border-hairline px-6 py-4 last:border-0 md:grid-cols-[minmax(0,18rem)_minmax(0,1fr)_7.5rem]">
+                    <span className="min-w-0">
+                      <span className="font-semibold">{blockerLabel(b)}</span>
+                      {out && <span className="type-small ml-2 whitespace-nowrap text-ink-2">Hors score</span>}
+                    </span>
+                    <span className="col-span-2 row-start-2 block h-1.5 overflow-hidden rounded-full bg-fill md:col-span-1 md:row-start-auto" aria-hidden>
+                      <span className={`block h-full rounded-full ${out ? "bg-ink-2/50" : "bg-fail"}`} style={{ width: `${(100 * n) / maxBlock}%` }} />
+                    </span>
+                    <span className="type-small text-right text-ink-2 tnum md:row-start-auto">
+                      {n} mission{n > 1 ? "s" : ""}
+                    </span>
+                  </li>
+                );
+              })}
             </ol>
           </section>
         )}
 
         {audit.recommendations && (
           <section>
-            <h2 className="type-h2 mb-8">Plan de corrections.</h2>
+            <SectionHead title="Plan de corrections." />
             <Recommendations text={audit.recommendations} />
-            <p className="type-caption mt-4 text-ink-2">Les constats viennent des verdicts des missions ci-dessous. Les hypothèses et corrections sont générées par IA (modèle open source sur Hugging Face) : à vérifier avant d&apos;agir.</p>
+            <p className="type-caption mt-4 max-w-[680px] text-ink-2">Les constats viennent des verdicts des missions ci-dessous. Les hypothèses et corrections sont générées par IA (modèle open source sur Hugging Face) : à vérifier avant d&apos;agir.</p>
           </section>
         )}
 
+        {/* 3. Evidence: every mission with its last screen. */}
         {!paymentOnly && (
-        <section>
-          <div className="mb-8 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-            <h2 className="type-h2">Missions.</h2>
-            {cost > 0 && <span className="type-small text-ink-2 tnum">Coût agent : {cost.toFixed(2)} $</span>}
-          </div>
-          <div className="space-y-5">
+        <section className="print-new-page">
+          <SectionHead
+            title="Missions."
+            intro="Chaque mission part de l'accueil du site et s'arrête à l'entrée du checkout. La capture montre le dernier écran vu par l'agent."
+            aside={cost > 0 && <span className="type-small text-ink-2 tnum">Coût agent : {cost.toFixed(2)} $</span>}
+          />
+          <div className="space-y-4">
             {runs.map((r: any, i: number) => (
-              <article key={r.id} className="tile grid gap-8 md:grid-cols-[1fr_minmax(0,420px)]">
-                <div className="flex flex-col">
+              <article key={r.id} id={`mission-${i + 1}`} className="tile grid scroll-mt-24 gap-x-10 gap-y-6 p-8! md:grid-cols-[minmax(0,1fr)_minmax(0,400px)] max-[734px]:p-6!">
+                <div className="flex min-w-0 flex-col">
                   <div className="type-small flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <span className="text-ink-2">Mission {i + 1}</span>
+                    <span className="text-ink-2 tnum">Mission {i + 1}</span>
                     <StatusBadge run={r} />
                   </div>
-                  <h3 className="type-h3 mt-3">{r.missions.title}</h3>
+                  <h3 className="type-h3 mt-2">{r.missions.title}</h3>
+                  {r.status === "done" && (
+                    <div className="mt-4">
+                      {!r.success && r.success !== null && <p className="font-semibold">{blockerLabel(r.blocker_type)}</p>}
+                      <p className="text-ink-2">{conclusion(r)}</p>
+                    </div>
+                  )}
+                  {r.status === "done" && r.reached_checkout && !r.success && r.judge?.reason && (
+                    <p className="type-small mt-4 rounded-[12px] bg-bg-2 px-4 py-3 dark:bg-[#2c2c2e]">
+                      <span className="font-semibold text-warn">Juge visuel. </span>
+                      {r.judge.reason}
+                    </p>
+                  )}
                   {r.first_attempt && (
-                    <p className="type-small mt-3 text-ink-2">
+                    <p className="type-small mt-4 border-l-2 border-line pl-3 text-ink-2">
                       Mission rejouée : le premier essai a échoué ({r.first_attempt.blocker_type ? blockerLabel(r.first_attempt.blocker_type) : "erreur technique"}).
                       {r.status === "done" && r.success !== null && !(r.success === false && EXCLUDED.includes(r.blocker_type)) && (r.success ? " Le second a réussi : l’échec n’était pas reproductible." : " Le second confirme l’échec.")}
                       {r.first_attempt.session_id && (
@@ -447,6 +470,16 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                         </>
                       )}
                     </p>
+                  )}
+                  {r.status === "done" && (r.blocker_detail || r.agent_answer?.steps_summary) && (
+                    <details className="type-small group mt-4 text-ink-2">
+                      <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 text-link [&::-webkit-details-marker]:hidden">
+                        <Chevron className="h-2.5 w-2.5 transition-transform duration-200 group-open:rotate-90" />
+                        Réponse originale de l&apos;agent
+                      </summary>
+                      {r.blocker_detail && <p className="mt-2">{r.blocker_detail}</p>}
+                      {r.agent_answer?.steps_summary && r.agent_answer.steps_summary !== r.blocker_detail && <p className="mt-2">{r.agent_answer.steps_summary}</p>}
+                    </details>
                   )}
                   {r.status === "launched" && r.session_id && (
                     <div className="mt-auto pt-6">
@@ -460,39 +493,32 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                     </div>
                   )}
                   {r.status === "done" && (
-                    <>
-                      {!r.success && r.success !== null && <p className="mt-4 font-semibold">{blockerLabel(r.blocker_type)}</p>}
-                      <p className={`text-ink-2 ${r.success ? "mt-4" : "mt-1"}`}>{conclusion(r)}</p>
-                      {(r.blocker_detail || r.agent_answer?.steps_summary) && (
-                        <details className="type-small mt-2 text-ink-2">
-                          <summary className="cursor-pointer text-link">Réponse originale de l&apos;agent</summary>
-                          {r.blocker_detail && <p className="mt-2">{r.blocker_detail}</p>}
-                          {r.agent_answer?.steps_summary && r.agent_answer.steps_summary !== r.blocker_detail && <p className="mt-2">{r.agent_answer.steps_summary}</p>}
-                        </details>
-                      )}
-                      {r.reached_checkout && !r.success && r.judge?.reason && (
-                        <p className="type-small mt-4 rounded-[12px] bg-bg-2 px-4 py-3 dark:bg-[#2c2c2e]">
-                          <span className="font-semibold text-warn">Juge visuel. </span>
-                          {r.judge.reason}
-                        </p>
-                      )}
-                      <div className="mt-auto flex flex-wrap items-center gap-x-5 gap-y-2 pt-6">
-                        <Link href={`/replay/${r.id}?a=${audit.id}`} className="no-print btn btn-dark min-h-[40px] px-[18px] text-[15px]">
-                          <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="currentColor" aria-hidden>
-                            <path d="M2.5 1.3v9.4L10.6 6z" />
-                          </svg>
-                          Voir le replay
-                        </Link>
-                        <span className="type-small text-ink-2 tnum">
-                          {r.steps ?? "?"} étapes · {r.duration_s ? `${Math.round(r.duration_s)} s` : "?"}
-                          {r.cost_usd != null && ` · ${Number(r.cost_usd).toFixed(3)} $`}
-                        </span>
-                      </div>
-                    </>
+                    <div className="mt-auto flex flex-wrap items-end justify-between gap-x-6 gap-y-4 pt-6">
+                      <dl className="flex gap-6 tnum">
+                        {(
+                          [
+                            ["Étapes", r.steps ?? "?"],
+                            ["Durée", r.duration_s ? `${Math.round(r.duration_s)} s` : "?"],
+                            ...(r.cost_usd != null ? [["Coût", `${Number(r.cost_usd).toFixed(3)} $`]] : []),
+                          ] as [string, string | number][]
+                        ).map(([k, v]) => (
+                          <div key={k}>
+                            <dt className="type-caption text-ink-2">{k}</dt>
+                            <dd className="type-small font-semibold">{v}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                      <Link href={`/replay/${r.id}?a=${audit.id}`} className="no-print btn btn-dark min-h-[40px] px-[18px] text-[15px]">
+                        <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="currentColor" aria-hidden>
+                          <path d="M2.5 1.3v9.4L10.6 6z" />
+                        </svg>
+                        Voir le replay
+                      </Link>
+                    </div>
                   )}
                 </div>
                 {r.screenshot_url ? (
-                  <a href={r.screenshot_url} target="_blank" rel="noreferrer" className="block rounded-[12px]" aria-label={`Ouvrir la capture : ${r.missions.title}`}>
+                  <a href={r.screenshot_url} target="_blank" rel="noreferrer" className="block self-start rounded-[12px]" aria-label={`Ouvrir la capture : ${r.missions.title}`}>
                     <BrowserFrame url={r.final_url}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={r.screenshot_url} alt={`Dernier écran vu par l'agent : ${r.missions.title}`} className="block w-full" />
@@ -502,7 +528,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                     </BrowserFrame>
                   </a>
                 ) : (
-                  <div className="type-small grid aspect-[16/10] place-items-center rounded-[12px] bg-bg-2 text-ink-2 dark:bg-[#2c2c2e]">
+                  <div className="type-small grid aspect-[16/10] place-items-center self-start rounded-[12px] bg-bg-2 text-ink-2 dark:bg-[#2c2c2e]">
                     {r.status === "done" ? "Pas de capture" : "Capture à venir"}
                   </div>
                 )}
@@ -510,6 +536,36 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             ))}
           </div>
         </section>
+        )}
+
+        {/* 4. Context: the free static reading, which never counts in the score. */}
+        {!paymentOnly && (statik?.items || (running && audit.kind === "checkout")) && (
+          <section>
+            <SectionHead
+              title="Ce que lit un robot, sans navigateur."
+              intro="Lecture gratuite du code du site, comme les outils qui notent un site sans le tester. Elle complète l'agent, elle ne compte pas dans le score."
+              aside={statik?.items && <span className="type-small text-ink-2 tnum">{statik.items.filter((it) => it.tone === "pass").length} sur {statik.items.filter((it) => it.tone !== "none").length} au vert</span>}
+            />
+            {statik?.items ? (
+              <div className="overflow-hidden rounded-[18px] bg-tile">
+              <ul className="-mb-px grid lg:grid-cols-2">
+                {statik.items.map((it) => (
+                  <li key={it.key} className="flex items-start gap-3 border-b border-hairline px-6 py-4 lg:odd:border-r">
+                    <StatusGlyph tone={it.tone} className="mt-0.5 h-5 w-5" />
+                    <span className="min-w-0">
+                      <span className="font-semibold">{it.label}</span>
+                      <span className="type-small block text-ink-2">{it.detail}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              </div>
+            ) : (
+              <p className="type-small flex items-center gap-2 text-ink-2">
+                <Spinner className="h-3.5 w-3.5" /> Lecture en cours…
+              </p>
+            )}
+          </section>
         )}
 
         {!paymentOnly && audit.status === "done" && s.score != null && (

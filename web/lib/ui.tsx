@@ -285,12 +285,20 @@ export function Recommendations({ text }: { text: string }) {
     else if (items.length) items[items.length - 1].fix.push(line);
     else intro.push(line);
   }
-  if (!items.length) return <p className="tile type-intro whitespace-pre-line">{text}</p>;
+  // Free text: one paragraph per line, at reading size and measure.
+  if (!items.length)
+    return (
+      <div className="tile space-y-3 p-8! max-[734px]:p-6! print:p-[5mm]!">
+        {intro.map((l, i) => (
+          <p key={i} className="max-w-[720px]">{l}</p>
+        ))}
+      </div>
+    );
 
   return (
     <div className="space-y-6">
-      {intro.length > 0 && <p className="type-intro max-w-[760px] text-ink-2">{intro.join(" ")}</p>}
-      <ol className="grid gap-5 md:grid-cols-3 print:grid-cols-1 print:gap-[3mm]">
+      {intro.length > 0 && <p className="max-w-[720px] text-ink-2">{intro.join(" ")}</p>}
+      <ol className={`grid gap-4 md:grid-cols-2 print:grid-cols-1 print:gap-[3mm] ${items.length > 2 ? "lg:grid-cols-3" : ""}`}>
         {items.map((it, i) => (
           <li key={i} className="tile flex flex-col p-7! print:p-[5mm]!">
             <span className="type-small text-ink-2">{it.fix.some((l) => TAGGED.test(l)) ? "Blocage" : "Correction"} {i + 1}</span>
