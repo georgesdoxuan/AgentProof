@@ -18,4 +18,5 @@ Depuis l’accueil, le bouton ouvre directement un rapport terminé, avec score,
 2026-11-18 — Demande validée par Mehdi pour la démonstration de vendredi à 11 h. Effort estimé : une heure. web/app/page.tsx. Choisir un rapport de démonstration dont les conclusions ont été vérifiées ; ne pas privilégier un score élevé au détriment de la cohérence.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait
+- Doublon de la demande d'Adonaï `2026-11-18-lien-exemple-de-rapport-accueil.md`, déjà faite (commit 88f7640) : lien « Voir un exemple de rapport » sous le titre de l'accueil, vers le rapport Promod, sans lancer d'audit.

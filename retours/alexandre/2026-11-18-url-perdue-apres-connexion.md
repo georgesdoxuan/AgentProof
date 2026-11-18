@@ -25,4 +25,8 @@ Après la connexion, le visiteur retrouve le formulaire déjà rempli avec ce qu
 - Vérifier que `next` passe bien le lien magique (`web/app/api/auth/route.ts`), encodage compris.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait
+- Un visiteur non connecté qui clique « Lancer l'audit » part vers `/connexion?next=/espace/nouveau?url=…&competitor=…&device=…`. Le `next` passe par le lien magique (stocké avec le jeton). Après connexion, `/espace/nouveau` est prérempli (site, concurrent, appareil). L'audit ne part jamais tout seul : il faut cliquer.
+- L'e-mail du rapport saisi sur l'accueil n'est pas repris (le rapport part à l'adresse de connexion).
+- Fichiers : `web/app/api/audits/route.ts`, `web/app/espace/nouveau/page.tsx`.
+- Commit : fa425bf.

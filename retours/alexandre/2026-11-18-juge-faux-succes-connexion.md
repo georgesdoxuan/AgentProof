@@ -24,4 +24,9 @@ Deux pistes simples, à combiner si possible :
 Je peux m'occuper du nouveau prompt et de la mesure avant / après (rôle CAIO) si Georges valide la piste.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait
+- Les deux pistes sont combinées. Prompt du juge (et `scripts/rejudge.mjs`) : une connexion ne compte comme checkout que si elle vient après le panier, c'est-à-dire si l'URL montre une étape de commande (checkout, commande, order, panier, cart, basket, tunnel, livraison, shipping, paiement, payment) ou si la page montre qu'elle fait partie de la commande. Une connexion ouverte depuis l'en-tête, un produit ou l'accueil ne compte pas.
+- Garde-fou dans `finalize` : si le juge dit checkout, que l'agent dit ne pas l'avoir atteint et que l'URL finale n'a pas d'étape de commande, le run passe « non vérifié » (hors score) au lieu de réussi.
+- S'applique aux nouveaux runs. Les runs existants n'ont pas été rejugés : la mesure avant / après avec `scripts/rejudge.mjs` reste à faire (Alexandre l'a proposée).
+- Fichiers : `web/lib/engine.ts`, `scripts/rejudge.mjs`.
+- Commit : fa425bf.
