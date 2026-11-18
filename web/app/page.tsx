@@ -160,6 +160,10 @@ export default async function Home() {
               "Le test s’arrête à l’entrée du checkout : le paiement n’est pas testé. Le rapport sépare ce que l’agent a observé des causes supposées, à vérifier par ton équipe.",
               "The test stops at the checkout entrance: payment is not tested. The report keeps what the agent observed apart from assumed causes, for your team to check.",
             )}
+            {" "}
+            <Link href="/methode#paiement" className="text-link hover:underline">
+              {t("La suite : le paiement", "Next step: the payment")}
+            </Link>
           </p>
         </div>
       </section>
