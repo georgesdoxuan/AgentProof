@@ -11,12 +11,13 @@ export async function generateMetadata() {
   return { title: `${t("Lancer un audit", "Run an audit")} · AgentProof` };
 }
 
-export default async function Nouveau({ searchParams }: { searchParams: Promise<{ url?: string }> }) {
+export default async function Nouveau({ searchParams }: { searchParams: Promise<{ url?: string; competitor?: string; device?: string }> }) {
   const ctx = await teamContext();
   if (!ctx) redirect("/connexion?next=/espace/nouveau");
   if (!ctx.team || !canLaunch(ctx.team.role)) redirect("/espace");
   const { user, teams, team } = ctx;
-  const { url } = await searchParams;
+  // Filled in from the home form when the visitor had to sign in first (see /api/audits).
+  const { url, competitor, device } = await searchParams;
   const card = await cardView(team.id);
   const t = await getT();
 
@@ -49,7 +50,7 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
             />
           )}
           <Field label={t("Adresse du site", "Site address")} name="url" required defaultValue={url} />
-          <Field label={t("Un concurrent (facultatif)", "A competitor (optional)")} name="competitor" />
+          <Field label={t("Un concurrent (facultatif)", "A competitor (optional)")} name="competitor" defaultValue={competitor} />
           <label className="type-small flex items-start gap-3 rounded-[12px] bg-bg-2 p-4 dark:bg-[#2c2c2e]">
             <input type="checkbox" name="models" value="1" className="mt-0.5 h-4 w-4 shrink-0 accent-blue" />
             <span>
@@ -94,7 +95,7 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
             <Segmented
               name="device"
               label={t("Appareil", "Device")}
-              value="desktop"
+              value={device === "mobile" ? "mobile" : "desktop"}
               options={[
                 ["desktop", t("Ordinateur", "Desktop")],
                 ["mobile", "Mobile"],

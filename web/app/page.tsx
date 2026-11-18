@@ -3,7 +3,7 @@ import { connection } from "next/server";
 import { db } from "@/lib/engine";
 import { currentUser } from "@/lib/auth";
 import { AgentCursor, BrowserFrame, Field, MissionBar, StatusGlyph, Verdict, blockerLabel, scoreTone } from "@/lib/ui";
-import { tr, type T } from "@/lib/i18n";
+import { tr, type Lang, type T } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 
 // Report opened by "Voir un exemple de rapport": real counted blockers, captures, replays and a plan. Env var to swap it without code.
@@ -28,8 +28,13 @@ export default async function Home() {
       .maybeSingle(),
   ]);
 
+  // The report e-mail goes through n8n: only announce it when that hook is configured.
+  const mails = !!process.env.N8N_NOTIFY_URL;
+
   return (
     <>
+      <SectionMenu lang={lang} />
+
       {/* Hero */}
       <section className="overflow-hidden pt-[88px] text-center max-[734px]:pt-14">
         <div className="wrap">
@@ -63,7 +68,7 @@ export default async function Home() {
       </section>
 
       {/* Statement */}
-      <section className="section">
+      <section id="pourquoi" className="section scroll-mt-[96px]">
         <div className="wrap">
           <p className="type-h2 text-ink-2">
             {t(
@@ -87,15 +92,15 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="section bg-bg-2">
+      {/* What you get */}
+      <section id="ce-que-tu-recois" className="section scroll-mt-[96px] bg-bg-2">
         <div className="wrap-wide">
           <h2 className="type-h1 mb-12 max-[734px]:mb-8">{t("Ce que tu reçois.", "What you get.")}</h2>
           <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-2">
             <article className="tile grid grid-cols-[minmax(0,1fr)] items-center gap-10 lg:col-span-2 lg:grid-cols-[1fr_1.1fr]">
               <div>
                 <p className="type-eyebrow text-ink-2">Missions</p>
-                <h3 className="type-h2 mt-3">{t("Cinq achats réels, jusqu’au checkout.", "Five real purchases, up to checkout.")}</h3>
+                <h3 className="type-h2 mt-3">{t("Cinq parcours d’achat testés, sans paiement.", "Five purchase journeys tested, no payment.")}</h3>
                 <p className="mt-4 max-w-[440px] text-ink-2">
                   {t(
                     "L’agent cherche, filtre, choisit une taille et remplit le panier, comme un client. Il s’arrête à la première page du checkout.",
@@ -140,11 +145,27 @@ export default async function Home() {
               <FixesVisual t={t} />
             </article>
           </div>
+
+          <h3 className="type-h2 mt-20 max-[734px]:mt-14">{t("Ce que ton équipe en fait.", "What your team does with it.")}</h3>
+          <div className="mt-8 grid gap-5 md:grid-cols-3">
+            {BENEFITS[lang].map(([title, text]) => (
+              <article key={title} className="tile">
+                <h4 className="type-headline">{title}</h4>
+                <p className="mt-2 text-ink-2">{text}</p>
+              </article>
+            ))}
+          </div>
+          <p className="type-small mt-5 max-w-[760px] text-ink-2">
+            {t(
+              "Le test s’arrête à l’entrée du checkout : le paiement n’est pas testé. Le rapport sépare ce que l’agent a observé des causes supposées, à vérifier par ton équipe.",
+              "The test stops at the checkout entrance: payment is not tested. The report keeps what the agent observed apart from assumed causes, for your team to check.",
+            )}
+          </p>
         </div>
       </section>
 
       {/* Form */}
-      <section id="tester" className="section scroll-mt-[52px]">
+      <section id="tester" className="section scroll-mt-[96px]">
         <div className="mx-auto w-[min(692px,87.5%)]">
           <h2 className="type-h1 text-center">{t("Teste ton site.", "Test your site.")}</h2>
           <p className="type-intro mt-4 text-center text-ink-2">
@@ -179,10 +200,27 @@ export default async function Home() {
               </div>
             </fieldset>
             <button className="btn mt-4 min-h-[56px] w-full rounded-[12px]">{t("Lancer l’audit", "Run the audit")}</button>
+            <div className="type-small mt-2 rounded-[12px] bg-bg-2 p-5 text-ink-2 dark:bg-[#2c2c2e]">
+              <p className="font-semibold text-ink">{t("Après le clic", "After the click")}</p>
+              <ol className="mt-2 grid gap-2">
+                {[
+                  ...(user
+                    ? []
+                    : [t("Tu te connectes avec le lien reçu par e-mail, sans mot de passe. Tu retrouves ce formulaire rempli et tu cliques à nouveau pour lancer.", "You sign in with the link sent by e-mail, no password. You get this form back, filled in, and click again to run it.")]),
+                  t("Si ton équipe a audité ce site sur le même appareil ces 7 derniers jours, tu arrives sur ce rapport, sans nouvel audit.", "If your team audited this site on the same device in the last 7 days, you land on that report, with no new audit."),
+                  t("Sinon, l’agent démarre les cinq missions et le rapport s’ouvre tout de suite : il se remplit mission par mission, en 10 à 20 minutes.", "Otherwise the agent starts the five missions and the report opens right away: it fills in mission by mission, in 10 to 20 minutes."),
+                  mails
+                    ? t("À la fin, le rapport t’est aussi envoyé par e-mail. Il reste dans ton espace d’équipe.", "At the end, the report is also sent to you by e-mail. It stays in your team space.")
+                    : t("À la fin, le rapport reste dans ton espace d’équipe.", "At the end, the report stays in your team space."),
+                ].map((step, i) => (
+                  <li key={i} className="flex gap-3">
+                    <span className="tnum font-semibold text-ink">{i + 1}.</span>
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
             <p className="type-small text-center text-ink-2">
-              {user
-                ? t("L'audit est rangé dans ton espace d'équipe.", "The audit is saved in your team space.")
-                : t("Connexion par e-mail, sans mot de passe. L'audit est rangé dans ton espace d'équipe.", "Sign in by e-mail, no password. The audit is saved in your team space.")}{" "}
               {t(
                 "Pendant l’audit, l’agent ne paie jamais et ne saisit aucune donnée personnelle. Ton e-mail sert uniquement à t’envoyer le rapport :",
                 "During the audit, the agent never pays and enters no personal data. Your e-mail is only used to send you the report:",
@@ -197,7 +235,7 @@ export default async function Home() {
       </section>
 
       {/* Leaderboard */}
-      <section className="section bg-bg-2">
+      <section id="classement" className="section scroll-mt-[96px] bg-bg-2">
         <div className="wrap">
           <div className="mb-10 flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
             <h2 className="type-h1">{t("Le classement mode.", "The fashion ranking.")}</h2>
@@ -238,6 +276,12 @@ export default async function Home() {
             <span className="inline-flex items-center gap-1.5"><StatusGlyph tone="pass" /> {t("70 % et plus : prêt pour les agents", "70 % and above: ready for agents")}</span>
             <span className="inline-flex items-center gap-1.5"><StatusGlyph tone="warn" /> {t("40 à 69 % : fragile", "40 to 69 %: fragile")}</span>
             <span className="inline-flex items-center gap-1.5"><StatusGlyph tone="fail" /> {t("Moins de 40 % : bloquant", "Below 40 %: blocking")}</span>
+          </p>
+          <p className="type-small mt-2 text-ink-2">
+            {t(
+              "Chaque site est noté sur ses 2 derniers audits sur ordinateur, 5 missions chacun, hors missions sans lien avec le site.",
+              "Each site is scored on its last 2 desktop audits, 5 missions each, leaving out missions unrelated to the site.",
+            )}
           </p>
         </div>
       </section>
@@ -382,5 +426,51 @@ function ProductMock({ t }: { t: T }) {
         </span>
       </span>
     </div>
+  );
+}
+
+// What a team does with the report: each line maps to a feature that exists (report, replay, plan, re-audit, competitor).
+const BENEFITS: Record<Lang, [string, string][]> = {
+  fr: [
+    ["Repérer les obstacles", "Mission par mission, tu vois où l'agent bloque sur les parcours testés, et ce qui fait baisser ton score."],
+    ["Transmettre des preuves", "Capture, replay pas à pas et plan de corrections : de quoi montrer le problème à tes développeurs, sans le reproduire à la main."],
+    ["Suivre les corrections", "Relance un audit après une correction : le nouveau rapport montre si la mission passe. Compare-toi à un concurrent sur les mêmes missions."],
+  ],
+  en: [
+    ["Spot the obstacles", "Mission by mission, you see where the agent gets stuck on the tested journeys, and what lowers your score."],
+    ["Hand over evidence", "Screenshot, step-by-step replay and fix plan: enough to show the problem to your developers without reproducing it by hand."],
+    ["Track the fixes", "Run a new audit after a fix: the new report shows whether the mission passes. Compare yourself with a competitor on the same missions."],
+  ],
+};
+
+const SECTIONS: Record<Lang, [string, string][]> = {
+  fr: [
+    ["pourquoi", "Pourquoi"],
+    ["ce-que-tu-recois", "Ce que tu reçois"],
+    ["tester", "Tester"],
+    ["classement", "Classement"],
+  ],
+  en: [
+    ["pourquoi", "Why"],
+    ["ce-que-tu-recois", "What you get"],
+    ["tester", "Test"],
+    ["classement", "Ranking"],
+  ],
+};
+
+// Second sticky bar, under the site header: jumps to the sections of this page (native anchors, smooth scroll in CSS).
+function SectionMenu({ lang }: { lang: Lang }) {
+  return (
+    <nav aria-label={lang === "en" ? "Page sections" : "Sections de la page"} className="sticky top-[52px] z-30 border-b border-hairline bg-[var(--nav)] backdrop-blur-[20px] backdrop-saturate-[180%]">
+      <ul className="wrap-wide type-caption flex h-11 items-center justify-center gap-x-5 overflow-hidden max-[400px]:gap-x-3">
+        {SECTIONS[lang].map(([id, label]) => (
+          <li key={id}>
+            <a href={`#${id}`} className="inline-flex h-11 items-center whitespace-nowrap text-ink/80 transition-colors hover:text-ink">
+              {label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
   );
 }

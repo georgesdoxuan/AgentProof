@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import type { Dict } from "@/lib/i18n";
 
 const link =
-  "inline-flex h-11 items-center whitespace-nowrap px-2 text-ink/80 transition-colors hover:text-ink aria-[current=page]:text-ink-2";
+  "inline-flex h-11 items-center whitespace-nowrap px-2 max-[400px]:px-1 text-ink/80 transition-colors hover:text-ink aria-[current=page]:text-ink-2";
 const item = "flex min-h-9 w-full items-center rounded-[8px] px-3 text-left type-small text-ink transition-colors hover:bg-fill";
 
 // A client-side link leaves the layout (and this popover) mounted: close it by hand.
@@ -16,7 +16,7 @@ export function Nav({ email, t }: { email: string | null; t: Dict["nav"] }) {
   const path = usePathname();
   if (!email)
     return (
-      <div className="flex items-center gap-1 type-caption sm:gap-3">
+      <div className="flex items-center gap-1 type-caption max-[400px]:gap-0 sm:gap-3">
         <Link href="/classement" aria-current={path === "/classement" ? "page" : undefined} className={link}>
           {t.ranking}
         </Link>

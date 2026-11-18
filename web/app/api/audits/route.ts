@@ -13,11 +13,21 @@ const fail = (msg: string, status = 400) => new Response(msg, { status, headers:
 export async function POST(req: Request) {
   // Audits belong to a team: signed in, and owner or admin of the current team.
   const ctx = await teamContext();
-  if (!ctx) return Response.redirect(new URL("/connexion?next=/espace", req.url), 303);
+  const form = await req.formData();
+  if (!ctx) {
+    // Signed out: keep what the visitor typed. After the magic link they land on the launch form, filled in,
+    // and still have to click: no audit (no H credits) is ever started without that click.
+    const keep = new URLSearchParams();
+    for (const k of ["url", "competitor", "device"]) {
+      const v = String(form.get(k) ?? "").trim().slice(0, 300);
+      if (v) keep.set(k, v);
+    }
+    const next = `/espace/nouveau${keep.size ? `?${keep}` : ""}`;
+    return Response.redirect(new URL(`/connexion?${new URLSearchParams({ next })}`, req.url), 303);
+  }
   if (!ctx.team) return Response.redirect(new URL("/espace", req.url), 303);
   if (!canLaunch(ctx.team.role)) return fail(await msg("Ton rôle (lecteur) permet de consulter les rapports, pas de lancer un audit.", "Your role (viewer) lets you read reports, not run an audit."), 403);
   const team = { teamId: ctx.team.id, createdBy: ctx.user.id };
-  const form = await req.formData();
   const url = String(form.get("url") ?? "");
   const competitor = String(form.get("competitor") ?? "").trim();
   const device = form.get("device") === "mobile" ? "mobile" : "desktop";
@@ -33,7 +43,9 @@ export async function POST(req: Request) {
     const domains = [url, competitor].filter(Boolean).map((u) => normalizeUrl(u).domain);
     // Demo day: ALLOWED_DOMAINS="jules.com,celio.com" limits the public form to known sites.
     const allowed = process.env.ALLOWED_DOMAINS?.split(",").map((d) => d.trim()).filter(Boolean);
-    if (allowed?.length && domains.some((d) => !allowed.includes(d))) return fail(await msg("Ce site n'est pas ouvert aux audits pour le moment.", "This site is not open to audits for now."), 403);
+    // A site off the demo list lands on a real page listing the open sites and their latest reports, not on plain text.
+    const closed = allowed?.length ? domains.find((d) => !allowed.includes(d)) : undefined;
+    if (closed) return Response.redirect(new URL(`/sites-ouverts?${new URLSearchParams({ site: closed })}`, req.url), 303);
 
     // Same site audited in the last 7 days: show that report instead of spending tokens again.
     // "Relancer pour vérifier" sends force=1: the team fixed something and wants a fresh pass.

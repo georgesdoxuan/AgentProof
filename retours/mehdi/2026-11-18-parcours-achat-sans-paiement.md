@@ -18,4 +18,6 @@ Sur l’accueil, le titre du bloc Missions n’annonce plus des achats effectifs
 2026-11-18 — Demande validée par Mehdi pour la démonstration de vendredi à 11 h. Effort estimé : trente minutes. web/app/page.tsx. Modification éditoriale de l’accueil, distincte de la demande existante sur la portée du score dans le rapport.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait
+- Titre remplacé par « Cinq parcours d'achat testés, sans paiement. » (`web/app/page.tsx`).
+- Commit : fa425bf.

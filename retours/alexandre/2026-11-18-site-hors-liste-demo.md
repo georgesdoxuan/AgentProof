@@ -24,4 +24,8 @@ Avec `ALLOWED_DOMAINS="jules.com,celio.com"`, saisir `zara.com` sur l'accueil : 
 - Rappel : un site audité depuis moins de 7 jours renvoie déjà au rapport existant (`recentAudit`). C'est l'effet « instantané » à montrer au jury.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait
+- Un site hors de `ALLOWED_DOMAINS` redirige vers `/sites-ouverts?site=…` : une phrase explique la limite (crédits de démo), puis la liste des sites ouverts avec leur score et un lien vers leur dernier rapport public terminé (audits du benchmark uniquement, jamais ceux d'une équipe).
+- Les autres erreurs de la route restent en texte brut. La décision « liste fermée ou formulaire ouvert vendredi » reste à prendre en équipe.
+- Fichiers : `web/app/api/audits/route.ts`, `web/app/sites-ouverts/page.tsx`.
+- Commit : fa425bf.

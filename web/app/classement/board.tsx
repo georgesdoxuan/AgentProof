@@ -19,10 +19,17 @@ export async function Leaderboard() {
     return Object.entries(c).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
   };
 
+  // Reference period: when the audits behind the scores ended (view: the 2 latest public audits per site and device).
+  const day = (d: string) => new Date(d).toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Paris" });
+  const ends = (scores ?? []).map((s) => s.finished_at).filter(Boolean).sort();
+  const [first, last] = [ends[0], ends.at(-1)];
+  const period = !first || !last ? null : day(first) === day(last) ? t(`le ${day(first)}`, `on ${day(first)}`) : t(`entre le ${day(first)} et le ${day(last)}`, `between ${day(first)} and ${day(last)}`);
+
   return (
     <>
+        {period && <p className="type-small mt-8 text-ink-2">{t("Derniers audits terminés", "Latest audits finished")} {period}.</p>}
         {scores?.length ? (
-          <div className="mt-12 overflow-hidden rounded-[18px] bg-tile">
+          <div className={`${period ? "mt-4" : "mt-12"} overflow-hidden rounded-[18px] bg-tile`}>
             <div className={`type-caption hidden gap-4 border-b border-hairline px-6 py-3 text-ink-2 md:grid ${COLS}`} aria-hidden>
               <span>{t("Rang", "Rank")}</span>
               <span>Site</span>
@@ -44,7 +51,9 @@ export async function Leaderboard() {
                       <span className="text-ink-2 tnum">{i + 1}</span>
                       <span className="min-w-0">
                         <span className="type-headline block truncate">{s.name}</span>
-                        <span className="type-small text-ink-2">{s.device === "mobile" ? "Mobile" : t("Ordinateur", "Desktop")}</span>
+                        <span className="type-small text-ink-2">
+                          {s.device === "mobile" ? "Mobile" : t("Ordinateur", "Desktop")} · {s.passes} audit{s.passes > 1 ? "s" : ""}, {s.runs_done} missions
+                        </span>
                       </span>
                       <span className="flex items-center justify-end gap-2 text-[21px] font-semibold tracking-[0.011em] tnum md:order-last">
                         <StatusGlyph tone={scoreTone(s.score)} className="h-4 w-4 md:hidden" />

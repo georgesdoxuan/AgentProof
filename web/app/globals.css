@@ -417,3 +417,8 @@ body {
     print-color-adjust: exact;
   }
 }
+
+/* Home section links (#tester, #classement...): smooth scroll, unless the visitor asked for less motion. */
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
