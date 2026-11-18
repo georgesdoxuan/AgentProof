@@ -1,5 +1,7 @@
 import { useId } from "react";
-import { BLOCKERS, EXCLUDED } from "./engine";
+import { EXCLUDED, blockerNames } from "./engine";
+import type { Lang } from "./i18n";
+import { getLang, getT } from "./lang";
 
 // ---------- score ----------
 // Never color alone: every tone has a word and a glyph.
@@ -10,12 +12,11 @@ export function scoreTone(score: number | null): Tone {
   return score >= 70 ? "pass" : score >= 40 ? "warn" : "fail";
 }
 
-export const toneWord: Record<Tone, string> = {
-  pass: "Prêt pour les agents",
-  warn: "Fragile",
-  fail: "Bloquant",
-  none: "En attente",
+const TONE_WORD: Record<Lang, Record<Tone, string>> = {
+  fr: { pass: "Prêt pour les agents", warn: "Fragile", fail: "Bloquant", none: "En attente" },
+  en: { pass: "Ready for agents", warn: "Fragile", fail: "Blocking", none: "Pending" },
 };
+export const toneWords = (lang: Lang) => TONE_WORD[lang];
 
 const toneText: Record<Tone, string> = { pass: "text-pass", warn: "text-warn", fail: "text-fail", none: "text-ink-2" };
 
@@ -36,8 +37,9 @@ export function StatusGlyph({ tone, className = "h-[1.05em] w-[1.05em]" }: { ton
   );
 }
 
-export function ToneLabel({ score, className = "" }: { score: number | null; className?: string }) {
+export async function ToneLabel({ score, className = "" }: { score: number | null; className?: string }) {
   const t = scoreTone(score);
+  const toneWord = toneWords(await getLang());
   return (
     <span className={`inline-flex items-center gap-1.5 font-semibold ${toneText[t]} ${className}`}>
       <StatusGlyph tone={t} />
@@ -47,11 +49,12 @@ export function ToneLabel({ score, className = "" }: { score: number | null; cla
 }
 
 // One segment per mission, like the storage bar in iPhone Settings: the score is the share of green.
-export function MissionBar({ ok, done, total, size = "md" }: { ok: number; done: number; total: number; size?: "sm" | "md" | "lg" }) {
+export async function MissionBar({ ok, done, total, size = "md" }: { ok: number; done: number; total: number; size?: "sm" | "md" | "lg" }) {
+  const t = await getT();
   const n = Math.max(total, done, 1);
   const h = size === "lg" ? "h-3" : size === "sm" ? "h-1.5" : "h-2";
   return (
-    <span className={`flex w-full gap-[3px] ${h}`} role="img" aria-label={`${ok} missions réussies sur ${done} comptées`}>
+    <span className={`flex w-full gap-[3px] ${h}`} role="img" aria-label={t(`${ok} missions réussies sur ${done} comptées`, `${ok} missions passed out of ${done} counted`)}>
       {Array.from({ length: n }, (_, i) => (
         <span
           key={i}
@@ -63,24 +66,25 @@ export function MissionBar({ ok, done, total, size = "md" }: { ok: number; done:
 }
 
 // ---------- runs ----------
-export function StatusBadge({ run }: { run: { status: string; success: boolean | null; blocker_type?: string | null } }) {
+export async function StatusBadge({ run }: { run: { status: string; success: boolean | null; blocker_type?: string | null } }) {
+  const t = await getT();
   if (run.status === "launched")
     return (
       <span className="inline-flex items-center gap-1.5 font-semibold text-ink-2">
         <Spinner />
-        En cours
+        {t("En cours", "Running")}
       </span>
     );
   const [text, tone]: [string, Tone] =
     run.status === "todo"
-      ? ["En attente", "none"]
+      ? [t("En attente", "Pending"), "none"]
       : run.status === "error" || run.success === null
-        ? ["Non vérifiée", "none"]
+        ? [t("Non vérifiée", "Unverified"), "none"]
         : run.success
-          ? ["Réussie", "pass"]
+          ? [t("Réussie", "Passed"), "pass"]
           : EXCLUDED.includes(run.blocker_type ?? "")
-            ? ["Hors score", "none"]
-            : ["Bloquée", "fail"];
+            ? [t("Hors score", "Out of score"), "none"]
+            : [t("Bloquée", "Blocked"), "fail"];
   return (
     <span className={`inline-flex items-center gap-1.5 font-semibold ${toneText[tone]}`}>
       <StatusGlyph tone={tone} />
@@ -94,13 +98,14 @@ export function Spinner({ className = "h-[1em] w-[1em]" }: { className?: string 
 }
 
 // The verdict, floating over the evidence on a glass capsule.
-export function Verdict({ success, label, className = "" }: { success: boolean; label?: string; className?: string }) {
+export async function Verdict({ success, label, className = "" }: { success: boolean; label?: string; className?: string }) {
+  const t = await getT();
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full bg-glass px-3 py-1.5 type-small font-semibold shadow-[0_4px_16px_rgb(0_0_0/0.12),inset_0_0_0_0.5px_rgb(0_0_0/0.08)] backdrop-blur-xl backdrop-saturate-150 ${className}`}
     >
       <StatusGlyph tone={success ? "pass" : "fail"} />
-      <span className="text-ink">{success ? "Checkout atteint" : label ? `Bloqué · ${label}` : "Bloqué"}</span>
+      <span className="text-ink">{success ? t("Checkout atteint", "Checkout reached") : label ? `${t("Bloqué", "Blocked")} · ${label}` : t("Bloqué", "Blocked")}</span>
     </span>
   );
 }
@@ -173,7 +178,7 @@ export function Mark({ className = "h-[24px] w-[24px]" }: { className?: string }
 }
 
 // ---------- helpers ----------
-export const blockerLabel = (b: string | null) => (b ? BLOCKERS[b] ?? b : "—");
+export const blockerLabel = (b: string | null, lang: Lang = "fr") => (b ? blockerNames(lang)[b] ?? b : "—");
 
 type Run = { status: string; success: boolean | null; blocker_type: string | null };
 
@@ -282,7 +287,9 @@ export function Avatar({ email, className = "h-9 w-9" }: { email: string; classN
 const TAGGED = /^(Observé|Hypothèse|À vérifier|Correction possible) :\u00a0/;
 
 // The LLM writes "1. Problème : … / Correction : …". Show each pair as a card; fall back to plain text.
-export function Recommendations({ text }: { text: string }) {
+export async function Recommendations({ text }: { text: string }) {
+  const t = await getT();
+  const TAG_EN: Record<string, string> = { Observé: "Observed", Hypothèse: "Hypothesis", "À vérifier": "To check", "Correction possible": "Possible fix" };
   const intro: string[] = [];
   const items: { problem: string; fix: string[] }[] = [];
   for (const raw of text.split("\n")) {
@@ -301,15 +308,23 @@ export function Recommendations({ text }: { text: string }) {
     else if (items.length) items[items.length - 1].fix.push(line);
     else intro.push(line);
   }
-  if (!items.length) return <p className="tile type-intro whitespace-pre-line">{text}</p>;
+  // Free text: one paragraph per line, at reading size and measure.
+  if (!items.length)
+    return (
+      <div className="tile space-y-3 p-8! max-[734px]:p-6! print:p-[5mm]!">
+        {intro.map((l, i) => (
+          <p key={i} className="max-w-[720px]">{l}</p>
+        ))}
+      </div>
+    );
 
   return (
     <div className="space-y-6">
-      {intro.length > 0 && <p className="type-intro max-w-[760px] text-ink-2">{intro.join(" ")}</p>}
-      <ol className="grid gap-5 md:grid-cols-3 print:grid-cols-1 print:gap-[3mm]">
+      {intro.length > 0 && <p className="max-w-[720px] text-ink-2">{intro.join(" ")}</p>}
+      <ol className={`grid gap-4 md:grid-cols-2 print:grid-cols-1 print:gap-[3mm] ${items.length > 2 ? "lg:grid-cols-3" : ""}`}>
         {items.map((it, i) => (
           <li key={i} className="tile flex flex-col p-7! print:p-[5mm]!">
-            <span className="type-small text-ink-2">{it.fix.some((l) => TAGGED.test(l)) ? "Blocage" : "Correction"} {i + 1}</span>
+            <span className="type-small text-ink-2">{it.fix.some((l) => TAGGED.test(l)) ? t("Blocage", "Blocker") : t("Correction", "Fix")} {i + 1}</span>
             <p className="mt-3 font-semibold">{it.problem}</p>
             {it.fix.some((l) => TAGGED.test(l)) ? (
               // Facts, hypothesis and check kept apart: the reader sees what was observed and what is only supposed.
@@ -319,7 +334,7 @@ export function Recommendations({ text }: { text: string }) {
                   const v = k ? l.slice(k.length + 3) : l;
                   return (
                     <div key={j}>
-                      {k && <dt className={`inline font-semibold ${k === "Hypothèse" ? "text-warn" : ""}`}>{k} : </dt>}
+                      {k && <dt className={`inline font-semibold ${k === "Hypothèse" ? "text-warn" : ""}`}>{t(k, TAG_EN[k] ?? k)} : </dt>}
                       <dd className="inline text-ink-2">{v}</dd>
                     </div>
                   );

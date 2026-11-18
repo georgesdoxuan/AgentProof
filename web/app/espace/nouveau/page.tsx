@@ -3,9 +3,13 @@ import { canLaunch, teamContext } from "@/lib/auth";
 import { cardView } from "@/lib/cards";
 import { COMPARE_MODEL, DEFAULT_MODEL } from "@/lib/engine";
 import { Field, Group, Segmented } from "@/lib/ui";
+import { getT } from "@/lib/lang";
 import { SpaceShell } from "../shell";
 
-export const metadata = { title: "Lancer un audit · AgentProof" };
+export async function generateMetadata() {
+  const t = await getT();
+  return { title: `${t("Lancer un audit", "Run an audit")} · AgentProof` };
+}
 
 export default async function Nouveau({ searchParams }: { searchParams: Promise<{ url?: string }> }) {
   const ctx = await teamContext();
@@ -14,30 +18,47 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
   const { user, teams, team } = ctx;
   const { url } = await searchParams;
   const card = await cardView(team.id);
+  const t = await getT();
 
   return (
-    <SpaceShell team={team} teams={teams} title="Lancer un audit" intro="Un agent IA essaie d'acheter sur ton site, comme un vrai client. Les missions s'arrêtent avant le paiement et ne saisissent aucune donnée personnelle.">
-      <Group footer={`Audit complet : cinq missions, 10 à 20 minutes. Paiement seulement : un achat réel avec la carte de l'équipe, 3 à 10 minutes, sans le concurrent. Le rapport arrive aussi par e-mail à ${user.email}.`}>
+    <SpaceShell
+      team={team}
+      teams={teams}
+      title={t("Lancer un audit", "Run an audit")}
+      intro={t(
+        "Un agent IA essaie d'acheter sur ton site, comme un vrai client. Les missions s'arrêtent avant le paiement et ne saisissent aucune donnée personnelle.",
+        "An AI agent tries to buy on your site, like a real customer. Missions stop before payment and enter no personal data.",
+      )}
+    >
+      <Group
+        footer={t(
+          `Audit complet : cinq missions, 10 à 20 minutes. Paiement seulement : un achat réel avec la carte de l'équipe, 3 à 10 minutes, sans le concurrent. Le rapport arrive aussi par e-mail à ${user.email}.`,
+          `Full audit: five missions, 10 to 20 minutes. Payment only: a real purchase with the team's card, 3 to 10 minutes, without the competitor. The report is also e-mailed to ${user.email}.`,
+        )}
+      >
         <form action="/api/audits" method="post" className="grid gap-5 p-6 sm:p-8">
           {card && !card.missing && (
             <Segmented
               name="mode"
-              label="Type de test"
+              label={t("Type de test", "Test type")}
               value="audit"
               options={[
-                ["audit", "Audit complet"],
-                ["payment", "Paiement seulement"],
+                ["audit", t("Audit complet", "Full audit")],
+                ["payment", t("Paiement seulement", "Payment only")],
               ]}
             />
           )}
-          <Field label="Adresse du site" name="url" required defaultValue={url} />
-          <Field label="Un concurrent (facultatif)" name="competitor" />
+          <Field label={t("Adresse du site", "Site address")} name="url" required defaultValue={url} />
+          <Field label={t("Un concurrent (facultatif)", "A competitor (optional)")} name="competitor" />
           <label className="type-small flex items-start gap-3 rounded-[12px] bg-bg-2 p-4 dark:bg-[#2c2c2e]">
             <input type="checkbox" name="models" value="1" className="mt-0.5 h-4 w-4 shrink-0 accent-blue" />
             <span>
-              <span className="font-semibold">Comparer deux modèles d&apos;agent</span>
+              <span className="font-semibold">{t("Comparer deux modèles d’agent", "Compare two agent models")}</span>
               <span className="block text-ink-2">
-                Les mêmes missions jouées par {DEFAULT_MODEL} (rapide) et {COMPARE_MODEL} (le plus capable de H) : réussite, durée et coût côte à côte. Double le coût de l&apos;audit, sans concurrent.
+                {t(
+                  `Les mêmes missions jouées par ${DEFAULT_MODEL} (rapide) et ${COMPARE_MODEL} (le plus capable de H) : réussite, durée et coût côte à côte. Double le coût de l’audit, sans concurrent.`,
+                  `The same missions played by ${DEFAULT_MODEL} (fast) and ${COMPARE_MODEL} (H's most capable): success, duration and cost side by side. Doubles the audit cost, no competitor.`,
+                )}
               </span>
             </span>
           </label>
@@ -45,24 +66,26 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
             <label className="type-small flex items-start gap-3 rounded-[12px] bg-bg-2 p-4 dark:bg-[#2c2c2e]">
               <input type="checkbox" name="payment" value="1" className="mt-0.5 h-4 w-4 shrink-0 accent-blue" />
               <span>
-                <span className="font-semibold">Ajouter un test de paiement réel à l&apos;audit</span>
+                <span className="font-semibold">{t("Ajouter un test de paiement réel à l’audit", "Add a real payment test to the audit")}</span>
                 <span className="block text-ink-2">
-                  L&apos;agent part au plus près du checkout, prend le premier article disponible et paie une fois avec {card.label} •••• {card.last4}. Avec une carte approvisionnée, la commande est réelle.
-                  Jamais sur le concurrent.
+                  {t(
+                    `L’agent part au plus près du checkout, prend le premier article disponible et paie une fois avec ${card.label} •••• ${card.last4}. Avec une carte approvisionnée, la commande est réelle. Jamais sur le concurrent.`,
+                    `The agent starts as close to checkout as it can, takes the first available item and pays once with ${card.label} •••• ${card.last4}. With a funded card, the order is real. Never on the competitor.`,
+                  )}
                 </span>
               </span>
             </label>
           )}
           <div className="grid gap-2">
-            <span className="type-small text-ink-2">Modèle de l&apos;agent (sans effet si tu compares les deux)</span>
+            <span className="type-small text-ink-2">{t("Modèle de l’agent (sans effet si tu compares les deux)", "Agent model (no effect if you compare both)")}</span>
             <div>
               <Segmented
                 name="model"
-                label="Modèle de l'agent"
+                label={t("Modèle de l'agent", "Agent model")}
                 value="fast"
                 options={[
-                  ["fast", `Rapide · ${DEFAULT_MODEL}`],
-                  ["precise", `Précis · ${COMPARE_MODEL}`],
+                  ["fast", `${t("Rapide", "Fast")} · ${DEFAULT_MODEL}`],
+                  ["precise", `${t("Précis", "Precise")} · ${COMPARE_MODEL}`],
                 ]}
               />
             </div>
@@ -70,14 +93,14 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
           <div className="flex flex-wrap items-center justify-between gap-4 pt-1">
             <Segmented
               name="device"
-              label="Appareil"
+              label={t("Appareil", "Device")}
               value="desktop"
               options={[
-                ["desktop", "Ordinateur"],
+                ["desktop", t("Ordinateur", "Desktop")],
                 ["mobile", "Mobile"],
               ]}
             />
-            <button className="btn">Lancer l&apos;audit</button>
+            <button className="btn">{t("Lancer l’audit", "Run the audit")}</button>
           </div>
         </form>
       </Group>
