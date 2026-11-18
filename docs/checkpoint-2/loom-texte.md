@@ -25,7 +25,7 @@ Avant de commencer : un onglet sur l'accueil, un 2e onglet sur le rapport Promod
 
 « Où on en est : le produit est en ligne, de bout en bout. On a testé 10 marques de mode. Sur ordinateur, l'agent arrive jusqu'à la page de paiement dans 96 % des cas. Sur téléphone, sur les mêmes sites, seulement 57 % : ces sites bloquent un acheteur IA sur mobile. Une mission, c'est 90 secondes et 3 centimes.
 
-Ce qui bloque encore : un audit prend jusqu'à 17 minutes, à cause des limites de l'API gratuite de H. On a un correctif qui divise ce temps. Certains sites bloquent notre agent avec leur anti-bot. Et il nous manque une preuve : que notre juge IA est d'accord avec un humain. On le mesure demain.
+Ce qui bloque encore : un audit prend jusqu'à 17 minutes, parce que notre compte H ne fait tourner que 3 agents en même temps. On a un correctif qui divise ce temps. Certains sites bloquent notre agent avec leur anti-bot. Et il nous manque une preuve : que notre juge IA est d'accord avec un humain. On le mesure demain.
 
 D'ici vendredi : des audits plus rapides, chaque correction reliée à sa preuve, un ticket prêt pour le développeur du marchand, et la démo live devant vous. Merci ! »
 
