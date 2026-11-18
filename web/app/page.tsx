@@ -4,6 +4,9 @@ import { db } from "@/lib/engine";
 import { currentUser } from "@/lib/auth";
 import { AgentCursor, BrowserFrame, Field, MissionBar, StatusGlyph, Verdict, blockerLabel, scoreTone } from "@/lib/ui";
 
+// Report opened by "Voir un exemple de rapport": real counted blockers, captures, replays and a plan. Env var to swap it without code.
+const EXAMPLE_AUDIT = process.env.EXAMPLE_AUDIT_ID ?? "8c843d3f-3d95-4834-aace-21880a85f499"; // Promod, 78 %
+
 export default async function Home() {
   await connection();
   const [user, { data: top }, { data: proof }] = await Promise.all([
@@ -15,7 +18,7 @@ export default async function Home() {
       .select("screenshot_url, final_url, blocker_type")
       .eq("success", false)
       .not("screenshot_url", "is", null)
-      .not("blocker_type", "in", "(captcha_or_bot_block,out_of_stock,mission_not_applicable,agent_out_of_steps,other)")
+      .not("blocker_type", "in", "(captcha_or_bot_block,out_of_stock,mission_not_applicable,agent_out_of_steps,agent_tool_error,other)")
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
@@ -34,6 +37,9 @@ export default async function Home() {
             <a href="#tester" className="btn">
               Tester mon site
             </a>
+            <Link href={`/audit/${EXAMPLE_AUDIT}`} className="more">
+              Voir un exemple de rapport
+            </Link>
             <Link href="/classement" className="more">
               Voir le classement
             </Link>

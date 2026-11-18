@@ -21,4 +21,6 @@ Sur l'accueil, un clic sur « Voir un exemple de rapport » ouvre un rapport ave
 - L'identifiant du rapport peut être une constante, ou une variable d'environnement pour le changer sans redéployer.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait
+- Lien « Voir un exemple de rapport » sous le titre de l'accueil (`web/app/page.tsx`). Il ouvre le rapport Promod (78 %, 2 blocages réels comptés, avec captures et replays). Son plan de corrections a été régénéré au nouveau format (Observé / Hypothèse / À vérifier).
+- Pour changer de rapport sans modifier le code, définir la variable `EXAMPLE_AUDIT_ID` sur Vercel.

@@ -32,4 +32,9 @@ Raison éthique et juridique : un classement public qui note une marque nommée 
 - C'est aussi une surprise de l'Agent API à noter dans la section « Retours » du README.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait
+- Confirmé dans les sessions H : sur Kiabi, Holo envoie `scroll_web` avec `scroll_element` sous forme de chaîne au lieu d'un objet. Il y a 8 à 19 appels rejetés (`validation_errors`) sur 30 étapes.
+- Nouveau blocage `agent_tool_error` (« Erreur d'outil de l'agent »), hors score et réservé à l'agent (`EXCLUDED`, `AGENT_ONLY` dans `web/lib/engine.ts`, vue `site_scores` mise à jour). Le moteur l'attribue quand une mission échoue avec au moins 5 appels d'outil rejetés ET que l'agent attribue lui-même l'échec au défilement ou à son outil. Le moteur lit maintenant toute la session (200 événements) dans la même requête.
+- Runs existants reclassés selon la même règle : Kiabi 114, 115, 116 et 12, Bonobo 44. Promod 19 et 20 ont aussi des appels rejetés (7 et 11), mais l'agent y nomme un blocage du site (pas de bouton « Ajouter au panier », pas de sélecteur de taille) : ils restent comptés.
+- Classement : Kiabi n'a plus de mission comptée et affiche « À confirmer », sans score. Bonobo passe de 89 % à 100 %. Le rapport Kiabi affiche les missions « Hors score » avec la cause, et son plan de corrections est régénéré.
+- Surprise notée dans la section « Retours » du README. Définition ajoutée dans CONTEXT.md § 6.

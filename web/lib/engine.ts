@@ -39,10 +39,11 @@ export const BLOCKERS: Record<string, string> = {
   page_error_or_timeout: "Erreur ou page trop lente",
   mission_not_applicable: "Mission impossible sur ce catalogue",
   agent_out_of_steps: "L'agent a manqué d'étapes",
+  agent_tool_error: "Erreur d'outil de l'agent",
   other: "Autre",
 };
 // Outcomes that say nothing about the site's interface: shown in the report, kept out of the score.
-export const EXCLUDED = ["out_of_stock", "captcha_or_bot_block", "mission_not_applicable", "agent_out_of_steps"];
+export const EXCLUDED = ["out_of_stock", "captcha_or_bot_block", "mission_not_applicable", "agent_out_of_steps", "agent_tool_error"];
 // Score of one audit: successful runs over verified runs, excluded outcomes left out. null when nothing counts yet.
 export function scoreOf(runs: { status: string; success: boolean | null; blocker_type: string | null }[]) {
   const scored = runs.filter((r) => r.status === "done" && r.success !== null && !EXCLUDED.includes(r.blocker_type ?? ""));
@@ -50,7 +51,10 @@ export function scoreOf(runs: { status: string; success: boolean | null; blocker
 }
 
 // Only the agent knows these (catalogue, step count): the screenshot judge never picks them.
-export const AGENT_ONLY = ["mission_not_applicable", "agent_out_of_steps"];
+export const AGENT_ONLY = ["mission_not_applicable", "agent_out_of_steps", "agent_tool_error"];
+// The agent wasted this many steps on malformed tool calls (e.g. scroll_web with a string instead of an object):
+// a failed mission is then the agent's fault, not the site's.
+const TOOL_ERRORS_MAX = 5;
 
 // Agent models: the catalog agent's own model (agent/agent.json), and the one a "compare models" audit runs against it.
 export const DEFAULT_MODEL = "holo4-35b-a3b";
@@ -254,7 +258,8 @@ export async function tick() {
         if (budget < 2) break;
         budget -= 2;
         try {
-          const events = await (await h(`/sessions/${run.session_id}/events?sort=-timestamp&size=15`)).json();
+          // Whole session in one request: tool errors are counted over every step, not just the last ones.
+          const events = await (await h(`/sessions/${run.session_id}/events?sort=-timestamp&size=200`)).json();
           await finalize(run, events.items, !TERMINAL.has(st) ? "stale" : ["completed", "idle"].includes(st) ? "completed" : "error");
           log.push(`finalized run ${run.id}`);
         } catch (e) {
@@ -474,6 +479,11 @@ async function finalize(run: any, items: Ev[], state: string) {
   if (success === false && (!blocker || blocker === "none")) blocker = "other";
   // An anti-bot message is a verdict by itself, even when the judge could not read the screenshot.
   if (success !== true && looksLikeBotBlock(answer?.blocker_detail)) (blocker = "captcha_or_bot_block"), (success = false);
+  // The agent kept sending malformed tool calls: its own failure, kept out of the score (after anti-bot, which wins).
+  const toolErrors = items.filter((e) => e.type === "AgentEvent" && e.data.kind === "policy_event" && e.data.validation_errors?.length).length;
+  // Only when the agent itself blames scrolling or its tool: a site blocker it names otherwise (no add-to-cart button...) stays.
+  const blamesTool = /d[ée]fil|scroll|outil|tool/i.test(`${answer?.blocker_detail ?? ""} ${answer?.steps_summary ?? ""}`);
+  if (success !== true && blocker !== "captcha_or_bot_block" && toolErrors >= TOOL_ERRORS_MAX && blamesTool) (blocker = "agent_tool_error"), (success = false);
   // Out of steps with no named blocker: the agent ran out of room, the site is not proven guilty (same rule as payment tests).
   if (success !== true && blocker === "other" && (state === "stale" || (metrics?.steps ?? 0) >= MISSION_STEPS)) blocker = "agent_out_of_steps";
 
@@ -766,7 +776,7 @@ export async function judgeScreenshot(imageUrl: string, mission: string | undefi
 }
 
 // Outcomes that are not the site's fault: listed apart, never turned into a correction.
-const NOT_SITE = ["out_of_stock", "mission_not_applicable", "agent_out_of_steps"];
+const NOT_SITE = ["out_of_stock", "mission_not_applicable", "agent_out_of_steps", "agent_tool_error"];
 
 // Plan de corrections. The facts (which missions failed, on what) come from the verdicts, never from the LLM:
 // a successful mission can never appear as a failure. The LLM only adds a cause, worded as a hypothesis, and a check.

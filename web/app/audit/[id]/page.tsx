@@ -24,7 +24,9 @@ function scopeText(runs: any[], s: ReturnType<typeof summarize>, device: string,
   const excluded = runs.filter((r) => r.status === "done" && r.success === false && EXCLUDED.includes(r.blocker_type));
   const reasons = [...new Set(excluded.map((r) => blockerLabel(r.blocker_type).toLowerCase()))].join(", ");
   return [
-    `Score calculé sur ${n(s.done, "parcours")} sur ${device === "mobile" ? "mobile" : "ordinateur"}, de l'accueil jusqu'à l'entrée du checkout.`,
+    s.done
+      ? `Score calculé sur ${n(s.done, "parcours")} sur ${device === "mobile" ? "mobile" : "ordinateur"}, de l'accueil jusqu'à l'entrée du checkout.`
+      : `Aucun parcours compté sur ${device === "mobile" ? "mobile" : "ordinateur"} : pas de score pour ce site avant un nouvel audit.`,
     excluded.length ? `${n(excluded.length, "mission")} exclue${excluded.length > 1 ? "s" : ""} du score (${reasons}).` : "",
     s.unverified ? `${n(s.unverified, "mission")} non vérifiée${s.unverified > 1 ? "s" : ""}, hors score.` : "",
     s.errors ? `${n(s.errors, "mission")} non jouée${s.errors > 1 ? "s" : ""} (erreur technique).` : "",
@@ -35,6 +37,7 @@ function scopeText(runs: any[], s: ReturnType<typeof summarize>, device: string,
 // Mission conclusion in French, built from the verdict (not the agent's free text, which may be in English).
 function conclusion(r: any) {
   if (r.success === null) return "Résultat non vérifié par le juge visuel : mission hors score.";
+  if (!r.success && EXCLUDED.includes(r.blocker_type)) return "Mission hors score : ce résultat ne compte ni pour ni contre le site.";
   if (!r.success) return "L'agent n'atteint pas l'entrée du checkout.";
   const login = /login|connexion|signin|sign-in|account|compte/i.test(r.final_url ?? "") || /connect|inscri|compte/i.test(r.judge?.reason ?? "");
   return login ? "Entrée du checkout atteinte : page de connexion ou d'inscription." : "Entrée du checkout atteinte.";
@@ -260,7 +263,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
           <div className="tile print:hidden">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="type-headline">Score agent</h2>
-              <ToneLabel score={s.score} />
+              {s.score == null && audit.status === "done" ? <span className="type-small font-semibold text-ink-2">À confirmer</span> : <ToneLabel score={s.score} />}
             </div>
             <p className="mt-6 text-[96px] font-semibold leading-none tracking-[-0.015em] tnum max-[734px]:text-[72px]">
               {s.score ?? "—"}
@@ -434,7 +437,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                   {r.first_attempt && (
                     <p className="type-small mt-3 text-ink-2">
                       Mission rejouée : le premier essai a échoué ({r.first_attempt.blocker_type ? blockerLabel(r.first_attempt.blocker_type) : "erreur technique"}).
-                      {r.status === "done" && r.success !== null && (r.success ? " Le second a réussi : l’échec n’était pas reproductible." : " Le second confirme l’échec.")}
+                      {r.status === "done" && r.success !== null && !(r.success === false && EXCLUDED.includes(r.blocker_type)) && (r.success ? " Le second a réussi : l’échec n’était pas reproductible." : " Le second confirme l’échec.")}
                       {r.first_attempt.session_id && (
                         <>
                           {" "}
