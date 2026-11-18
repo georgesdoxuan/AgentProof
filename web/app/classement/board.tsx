@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { EXCLUDED, db } from "@/lib/engine";
-import { MissionBar, StatusGlyph, ToneLabel, blockerLabel, scoreTone } from "@/lib/ui";
+import { MissionBar, StatusGlyph, ToneLabel, blockerLabel, hurdles, scoreTone } from "@/lib/ui";
 import { tr } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 
@@ -18,6 +18,9 @@ export async function Leaderboard() {
     for (const f of fails ?? []) if (f.audit_id === id && f.blocker_type && !EXCLUDED.includes(f.blocker_type)) c[f.blocker_type] = (c[f.blocker_type] ?? 0) + 1;
     return Object.entries(c).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
   };
+  // No blocker does not mean no friction: the main obstacle the agent got past on that audit.
+  const { data: wins } = await db.from("runs").select("audit_id, success, steps, agent_answer").in("audit_id", auditIds).eq("success", true);
+  const topHurdle = (id: string) => hurdles((wins ?? []).filter((w) => w.audit_id === id), lang).items[0]?.[0] ?? null;
 
   // Reference period: when the audits behind the scores ended (view: the 2 latest public audits per site and device).
   const day = (d: string) => new Date(d).toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Paris" });
@@ -81,6 +84,7 @@ export async function Leaderboard() {
                       <span className="type-small col-span-3 col-start-2 text-ink-2 md:col-span-1 md:col-start-auto">
                         <span className="md:hidden">{t("Blocage principal", "Main blocker")} : </span>
                         {blocker ? <span className="text-ink">{blockerLabel(blocker, lang)}</span> : t("Aucun", "None")}
+                        {!blocker && topHurdle(s.audit_id) && ` · ${t("contourné", "got past")} : ${topHurdle(s.audit_id)!.toLowerCase()}`}
                         {s.runs_bot_blocked > 0 && !botOnly && " · anti-bot"}
                       </span>
                     </Link>

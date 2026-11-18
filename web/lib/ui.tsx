@@ -203,6 +203,28 @@ export function summarize(runs: Run[]) {
   };
 }
 
+// What the agent had to get past on missions it still passed, read from its own report (steps_summary, blocker_detail).
+// ponytail: keyword match on the agent's text; add an "obstacles" field to the agent's answer schema if wording drifts.
+const HURDLES: [string, string, RegExp][] = [
+  ["Bandeau cookies à fermer", "Cookie banner to close", /cookie|consentement/i],
+  ["Pop-up à fermer", "Pop-up to close", /(dismiss|clos|ferm)[^.]{0,60}(pop-?up|newsletter|modal|overlay)|(pop-?up|newsletter|modal|overlay)[^.]{0,40}(dismiss|closed|ferm)/i],
+  ["Recherche à reprendre", "Search to retry", /no results?|aucun r[ée]sultat|pas de r[ée]sultat/i],
+  ["Filtre qui ne répond pas", "Filter that does not respond", /(tried|tent[ée]) (to )?(de )?(filter|filtrer)/i],
+];
+export const LONG_PATH = 20;
+
+export function hurdles(runs: { success?: boolean | null; steps?: number | null; agent_answer?: { steps_summary?: string; blocker_detail?: string } | null }[], lang: Lang) {
+  const won = runs.filter((r) => r.success);
+  const out: [string, number][] = [];
+  for (const [fr, en, re] of HURDLES) {
+    const n = won.filter((r) => re.test(`${r.agent_answer?.steps_summary ?? ""} ${r.agent_answer?.blocker_detail ?? ""}`)).length;
+    if (n) out.push([lang === "en" ? en : fr, n]);
+  }
+  const long = won.filter((r) => (r.steps ?? 0) >= LONG_PATH).length;
+  if (long) out.push([lang === "en" ? `Long path (${LONG_PATH}+ steps)` : `Parcours long (${LONG_PATH} étapes ou plus)`, long]);
+  return { passed: won.length, items: out.sort((a, b) => b[1] - a[1]) };
+}
+
 export function Chevron({ dir = "right", className = "h-[0.7em] w-[0.7em]" }: { dir?: "right" | "left" | "down"; className?: string }) {
   const d = dir === "left" ? "M8 1.5L3.5 6 8 10.5" : dir === "down" ? "M1.5 4L6 8.5 10.5 4" : "M4 1.5L8.5 6 4 10.5";
   return (

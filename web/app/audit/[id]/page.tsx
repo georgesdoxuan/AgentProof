@@ -5,7 +5,7 @@ import { connection } from "next/server";
 import { DEFAULT_MODEL, EXCLUDED, db, paymentStages, paymentVerdicts } from "@/lib/engine";
 import { locale, missionTitle, staticText, tr, type Lang, type T } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
-import { BrowserFrame, Chevron, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, summarize } from "@/lib/ui";
+import { BrowserFrame, Chevron, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, hurdles, summarize } from "@/lib/ui";
 import { headers } from "next/headers";
 import { CopyField } from "@/app/espace/controls";
 import { Mark, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
@@ -228,6 +228,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   const running = audit.status === "running" || competitor?.status === "running" || pays.some((p) => p.status !== "done");
   const cost = runs.reduce((t: number, r: any) => t + Number(r.cost_usd ?? 0), 0);
   const maxBlock = s.blockers[0]?.[1] ?? 1;
+  const got = hurdles(runs, lang);
   const aside = s.excluded + s.unverified + s.errors;
   const scope = scopeText(runs, s, audit.device, pays.some((p) => p.status === "done"), lang);
 
@@ -473,6 +474,30 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                 );
               })}
             </ol>
+          </section>
+        )}
+
+        {/* Even a passed mission can hide friction: what the agent had to get past, from its own report. Outside the score. */}
+        {got.items.length > 0 && (
+          <section>
+            <SectionHead title={t("Ce que l’agent a dû contourner.", "What the agent had to get past.")}
+              intro={t(
+                `Sur les ${got.passed} missions réussies, les obstacles que l’agent a franchis. Un client pressé ou un agent moins tenace peut s’y arrêter. Relevés dans le compte rendu de l’agent, hors score.`,
+                `Across the ${got.passed} passed missions, the obstacles the agent got past. A hurried shopper or a less persistent agent may stop there. Read from the agent's own report, outside the score.`,
+              )} />
+            <ul className="overflow-hidden rounded-[18px] bg-tile">
+              {got.items.map(([label, n]) => (
+                <li key={label} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-2.5 border-b border-hairline px-6 py-4 last:border-0 md:grid-cols-[minmax(0,18rem)_minmax(0,1fr)_7.5rem]">
+                  <span className="min-w-0 font-semibold">{label}</span>
+                  <span className="col-span-2 row-start-2 block h-1.5 overflow-hidden rounded-full bg-fill md:col-span-1 md:row-start-auto" aria-hidden>
+                    <span className="block h-full rounded-full bg-ink-2/50" style={{ width: `${(100 * n) / got.passed}%` }} />
+                  </span>
+                  <span className="type-small text-right text-ink-2 tnum md:row-start-auto">
+                    {t(`${n} sur ${got.passed}`, `${n} of ${got.passed}`)}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </section>
         )}
 
