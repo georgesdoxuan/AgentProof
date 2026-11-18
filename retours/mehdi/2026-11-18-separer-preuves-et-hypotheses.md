@@ -18,4 +18,8 @@ Sur le cas Celio, le rapport n'affirme pas sans preuve que le filtre exige une c
 Objectif : recommandations fiables pour une entreprise et défendables devant le jury. Effort estimé : une demi-journée. Composants : génération des recommandations dans web/lib/engine.ts et affichage dans web/app/audit/[id]/page.tsx. Sujet distinct de la cohérence des verdicts : cette demande concerne le niveau de certitude des causes proposées.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait
+- Chaque blocage du plan affiche désormais quatre lignes séparées : « Observé » (texte de l'agent et du juge, sans IA), « Hypothèse » (cause proposée par l'IA, en orange, consigne de ne rien affirmer), « À vérifier » (vérification concrète) et « Correction possible ». Si l'IA échoue, il reste le constat et une vérification par défaut (rejouer le replay).
+- La consigne précise qu'une page de connexion à l'entrée du checkout n'est pas un bug. Sur Celio, le plan ne dit plus que le filtre exige une connexion.
+- La mention sous le plan explique que les constats viennent des verdicts et que les hypothèses viennent de l'IA.
+- Fichiers : `web/lib/engine.ts`, `web/lib/ui.tsx` (`Recommendations`), `web/app/audit/[id]/page.tsx`. Les anciens plans restent lisibles.

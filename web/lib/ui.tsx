@@ -261,6 +261,8 @@ export function Avatar({ email, className = "h-9 w-9" }: { email: string; classN
   );
 }
 
+const TAGGED = /^(Observé|Hypothèse|À vérifier|Correction possible) :\u00a0/;
+
 // The LLM writes "1. Problème : … / Correction : …". Show each pair as a card; fall back to plain text.
 export function Recommendations({ text }: { text: string }) {
   const intro: string[] = [];
@@ -270,7 +272,9 @@ export function Recommendations({ text }: { text: string }) {
     if (!line) continue;
     const p = line.match(/^\d+[.)]\s*(?:\*\*)?(?:Probl[eè]me\s*(?:\*\*)?\s*:\s*(?:\*\*)?)?(.*)$/i);
     const f = line.match(/^(?:[-*]\s*)?(?:\*\*)?Correction\s*(?:\*\*)?\s*:?\s*(.*)$/i);
-    if (p) {
+    const tag = line.match(/^(Observé|Hypothèse|À vérifier|Correction possible)\s*:\s*(.*)$/);
+    if (tag && items.length) items[items.length - 1].fix.push(`${tag[1]} :\u00a0${tag[2]}`);
+    else if (p) {
       // "Problème … → Correction : …" sometimes arrives on one line.
       const [problem, ...fix] = p[1].split(/\s*(?:→|->)?\s*(?:\*\*)?Correction\s*(?:\*\*)?\s*:\s*/i);
       items.push({ problem: problem.replace(/\*\*/g, ""), fix: fix.filter(Boolean) });
@@ -287,9 +291,23 @@ export function Recommendations({ text }: { text: string }) {
       <ol className="grid gap-5 md:grid-cols-3 print:grid-cols-1 print:gap-[3mm]">
         {items.map((it, i) => (
           <li key={i} className="tile flex flex-col p-7! print:p-[5mm]!">
-            <span className="type-small text-ink-2">Correction {i + 1}</span>
+            <span className="type-small text-ink-2">{it.fix.some((l) => TAGGED.test(l)) ? "Blocage" : "Correction"} {i + 1}</span>
             <p className="mt-3 font-semibold">{it.problem}</p>
-            {it.fix.length > 0 && (
+            {it.fix.some((l) => TAGGED.test(l)) ? (
+              // Facts, hypothesis and check kept apart: the reader sees what was observed and what is only supposed.
+              <dl className="mt-4 space-y-2 type-small">
+                {it.fix.map((l, j) => {
+                  const k = l.match(TAGGED)?.[1] ?? "";
+                  const v = k ? l.slice(k.length + 3) : l;
+                  return (
+                    <div key={j}>
+                      {k && <dt className={`inline font-semibold ${k === "Hypothèse" ? "text-warn" : ""}`}>{k} : </dt>}
+                      <dd className="inline text-ink-2">{v}</dd>
+                    </div>
+                  );
+                })}
+              </dl>
+            ) : it.fix.length > 0 && (
               <p className="mt-4 flex gap-2 text-ink-2">
                 <Chevron className="mt-[0.45em] h-3 w-3 text-link" />
                 <span>{it.fix.join(" ")}</span>

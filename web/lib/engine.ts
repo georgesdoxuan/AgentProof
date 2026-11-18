@@ -609,7 +609,7 @@ async function retryFailures(a: any) {
 async function closeAudits(log: string[]) {
   const { data: audits } = await db
     .from("audits")
-    .select("id, kind, sites(domain), runs(id, status, success, blocker_type, blocker_detail, attempts, session_id, screenshot_url, share_url, steps, cost_usd, error, missions(title))")
+    .select("id, kind, sites(domain), runs(id, status, success, blocker_type, blocker_detail, judge, attempts, session_id, screenshot_url, share_url, steps, cost_usd, error, missions(title))")
     .eq("status", "running");
   for (const a of audits ?? []) {
     if (a.runs.some((r: any) => r.status === "todo" || r.status === "launched")) continue;
@@ -765,21 +765,73 @@ export async function judgeScreenshot(imageUrl: string, mission: string | undefi
   return JSON.parse(out.slice(out.indexOf("{"), out.lastIndexOf("}") + 1));
 }
 
-async function writeRecommendations(domain: string, runs: any[]) {
-  const lines = runs.map((r) => `- ${r.missions?.title}: ${r.success === null ? "non vérifié" : r.success ? "réussi" : `échec (${r.blocker_type}) ${r.blocker_detail ?? ""}`}`).join("\n");
-  return hf(
+// Outcomes that are not the site's fault: listed apart, never turned into a correction.
+const NOT_SITE = ["out_of_stock", "mission_not_applicable", "agent_out_of_steps"];
+
+// Plan de corrections. The facts (which missions failed, on what) come from the verdicts, never from the LLM:
+// a successful mission can never appear as a failure. The LLM only adds a cause, worded as a hypothesis, and a check.
+export async function writeRecommendations(domain: string, runs: any[]) {
+  const done = runs.filter((r) => r.status === "done");
+  const failed = done.filter((r) => r.success === false && !NOT_SITE.includes(r.blocker_type));
+  const aside = done.filter((r) => r.success === false && NOT_SITE.includes(r.blocker_type));
+  const unverified = done.filter((r) => r.success === null).length;
+  const ok = done.filter((r) => r.success === true).length;
+  const titles = (rs: any[]) => rs.map((r) => `« ${r.missions?.title} »`).join(", ");
+  const notes = [
+    aside.length ? `${aside.length} mission${aside.length > 1 ? "s" : ""} sans lien avec l'interface du site, hors plan : ${aside.map((r) => `« ${r.missions?.title} » (${BLOCKERS[r.blocker_type]})`).join(", ")}.` : "",
+    unverified ? `${unverified} mission${unverified > 1 ? "s" : ""} non vérifiée${unverified > 1 ? "s" : ""} par le juge visuel, hors plan.` : "",
+  ].filter(Boolean).join(" ");
+
+  if (!failed.length)
+    return `Aucun blocage observé : ${ok} mission${ok > 1 ? "s" : ""} sur ${ok} atteigne${ok > 1 ? "nt" : ""} l'entrée du checkout. Une page de connexion ou d'inscription à cette étape compte comme une arrivée valide. Le paiement n'a pas été testé. ${notes}`.trim();
+
+  const byBlocker: Record<string, any[]> = {};
+  for (const r of failed) (byBlocker[r.blocker_type ?? "other"] ??= []).push(r);
+  const groups = Object.entries(byBlocker).sort((a, b) => b[1].length - a[1].length).slice(0, 3);
+  const facts = groups.map(([b, rs]) => ({
+    head: `${BLOCKERS[b] ?? b} · ${rs.length} mission${rs.length > 1 ? "s" : ""} : ${titles(rs)}`,
+    seen: [...new Set(rs.map((r) => r.blocker_detail).filter(Boolean))]
+      .concat([...new Set(rs.map((r) => r.judge?.reason).filter(Boolean))].map((j) => `juge visuel : ${j}`))
+      .join(" ; "),
+  }));
+  let ideas: { hypothese?: string; verification?: string; correction?: string }[] = [];
+  try {
+    const out = await hf(
+      [
+        {
+          role: "user",
+          content:
+            `Un agent IA a tenté d'acheter sur ${domain}. Voici ${facts.length} blocage(s) observé(s), avec le texte rapporté par l'agent et par un juge visuel :\n` +
+            facts.map((f, i) => `${i + 1}. ${f.head}. Observé : ${f.seen || "aucun détail"}`).join("\n") +
+            `\n\nPour chaque blocage, dans le même ordre, propose une cause possible, une vérification concrète qu'un marchand peut faire, et une correction côté site. ` +
+            `La cause est une hypothèse : ne l'affirme pas, ne déduis rien qui ne soit pas dans le texte observé. Une page de connexion à l'entrée du checkout n'est pas un bug. ` +
+            `Réponds en français, en JSON seulement : [{"hypothese": "une phrase", "verification": "une phrase", "correction": "une phrase"}]`,
+        },
+      ],
+      600,
+    );
+    ideas = JSON.parse(out.slice(out.indexOf("["), out.lastIndexOf("]") + 1));
+  } catch {}
+  const clean = (s?: string) => (typeof s === "string" ? s.replace(/[\n*]/g, " ").trim() : "");
+  const body = facts.map((f, i) =>
     [
-      {
-        role: "user",
-        content:
-          `Tu es expert e-commerce. Un agent IA a tenté d'acheter sur ${domain}. Résultats par mission :\n${lines}\n\n` +
-          `Écris en français, en texte simple sans markdown. Base-toi uniquement sur ces résultats, n'invente aucun problème. ` +
-          `S'il y a des échecs : au plus 3 lignes numérotées, classées par nombre de missions touchées, chacune « problème → correction concrète côté site ». ` +
-          `Si tout a réussi : une seule phrase qui le dit, puis une seule phrase de conseil pour rester accessible aux agents IA.`,
-      },
-    ],
-    500,
+      `${i + 1}. ${f.head}`,
+      `Observé : ${f.seen || "voir la capture et le replay de la mission."}`,
+      clean(ideas[i]?.hypothese) && `Hypothèse : ${clean(ideas[i]!.hypothese)}`,
+      `À vérifier : ${clean(ideas[i]?.verification) || "rejouer le replay de la mission pour voir l'écran exact du blocage."}`,
+      clean(ideas[i]?.correction) && `Correction possible : ${clean(ideas[i]!.correction)}`,
+    ].filter(Boolean).join("\n"),
   );
+  return [`${failed.length} mission${failed.length > 1 ? "s" : ""} bloquée${failed.length > 1 ? "s" : ""} par le site, ${ok} réussie${ok > 1 ? "s" : ""}. ${notes}`.trim(), ...body].join("\n");
+}
+
+// Rewrites an audit's plan from its stored verdicts (old audits written by the previous prompt).
+export async function regenerateRecommendations(auditId: string) {
+  const { data: a } = await db.from("audits").select("sites(domain), runs(status, success, blocker_type, blocker_detail, judge, missions(title))").eq("id", auditId).single();
+  if (!a) throw new Error("audit introuvable");
+  const recommendations = await writeRecommendations((a.sites as any).domain, a.runs);
+  await db.from("audits").update({ recommendations }).eq("id", auditId);
+  return recommendations;
 }
 
 // ---------- replay: public trajectory, step by step ----------

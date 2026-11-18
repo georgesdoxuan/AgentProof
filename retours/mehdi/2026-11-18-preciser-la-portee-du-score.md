@@ -18,4 +18,6 @@ Sur le rapport Celio, on comprend près du score que cinq parcours sur ordinateu
 Objectif : expliquer au jury ce que mesure le score. Effort estimé : une à deux heures. Composant : web/app/audit/[id]/page.tsx. La limite existe déjà dans le pied de page : la demande consiste à la rapprocher du résultat.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait
+- Sous le score (page et couverture PDF), une phrase tirée des données du rapport : nombre de parcours comptés, appareil, « de l'accueil jusqu'à l'entrée du checkout », missions exclues avec leurs raisons, missions non vérifiées ou non jouées, puis « Paiement non testé » (ou « Paiement testé à part » quand un test de paiement est lié). Aucun nombre codé en dur (`scopeText` dans `web/app/audit/[id]/page.tsx`).
+- Celio : « Score calculé sur 5 parcours sur ordinateur, de l'accueil jusqu'à l'entrée du checkout. Paiement non testé. »

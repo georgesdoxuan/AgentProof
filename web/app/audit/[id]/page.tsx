@@ -2,7 +2,7 @@ import { staffUser, teamContext } from "@/lib/auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { DEFAULT_MODEL, PAYMENT_STAGES, PAYMENT_VERDICTS, db } from "@/lib/engine";
+import { DEFAULT_MODEL, EXCLUDED, PAYMENT_STAGES, PAYMENT_VERDICTS, db } from "@/lib/engine";
 import { BrowserFrame, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, summarize } from "@/lib/ui";
 import { headers } from "next/headers";
 import { CopyField } from "@/app/espace/controls";
@@ -16,6 +16,28 @@ const RUN_FIELDS =
 function perMission(runs: any[]) {
   const d = runs.filter((r) => r.status === "done" && r.duration_s);
   return d.length ? { s: Math.round(d.reduce((t, r) => t + r.duration_s, 0) / d.length), usd: d.reduce((t, r) => t + Number(r.cost_usd ?? 0), 0) / d.length } : null;
+}
+
+// What the score covers, from the report's own data: shown next to the score so 100 % is never read as more than it is.
+function scopeText(runs: any[], s: ReturnType<typeof summarize>, device: string, paymentTested: boolean) {
+  const n = (k: number, w: string) => `${k} ${w}${k > 1 && !w.endsWith("s") ? "s" : ""}`;
+  const excluded = runs.filter((r) => r.status === "done" && r.success === false && EXCLUDED.includes(r.blocker_type));
+  const reasons = [...new Set(excluded.map((r) => blockerLabel(r.blocker_type).toLowerCase()))].join(", ");
+  return [
+    `Score calculé sur ${n(s.done, "parcours")} sur ${device === "mobile" ? "mobile" : "ordinateur"}, de l'accueil jusqu'à l'entrée du checkout.`,
+    excluded.length ? `${n(excluded.length, "mission")} exclue${excluded.length > 1 ? "s" : ""} du score (${reasons}).` : "",
+    s.unverified ? `${n(s.unverified, "mission")} non vérifiée${s.unverified > 1 ? "s" : ""}, hors score.` : "",
+    s.errors ? `${n(s.errors, "mission")} non jouée${s.errors > 1 ? "s" : ""} (erreur technique).` : "",
+    paymentTested ? "Paiement testé à part, voir plus bas." : "Paiement non testé.",
+  ].filter(Boolean).join(" ");
+}
+
+// Mission conclusion in French, built from the verdict (not the agent's free text, which may be in English).
+function conclusion(r: any) {
+  if (r.success === null) return "Résultat non vérifié par le juge visuel : mission hors score.";
+  if (!r.success) return "L'agent n'atteint pas l'entrée du checkout.";
+  const login = /login|connexion|signin|sign-in|account|compte/i.test(r.final_url ?? "") || /connect|inscri|compte/i.test(r.judge?.reason ?? "");
+  return login ? "Entrée du checkout atteinte : page de connexion ou d'inscription." : "Entrée du checkout atteinte.";
 }
 
 const longDate = (d: string) => new Date(d).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris", day: "numeric", month: "long", year: "numeric" });
@@ -42,6 +64,7 @@ function PrintCover(p: {
   alert: { from: number; to: number } | null;
   brand: { brand_name: string | null; brand_logo: string | null } | null;
   reportUrl: string;
+  scope: string;
 }) {
   const { s } = p;
   const tone = scoreTone(s.score);
@@ -89,6 +112,7 @@ function PrintCover(p: {
           L&apos;agent atteint la première page du checkout dans <strong>{s.ok} mission{s.ok > 1 ? "s" : ""} sur {s.done}</strong> comptée{s.done > 1 ? "s" : ""}.
           {s.excluded + s.unverified > 0 && <span className="text-ink-2"> {s.excluded + s.unverified} hors score.</span>}
         </p>
+        <p className="mt-[3mm] max-w-[150mm] text-[10.5pt] leading-snug text-ink-2">{p.scope}</p>
         {p.alert && (
           <p className="mt-[3mm] text-[11pt] font-semibold text-fail">
             En baisse : {p.alert.from} % au précédent audit, {p.alert.to} % aujourd&apos;hui.
@@ -160,6 +184,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   const cost = runs.reduce((t: number, r: any) => t + Number(r.cost_usd ?? 0), 0);
   const maxBlock = s.blockers[0]?.[1] ?? 1;
   const aside = s.excluded + s.unverified + s.errors;
+  const scope = scopeText(runs, s, audit.device, pays.some((p) => p.status === "done"));
 
   const paymentOnly = runs.length === 0 && pays.length > 0;
   // A linked audit of the same site is a model comparison, not a competitor.
@@ -181,6 +206,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             alert={alert}
             brand={branded ? brand : null}
             reportUrl={`${base}/audit/${audit.id}`}
+            scope={scope}
           />
         </>
       )}
@@ -258,6 +284,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                   </li>
                 )}
               </ul>
+              <p className="type-small mt-4 max-w-[560px] text-ink-2">{scope}</p>
             </div>
           </div>
 
@@ -385,7 +412,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
           <section>
             <h2 className="type-h2 mb-8">Plan de corrections.</h2>
             <Recommendations text={audit.recommendations} />
-            <p className="type-caption mt-4 text-ink-2">Texte généré par IA (modèle open source sur Hugging Face) à partir des résultats ci-dessous. À vérifier avant d&apos;agir.</p>
+            <p className="type-caption mt-4 text-ink-2">Les constats viennent des verdicts des missions ci-dessous. Les hypothèses et corrections sont générées par IA (modèle open source sur Hugging Face) : à vérifier avant d&apos;agir.</p>
           </section>
         )}
 
@@ -432,7 +459,14 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                   {r.status === "done" && (
                     <>
                       {!r.success && r.success !== null && <p className="mt-4 font-semibold">{blockerLabel(r.blocker_type)}</p>}
-                      {r.blocker_detail && <p className={`text-ink-2 ${r.success ? "mt-4" : "mt-1"}`}>{r.blocker_detail}</p>}
+                      <p className={`text-ink-2 ${r.success ? "mt-4" : "mt-1"}`}>{conclusion(r)}</p>
+                      {(r.blocker_detail || r.agent_answer?.steps_summary) && (
+                        <details className="type-small mt-2 text-ink-2">
+                          <summary className="cursor-pointer text-link">Réponse originale de l&apos;agent</summary>
+                          {r.blocker_detail && <p className="mt-2">{r.blocker_detail}</p>}
+                          {r.agent_answer?.steps_summary && r.agent_answer.steps_summary !== r.blocker_detail && <p className="mt-2">{r.agent_answer.steps_summary}</p>}
+                        </details>
+                      )}
                       {r.reached_checkout && !r.success && r.judge?.reason && (
                         <p className="type-small mt-4 rounded-[12px] bg-bg-2 px-4 py-3 dark:bg-[#2c2c2e]">
                           <span className="font-semibold text-warn">Juge visuel. </span>

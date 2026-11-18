@@ -18,4 +18,6 @@ Sur un rapport contenant des réponses agent françaises et anglaises, les concl
 Objectif : rendre la démo plus lisible pour le jury. Effort estimé : deux à quatre heures. Composants : présentation des missions dans web/app/audit/[id]/page.tsx et résultat structuré produit par web/lib/engine.ts. Ne pas inventer de cause lors de la reformulation.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait
+- La conclusion de chaque mission est construite en français à partir du verdict, sans appel IA : « Entrée du checkout atteinte » (avec « page de connexion ou d'inscription » quand l'URL finale ou le juge le montrent), « L'agent n'atteint pas l'entrée du checkout » (le libellé du blocage reste affiché au-dessus), ou « Résultat non vérifié par le juge visuel ». Aucune cause n'est inventée.
+- La réponse originale de l'agent (détail et résumé des étapes) reste accessible dans « Réponse originale de l'agent », repliée sous la conclusion. Verdict, capture et replay inchangés (`conclusion` dans `web/app/audit/[id]/page.tsx`).
