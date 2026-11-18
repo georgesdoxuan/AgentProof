@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { Dict } from "@/lib/i18n";
 
 const link =
   "inline-flex h-11 items-center whitespace-nowrap px-2 text-ink/80 transition-colors hover:text-ink aria-[current=page]:text-ink-2";
@@ -11,29 +12,29 @@ const hide = (e: React.MouseEvent<HTMLElement>) => (e.currentTarget.closest("[po
 
 // apple.com local nav. Signed out: the public pages and one blue pill. Signed in: the space and an account menu,
 // so the app keeps a single primary action ("Lancer un audit") and Classement lives in the space's sidebar.
-export function Nav({ email }: { email: string | null }) {
+export function Nav({ email, t }: { email: string | null; t: Dict["nav"] }) {
   const path = usePathname();
   if (!email)
     return (
       <div className="flex items-center gap-1 type-caption sm:gap-3">
         <Link href="/classement" aria-current={path === "/classement" ? "page" : undefined} className={link}>
-          Classement
+          {t.ranking}
         </Link>
         <Link href="/connexion" className={link}>
-          Connexion
+          {t.signIn}
         </Link>
         <Link href="/#tester" className="inline-flex h-7 items-center whitespace-nowrap rounded-full bg-blue px-[11px] text-white transition-colors hover:bg-[var(--blue-hover)]">
-          Tester<span className="max-[480px]:hidden">&nbsp;mon site</span>
+          {t.test}<span className="max-[480px]:hidden">&nbsp;{t.testMySite}</span>
         </Link>
       </div>
     );
   return (
     <div className="flex items-center gap-1 type-caption sm:gap-2">
       <Link href="/espace" aria-current={/^\/(espace|equipe|compte)(\/|$)/.test(path) ? "page" : undefined} className={link}>
-        <span className="max-[480px]:hidden">Mon espace</span>
-        <span className="min-[481px]:hidden">Espace</span>
+        <span className="max-[480px]:hidden">{t.mySpace}</span>
+        <span className="min-[481px]:hidden">{t.space}</span>
       </Link>
-      <button type="button" popoverTarget="compte-menu" aria-label={`Compte : ${email}`} className="-mr-2 grid h-11 w-11 place-items-center rounded-full">
+      <button type="button" popoverTarget="compte-menu" aria-label={`${t.account} : ${email}`} className="-mr-2 grid h-11 w-11 place-items-center rounded-full">
         <span className="grid h-7 w-7 place-items-center rounded-full bg-ink font-semibold text-bg" aria-hidden>
           {email[0].toUpperCase()}
         </span>
@@ -45,14 +46,14 @@ export function Nav({ email }: { email: string | null }) {
       >
         <p className="type-caption truncate px-3 pb-1.5 pt-2 text-ink-2">{email}</p>
         <Link href="/equipe" onClick={hide} className={item}>
-          Équipe
+          {t.team}
         </Link>
         <Link href="/compte" onClick={hide} className={item}>
-          Compte
+          {t.account}
         </Link>
         <form action="/api/auth" method="post" className="mt-1 border-t border-hairline pt-1">
           <input type="hidden" name="action" value="logout" />
-          <button className={item}>Se déconnecter</button>
+          <button className={item}>{t.signOut}</button>
         </form>
       </div>
     </div>

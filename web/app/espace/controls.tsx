@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import type { Dict } from "@/lib/i18n";
 
 // lib/ui pulls in the server engine, so client controls keep their own styles.
 // Pop-up button look for native <select>: keeps the system menu, drops the default chrome.
@@ -20,46 +21,75 @@ const ICON = {
   cycle: "M20 11a8 8 0 0 0-14.6-4.5M4 3v4h4M4 13a8 8 0 0 0 14.6 4.5M20 21v-4h-4",
   people: "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2.5 21a6.5 6.5 0 0 1 13 0M16 3.2a4 4 0 0 1 0 7.6M21.5 21a6.5 6.5 0 0 0-4-6",
   person: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7.5a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM6.5 18.2a6.5 6.5 0 0 1 11 0",
+  star: "M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z",
+  trash: "M4 6.5h16M9.5 6.5V4.5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2M6 6.5l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M10 10.5v6M14 10.5v6",
 };
 
-// Three groups, labels matching each page's title.
-const GROUPS: [string, [string, string, string][]][] = [
-  ["Suivi", [["/espace", "Accueil", ICON.home], ["/espace/sites", "Sites", ICON.globe], ["/espace/rapports", "Rapports", ICON.doc], ["/espace/classement", "Classement", ICON.podium]]],
-  ["Agent", [["/espace/paiement", "Moyen de paiement", ICON.card], ["/espace/comptes", "Comptes de test", ICON.key], ["/espace/automations", "Automations", ICON.cycle]]],
-  ["Réglages", [["/equipe", "Équipe", ICON.people], ["/compte", "Compte", ICON.person]]],
-];
+// Sub-sections shown under their parent in the sidebar (Rapports › Favoris, Corbeille). On narrow screens the page shows them as tabs.
+const CHILDREN: Record<string, readonly (readonly [string, string])[]> = {
+  "/espace/rapports": [["/espace/rapports/favoris", ICON.star], ["/espace/rapports/corbeille", ICON.trash]],
+};
+
+const glyph = (d: string, cls: string) => (
+  <svg viewBox="0 0 24 24" className={cls} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d={d} />
+  </svg>
+);
+const itemCls = (current: boolean) =>
+  `flex items-center gap-2.5 whitespace-nowrap rounded-[8px] transition-colors duration-200 lg:min-h-10 lg:px-3 max-lg:h-9 max-lg:px-4 max-lg:type-small max-lg:font-semibold ${
+    current ? "bg-tile font-semibold text-ink shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#3a3a3c]" : "text-ink-2 hover:bg-tile/60 hover:text-ink max-lg:hover:bg-transparent"
+  }`;
+
+// Three groups; their names and the section labels come from the dictionary (labels match each page's title).
+const GROUPS = [
+  ["track", [["/espace", ICON.home], ["/espace/sites", ICON.globe], ["/espace/rapports", ICON.doc], ["/espace/classement", ICON.podium]]],
+  ["agent", [["/espace/paiement", ICON.card], ["/espace/comptes", ICON.key], ["/espace/automations", ICON.cycle]]],
+  ["settings", [["/equipe", ICON.people], ["/compte", ICON.person]]],
+] as const;
 
 // Sidebar on wide screens, segmented tabs on narrow ones (groups and icons drop out). Tabs navigate, they never act.
-export function SpaceNav() {
+export function SpaceNav({ t }: { t: Dict["space"] }) {
   const path = usePathname();
   return (
-    <nav aria-label="Espace" className="max-lg:-mx-1 max-lg:overflow-x-auto">
+    <nav aria-label={t.label} className="max-lg:-mx-1 max-lg:overflow-x-auto">
       <div className="lg:space-y-5 max-lg:inline-flex max-lg:gap-1 max-lg:rounded-[10px] max-lg:bg-fill max-lg:p-[3px]">
         {GROUPS.map(([group, items]) => (
           <div key={group} className="max-lg:contents">
             <p id={`nav-${group}`} className="type-caption mb-1 px-3 font-semibold text-ink-2 max-lg:hidden">
-              {group}
+              {t.groups[group]}
             </p>
             <ul aria-labelledby={`nav-${group}`} className="flex flex-col gap-0.5 max-lg:contents">
-              {items.map(([href, label, icon]) => {
-                // "Sites" stays lit on a site page; "Accueil" only on itself.
-                const current = href === "/espace" ? path === href : path === href || path.startsWith(`${href}/`);
+              {items.map(([href, icon]) => {
+                const children = CHILDREN[href] ?? [];
+                const inChild = children.some(([c]) => path === c || path.startsWith(`${c}/`));
+                // "Sites" stays lit on a site page; "Accueil" only on itself; a parent gives way to its lit sub-section.
+                const current = href === "/espace" ? path === href : !inChild && (path === href || path.startsWith(`${href}/`));
                 return (
                   <li key={href}>
+                    {/* Narrow screens have no sub-sections in the tabs: the parent stays lit for them. */}
                     <Link
                       href={href}
                       aria-current={current ? "page" : undefined}
-                      className={`flex items-center gap-2.5 whitespace-nowrap rounded-[8px] transition-colors duration-200 lg:min-h-10 lg:px-3 max-lg:h-9 max-lg:px-4 max-lg:type-small max-lg:font-semibold ${
-                        current
-                          ? "bg-tile font-semibold text-ink shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#3a3a3c]"
-                          : "text-ink-2 hover:bg-tile/60 hover:text-ink max-lg:hover:bg-transparent"
-                      }`}
+                      className={`${itemCls(current)} ${inChild ? "max-lg:bg-tile max-lg:text-ink max-lg:shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:max-lg:bg-[#3a3a3c]" : ""}`}
                     >
-                      <svg viewBox="0 0 24 24" className={`h-[18px] w-[18px] shrink-0 max-lg:hidden ${current ? "text-blue" : ""}`} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                        <path d={icon} />
-                      </svg>
-                      {label}
+                      {glyph(icon, `h-[18px] w-[18px] shrink-0 max-lg:hidden ${current ? "text-blue" : ""}`)}
+                      {t.sections[href as keyof typeof t.sections]}
                     </Link>
+                    {children.length > 0 && (
+                      <ul className="mt-0.5 flex flex-col gap-0.5 pl-6 max-lg:hidden">
+                        {children.map(([c, cIcon]) => {
+                          const on = path === c || path.startsWith(`${c}/`);
+                          return (
+                            <li key={c}>
+                              <Link href={c} aria-current={on ? "page" : undefined} className={`${itemCls(on)} lg:min-h-9 type-small`}>
+                                {glyph(cIcon, `h-4 w-4 shrink-0 ${on ? "text-blue" : ""}`)}
+                                {t.sections[c as keyof typeof t.sections]}
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
                   </li>
                 );
               })}
@@ -85,15 +115,24 @@ export function AutoSubmitSelect({ name, defaultValue, label, options }: { name:
 }
 
 // Destructive actions always ask first and offer Cancel.
-export function ConfirmButton({ message, children, className = "" }: { message: string; children: React.ReactNode; className?: string }) {
+export function ConfirmButton({ message, children, className = "", label }: { message: string; children: React.ReactNode; className?: string; label?: string }) {
   return (
-    <button className={className} onClick={(e) => !confirm(message) && e.preventDefault()}>
+    <button className={className} aria-label={label} title={label} onClick={(e) => !confirm(message) && e.preventDefault()}>
       {children}
     </button>
   );
 }
 
-export function CopyField({ value, label }: { value: string; label: string }) {
+// Closes the <details> menu it sits in (Cancel in a row's "…" menu).
+export function CloseMenu({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <button type="button" className={className} onClick={(e) => e.currentTarget.closest("details")?.removeAttribute("open")}>
+      {children}
+    </button>
+  );
+}
+
+export function CopyField({ value, label, lang = "fr" }: { value: string; label: string; lang?: "fr" | "en" }) {
   const [copied, setCopied] = useState(false);
   return (
     <div className="flex items-center gap-2 rounded-[12px] bg-bg-2 p-1.5 pl-4 dark:bg-[#2c2c2e]">
@@ -104,14 +143,14 @@ export function CopyField({ value, label }: { value: string; label: string }) {
         className="btn btn-dark min-h-9 px-4 text-[14px]"
         aria-live="polite"
       >
-        {copied ? "Copié" : "Copier"}
+        {lang === "en" ? (copied ? "Copied" : "Copy") : copied ? "Copié" : "Copier"}
       </button>
     </div>
   );
 }
 
 // Back / forward, like a browser toolbar. Uses the Navigation API when available to grey out a dead end.
-export function HistoryButtons() {
+export function HistoryButtons({ back, forward }: { back: string; forward: string }) {
   const router = useRouter();
   const path = usePathname();
   const [can, setCan] = useState({ back: true, forward: true });
@@ -123,12 +162,12 @@ export function HistoryButtons() {
     "grid h-9 w-9 place-items-center rounded-full bg-fill text-ink transition-colors hover:bg-line/60 disabled:cursor-default disabled:opacity-35 focus-visible:outline-2 focus-visible:outline-blue";
   return (
     <div className="flex gap-2">
-      <button type="button" className={btn} onClick={() => router.back()} disabled={!can.back} aria-label="Page précédente" title="Page précédente">
+      <button type="button" className={btn} onClick={() => router.back()} disabled={!can.back} aria-label={back} title={back}>
         <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d="M10 3L5 8l5 5" />
         </svg>
       </button>
-      <button type="button" className={btn} onClick={() => router.forward()} disabled={!can.forward} aria-label="Page suivante" title="Page suivante">
+      <button type="button" className={btn} onClick={() => router.forward()} disabled={!can.forward} aria-label={forward} title={forward}>
         <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d="M6 3l5 5-5 5" />
         </svg>

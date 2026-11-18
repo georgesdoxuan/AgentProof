@@ -1,5 +1,6 @@
 import { BLOCKERS, db } from "@/lib/engine";
 import { canLaunch, teamContext } from "@/lib/auth";
+import { msg } from "@/lib/lang";
 
 // Checklist on a site page: mark a blocker as fixed (or undo). Owner and admin only.
 export async function POST(req: Request) {
@@ -13,11 +14,11 @@ export async function POST(req: Request) {
   const siteId = Number(form.get("site"));
   const device = form.get("device") === "mobile" ? "mobile" : "desktop";
   const blocker = String(form.get("blocker") ?? "");
-  if (!Number.isInteger(siteId) || !(blocker in BLOCKERS)) return new Response("Requête invalide.", { status: 400 });
+  if (!Number.isInteger(siteId) || !(blocker in BLOCKERS)) return new Response(await msg("Requête invalide.", "Invalid request."), { status: 400 });
 
   // The site must belong to one of this team's audits.
   const { count } = await db.from("audits").select("id", { count: "exact", head: true }).eq("team_id", ctx.team.id).eq("site_id", siteId);
-  if (!count) return new Response("Site inconnu pour cette équipe.", { status: 404 });
+  if (!count) return new Response(await msg("Site inconnu pour cette équipe.", "Unknown site for this team."), { status: 404 });
 
   const key = { team_id: ctx.team.id, site_id: siteId, device, blocker_type: blocker };
   if (form.get("action") === "undo") await db.from("fixes").delete().match(key);
