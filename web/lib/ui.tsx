@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { EXCLUDED, blockerNames } from "./engine";
 import type { Lang } from "./i18n";
 import { getLang, getT } from "./lang";
@@ -151,12 +152,27 @@ export function AgentCursor({ x, y, animate = false, className = "" }: { x: numb
 }
 
 // AgentProof mark: the agent's cursor heading for the blue dot (the checkout).
-export function Mark({ className = "h-[22px] w-[22px]" }: { className?: string }) {
+// The AgentProof mark: the agent's cursor, stamped with a blue "verified" check. Follows the theme
+// (dark tile in light mode, light tile in dark mode); app/icon.svg is the fixed-color favicon copy.
+export function Mark({ className = "h-[24px] w-[24px]" }: { className?: string }) {
+  const id = useId();
   return (
     <svg viewBox="0 0 64 64" className={className} aria-hidden>
-      <rect width="64" height="64" rx="15" fill="var(--ink)" />
-      <path d="M20 14l28 16-12 3-6 11z" fill="var(--bg)" stroke="var(--bg)" strokeWidth="2" strokeLinejoin="round" />
-      <circle cx="45" cy="46" r="5" fill="var(--blue)" />
+      <defs>
+        <linearGradient id={`${id}s`} x2="0" y2="1">
+          <stop offset="0" stopColor="#fff" stopOpacity="0.16" />
+          <stop offset="1" stopColor="#fff" stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id={`${id}b`} x2="0" y2="1">
+          <stop offset="0" stopColor="#2997ff" />
+          <stop offset="1" stopColor="#0071e3" />
+        </linearGradient>
+      </defs>
+      <rect width="64" height="64" rx="14.5" fill="var(--ink)" />
+      <rect width="64" height="64" rx="14.5" fill={`url(#${id}s)`} />
+      <path d="M14 10.5V39l6.6-6.4 5.2 11.6 4-1.6-5.1-11.4H34z" fill="var(--bg)" stroke="var(--bg)" strokeWidth="2.5" strokeLinejoin="round" />
+      <circle cx="41.5" cy="42" r="12" fill={`url(#${id}b)`} stroke="var(--ink)" strokeWidth="3.5" />
+      <path d="M36 42.3l3.8 3.8 7.2-7.8" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
