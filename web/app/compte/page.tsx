@@ -22,7 +22,7 @@ export default async function Compte() {
   const roles = t.roles;
 
   return (
-    <SpaceShell team={team} teams={teams} title={a.title}>
+    <SpaceShell narrow team={team} teams={teams} title={a.title}>
       <Group footer={a.loginNote}>
         <Row className="min-h-[76px]">
           <Avatar email={user.email} className="h-11 w-11" />

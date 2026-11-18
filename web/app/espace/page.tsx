@@ -118,7 +118,7 @@ export default async function Accueil() {
 
       {sites.length > 0 && (
         <section>
-          <div className="mb-3 flex items-baseline justify-between gap-4 px-1">
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-1">
             <h2 className="type-headline">Sites</h2>
             <Link href="/espace/sites" className="type-small text-link hover:underline">
               {t("Tout voir", "See all")}
@@ -181,7 +181,7 @@ export default async function Accueil() {
 
       {todo.length > 0 && (
         <section>
-          <div className="mb-3 flex items-baseline justify-between gap-4 px-1">
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-1">
             <h2 className="type-headline">{t("À corriger en priorité", "Fix first")}</h2>
             <span className="type-small text-ink-2">{t("Classé par missions perdues", "Sorted by missions lost")}</span>
           </div>

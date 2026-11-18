@@ -45,7 +45,7 @@ export default async function Automations() {
   const { STATES, CHECK, MONTHLY } = labels(lang);
 
   return (
-    <SpaceShell
+    <SpaceShell narrow
       team={team}
       teams={teams}
       title="Automations"

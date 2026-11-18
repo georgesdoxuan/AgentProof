@@ -21,7 +21,7 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
   const t = await getT();
 
   return (
-    <SpaceShell
+    <SpaceShell narrow
       team={team}
       teams={teams}
       title={t("Lancer un audit", "Run an audit")}

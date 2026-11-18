@@ -109,7 +109,7 @@ export async function BlockerItem({ site, b, canEdit, compact = false }: { site:
             {compact && ` · ${site.domain}`}
           </span>
         </div>
-        <h3 className="type-h3 mt-3">{blockerLabel(b.type, lang)}</h3>
+        <h3 className={`mt-3 ${compact ? "type-eyebrow" : "type-h3"}`}>{blockerLabel(b.type, lang)}</h3>
         {b.run?.blocker_detail && <p className={`mt-2 text-ink-2 ${compact ? "type-small line-clamp-3" : ""}`}>{b.run.blocker_detail}</p>}
         <p className={`mt-4 flex gap-2 ${compact ? "type-small" : ""}`}>
           <Chevron className="mt-[0.45em] h-3 w-3 shrink-0 text-link" />

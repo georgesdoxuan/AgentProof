@@ -152,6 +152,15 @@ body {
   text-wrap: balance;
   @media (max-width: 734px) { font-size: 24px; line-height: 1.16667; letter-spacing: 0.009em; }
 }
+/* Page title inside the app (team space): the large-title size, a step below marketing headlines. */
+@utility type-title {
+  font-size: 34px;
+  line-height: 1.11765;
+  font-weight: 600;
+  letter-spacing: 0.002em;
+  text-wrap: balance;
+  @media (max-width: 734px) { font-size: 28px; line-height: 1.14286; letter-spacing: 0.007em; }
+}
 @utility type-subhead {
   font-size: 28px;
   line-height: 1.14286;
@@ -208,6 +217,11 @@ body {
 @utility wrap-wide {
   width: min(1200px, 87.5%);
   margin-inline: auto;
+}
+/* App pages (team space): header and footer run edge to edge so the logo lines up with the sidebar. */
+@media (min-width: 1024px) {
+  body:has([data-app-shell]) :is(header > nav, footer > div) { width: auto; margin-inline: 24px; }
+  body:has([data-app-shell]) #compte-menu { right: 24px; }
 }
 /* Product-page tile: radius 30 / 25 / 20, padding 40 / 30. */
 @utility tile {
