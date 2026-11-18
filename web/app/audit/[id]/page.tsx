@@ -222,7 +222,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
           <p className="type-eyebrow text-ink-2">{paymentOnly ? "Test de paiement" : "Rapport d\u2019audit"} · {audit.device === "mobile" ? "Mobile" : "Ordinateur"}
             {audit.model && ` · Modèle ${audit.model}`}
           </p>
-          <h1 className="type-h1 mt-3 break-words">{audit.sites.name}</h1>
+          <h1 className="type-h1 mt-3 break-words">{audit.title || audit.sites.name}</h1>
           <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-ink-2">
             <a href={audit.sites.url} className="text-link hover:underline" target="_blank" rel="noreferrer">
               {audit.sites.url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
@@ -233,6 +233,14 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             </time>
             {!running && !paymentOnly && <PrintButton />}
           </p>
+          {audit.deleted_at && (
+            <p className="mt-6 rounded-[12px] bg-tile px-4 py-3 type-small print:hidden">
+              Ce rapport est dans la corbeille de l&apos;équipe.{" "}
+              <Link href="/espace/rapports/corbeille" className="text-link hover:underline">
+                Ouvrir la corbeille
+              </Link>
+            </p>
+          )}
           {alert && (
             <p className="mt-6 rounded-[12px] bg-tile px-4 py-3 type-small" role="alert">
               <span className="font-semibold text-fail">Le score baisse : {alert.from} % → {alert.to} %.</span>{" "}

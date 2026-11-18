@@ -21,7 +21,24 @@ const ICON = {
   cycle: "M20 11a8 8 0 0 0-14.6-4.5M4 3v4h4M4 13a8 8 0 0 0 14.6 4.5M20 21v-4h-4",
   people: "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2.5 21a6.5 6.5 0 0 1 13 0M16 3.2a4 4 0 0 1 0 7.6M21.5 21a6.5 6.5 0 0 0-4-6",
   person: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7.5a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM6.5 18.2a6.5 6.5 0 0 1 11 0",
+  star: "M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z",
+  trash: "M4 6.5h16M9.5 6.5V4.5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2M6 6.5l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M10 10.5v6M14 10.5v6",
 };
+
+// Sub-sections shown under their parent in the sidebar (Rapports › Favoris, Corbeille). On narrow screens the page shows them as tabs.
+const CHILDREN: Record<string, readonly (readonly [string, string])[]> = {
+  "/espace/rapports": [["/espace/rapports/favoris", ICON.star], ["/espace/rapports/corbeille", ICON.trash]],
+};
+
+const glyph = (d: string, cls: string) => (
+  <svg viewBox="0 0 24 24" className={cls} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d={d} />
+  </svg>
+);
+const itemCls = (current: boolean) =>
+  `flex items-center gap-2.5 whitespace-nowrap rounded-[8px] transition-colors duration-200 lg:min-h-10 lg:px-3 max-lg:h-9 max-lg:px-4 max-lg:type-small max-lg:font-semibold ${
+    current ? "bg-tile font-semibold text-ink shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#3a3a3c]" : "text-ink-2 hover:bg-tile/60 hover:text-ink max-lg:hover:bg-transparent"
+  }`;
 
 // Three groups; their names and the section labels come from the dictionary (labels match each page's title).
 const GROUPS = [
@@ -43,24 +60,36 @@ export function SpaceNav({ t }: { t: Dict["space"] }) {
             </p>
             <ul aria-labelledby={`nav-${group}`} className="flex flex-col gap-0.5 max-lg:contents">
               {items.map(([href, icon]) => {
-                // "Sites" stays lit on a site page; "Accueil" only on itself.
-                const current = href === "/espace" ? path === href : path === href || path.startsWith(`${href}/`);
+                const children = CHILDREN[href] ?? [];
+                const inChild = children.some(([c]) => path === c || path.startsWith(`${c}/`));
+                // "Sites" stays lit on a site page; "Accueil" only on itself; a parent gives way to its lit sub-section.
+                const current = href === "/espace" ? path === href : !inChild && (path === href || path.startsWith(`${href}/`));
                 return (
                   <li key={href}>
+                    {/* Narrow screens have no sub-sections in the tabs: the parent stays lit for them. */}
                     <Link
                       href={href}
                       aria-current={current ? "page" : undefined}
-                      className={`flex items-center gap-2.5 whitespace-nowrap rounded-[8px] transition-colors duration-200 lg:min-h-10 lg:px-3 max-lg:h-9 max-lg:px-4 max-lg:type-small max-lg:font-semibold ${
-                        current
-                          ? "bg-tile font-semibold text-ink shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#3a3a3c]"
-                          : "text-ink-2 hover:bg-tile/60 hover:text-ink max-lg:hover:bg-transparent"
-                      }`}
+                      className={`${itemCls(current)} ${inChild ? "max-lg:bg-tile max-lg:text-ink max-lg:shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:max-lg:bg-[#3a3a3c]" : ""}`}
                     >
-                      <svg viewBox="0 0 24 24" className={`h-[18px] w-[18px] shrink-0 max-lg:hidden ${current ? "text-blue" : ""}`} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                        <path d={icon} />
-                      </svg>
-                      {t.sections[href]}
+                      {glyph(icon, `h-[18px] w-[18px] shrink-0 max-lg:hidden ${current ? "text-blue" : ""}`)}
+                      {t.sections[href as keyof typeof t.sections]}
                     </Link>
+                    {children.length > 0 && (
+                      <ul className="mt-0.5 flex flex-col gap-0.5 pl-6 max-lg:hidden">
+                        {children.map(([c, cIcon]) => {
+                          const on = path === c || path.startsWith(`${c}/`);
+                          return (
+                            <li key={c}>
+                              <Link href={c} aria-current={on ? "page" : undefined} className={`${itemCls(on)} lg:min-h-9 type-small`}>
+                                {glyph(cIcon, `h-4 w-4 shrink-0 ${on ? "text-blue" : ""}`)}
+                                {t.sections[c as keyof typeof t.sections]}
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
                   </li>
                 );
               })}
@@ -86,9 +115,18 @@ export function AutoSubmitSelect({ name, defaultValue, label, options }: { name:
 }
 
 // Destructive actions always ask first and offer Cancel.
-export function ConfirmButton({ message, children, className = "" }: { message: string; children: React.ReactNode; className?: string }) {
+export function ConfirmButton({ message, children, className = "", label }: { message: string; children: React.ReactNode; className?: string; label?: string }) {
   return (
-    <button className={className} onClick={(e) => !confirm(message) && e.preventDefault()}>
+    <button className={className} aria-label={label} title={label} onClick={(e) => !confirm(message) && e.preventDefault()}>
+      {children}
+    </button>
+  );
+}
+
+// Closes the <details> menu it sits in (Cancel in a row's "…" menu).
+export function CloseMenu({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <button type="button" className={className} onClick={(e) => e.currentTarget.closest("details")?.removeAttribute("open")}>
       {children}
     </button>
   );

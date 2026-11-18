@@ -20,6 +20,9 @@ export type SpaceAudit = {
   status: string;
   compare_to: string | null;
   model: string | null;
+  title: string | null; // custom name given by the team; null = the site's domain
+  favorite: boolean;
+  deleted_at: string | null; // in the trash since then
   recommendations: string | null;
   site_id: number;
   sites: { domain: string; name: string; url: string } | null;
@@ -66,7 +69,7 @@ export async function loadSpace(teamId: string) {
     db
       .from("audits")
       .select(
-        "id, created_at, device, status, compare_to, model, recommendations, site_id, payment_test, sites(domain, name, url), users:created_by(email), runs(id, status, success, blocker_type, blocker_detail, screenshot_url, final_url)",
+        "id, created_at, device, status, compare_to, model, title, favorite, deleted_at, recommendations, site_id, payment_test, sites(domain, name, url), users:created_by(email), runs(id, status, success, blocker_type, blocker_detail, screenshot_url, final_url)",
       )
       .eq("team_id", teamId)
       .eq("kind", "checkout")
@@ -87,7 +90,9 @@ export async function loadSpace(teamId: string) {
   const byId = new Map(all.map((a) => [a.id, a]));
   // Competitor audits show inside the main site, not as sites of their own.
   const competitorIds = new Set(all.map((a) => a.compare_to).filter(Boolean));
-  const audits = all.filter((a) => !competitorIds.has(a.id));
+  // Reports in the trash leave every view (sites, checklist, home) until restored; the trash page lists them.
+  const trash = all.filter((a) => !competitorIds.has(a.id) && a.deleted_at).sort((x, y) => Date.parse(y.deleted_at!) - Date.parse(x.deleted_at!));
+  const audits = all.filter((a) => !competitorIds.has(a.id) && !a.deleted_at);
 
   const sites = new Map<string, SiteView>();
   for (const a of audits) {
@@ -142,7 +147,7 @@ export async function loadSpace(teamId: string) {
     v.verified = siteFixes.filter((f) => Date.parse(f.fixed_at) < latestAt && !present.has(f.blocker_type)).map((f) => f.blocker_type);
   }
 
-  return { audits, sites: [...sites.values()] };
+  return { audits, trash, sites: [...sites.values()] };
 }
 
 // What to fix first across every site: blockers still open, the ones costing the most missions first.
