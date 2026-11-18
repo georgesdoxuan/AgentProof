@@ -20,15 +20,14 @@ Avant de commencer : un onglet sur l'accueil, un 2e onglet sur le rapport Promod
 
 « Voici le rapport. Un score : la part des missions menées jusqu'au checkout, ici 3 sur 5. Les blocages, classés par fréquence. Pour chaque échec, la capture du moment exact où l'agent bloque. Et le replay étape par étape : ce que l'agent voyait, où il a cliqué, pourquoi. Un juge visuel Hugging Face relit la dernière capture à l'aveugle, pour éviter les faux succès. Ensuite, un LLM écrit le plan de corrections. »
 
-**1:25 · L'avancement**
+**1:25 · L'avancement, ce qui bloque, la suite**
 *(Clique « Classement » en haut de la page. Montre les sites sur ordinateur en haut, puis descends jusqu'aux lignes « Mobile ».)*
 
-« Le produit est en ligne et on a audité 10 marques de mode françaises. Une mission dure environ 90 secondes et coûte 3 centimes. Et voici notre résultat du jour : sur ordinateur, l'agent réussit 96 % des missions sur ces sites. Sur téléphone, sur les mêmes sites, seulement 57 %. Des sites "prêts pour les agents" sur ordinateur bloquent sur mobile, et leurs marchands ne le savent pas. »
+« Où on en est : le produit est en ligne, de bout en bout. On a testé 10 marques de mode. Sur ordinateur, l'agent réussit 96 % des missions. Sur téléphone, sur les mêmes sites, seulement 57 %. Une mission, c'est 90 secondes et 3 centimes.
 
-**1:50 · La suite**
-*(Reste sur le classement.)*
+Ce qui bloque encore : un audit prend jusqu'à 17 minutes, à cause des limites de l'API gratuite de H. On a un correctif qui divise ce temps. Certains sites bloquent notre agent avec leur anti-bot. Et il nous manque une preuve : que notre juge IA est d'accord avec un humain. On le mesure demain.
 
-« D'ici vendredi : vérifier à la main les blocages mobiles, mesurer l'accord du juge avec un humain, rendre les audits plus rapides, et faire la démo live devant vous. Le classement est gratuit, l'audit coûte 490 euros, le suivi mensuel 149 euros. Merci ! »
+D'ici vendredi : des audits plus rapides, chaque correction reliée à sa preuve, un ticket prêt pour le développeur du marchand, et la démo live devant vous. Merci ! »
 
 ---
 
