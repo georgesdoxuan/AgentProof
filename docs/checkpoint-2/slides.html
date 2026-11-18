@@ -1,0 +1,102 @@
+<!doctype html><html lang="fr"><meta charset="utf-8"><title>AgentProof · Groupe 6 · Checkpoint 2</title>
+<style>
+@page{size:1920px 1080px;margin:0}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Arial,sans-serif;color:#1d1d1f;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.s{width:1920px;height:1080px;position:relative;overflow:hidden;background:#fff;page-break-after:always;padding:72px 120px}
+.top{display:flex;justify-content:space-between;align-items:center;height:56px}
+.brand{display:flex;align-items:center;gap:14px;font-size:30px;font-weight:700;letter-spacing:-.5px}
+.brand b{color:#0071e3;font-weight:700}
+.tag{font-size:20px;color:#6e6e73;font-weight:500}
+.tag span{background:#0071e3;color:#fff;border-radius:999px;padding:8px 18px;margin-left:14px;font-weight:600}
+.num{font-size:22px;font-weight:600;color:#0071e3;margin-top:40px}
+h1{font-size:64px;font-weight:700;letter-spacing:-1.5px;margin-top:6px}
+.sub{font-size:26px;color:#6e6e73;margin-top:10px}
+.fig{margin-top:28px;height:720px;display:flex;justify-content:center}
+.fig img{height:100%;border-radius:24px;box-shadow:0 2px 24px rgba(0,0,0,.08)}
+.cover{background:#f5f5f7;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+.cover h1{font-size:120px;letter-spacing:-3px}
+.cover .sub{font-size:40px;margin-top:18px}
+.pill{display:inline-block;margin-top:56px;background:#0071e3;color:#fff;font-size:30px;font-weight:600;border-radius:999px;padding:18px 40px}
+.team{margin-top:40px;font-size:24px;color:#6e6e73}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:44px}
+.card{background:#f5f5f7;border-radius:28px;padding:36px 40px}
+.card .k{font-size:64px;font-weight:700;letter-spacing:-1.5px}
+.card .k small{font-size:30px;color:#6e6e73;font-weight:600}
+.card p{font-size:23px;color:#6e6e73;margin-top:8px;line-height:1.35}
+.loom{margin-top:44px;display:flex;align-items:center;gap:36px;background:#e8f2fd;border-radius:28px;padding:40px 48px}
+.play{width:110px;height:110px;border-radius:50%;background:#0071e3;flex:none;display:flex;align-items:center;justify-content:center}
+.play:after{content:"";border-left:40px solid #fff;border-top:24px solid transparent;border-bottom:24px solid transparent;margin-left:10px}
+.loom a{font-size:34px;font-weight:600;color:#0071e3;text-decoration:none;word-break:break-all}
+.loom .l{font-size:24px;color:#1d1d1f;font-weight:600;margin-bottom:8px}
+.cols{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:40px}
+.col{background:#f5f5f7;border-radius:28px;padding:36px 40px;min-height:600px}
+.col h3{font-size:34px;font-weight:700}
+.col .d{font-size:20px;color:#0071e3;font-weight:600;margin-top:4px}
+.col ul{list-style:none;margin-top:24px}
+.col li{font-size:24px;line-height:1.35;padding:14px 0 14px 34px;position:relative;border-top:1px solid #d2d2d7}
+.col li:before{content:"";position:absolute;left:0;top:24px;width:14px;height:14px;border-radius:3px;background:#1d1d1f}
+.col li.b:before{background:#0071e3}
+.goal{margin-top:28px;font-size:24px;color:#6e6e73}
+.goal b{color:#1d1d1f}
+.foot{position:absolute;left:120px;right:120px;bottom:44px;display:flex;justify-content:space-between;font-size:18px;color:#86868b}
+</style>
+<body>
+<!-- logo -->
+<template id="logo"><svg width="46" height="46" viewBox="0 0 64 64"><g fill="#1d1d1f"><rect x="0" y="22" width="9" height="9" rx="1.5"/><rect x="11" y="33" width="9" height="9" rx="1.5"/><rect x="22" y="44" width="9" height="9" rx="1.5"/><rect x="33" y="33" width="9" height="9" rx="1.5"/><rect x="44" y="22" width="9" height="9" rx="1.5"/></g><rect x="55" y="11" width="9" height="9" rx="1.5" fill="#0071e3"/></svg></template>
+
+<section class="s cover">
+  <div class="brand" style="font-size:44px"><span class="L"></span><span>Agent<b>Proof</b></span></div>
+  <h1 style="margin-top:48px">Un agent IA essaie<br>d’acheter sur ton site.</h1>
+  <p class="sub">AgentProof te montre où il bloque. Preuves à l’appui.</p>
+  <div class="pill">Groupe 6 · Checkpoint 2 · mercredi 18 novembre</div>
+  <p class="team">Thomas · Georges · Alexandre · Mehdi · Adonaï — Hackathon H Company × Hugging Face</p>
+</section>
+
+<section class="s">
+  <div class="top"><div class="brand"><span class="L"></span><span>Agent<b>Proof</b></span></div><div class="tag">Checkpoint 2<span>Groupe 6</span></div></div>
+  <div class="num">01</div><h1>Parcours utilisateur</h1>
+  <div class="fig" style="height:740px"><img src="parcours-utilisateur.png"></div>
+</section>
+
+<section class="s">
+  <div class="top"><div class="brand"><span class="L"></span><span>Agent<b>Proof</b></span></div><div class="tag">Checkpoint 2<span>Groupe 6</span></div></div>
+  <div class="num">02</div><h1>Architecture technique</h1>
+  <div class="fig" style="height:740px"><img src="architecture.png"></div>
+</section>
+
+<section class="s">
+  <div class="top"><div class="brand"><span class="L"></span><span>Agent<b>Proof</b></span></div><div class="tag">Checkpoint 2<span>Groupe 6</span></div></div>
+  <div class="num">03</div><h1>Ce qu’on a déjà réalisé</h1>
+  <p class="sub">Démo du produit en ligne : audit, rapport, replay de l’agent, classement.</p>
+  <div class="loom"><div class="play"></div><div><div class="l">Notre Loom de 2 minutes</div><a href="https://www.loom.com/share/4221a9146cf14a21a82abdac97399532">loom.com/share/4221a9146cf14a21a82abdac97399532</a></div></div>
+  <div class="grid">
+    <div class="card"><div class="k">10 <small>marques</small></div><p>de mode françaises auditées par l’agent H, de l’accueil jusqu’au checkout.</p></div>
+    <div class="card"><div class="k">96 % <small>/ 57 %</small></div><p>de missions réussies sur ordinateur contre mobile, sur les mêmes sites.</p></div>
+    <div class="card"><div class="k">90 s <small>· 0,03 $</small></div><p>par mission. Produit en ligne : agentproof-iota-tawny.vercel.app</p></div>
+  </div>
+</section>
+
+<section class="s">
+  <div class="top"><div class="brand"><span class="L"></span><span>Agent<b>Proof</b></span></div><div class="tag">Checkpoint 2<span>Groupe 6</span></div></div>
+  <div class="num">04</div><h1>Roadmap jusqu’au MVP de vendredi</h1>
+  <div class="cols">
+    <div class="col"><h3>Mercredi soir</h3><div class="d">18 nov</div><ul>
+      <li class="b">Audits plus rapides : de 7–17 min à ~5 min, mêmes missions, même juge</li>
+      <li>Retours de l’équipe intégrés</li>
+      <li>Peer review</li></ul></div>
+    <div class="col"><h3>Jeudi</h3><div class="d">19 nov</div><ul>
+      <li class="b">Accord juge IA / humain mesuré et affiché (midi)</li>
+      <li>Blocages mobiles vérifiés à la main</li>
+      <li>Démo à blanc chronométrée sur 3 sites</li>
+      <li>Repo public, dataset Hugging Face à jour</li>
+      <li>Deck et répétitions du pitch</li></ul></div>
+    <div class="col"><h3>Vendredi</h3><div class="d">20 nov</div><ul>
+      <li class="b">11 h : prototype live, repo, vidéo démo 5 min</li>
+      <li>15 h : pitch deck</li>
+      <li class="b">Pitch 6 min avec un audit lancé en direct</li></ul></div>
+  </div>
+  <p class="goal"><b>Encore bloquant :</b> sites protégés par un anti-bot, mobile simulé par la taille d’écran seulement.</p>
+</section>
+<script>const t=document.getElementById('logo').innerHTML;document.querySelectorAll('.L').forEach(e=>e.innerHTML=t);document.querySelector('.cover .L svg').setAttribute('width','64'),document.querySelector('.cover .L svg').setAttribute('height','64');</script>
+</body></html>
