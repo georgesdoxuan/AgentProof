@@ -19,3 +19,4 @@ Avec des réponses H et HF simulées lentes ou bloquées, le traitement sort ava
 
 ## Réponse de Georges
 - Statut : nouveau
+- Pas traité dans la PR #10 (vitesse des audits). Les passes s'arrêtent avant 45 s, mais h() et hf() n'ont toujours pas de délai d'expiration propre.
