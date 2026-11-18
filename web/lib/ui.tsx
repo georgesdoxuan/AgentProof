@@ -150,17 +150,18 @@ export function AgentCursor({ x, y, animate = false, className = "" }: { x: numb
   );
 }
 
-// The AgentProof mark: dots that land in a "V" (the agent's path to a verified purchase), with the
-// blue dot top right. Dots follow the theme (--ink); app/icon.svg is the favicon copy.
-export const MARK_DOTS: [number, number][] = [[7, 19], [19.5, 31.5], [32, 44], [44.5, 31.5]];
-export const MARK_ACCENT: [number, number] = [57, 19];
-export const MARK_R = 6.2;
+// The AgentProof mark: square dots that land in a "V" (the agent's path to a verified purchase),
+// with the blue one top right. Dots follow the theme (--ink); app/icon.svg is the favicon copy.
+// Top-left corners on an 11-unit grid, 9-unit squares.
+export const MARK_DOTS: [number, number][] = [[0, 22], [11, 33], [22, 44], [33, 33], [44, 22]];
+export const MARK_ACCENT: [number, number] = [55, 11];
+export const MARK_SIZE = 9;
 
 export function Mark({ className = "h-[24px] w-[24px]" }: { className?: string }) {
   return (
     <svg viewBox="0 0 64 64" className={className} aria-hidden>
-      {MARK_DOTS.map(([cx, cy]) => <circle key={cx} cx={cx} cy={cy} r={MARK_R} fill="var(--ink)" />)}
-      <circle cx={MARK_ACCENT[0]} cy={MARK_ACCENT[1]} r={MARK_R} fill="var(--blue)" />
+      {MARK_DOTS.map(([x, y]) => <rect key={x} x={x} y={y} width={MARK_SIZE} height={MARK_SIZE} rx="1.5" fill="var(--ink)" />)}
+      <rect x={MARK_ACCENT[0]} y={MARK_ACCENT[1]} width={MARK_SIZE} height={MARK_SIZE} rx="1.5" fill="var(--blue)" />
     </svg>
   );
 }

@@ -38,7 +38,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <header className="sticky top-0 z-40 border-b border-hairline bg-[var(--nav)] backdrop-blur-[20px] backdrop-saturate-[180%]">
           <nav className="wrap-wide flex h-[52px] items-center justify-between" aria-label={t.navLabel}>
             <Link href="/" aria-label={t.home} className="-ml-1 flex items-center gap-2.5 rounded-md px-1 py-2">
-              <Mark />
+              <Mark className="h-[32px] w-[32px] max-[734px]:h-[28px] max-[734px]:w-[28px]" />
               <Wordmark className="text-[21px] leading-none max-[734px]:text-[19px]" />
             </Link>
             <Nav email={(await currentUser())?.email ?? null} t={t.nav} />
