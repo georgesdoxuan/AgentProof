@@ -24,8 +24,13 @@ export default async function Home() {
       .maybeSingle(),
   ]);
 
+  // The report e-mail goes through n8n: only announce it when that hook is configured.
+  const mails = !!process.env.N8N_NOTIFY_URL;
+
   return (
     <>
+      <SectionMenu />
+
       {/* Hero */}
       <section className="overflow-hidden pt-[88px] text-center max-[734px]:pt-14">
         <div className="wrap">
@@ -56,7 +61,7 @@ export default async function Home() {
       </section>
 
       {/* Statement */}
-      <section className="section">
+      <section id="pourquoi" className="section scroll-mt-[96px]">
         <div className="wrap">
           <p className="type-h2 text-ink-2">
             Demain, des agents IA feront les courses à la place de tes clients.{" "}
@@ -71,15 +76,15 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="section bg-bg-2">
+      {/* What you get */}
+      <section id="ce-que-tu-recois" className="section scroll-mt-[96px] bg-bg-2">
         <div className="wrap-wide">
           <h2 className="type-h1 mb-12 max-[734px]:mb-8">Ce que tu reçois.</h2>
           <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-2">
             <article className="tile grid grid-cols-[minmax(0,1fr)] items-center gap-10 lg:col-span-2 lg:grid-cols-[1fr_1.1fr]">
               <div>
                 <p className="type-eyebrow text-ink-2">Missions</p>
-                <h3 className="type-h2 mt-3">Cinq achats réels, jusqu&apos;au checkout.</h3>
+                <h3 className="type-h2 mt-3">Cinq parcours d&apos;achat testés, sans paiement.</h3>
                 <p className="mt-4 max-w-[440px] text-ink-2">
                   L&apos;agent cherche, filtre, choisit une taille et remplit le panier, comme un client. Il s&apos;arrête à la première page du checkout.
                 </p>
@@ -111,11 +116,24 @@ export default async function Home() {
               <FixesVisual />
             </article>
           </div>
+
+          <h3 className="type-h2 mt-20 max-[734px]:mt-14">Ce que ton équipe en fait.</h3>
+          <div className="mt-8 grid gap-5 md:grid-cols-3">
+            {BENEFITS.map(([title, text]) => (
+              <article key={title} className="tile">
+                <h4 className="type-headline">{title}</h4>
+                <p className="mt-2 text-ink-2">{text}</p>
+              </article>
+            ))}
+          </div>
+          <p className="type-small mt-5 max-w-[760px] text-ink-2">
+            Le test s&apos;arrête à l&apos;entrée du checkout : le paiement n&apos;est pas testé. Le rapport sépare ce que l&apos;agent a observé des causes supposées, à vérifier par ton équipe.
+          </p>
         </div>
       </section>
 
       {/* Form */}
-      <section id="tester" className="section scroll-mt-[52px]">
+      <section id="tester" className="section scroll-mt-[96px]">
         <div className="mx-auto w-[min(692px,87.5%)]">
           <h2 className="type-h1 text-center">Teste ton site.</h2>
           <p className="type-intro mt-4 text-center text-ink-2">Cinq missions d&apos;achat, 10 à 20 minutes. Le rapport s&apos;ouvre tout de suite et se remplit pendant l&apos;audit.</p>
@@ -145,8 +163,24 @@ export default async function Home() {
               </div>
             </fieldset>
             <button className="btn mt-4 min-h-[56px] w-full rounded-[12px]">Lancer l&apos;audit</button>
+            <div className="type-small mt-2 rounded-[12px] bg-bg-2 p-5 text-ink-2 dark:bg-[#2c2c2e]">
+              <p className="font-semibold text-ink">Après le clic</p>
+              <ol className="mt-2 grid gap-2">
+              {[
+                ...(user ? [] : ["Tu te connectes avec le lien reçu par e-mail, sans mot de passe. Tu retrouves ce formulaire rempli et tu cliques à nouveau pour lancer."]),
+                "Si ton équipe a audité ce site sur le même appareil ces 7 derniers jours, tu arrives sur ce rapport, sans nouvel audit.",
+                "Sinon, l'agent démarre les cinq missions et le rapport s'ouvre tout de suite : il se remplit mission par mission, en 10 à 20 minutes.",
+                mails ? "À la fin, le rapport t'est aussi envoyé par e-mail. Il reste dans ton espace d'équipe." : "À la fin, le rapport reste dans ton espace d'équipe.",
+              ].map((t, i) => (
+                <li key={i} className="flex gap-3">
+                  <span className="tnum font-semibold text-ink">{i + 1}.</span>
+                  <span>{t}</span>
+                </li>
+              ))}
+              </ol>
+            </div>
             <p className="type-small text-center text-ink-2">
-              {user ? "L'audit est rangé dans ton espace d'équipe." : "Connexion par e-mail, sans mot de passe. L'audit est rangé dans ton espace d'équipe."} Pendant l&apos;audit, l&apos;agent ne paie jamais et ne saisit aucune donnée personnelle. Ton e-mail sert uniquement à t&apos;envoyer le rapport :{" "}
+              Pendant l&apos;audit, l&apos;agent ne paie jamais et ne saisit aucune donnée personnelle. Ton e-mail sert uniquement à t&apos;envoyer le rapport :{" "}
               <Link href="/confidentialite" className="text-link hover:underline">confidentialité</Link>.
             </p>
           </form>
@@ -154,7 +188,7 @@ export default async function Home() {
       </section>
 
       {/* Leaderboard */}
-      <section className="section bg-bg-2">
+      <section id="classement" className="section scroll-mt-[96px] bg-bg-2">
         <div className="wrap">
           <div className="mb-10 flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
             <h2 className="type-h1">Le classement mode.</h2>
@@ -196,6 +230,7 @@ export default async function Home() {
             <span className="inline-flex items-center gap-1.5"><StatusGlyph tone="warn" /> 40 à 69 % : fragile</span>
             <span className="inline-flex items-center gap-1.5"><StatusGlyph tone="fail" /> Moins de 40 % : bloquant</span>
           </p>
+          <p className="type-small mt-2 text-ink-2">Chaque site est noté sur ses 2 derniers audits sur ordinateur, 5 missions chacun, hors missions sans lien avec le site.</p>
         </div>
       </section>
 
@@ -333,5 +368,36 @@ function ProductMock() {
         </span>
       </span>
     </div>
+  );
+}
+
+// What a team does with the report: each line maps to a feature that exists (report, replay, plan, re-audit, competitor).
+const BENEFITS: [string, string][] = [
+  ["Repérer les obstacles", "Mission par mission, tu vois où l'agent bloque sur les parcours testés, et ce qui fait baisser ton score."],
+  ["Transmettre des preuves", "Capture, replay pas à pas et plan de corrections : de quoi montrer le problème à tes développeurs, sans le reproduire à la main."],
+  ["Suivre les corrections", "Relance un audit après une correction : le nouveau rapport montre si la mission passe. Compare-toi à un concurrent sur les mêmes missions."],
+];
+
+const SECTIONS: [string, string][] = [
+  ["pourquoi", "Pourquoi"],
+  ["ce-que-tu-recois", "Ce que tu reçois"],
+  ["tester", "Tester"],
+  ["classement", "Classement"],
+];
+
+// Second sticky bar, under the site header: jumps to the sections of this page (native anchors, smooth scroll in CSS).
+function SectionMenu() {
+  return (
+    <nav aria-label="Sections de la page" className="sticky top-[52px] z-30 border-b border-hairline bg-[var(--nav)] backdrop-blur-[20px] backdrop-saturate-[180%]">
+      <ul className="wrap-wide type-caption flex h-11 items-center justify-center gap-x-5 overflow-hidden max-[400px]:gap-x-3">
+        {SECTIONS.map(([id, label]) => (
+          <li key={id}>
+            <a href={`#${id}`} className="inline-flex h-11 items-center whitespace-nowrap text-ink/80 transition-colors hover:text-ink">
+              {label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
   );
 }

@@ -474,6 +474,9 @@ async function finalize(run: any, items: Ev[], state: string) {
   const verified = !!judge && typeof (judge as any).is_checkout_page === "boolean";
   // Unverified runs (no screenshot, judge down, unreadable answer) get success = null and stay out of the score.
   let success: boolean | null = verified ? !!(judge as any).is_checkout_page : null;
+  // Possible false success: the judge sees checkout, the agent says it did not get there, and the final URL has no order step
+  // (typically a login window opened from the header). Neither proven: unverified, out of the score.
+  if (success === true && answer && !agentSays && !ORDER_URL.test(obs?.data.metadata?.url ?? answer.final_url ?? "")) success = null;
   let blocker = success ? "none" : answer?.blocker_type ?? (state === "error" ? "page_error_or_timeout" : "other");
   if (success === false && agentSays) blocker = (judge as any).blocker_type ?? "other";
   if (success === false && (!blocker || blocker === "none")) blocker = "other";
@@ -752,6 +755,9 @@ async function hf(messages: unknown[], max_tokens = 400) {
   throw last;
 }
 
+// URL of a step of placing an order (cart included): a login page there is the entry of the checkout.
+const ORDER_URL = /checkout|commande|order|panier|cart|basket|tunnel|livraison|shipping|delivery|paiement|payment/i;
+
 export async function judgeScreenshot(imageUrl: string, mission: string | undefined, pageUrl?: string | null) {
   const out = await hf(
     [
@@ -762,7 +768,7 @@ export async function judgeScreenshot(imageUrl: string, mission: string | undefi
             type: "text",
             text:
               `Screenshot of the last page an AI shopping agent saw on an e-commerce site. Mission: ${mission ?? "reach checkout"}. Page URL: ${pageUrl ?? "unknown"}. ` +
-              `is_checkout_page is true when the page asks the shopper to log in, create an account, give an e-mail to continue as a guest, enter a shipping address, choose a delivery or pay. Login pages and login pop-ups count as checkout. is_checkout_page is false for a cart page that only lists the chosen items with a button to order, and for a product, search or home page. ` +
+              `is_checkout_page is true when the page asks the shopper to log in, create an account, give an e-mail to continue as a guest, enter a shipping address, choose a delivery or pay. A login page or login pop-up counts as checkout only when it comes after the cart: the page URL shows an order step (checkout, commande, order, panier, cart, basket, tunnel, livraison, shipping, paiement, payment) or the page shows it belongs to placing an order (order steps, order summary, "continue as guest"). A login page or pop-up opened from the header, a product, search or home page (URL like /account, /compte, /login, /connexion with no order step) is not checkout. is_checkout_page is false for a cart page that only lists the chosen items with a button to order, and for a product, search or home page. ` +
               `A message saying access is denied, the request was blocked or could not be processed, or asking to disable browser extensions means captcha_or_bot_block. ` +
               `Reply with JSON only: {"is_checkout_page": boolean, "blocking_overlay": boolean, "blocker_type": one of ${Object.keys(BLOCKERS).filter((k) => !AGENT_ONLY.includes(k)).join("|")}, "reason": "short French sentence"}`,
           },
