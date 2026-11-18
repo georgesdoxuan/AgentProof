@@ -3,10 +3,10 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 // The PDF report is the browser's own "Save as PDF": print styles in globals.css drop the navigation and buttons.
-export function PrintButton() {
+export function PrintButton({ label = "Télécharger en PDF" }: { label?: string }) {
   return (
     <button type="button" onClick={() => window.print()} className="no-print ml-auto text-link hover:underline">
-      Télécharger en PDF
+      {label}
     </button>
   );
 }

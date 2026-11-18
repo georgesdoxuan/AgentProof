@@ -3,9 +3,13 @@ import { connection } from "next/server";
 import { db } from "@/lib/engine";
 import { currentUser } from "@/lib/auth";
 import { AgentCursor, BrowserFrame, Field, MissionBar, StatusGlyph, Verdict, blockerLabel, scoreTone } from "@/lib/ui";
+import { tr, type T } from "@/lib/i18n";
+import { getLang } from "@/lib/lang";
 
 export default async function Home() {
   await connection();
+  const lang = await getLang();
+  const t = tr(lang);
   const [user, { data: top }, { data: proof }] = await Promise.all([
     currentUser(),
     db.from("site_scores").select("*").eq("device", "desktop").order("score", { ascending: false, nullsFirst: false }).limit(5),
@@ -26,25 +30,28 @@ export default async function Home() {
       {/* Hero */}
       <section className="overflow-hidden pt-[88px] text-center max-[734px]:pt-14">
         <div className="wrap">
-          <h1 className="type-hero ap-fade">Un agent IA essaie d&apos;acheter sur ton site.</h1>
+          <h1 className="type-hero ap-fade">{t("Un agent IA essaie d’acheter sur ton site.", "An AI agent tries to buy on your site.")}</h1>
           <p className="type-subhead ap-fade mx-auto mt-5 max-w-[640px] text-ink-2 [animation-delay:0.2s]">
-            AgentProof te montre où il bloque. Preuves à l&apos;appui.
+            {t("AgentProof te montre où il bloque. Preuves à l’appui.", "AgentProof shows you where it gets stuck. With proof.")}
           </p>
           <div className="ap-fade mt-8 flex flex-wrap items-center justify-center gap-x-[17px] gap-y-2 [animation-delay:0.4s]">
             <a href="#tester" className="btn">
-              Tester mon site
+              {t("Tester mon site", "Test my site")}
             </a>
             <Link href="/classement" className="more">
-              Voir le classement
+              {t("Voir le classement", "See the ranking")}
             </Link>
           </div>
         </div>
         <figure className="mx-auto mt-16 w-[min(1080px,92%)] max-[734px]:mt-12">
-          <BrowserFrame url="https://maison-exemple.fr/pull-col-rond-noir">
-            <ProductMock />
+          <BrowserFrame url={t("https://maison-exemple.fr/pull-col-rond-noir", "https://maison-example.com/black-crew-neck-sweater")}>
+            <ProductMock t={t} />
           </BrowserFrame>
           <figcaption className="type-small mx-auto mt-5 max-w-[520px] text-ink-2">
-            L&apos;agent clique sur « Ajouter au panier ». Un bandeau cookies surgit et le recouvre. La mission s&apos;arrête là.
+            {t(
+              "L’agent clique sur « Ajouter au panier ». Un bandeau cookies surgit et le recouvre. La mission s’arrête là.",
+              "The agent clicks “Add to cart”. A cookie banner pops up and covers it. The mission ends there.",
+            )}
           </figcaption>
         </figure>
       </section>
@@ -53,9 +60,18 @@ export default async function Home() {
       <section className="section">
         <div className="wrap">
           <p className="type-h2 text-ink-2">
-            Demain, des agents IA feront les courses à la place de tes clients.{" "}
-            <span className="text-ink">Un bandeau cookies, une pop-up ou un sélecteur de taille suffit à les arrêter.</span> Ils achètent alors ailleurs.
-            Et <span className="text-ink">63 % des responsables e-commerce</span> pensent que leur tunnel d&apos;achat ne passerait pas le test.
+            {t(
+              <>
+                Demain, des agents IA feront les courses à la place de tes clients.{" "}
+                <span className="text-ink">Un bandeau cookies, une pop-up ou un sélecteur de taille suffit à les arrêter.</span> Ils achètent alors ailleurs. Et{" "}
+                <span className="text-ink">63 % des responsables e-commerce</span> pensent que leur tunnel d&apos;achat ne passerait pas le test.
+              </>,
+              <>
+                Tomorrow, AI agents will shop on behalf of your customers.{" "}
+                <span className="text-ink">A cookie banner, a pop-up or a size selector is enough to stop them.</span> Then they buy elsewhere. And{" "}
+                <span className="text-ink">63 % of e-commerce managers</span> think their checkout funnel would not pass the test.
+              </>,
+            )}
             <sup className="ml-0.5 align-super text-[0.4em]">
               <a href="#note-1" className="text-link" aria-label="Note 1">
                 1
@@ -68,41 +84,54 @@ export default async function Home() {
       {/* How it works */}
       <section className="section bg-bg-2">
         <div className="wrap-wide">
-          <h2 className="type-h1 mb-12 max-[734px]:mb-8">Ce que tu reçois.</h2>
+          <h2 className="type-h1 mb-12 max-[734px]:mb-8">{t("Ce que tu reçois.", "What you get.")}</h2>
           <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-2">
             <article className="tile grid grid-cols-[minmax(0,1fr)] items-center gap-10 lg:col-span-2 lg:grid-cols-[1fr_1.1fr]">
               <div>
                 <p className="type-eyebrow text-ink-2">Missions</p>
-                <h3 className="type-h2 mt-3">Cinq achats réels, jusqu&apos;au checkout.</h3>
+                <h3 className="type-h2 mt-3">{t("Cinq achats réels, jusqu’au checkout.", "Five real purchases, up to checkout.")}</h3>
                 <p className="mt-4 max-w-[440px] text-ink-2">
-                  L&apos;agent cherche, filtre, choisit une taille et remplit le panier, comme un client. Il s&apos;arrête à la première page du checkout.
+                  {t(
+                    "L’agent cherche, filtre, choisit une taille et remplit le panier, comme un client. Il s’arrête à la première page du checkout.",
+                    "The agent searches, filters, picks a size and fills the cart, like a customer. It stops at the first checkout page.",
+                  )}
                 </p>
               </div>
-              <MissionsVisual />
+              <MissionsVisual t={t} />
             </article>
 
             <article className="tile flex flex-col">
-              <p className="type-eyebrow text-ink-2">Preuves</p>
-              <h3 className="type-h3 mt-3">Une capture là où l&apos;agent abandonne.</h3>
-              <p className="mt-3 text-ink-2">Chaque mission a son replay pas à pas. Un juge visuel relit la dernière capture pour confirmer le verdict.</p>
+              <p className="type-eyebrow text-ink-2">{t("Preuves", "Proof")}</p>
+              <h3 className="type-h3 mt-3">{t("Une capture là où l’agent abandonne.", "A screenshot where the agent gives up.")}</h3>
+              <p className="mt-3 text-ink-2">
+                {t(
+                  "Chaque mission a son replay pas à pas. Un juge visuel relit la dernière capture pour confirmer le verdict.",
+                  "Every mission has a step-by-step replay. A visual judge reviews the last screenshot to confirm the verdict.",
+                )}
+              </p>
               <div className="mt-8 -mb-16 translate-x-6 max-[734px]:-mb-10 max-[734px]:translate-x-4">
                 <BrowserFrame url={proof?.final_url}>
                   {proof?.screenshot_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={proof.screenshot_url} alt={`Capture réelle d'une mission bloquée : ${blockerLabel(proof.blocker_type)}`} className="block w-full" loading="lazy" />
+                    <img src={proof.screenshot_url} alt={`${t("Capture réelle d'une mission bloquée", "Real screenshot of a blocked mission")} : ${blockerLabel(proof.blocker_type, lang)}`} className="block w-full" loading="lazy" />
                   ) : (
                     <div className="aspect-[16/10] bg-bg-2" />
                   )}
-                  <Verdict success={false} label={blockerLabel(proof?.blocker_type ?? "cookie_banner")} className="absolute left-4 top-4" />
+                  <Verdict success={false} label={blockerLabel(proof?.blocker_type ?? "cookie_banner", lang)} className="absolute left-4 top-4" />
                 </BrowserFrame>
               </div>
             </article>
 
             <article className="tile flex flex-col">
-              <p className="type-eyebrow text-ink-2">Corrections</p>
-              <h3 className="type-h3 mt-3">Un plan classé par impact.</h3>
-              <p className="mt-3 text-ink-2">Les blocages les plus fréquents d&apos;abord, la correction à faire, et ton score face à celui d&apos;un concurrent.</p>
-              <FixesVisual />
+              <p className="type-eyebrow text-ink-2">{t("Corrections", "Fixes")}</p>
+              <h3 className="type-h3 mt-3">{t("Un plan classé par impact.", "A plan ranked by impact.")}</h3>
+              <p className="mt-3 text-ink-2">
+                {t(
+                  "Les blocages les plus fréquents d’abord, la correction à faire, et ton score face à celui d’un concurrent.",
+                  "The most frequent blockers first, the fix to make, and your score next to a competitor's.",
+                )}
+              </p>
+              <FixesVisual t={t} />
             </article>
           </div>
         </div>
@@ -111,22 +140,27 @@ export default async function Home() {
       {/* Form */}
       <section id="tester" className="section scroll-mt-[52px]">
         <div className="mx-auto w-[min(692px,87.5%)]">
-          <h2 className="type-h1 text-center">Teste ton site.</h2>
-          <p className="type-intro mt-4 text-center text-ink-2">Cinq missions d&apos;achat, 10 à 20 minutes. Le rapport s&apos;ouvre tout de suite et se remplit pendant l&apos;audit.</p>
+          <h2 className="type-h1 text-center">{t("Teste ton site.", "Test your site.")}</h2>
+          <p className="type-intro mt-4 text-center text-ink-2">
+            {t(
+              "Cinq missions d’achat, 10 à 20 minutes. Le rapport s’ouvre tout de suite et se remplit pendant l’audit.",
+              "Five shopping missions, 10 to 20 minutes. The report opens right away and fills in during the audit.",
+            )}
+          </p>
           <form action="/api/audits" method="post" className="mt-12 grid gap-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Adresse de ton site" name="url" required />
-              <Field label="Un concurrent (facultatif)" name="competitor" />
+              <Field label={t("Adresse de ton site", "Your site's address")} name="url" required />
+              <Field label={t("Un concurrent (facultatif)", "A competitor (optional)")} name="competitor" />
             </div>
-            <Field label="E-mail du rapport (par défaut : ton adresse de connexion)" name="email" type="email" />
+            <Field label={t("E-mail du rapport (par défaut : ton adresse de connexion)", "Report e-mail (default: your sign-in address)")} name="email" type="email" />
             <fieldset className="mt-2 flex flex-wrap items-center justify-between gap-3">
-              <legend className="sr-only">Appareil</legend>
+              <legend className="sr-only">{t("Appareil", "Device")}</legend>
               <span className="text-ink-2" aria-hidden>
-                Appareil
+                {t("Appareil", "Device")}
               </span>
               <div className="inline-grid grid-cols-2 rounded-[10px] bg-fill p-[3px]">
                 {[
-                  ["desktop", "Ordinateur"],
+                  ["desktop", t("Ordinateur", "Desktop")],
                   ["mobile", "Mobile"],
                 ].map(([v, l]) => (
                   <label key={v} className="relative cursor-pointer">
@@ -138,10 +172,19 @@ export default async function Home() {
                 ))}
               </div>
             </fieldset>
-            <button className="btn mt-4 min-h-[56px] w-full rounded-[12px]">Lancer l&apos;audit</button>
+            <button className="btn mt-4 min-h-[56px] w-full rounded-[12px]">{t("Lancer l’audit", "Run the audit")}</button>
             <p className="type-small text-center text-ink-2">
-              {user ? "L'audit est rangé dans ton espace d'équipe." : "Connexion par e-mail, sans mot de passe. L'audit est rangé dans ton espace d'équipe."} Pendant l&apos;audit, l&apos;agent ne paie jamais et ne saisit aucune donnée personnelle. Ton e-mail sert uniquement à t&apos;envoyer le rapport :{" "}
-              <Link href="/confidentialite" className="text-link hover:underline">confidentialité</Link>.
+              {user
+                ? t("L'audit est rangé dans ton espace d'équipe.", "The audit is saved in your team space.")
+                : t("Connexion par e-mail, sans mot de passe. L'audit est rangé dans ton espace d'équipe.", "Sign in by e-mail, no password. The audit is saved in your team space.")}{" "}
+              {t(
+                "Pendant l’audit, l’agent ne paie jamais et ne saisit aucune donnée personnelle. Ton e-mail sert uniquement à t’envoyer le rapport :",
+                "During the audit, the agent never pays and enters no personal data. Your e-mail is only used to send you the report:",
+              )}{" "}
+              <Link href="/confidentialite" className="text-link hover:underline">
+                {t("confidentialité", "privacy")}
+              </Link>
+              .
             </p>
           </form>
         </div>
@@ -151,9 +194,9 @@ export default async function Home() {
       <section className="section bg-bg-2">
         <div className="wrap">
           <div className="mb-10 flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
-            <h2 className="type-h1">Le classement mode.</h2>
+            <h2 className="type-h1">{t("Le classement mode.", "The fashion ranking.")}</h2>
             <Link href="/classement" className="more type-intro">
-              Tout le classement
+              {t("Tout le classement", "Full ranking")}
             </Link>
           </div>
           {top?.length ? (
@@ -179,16 +222,16 @@ export default async function Home() {
             </ol>
           ) : (
             <div className="rounded-[18px] bg-tile p-10 text-center">
-              <p className="type-headline">Les premiers audits tournent.</p>
+              <p className="type-headline">{t("Les premiers audits tournent.", "The first audits are running.")}</p>
               <a href="#tester" className="more mt-1">
-                Teste ton site en attendant
+                {t("Teste ton site en attendant", "Test your site meanwhile")}
               </a>
             </div>
           )}
           <p className="type-small mt-5 flex flex-wrap gap-x-5 gap-y-1 text-ink-2">
-            <span className="inline-flex items-center gap-1.5"><StatusGlyph tone="pass" /> 70 % et plus : prêt pour les agents</span>
-            <span className="inline-flex items-center gap-1.5"><StatusGlyph tone="warn" /> 40 à 69 % : fragile</span>
-            <span className="inline-flex items-center gap-1.5"><StatusGlyph tone="fail" /> Moins de 40 % : bloquant</span>
+            <span className="inline-flex items-center gap-1.5"><StatusGlyph tone="pass" /> {t("70 % et plus : prêt pour les agents", "70 % and above: ready for agents")}</span>
+            <span className="inline-flex items-center gap-1.5"><StatusGlyph tone="warn" /> {t("40 à 69 % : fragile", "40 to 69 %: fragile")}</span>
+            <span className="inline-flex items-center gap-1.5"><StatusGlyph tone="fail" /> {t("Moins de 40 % : bloquant", "Below 40 %: blocking")}</span>
           </p>
         </div>
       </section>
@@ -196,7 +239,11 @@ export default async function Home() {
       <div className="bg-bg-2">
         <ol className="wrap-wide type-caption pb-6 text-ink-2">
           <li id="note-1" className="scroll-mt-20">
-            1. Blend Commerce, sondage auprès de 59 responsables e-commerce, juillet–août 2026 : leur tunnel d&apos;achat ne peut pas être finalisé par un agent IA.
+            1.{" "}
+            {t(
+              "Blend Commerce, sondage auprès de 59 responsables e-commerce, juillet–août 2026 : leur tunnel d’achat ne peut pas être finalisé par un agent IA.",
+              "Blend Commerce, survey of 59 e-commerce managers, July–August 2026: their checkout funnel cannot be completed by an AI agent.",
+            )}
           </li>
         </ol>
       </div>
@@ -204,26 +251,25 @@ export default async function Home() {
   );
 }
 
-const MISSIONS: [string, boolean, string?][] = [
-  ["Recherche « pull noir », taille M", true],
-  ["Menu, puis filtre de taille", true],
-  ["Filtre de prix, moins de 60 €", false, "Pop-up"],
-  ["Variante couleur", true],
-  ["Article en promotion", true],
-];
-
-function MissionsVisual() {
+function MissionsVisual({ t }: { t: T }) {
+  const MISSIONS: [string, boolean, string?][] = [
+    [t("Recherche « pull noir », taille M", "Search “black sweater”, size M"), true],
+    [t("Menu, puis filtre de taille", "Menu, then size filter"), true],
+    [t("Filtre de prix, moins de 60 €", "Price filter, under €60"), false, "Pop-up"],
+    [t("Variante couleur", "Colour variant"), true],
+    [t("Article en promotion", "Item on sale"), true],
+  ];
   return (
     <div className="rounded-[18px] bg-bg-2 p-2 dark:bg-[#2c2c2e]" aria-hidden>
       <div className="flex items-center justify-between px-4 pb-3 pt-3">
-        <span className="type-small font-semibold">maison-exemple.fr</span>
-        <span className="type-small text-ink-2 tnum">4 sur 5</span>
+        <span className="type-small font-semibold">{t("maison-exemple.fr", "maison-example.com")}</span>
+        <span className="type-small text-ink-2 tnum">{t("4 sur 5", "4 of 5")}</span>
       </div>
       <ul className="overflow-hidden rounded-[12px] bg-tile">
-        {MISSIONS.map(([t, ok, why]) => (
-          <li key={t} className="flex items-center gap-3 border-b border-hairline px-4 py-3.5 last:border-0">
+        {MISSIONS.map(([m, ok, why]) => (
+          <li key={m} className="flex items-center gap-3 border-b border-hairline px-4 py-3.5 last:border-0">
             <StatusGlyph tone={ok ? "pass" : "fail"} className="h-5 w-5" />
-            <span className="min-w-0 flex-1 truncate">{t}</span>
+            <span className="min-w-0 flex-1 truncate">{m}</span>
             {why && <span className="type-small text-fail">{why}</span>}
           </li>
         ))}
@@ -235,10 +281,10 @@ function MissionsVisual() {
   );
 }
 
-function FixesVisual() {
+function FixesVisual({ t }: { t: T }) {
   const rows: [string, number, string][] = [
-    ["Bandeau cookies", 3, "Le bouton « Tout accepter » doit rester visible sans défiler."],
-    ["Sélecteur de taille", 2, "Les tailles doivent être des boutons, pas des images."],
+    [t("Bandeau cookies", "Cookie banner"), 3, t("Le bouton « Tout accepter » doit rester visible sans défiler.", "The “Accept all” button must stay visible without scrolling.")],
+    [t("Sélecteur de taille", "Size selector"), 2, t("Les tailles doivent être des boutons, pas des images.", "Sizes must be buttons, not images.")],
   ];
   return (
     <div className="mt-8 space-y-3" aria-hidden>
@@ -253,10 +299,10 @@ function FixesVisual() {
       ))}
       <div className="rounded-[18px] bg-bg-2 p-5 dark:bg-[#2c2c2e]">
         <div className="type-small grid grid-cols-[6rem_1fr_3rem] items-center gap-3">
-          <span className="font-semibold">Ton site</span>
+          <span className="font-semibold">{t("Ton site", "Your site")}</span>
           <MissionBar ok={2} done={5} total={5} size="sm" />
           <span className="text-right tnum">40 %</span>
-          <span className="text-ink-2">Concurrent</span>
+          <span className="text-ink-2">{t("Concurrent", "Competitor")}</span>
           <MissionBar ok={4} done={5} total={5} size="sm" />
           <span className="text-right text-ink-2 tnum">80 %</span>
         </div>
@@ -266,16 +312,16 @@ function FixesVisual() {
 }
 
 // A product page as the agent sees it. Plays once: the agent taps "Ajouter au panier", a cookie banner slides over it.
-function ProductMock() {
+function ProductMock({ t }: { t: T }) {
   return (
     <div className="scheme-light relative flex aspect-[16/9] select-none flex-col bg-tile text-left text-ink max-[734px]:aspect-[4/3.6]" aria-hidden>
       <div className="flex items-center justify-between border-b border-hairline px-8 py-4 max-[734px]:px-4 max-[734px]:py-2.5">
         <span className="text-[13px] font-semibold tracking-[0.32em]">MAISON</span>
         <span className="flex gap-6 text-[12px] text-ink-2 max-[734px]:hidden">
-          <span>Femme</span>
-          <span>Homme</span>
-          <span>Nouveautés</span>
-          <span>Panier (0)</span>
+          <span>{t("Femme", "Women")}</span>
+          <span>{t("Homme", "Men")}</span>
+          <span>{t("Nouveautés", "New in")}</span>
+          <span>{t("Panier (0)", "Cart (0)")}</span>
         </span>
       </div>
       <div className="grid min-h-0 flex-1 grid-cols-[1.1fr_1fr] gap-10 p-8 max-[734px]:gap-4 max-[734px]:p-4">
@@ -286,23 +332,23 @@ function ProductMock() {
           </svg>
         </div>
         <div className="flex flex-col pt-2 max-[734px]:pt-0">
-          <span className="text-[11px] text-ink-2 max-[734px]:text-[9px]">Mailles · Pulls</span>
-          <p className="mt-2 text-[22px] font-semibold leading-tight tracking-[-0.01em] max-[734px]:text-[14px]">Pull col rond en laine</p>
-          <p className="mt-1 text-[15px] text-ink-2 tnum max-[734px]:text-[12px]">49,90 €</p>
-          <p className="mt-6 text-[12px] font-semibold max-[734px]:mt-3 max-[734px]:text-[10px]">Taille</p>
+          <span className="text-[11px] text-ink-2 max-[734px]:text-[9px]">{t("Mailles · Pulls", "Knitwear · Sweaters")}</span>
+          <p className="mt-2 text-[22px] font-semibold leading-tight tracking-[-0.01em] max-[734px]:text-[14px]">{t("Pull col rond en laine", "Wool crew-neck sweater")}</p>
+          <p className="mt-1 text-[15px] text-ink-2 tnum max-[734px]:text-[12px]">{t("49,90 €", "€49.90")}</p>
+          <p className="mt-6 text-[12px] font-semibold max-[734px]:mt-3 max-[734px]:text-[10px]">{t("Taille", "Size")}</p>
           <div className="mt-2 flex gap-2 max-[734px]:gap-1">
-            {["XS", "S", "M", "L", "XL"].map((t) => (
+            {["XS", "S", "M", "L", "XL"].map((sz) => (
               <span
-                key={t}
-                className={`grid h-9 w-11 place-items-center rounded-[6px] border text-[12px] max-[734px]:h-6 max-[734px]:w-6 max-[734px]:text-[9px] ${t === "M" ? "border-ink" : "border-line text-ink-2"}`}
+                key={sz}
+                className={`grid h-9 w-11 place-items-center rounded-[6px] border text-[12px] max-[734px]:h-6 max-[734px]:w-6 max-[734px]:text-[9px] ${sz === "M" ? "border-ink" : "border-line text-ink-2"}`}
               >
-                {t}
+                {sz}
               </span>
             ))}
           </div>
           <span className="relative mt-auto block">
             <span className="flex h-12 items-center justify-center rounded-[6px] bg-ink text-[14px] font-semibold text-tile max-[734px]:h-8 max-[734px]:text-[10px]">
-              Ajouter au panier
+              {t("Ajouter au panier", "Add to cart")}
             </span>
             <AgentCursor x={0.62} y={0.55} animate />
           </span>
@@ -311,19 +357,22 @@ function ProductMock() {
 
       {/* Cookie banner */}
       <div className="ap-banner absolute inset-x-0 bottom-0 z-10 h-[44%] border-t border-hairline bg-tile px-8 py-6 shadow-[0_-16px_40px_-12px_rgb(0_0_0/0.25)] max-[734px]:h-[46%] max-[734px]:px-4 max-[734px]:py-3">
-        <p className="text-[15px] font-semibold max-[734px]:text-[11px]">Nous respectons votre vie privée</p>
+        <p className="text-[15px] font-semibold max-[734px]:text-[11px]">{t("Nous respectons votre vie privée", "We respect your privacy")}</p>
         <p className="mt-1.5 max-w-[560px] text-[12px] leading-relaxed text-ink-2 max-[734px]:text-[9px]">
-          Nous utilisons des cookies pour améliorer votre expérience, mesurer l&apos;audience et personnaliser les contenus. Vous pouvez modifier vos choix à tout moment.
+          {t(
+            "Nous utilisons des cookies pour améliorer votre expérience, mesurer l’audience et personnaliser les contenus. Vous pouvez modifier vos choix à tout moment.",
+            "We use cookies to improve your experience, measure our audience and personalise content. You can change your choices at any time.",
+          )}
         </p>
         <div className="mt-4 flex gap-2 max-[734px]:mt-2">
-          <span className="flex h-9 items-center rounded-[6px] bg-bg-2 px-4 text-[12px] text-ink-2 max-[734px]:h-6 max-[734px]:px-2 max-[734px]:text-[9px]">Paramétrer</span>
-          <span className="flex h-9 items-center rounded-[6px] bg-bg-2 px-4 text-[12px] text-ink-2 max-[734px]:h-6 max-[734px]:px-2 max-[734px]:text-[9px]">Continuer sans accepter</span>
+          <span className="flex h-9 items-center rounded-[6px] bg-bg-2 px-4 text-[12px] text-ink-2 max-[734px]:h-6 max-[734px]:px-2 max-[734px]:text-[9px]">{t("Paramétrer", "Settings")}</span>
+          <span className="flex h-9 items-center rounded-[6px] bg-bg-2 px-4 text-[12px] text-ink-2 max-[734px]:h-6 max-[734px]:px-2 max-[734px]:text-[9px]">{t("Continuer sans accepter", "Continue without accepting")}</span>
         </div>
       </div>
 
       <span className="absolute bottom-[24%] right-[4%] z-30 max-[734px]:inset-x-0 max-[734px]:bottom-auto max-[734px]:top-[15%] max-[734px]:flex max-[734px]:justify-center">
         <span className="ap-verdict">
-          <Verdict success={false} label="Bandeau cookies" />
+          <Verdict success={false} label={t("Bandeau cookies", "Cookie banner")} />
         </span>
       </span>
     </div>

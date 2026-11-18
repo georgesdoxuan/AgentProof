@@ -2,11 +2,13 @@ import { staffUser, teamContext } from "@/lib/auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { DEFAULT_MODEL, EXCLUDED, PAYMENT_STAGES, PAYMENT_VERDICTS, db } from "@/lib/engine";
+import { DEFAULT_MODEL, EXCLUDED, db, paymentStages, paymentVerdicts } from "@/lib/engine";
+import { locale, missionTitle, staticText, tr, type Lang, type T } from "@/lib/i18n";
+import { getLang } from "@/lib/lang";
 import { BrowserFrame, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, summarize } from "@/lib/ui";
 import { headers } from "next/headers";
 import { CopyField } from "@/app/espace/controls";
-import { Mark, StatusGlyph, scoreTone, toneWord } from "@/lib/ui";
+import { Mark, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
 import { AutoRefresh, PrintButton } from "./refresh";
 
 const RUN_FIELDS =
@@ -19,10 +21,19 @@ function perMission(runs: any[]) {
 }
 
 // What the score covers, from the report's own data: shown next to the score so 100 % is never read as more than it is.
-function scopeText(runs: any[], s: ReturnType<typeof summarize>, device: string, paymentTested: boolean) {
+function scopeText(runs: any[], s: ReturnType<typeof summarize>, device: string, paymentTested: boolean, lang: Lang) {
   const n = (k: number, w: string) => `${k} ${w}${k > 1 && !w.endsWith("s") ? "s" : ""}`;
+  const pl = (k: number) => (k > 1 ? "s" : "");
   const excluded = runs.filter((r) => r.status === "done" && r.success === false && EXCLUDED.includes(r.blocker_type));
-  const reasons = [...new Set(excluded.map((r) => blockerLabel(r.blocker_type).toLowerCase()))].join(", ");
+  const reasons = [...new Set(excluded.map((r) => blockerLabel(r.blocker_type, lang).toLowerCase()))].join(", ");
+  if (lang === "en")
+    return [
+      `Score based on ${s.done} journey${pl(s.done)} on ${device === "mobile" ? "mobile" : "desktop"}, from the home page to the checkout entrance.`,
+      excluded.length ? `${n(excluded.length, "mission")} excluded from the score (${reasons}).` : "",
+      s.unverified ? `${n(s.unverified, "mission")} unverified, outside the score.` : "",
+      s.errors ? `${n(s.errors, "mission")} not played (technical error).` : "",
+      paymentTested ? "Payment tested separately, see below." : "Payment not tested.",
+    ].filter(Boolean).join(" ");
   return [
     `Score calculé sur ${n(s.done, "parcours")} sur ${device === "mobile" ? "mobile" : "ordinateur"}, de l'accueil jusqu'à l'entrée du checkout.`,
     excluded.length ? `${n(excluded.length, "mission")} exclue${excluded.length > 1 ? "s" : ""} du score (${reasons}).` : "",
@@ -32,15 +43,17 @@ function scopeText(runs: any[], s: ReturnType<typeof summarize>, device: string,
   ].filter(Boolean).join(" ");
 }
 
-// Mission conclusion in French, built from the verdict (not the agent's free text, which may be in English).
-function conclusion(r: any) {
-  if (r.success === null) return "Résultat non vérifié par le juge visuel : mission hors score.";
-  if (!r.success) return "L'agent n'atteint pas l'entrée du checkout.";
+// Mission conclusion in the reader's language, built from the verdict (not the agent's free text, which may be in English).
+function conclusion(r: any, t: T) {
+  if (r.success === null) return t("Résultat non vérifié par le juge visuel : mission hors score.", "Result not verified by the visual judge: mission outside the score.");
+  if (!r.success) return t("L'agent n'atteint pas l'entrée du checkout.", "The agent does not reach the checkout entrance.");
   const login = /login|connexion|signin|sign-in|account|compte/i.test(r.final_url ?? "") || /connect|inscri|compte/i.test(r.judge?.reason ?? "");
-  return login ? "Entrée du checkout atteinte : page de connexion ou d'inscription." : "Entrée du checkout atteinte.";
+  return login
+    ? t("Entrée du checkout atteinte : page de connexion ou d'inscription.", "Checkout entrance reached: sign-in or sign-up page.")
+    : t("Entrée du checkout atteinte.", "Checkout entrance reached.");
 }
 
-const longDate = (d: string) => new Date(d).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris", day: "numeric", month: "long", year: "numeric" });
+const longDate = (d: string, lang: Lang) => new Date(d).toLocaleDateString(locale(lang), { timeZone: "Europe/Paris", day: "numeric", month: "long", year: "numeric" });
 const TONE_TEXT = { pass: "text-pass", warn: "text-warn", fail: "text-fail", none: "text-ink-2" } as const;
 
 // PDF only: running footer on every page but the cover (Chrome draws @page margin boxes).
@@ -65,8 +78,10 @@ function PrintCover(p: {
   brand: { brand_name: string | null; brand_logo: string | null } | null;
   reportUrl: string;
   scope: string;
+  lang: Lang;
 }) {
-  const { s } = p;
+  const { s, lang } = p;
+  const t = tr(lang);
   const tone = scoreTone(s.score);
   const top = s.blockers[0];
   return (
@@ -85,7 +100,7 @@ function PrintCover(p: {
           </span>
         )}
         <span className="text-right text-[9pt] leading-snug text-ink-2">
-          Audit d&apos;achat par agent IA
+          {t("Audit d’achat par agent IA", "AI agent shopping audit")}
           <br />
           {p.date}
         </span>
@@ -102,29 +117,36 @@ function PrintCover(p: {
           </p>
           <p className={`flex items-center gap-2 pb-2 text-[15pt] font-semibold ${TONE_TEXT[tone]}`}>
             <StatusGlyph tone={tone} className="h-[15pt] w-[15pt]" />
-            {toneWord[tone]}
+            {toneWords(lang)[tone]}
           </p>
         </div>
         <div className="mt-[6mm]">
           <MissionBar ok={s.ok} done={s.done} total={s.total} size="lg" />
         </div>
         <p className="mt-[5mm] max-w-[150mm] text-[13pt] leading-snug">
-          L&apos;agent atteint la première page du checkout dans <strong>{s.ok} mission{s.ok > 1 ? "s" : ""} sur {s.done}</strong> comptée{s.done > 1 ? "s" : ""}.
-          {s.excluded + s.unverified > 0 && <span className="text-ink-2"> {s.excluded + s.unverified} hors score.</span>}
+          {t(
+            <>
+              L&apos;agent atteint la première page du checkout dans <strong>{s.ok} mission{s.ok > 1 ? "s" : ""} sur {s.done}</strong> comptée{s.done > 1 ? "s" : ""}.
+            </>,
+            <>
+              The agent reaches the first checkout page in <strong>{s.ok} of {s.done} mission{s.done > 1 ? "s" : ""}</strong> counted.
+            </>,
+          )}
+          {s.excluded + s.unverified > 0 && <span className="text-ink-2"> {s.excluded + s.unverified} {t("hors score", "outside the score")}.</span>}
         </p>
         <p className="mt-[3mm] max-w-[150mm] text-[10.5pt] leading-snug text-ink-2">{p.scope}</p>
         {p.alert && (
           <p className="mt-[3mm] text-[11pt] font-semibold text-fail">
-            En baisse : {p.alert.from} % au précédent audit, {p.alert.to} % aujourd&apos;hui.
+            {t(`En baisse : ${p.alert.from} % au précédent audit, ${p.alert.to} % aujourd’hui.`, `Down: ${p.alert.from} % at the previous audit, ${p.alert.to} % today.`)}
           </p>
         )}
 
         <dl className="mt-[12mm] grid grid-cols-3 border-t border-line text-[9.5pt]">
           {(
             [
-              ["Premier blocage", top ? `${blockerLabel(top[0])} · ${top[1]} mission${top[1] > 1 ? "s" : ""}` : "Aucun"],
-              ["Parcours testé", `${p.device === "mobile" ? "Mobile" : "Ordinateur"} · ${p.model ?? DEFAULT_MODEL}`],
-              ["Coût de l'agent", `${p.cost.toFixed(2)} $ pour ${s.total} missions`],
+              [t("Premier blocage", "First blocker"), top ? `${blockerLabel(top[0], lang)} · ${top[1]} mission${top[1] > 1 ? "s" : ""}` : t("Aucun", "None")],
+              [t("Parcours testé", "Journey tested"), `${p.device === "mobile" ? "Mobile" : t("Ordinateur", "Desktop")} · ${p.model ?? DEFAULT_MODEL}`],
+              [t("Coût de l'agent", "Agent cost"), `${p.cost.toFixed(2)} $ ${t("pour", "for")} ${s.total} missions`],
             ] as const
           ).map(([k, v]) => (
             <div key={k} className="border-r border-line py-[4mm] pr-[4mm] last:border-0 [&:not(:first-child)]:pl-[4mm]">
@@ -137,12 +159,13 @@ function PrintCover(p: {
 
       <footer className="grid gap-[4mm] border-t border-line pt-[5mm] text-[8.5pt] leading-relaxed text-ink-2">
         <p className="max-w-[150mm]">
-          Un agent IA computer-use (Holo, H Company) joue des missions d&apos;achat réelles sur le site, comme un client, et s&apos;arrête au premier écran du checkout : il ne paie
-          jamais, ne saisit aucune donnée personnelle et ne résout aucun captcha. Un juge visuel (Hugging Face) vérifie chaque dernière capture sans connaître l&apos;avis de
-          l&apos;agent.
+          {t(
+            "Un agent IA computer-use (Holo, H Company) joue des missions d’achat réelles sur le site, comme un client, et s’arrête au premier écran du checkout : il ne paie jamais, ne saisit aucune donnée personnelle et ne résout aucun captcha. Un juge visuel (Hugging Face) vérifie chaque dernière capture sans connaître l’avis de l’agent.",
+            "A computer-use AI agent (Holo, H Company) plays real shopping missions on the site, like a customer, and stops at the first checkout screen: it never pays, never enters personal data and never solves a captcha. A visual judge (Hugging Face) checks each final screenshot without knowing the agent's opinion.",
+          )}
         </p>
         <p>
-          Rapport en ligne, avec le replay étape par étape de chaque mission :
+          {t("Rapport en ligne, avec le replay étape par étape de chaque mission :", "Online report, with a step-by-step replay of every mission:")}
           <br />
           <span className="font-semibold text-ink">{p.reportUrl.replace(/^https?:\/\//, "")}</span>
         </p>
@@ -158,6 +181,10 @@ async function loadAudit(id: string) {
 
 export default async function AuditPage({ params }: { params: Promise<{ id: string }> }) {
   await connection();
+  const lang = await getLang();
+  const t = tr(lang);
+  const PAYMENT_VERDICTS = paymentVerdicts(lang);
+  const PAYMENT_STAGES = paymentStages(lang);
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const audit = await loadAudit(id);
@@ -184,7 +211,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   const cost = runs.reduce((t: number, r: any) => t + Number(r.cost_usd ?? 0), 0);
   const maxBlock = s.blockers[0]?.[1] ?? 1;
   const aside = s.excluded + s.unverified + s.errors;
-  const scope = scopeText(runs, s, audit.device, pays.some((p) => p.status === "done"));
+  const scope = scopeText(runs, s, audit.device, pays.some((p) => p.status === "done"), lang);
 
   const paymentOnly = runs.length === 0 && pays.length > 0;
   // A linked audit of the same site is a model comparison, not a competitor.
@@ -195,10 +222,10 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
       {branded && <style>{"body > header, body > footer { display: none; }"}</style>}
       {!paymentOnly && (
         <>
-          <PrintPage left={`${branded ? brand!.brand_name : "AgentProof"} · ${audit.sites.domain} · ${longDate(audit.created_at)}`} />
+          <PrintPage left={`${branded ? brand!.brand_name : "AgentProof"} · ${audit.sites.domain} · ${longDate(audit.created_at, lang)}`} />
           <PrintCover
             site={audit.sites}
-            date={longDate(audit.created_at)}
+            date={longDate(audit.created_at, lang)}
             device={audit.device}
             model={audit.model}
             s={s}
@@ -207,6 +234,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             brand={branded ? brand : null}
             reportUrl={`${base}/audit/${audit.id}`}
             scope={scope}
+            lang={lang}
           />
         </>
       )}
@@ -216,11 +244,11 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             <p className="mb-10 flex items-center gap-3 type-headline">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               {brand!.brand_logo && <img src={brand!.brand_logo} alt="" className="h-10 w-auto max-w-[160px] object-contain" />}
-              <span>Rapport préparé par {brand!.brand_name}</span>
+              <span>{t("Rapport préparé par", "Report prepared by")} {brand!.brand_name}</span>
             </p>
           )}
-          <p className="type-eyebrow text-ink-2">{paymentOnly ? "Test de paiement" : "Rapport d\u2019audit"} · {audit.device === "mobile" ? "Mobile" : "Ordinateur"}
-            {audit.model && ` · Modèle ${audit.model}`}
+          <p className="type-eyebrow text-ink-2">{paymentOnly ? t("Test de paiement", "Payment test") : t("Rapport d\u2019audit", "Audit report")} · {audit.device === "mobile" ? "Mobile" : t("Ordinateur", "Desktop")}
+            {audit.model && ` · ${t("Modèle", "Model")} ${audit.model}`}
           </p>
           <h1 className="type-h1 mt-3 break-words">{audit.title || audit.sites.name}</h1>
           <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-ink-2">
@@ -229,23 +257,23 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             </a>
             <span aria-hidden>·</span>
             <time dateTime={audit.created_at}>
-              {new Date(audit.created_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris", dateStyle: "long", timeStyle: "short" })}
+              {new Date(audit.created_at).toLocaleString(locale(lang), { timeZone: "Europe/Paris", dateStyle: "long", timeStyle: "short" })}
             </time>
-            {!running && !paymentOnly && <PrintButton />}
+            {!running && !paymentOnly && <PrintButton label={t("Télécharger en PDF", "Download as PDF")} />}
           </p>
           {audit.deleted_at && (
             <p className="mt-6 rounded-[12px] bg-tile px-4 py-3 type-small print:hidden">
-              Ce rapport est dans la corbeille de l&apos;équipe.{" "}
+              {t("Ce rapport est dans la corbeille de l'équipe.", "This report is in the team's trash.")}{" "}
               <Link href="/espace/rapports/corbeille" className="text-link hover:underline">
-                Ouvrir la corbeille
+                {t("Ouvrir la corbeille", "Open the trash")}
               </Link>
             </p>
           )}
           {alert && (
             <p className="mt-6 rounded-[12px] bg-tile px-4 py-3 type-small" role="alert">
-              <span className="font-semibold text-fail">Le score baisse : {alert.from} % → {alert.to} %.</span>{" "}
+              <span className="font-semibold text-fail">{t("Le score baisse", "The score drops")} : {alert.from} % → {alert.to} %.</span>{" "}
               <Link href={`/audit/${alert.previous}`} className="text-link hover:underline">
-                Voir l&apos;audit précédent
+                {t("Voir l’audit précédent", "See the previous audit")}
               </Link>
             </p>
           )}
@@ -254,9 +282,9 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
               <Spinner className="h-3.5 w-3.5 text-ink-2" />
               <span>
                 <span className="font-semibold">
-                  {s.finished} missions terminées sur {s.total}.
+                  {t(`${s.finished} missions terminées sur ${s.total}.`, `${s.finished} of ${s.total} missions finished.`)}
                 </span>{" "}
-                <span className="text-ink-2">La page se met à jour toute seule.</span>
+                <span className="text-ink-2">{t("La page se met à jour toute seule.", "The page updates by itself.")}</span>
               </span>
             </p>
           )}
@@ -264,10 +292,10 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
 
         {/* Verdict */}
         {!paymentOnly && (
-        <section className="grid gap-5 lg:grid-cols-[1.5fr_1fr] print:block" aria-label="Score">
+        <section className="grid gap-5 lg:grid-cols-[1.5fr_1fr] print:block" aria-label={t("Score", "Score")}>
           <div className="tile print:hidden">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="type-headline">Score agent</h2>
+              <h2 className="type-headline">{t("Score agent", "Agent score")}</h2>
               <ToneLabel score={s.score} />
             </div>
             <p className="mt-6 text-[96px] font-semibold leading-none tracking-[-0.015em] tnum max-[734px]:text-[72px]">
@@ -279,16 +307,16 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
               <ul className="type-small mt-4 flex flex-wrap gap-x-6 gap-y-1 text-ink-2">
                 <li className="flex items-center gap-2">
                   <span className="h-2.5 w-2.5 rounded-full bg-pass" aria-hidden />
-                  {s.ok} réussie{s.ok > 1 ? "s" : ""}
+                  {s.ok} {t(`réussie${s.ok > 1 ? "s" : ""}`, "passed")}
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="h-2.5 w-2.5 rounded-full bg-fail" aria-hidden />
-                  {s.done - s.ok} bloquée{s.done - s.ok > 1 ? "s" : ""}
+                  {s.done - s.ok} {t(`bloquée${s.done - s.ok > 1 ? "s" : ""}`, "blocked")}
                 </li>
                 {aside > 0 && (
                   <li className="flex items-center gap-2">
                     <span className="h-2.5 w-2.5 rounded-full bg-fill" aria-hidden />
-                    {aside} hors score
+                    {aside} {t("hors score", "outside the score")}
                   </li>
                 )}
               </ul>
@@ -298,7 +326,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
 
           {competitor && c ? (
             <Link href={`/audit/${competitor.id}`} className="tile group flex flex-col transition-colors duration-200 hover:bg-tile/80">
-              <h2 className="type-headline">{modelCompare ? "Deux modèles, mêmes missions" : "Face au concurrent"}</h2>
+              <h2 className="type-headline">{modelCompare ? t("Deux modèles, mêmes missions", "Two models, same missions") : t("Face au concurrent", "Against the competitor")}</h2>
               <div className="mt-8 space-y-6">
                 {(
                   [
@@ -314,22 +342,22 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                     <MissionBar ok={x.ok} done={x.done} total={x.total} />
                     {modelCompare && pm && (
                       <p className="type-small text-ink-2 tnum">
-                        {pm.s} s · {pm.usd.toFixed(3)} $ par mission
+                        {pm.s} s · {pm.usd.toFixed(3)} $ {t("par mission", "per mission")}
                       </p>
                     )}
                   </div>
                 ))}
               </div>
               <span className="more mt-auto pt-6 group-hover:underline">
-                {modelCompare ? `Rapport ${competitor.model ?? DEFAULT_MODEL}` : `Rapport de ${competitor.sites.name}`}
+                {modelCompare ? `${t("Rapport", "Report")} ${competitor.model ?? DEFAULT_MODEL}` : t(`Rapport de ${competitor.sites.name}`, `${competitor.sites.name} report`)}
               </span>
             </Link>
           ) : (
             <div className="tile flex flex-col justify-center print:hidden">
-              <h2 className="type-headline">Pas de concurrent dans cet audit.</h2>
-              <p className="mt-2 text-ink-2">Compare ce score avec les autres sites mode.</p>
+              <h2 className="type-headline">{t("Pas de concurrent dans cet audit.", "No competitor in this audit.")}</h2>
+              <p className="mt-2 text-ink-2">{t("Compare ce score avec les autres sites mode.", "Compare this score with other fashion sites.")}</p>
               <Link href="/classement" className="more mt-2">
-                Voir le classement
+                {t("Voir le classement", "See the ranking")}
               </Link>
             </div>
           )}
@@ -340,42 +368,51 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
           <section key={pay.id} className="tile">
             <div className="type-small flex flex-wrap items-center gap-x-3 gap-y-1">
               <span className="text-ink-2">
-                Test de paiement réel{pays.length > 1 || pay.with_login ? (pay.with_login ? " · connecté avec le compte de test" : " · sans compte") : ""}
+                {t("Test de paiement réel", "Real payment test")}
+                {pays.length > 1 || pay.with_login ? (pay.with_login ? t(" · connecté avec le compte de test", " · signed in with the test account") : t(" · sans compte", " · without an account")) : ""}
               </span>
               <StatusBadge run={pay} />
             </div>
             {pay.status === "done" ? (
               <>
                 <p className={`type-h3 mt-3 ${["bank_declined", "payment_accepted"].includes(pay.payment_verdict) ? "text-pass" : ["inconclusive", "three_ds_timeout"].includes(pay.payment_verdict) ? "text-warn" : "text-fail"}`}>
-                  {PAYMENT_VERDICTS[pay.payment_verdict] ?? pay.payment_verdict ?? "Pas de résultat"}
+                  {PAYMENT_VERDICTS[pay.payment_verdict] ?? pay.payment_verdict ?? t("Pas de résultat", "No result")}
                 </p>
-                {pay.agent_answer?.site_message && <p className="mt-2 text-ink-2">Message du site : « {pay.agent_answer.site_message} »</p>}
+                {pay.agent_answer?.site_message && <p className="mt-2 text-ink-2">{t("Message du site", "Site message")} : « {pay.agent_answer.site_message} »</p>}
                 {pay.agent_answer?.furthest_stage && (
                   <p className="mt-2">
-                    Étape la plus loin atteinte : <span className="font-semibold">{PAYMENT_STAGES[pay.agent_answer.furthest_stage] ?? pay.agent_answer.furthest_stage}</span>
+                    {t("Étape la plus loin atteinte", "Furthest step reached")} : <span className="font-semibold">{PAYMENT_STAGES[pay.agent_answer.furthest_stage] ?? pay.agent_answer.furthest_stage}</span>
                   </p>
                 )}
                 <p className="type-small mt-2 text-ink-2">
-                  3D Secure : {pay.agent_answer?.three_ds_seen ? "demandé" : "non"} · Prestataire : {pay.agent_answer?.payment_provider || "?"} · Moyens :{" "}
+                  3D Secure : {pay.agent_answer?.three_ds_seen ? t("demandé", "requested") : t("non", "no")} · {t("Prestataire", "Provider")} : {pay.agent_answer?.payment_provider || "?"} · {t("Moyens", "Methods")} :{" "}
                   {pay.agent_answer?.payment_methods || "?"}
                 </p>
                 {pay.judge?.result && pay.judge.result !== pay.payment_verdict && (
                   <p className="type-small mt-2 text-warn">
-                    Juge visuel en désaccord : {PAYMENT_VERDICTS[pay.judge.result] ?? pay.judge.result}. {pay.judge.reason}
+                    {t("Juge visuel en désaccord", "Visual judge disagrees")} : {PAYMENT_VERDICTS[pay.judge.result] ?? pay.judge.result}. {pay.judge.reason}
                   </p>
                 )}
               </>
             ) : (
-              <p className="mt-3 text-ink-2">L&apos;agent part au plus près du checkout, prend le premier article disponible et paie une fois. Garde ton téléphone à portée pour valider le 3D Secure.</p>
+              <p className="mt-3 text-ink-2">
+                {t(
+                  "L’agent part au plus près du checkout, prend le premier article disponible et paie une fois. Garde ton téléphone à portée pour valider le 3D Secure.",
+                  "The agent starts as close to checkout as it can, takes the first available item and pays once. Keep your phone at hand to approve 3D Secure.",
+                )}
+              </p>
             )}
           </section>
         ))}
 
         {!paymentOnly && (statik?.items || (running && audit.kind === "checkout")) && (
           <section>
-            <h2 className="type-h2">Ce que lit un robot, sans navigateur.</h2>
+            <h2 className="type-h2">{t("Ce que lit un robot, sans navigateur.", "What a bot reads, without a browser.")}</h2>
             <p className="mt-3 mb-8 max-w-[680px] text-ink-2">
-              Lecture gratuite du code du site, comme les outils qui notent un site sans le tester. Elle complète l&apos;agent, elle ne compte pas dans le score.
+              {t(
+                "Lecture gratuite du code du site, comme les outils qui notent un site sans le tester. Elle complète l’agent, elle ne compte pas dans le score.",
+                "A free read of the site's code, like the tools that rate a site without testing it. It adds to the agent and does not count in the score.",
+              )}
             </p>
             {statik?.items ? (
               <ul className="overflow-hidden rounded-[18px] bg-tile">
@@ -383,15 +420,15 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                   <li key={it.key} className="flex items-start gap-3 border-b border-hairline px-6 py-4 last:border-0">
                     <StatusGlyph tone={it.tone} className="mt-0.5 h-5 w-5" />
                     <span>
-                      <span className="font-semibold">{it.label}</span>
-                      <span className="type-small block text-ink-2">{it.detail}</span>
+                      <span className="font-semibold">{staticText(it.label, lang)}</span>
+                      <span className="type-small block text-ink-2">{staticText(it.detail, lang)}</span>
                     </span>
                   </li>
                 ))}
               </ul>
             ) : (
               <p className="type-small flex items-center gap-2 text-ink-2">
-                <Spinner className="h-3.5 w-3.5" /> Lecture en cours…
+                <Spinner className="h-3.5 w-3.5" /> {t("Lecture en cours…", "Reading…")}
               </p>
             )}
           </section>
@@ -399,11 +436,11 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
 
         {s.blockers.length > 0 && (
           <section>
-            <h2 className="type-h2 mb-8">Ce qui arrête l&apos;agent.</h2>
+            <h2 className="type-h2 mb-8">{t("Ce qui arrête l’agent.", "What stops the agent.")}</h2>
             <ol className="overflow-hidden rounded-[18px] bg-tile">
               {s.blockers.slice(0, 3).map(([b, n]) => (
                 <li key={b} className="grid grid-cols-[1fr_auto] items-center gap-x-6 gap-y-3 border-b border-hairline px-6 py-5 last:border-0 sm:grid-cols-[minmax(0,16rem)_1fr_auto]">
-                  <span className="type-headline">{blockerLabel(b)}</span>
+                  <span className="type-headline">{blockerLabel(b, lang)}</span>
                   <span className="col-span-2 row-start-2 block h-2 overflow-hidden rounded-full bg-fill sm:col-span-1 sm:row-start-auto" aria-hidden>
                     <span className="block h-full rounded-full bg-fail" style={{ width: `${(100 * n) / maxBlock}%` }} />
                   </span>
@@ -418,9 +455,14 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
 
         {audit.recommendations && (
           <section>
-            <h2 className="type-h2 mb-8">Plan de corrections.</h2>
+            <h2 className="type-h2 mb-8">{t("Plan de corrections.", "Fix plan.")}</h2>
             <Recommendations text={audit.recommendations} />
-            <p className="type-caption mt-4 text-ink-2">Les constats viennent des verdicts des missions ci-dessous. Les hypothèses et corrections sont générées par IA (modèle open source sur Hugging Face) : à vérifier avant d&apos;agir.</p>
+            <p className="type-caption mt-4 text-ink-2">
+              {t(
+                "Les constats viennent des verdicts des missions ci-dessous. Les hypothèses et corrections sont générées par IA (modèle open source sur Hugging Face) : à vérifier avant d’agir.",
+                "The findings come from the verdicts of the missions below. Hypotheses and fixes are AI-generated (open-source model on Hugging Face) and written in French: check them before acting.",
+              )}
+            </p>
           </section>
         )}
 
@@ -428,7 +470,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
         <section>
           <div className="mb-8 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
             <h2 className="type-h2">Missions.</h2>
-            {cost > 0 && <span className="type-small text-ink-2 tnum">Coût agent : {cost.toFixed(2)} $</span>}
+            {cost > 0 && <span className="type-small text-ink-2 tnum">{t("Coût agent", "Agent cost")} : {cost.toFixed(2)} $</span>}
           </div>
           <div className="space-y-5">
             {runs.map((r: any, i: number) => (
@@ -438,16 +480,20 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                     <span className="text-ink-2">Mission {i + 1}</span>
                     <StatusBadge run={r} />
                   </div>
-                  <h3 className="type-h3 mt-3">{r.missions.title}</h3>
+                  <h3 className="type-h3 mt-3">{missionTitle(r.missions.title, lang)}</h3>
                   {r.first_attempt && (
                     <p className="type-small mt-3 text-ink-2">
-                      Mission rejouée : le premier essai a échoué ({r.first_attempt.blocker_type ? blockerLabel(r.first_attempt.blocker_type) : "erreur technique"}).
-                      {r.status === "done" && r.success !== null && (r.success ? " Le second a réussi : l’échec n’était pas reproductible." : " Le second confirme l’échec.")}
+                      {t("Mission rejouée : le premier essai a échoué", "Mission replayed: the first attempt failed")} ({r.first_attempt.blocker_type ? blockerLabel(r.first_attempt.blocker_type, lang) : t("erreur technique", "technical error")}).
+                      {r.status === "done" &&
+                        r.success !== null &&
+                        (r.success
+                          ? t(" Le second a réussi : l’échec n’était pas reproductible.", " The second passed: the failure was not reproducible.")
+                          : t(" Le second confirme l’échec.", " The second confirms the failure."))}
                       {r.first_attempt.session_id && (
                         <>
                           {" "}
                           <Link href={`/replay/${r.id}?a=${audit.id}&essai=1`} className="no-print text-link hover:underline">
-                            Voir le premier essai
+                            {t("Voir le premier essai", "See the first attempt")}
                           </Link>
                         </>
                       )}
@@ -460,24 +506,24 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-70 motion-reduce:hidden" />
                           <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
                         </span>
-                        Regarder l&apos;agent en direct
+                        {t("Regarder l’agent en direct", "Watch the agent live")}
                       </Link>
                     </div>
                   )}
                   {r.status === "done" && (
                     <>
-                      {!r.success && r.success !== null && <p className="mt-4 font-semibold">{blockerLabel(r.blocker_type)}</p>}
-                      <p className={`text-ink-2 ${r.success ? "mt-4" : "mt-1"}`}>{conclusion(r)}</p>
+                      {!r.success && r.success !== null && <p className="mt-4 font-semibold">{blockerLabel(r.blocker_type, lang)}</p>}
+                      <p className={`text-ink-2 ${r.success ? "mt-4" : "mt-1"}`}>{conclusion(r, t)}</p>
                       {(r.blocker_detail || r.agent_answer?.steps_summary) && (
                         <details className="type-small mt-2 text-ink-2">
-                          <summary className="cursor-pointer text-link">Réponse originale de l&apos;agent</summary>
+                          <summary className="cursor-pointer text-link">{t("Réponse originale de l’agent", "The agent's original answer")}</summary>
                           {r.blocker_detail && <p className="mt-2">{r.blocker_detail}</p>}
                           {r.agent_answer?.steps_summary && r.agent_answer.steps_summary !== r.blocker_detail && <p className="mt-2">{r.agent_answer.steps_summary}</p>}
                         </details>
                       )}
                       {r.reached_checkout && !r.success && r.judge?.reason && (
                         <p className="type-small mt-4 rounded-[12px] bg-bg-2 px-4 py-3 dark:bg-[#2c2c2e]">
-                          <span className="font-semibold text-warn">Juge visuel. </span>
+                          <span className="font-semibold text-warn">{t("Juge visuel. ", "Visual judge. ")}</span>
                           {r.judge.reason}
                         </p>
                       )}
@@ -486,10 +532,10 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                           <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="currentColor" aria-hidden>
                             <path d="M2.5 1.3v9.4L10.6 6z" />
                           </svg>
-                          Voir le replay
+                          {t("Voir le replay", "Watch the replay")}
                         </Link>
                         <span className="type-small text-ink-2 tnum">
-                          {r.steps ?? "?"} étapes · {r.duration_s ? `${Math.round(r.duration_s)} s` : "?"}
+                          {r.steps ?? "?"} {t("étapes", "steps")} · {r.duration_s ? `${Math.round(r.duration_s)} s` : "?"}
                           {r.cost_usd != null && ` · ${Number(r.cost_usd).toFixed(3)} $`}
                         </span>
                       </div>
@@ -497,18 +543,18 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                   )}
                 </div>
                 {r.screenshot_url ? (
-                  <a href={r.screenshot_url} target="_blank" rel="noreferrer" className="block rounded-[12px]" aria-label={`Ouvrir la capture : ${r.missions.title}`}>
+                  <a href={r.screenshot_url} target="_blank" rel="noreferrer" className="block rounded-[12px]" aria-label={`${t("Ouvrir la capture", "Open the screenshot")} : ${missionTitle(r.missions.title, lang)}`}>
                     <BrowserFrame url={r.final_url}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={r.screenshot_url} alt={`Dernier écran vu par l'agent : ${r.missions.title}`} className="block w-full" />
+                      <img src={r.screenshot_url} alt={`${t("Dernier écran vu par l'agent", "Last screen the agent saw")} : ${missionTitle(r.missions.title, lang)}`} className="block w-full" />
                       {r.status === "done" && r.success !== null && (
-                        <Verdict success={!!r.success} label={r.success ? undefined : blockerLabel(r.blocker_type)} className="no-print absolute bottom-3 left-3" />
+                        <Verdict success={!!r.success} label={r.success ? undefined : blockerLabel(r.blocker_type, lang)} className="no-print absolute bottom-3 left-3" />
                       )}
                     </BrowserFrame>
                   </a>
                 ) : (
                   <div className="type-small grid aspect-[16/10] place-items-center rounded-[12px] bg-bg-2 text-ink-2 dark:bg-[#2c2c2e]">
-                    {r.status === "done" ? "Pas de capture" : "Capture à venir"}
+                    {r.status === "done" ? t("Pas de capture", "No screenshot") : t("Capture à venir", "Screenshot coming")}
                   </div>
                 )}
               </article>
@@ -522,11 +568,12 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={`/badge/${audit.id}.svg`} alt={`Badge AgentProof : ${s.score} %`} height={28} className="h-7 w-auto" />
             <div className="min-w-0">
-              <h2 className="type-headline">Badge à afficher sur ton site.</h2>
-              <p className="type-small mt-1 text-ink-2">Il affiche le score de cet audit et renvoie vers ce rapport.</p>
+              <h2 className="type-headline">{t("Badge à afficher sur ton site.", "A badge to show on your site.")}</h2>
+              <p className="type-small mt-1 text-ink-2">{t("Il affiche le score de cet audit et renvoie vers ce rapport.", "It shows this audit's score and links to this report.")}</p>
               <div className="mt-4">
                 <CopyField
-                  label="Code HTML du badge"
+                  label={t("Code HTML du badge", "Badge HTML code")}
+                  lang={lang}
                   value={`<a href="${base}/audit/${audit.id}"><img src="${base}/badge/${audit.id}.svg" alt="Score AgentProof : ${s.score} %" height="28"></a>`}
                 />
               </div>

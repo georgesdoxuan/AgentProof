@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { canLaunch, teamContext } from "@/lib/auth";
-import { PAYMENT_VERDICTS } from "@/lib/engine";
-import type { Dict } from "@/lib/i18n";
+import { paymentVerdicts } from "@/lib/engine";
+import { locale, tr, type Dict, type Lang } from "@/lib/i18n";
 import { getDict, getLang } from "@/lib/lang";
 import { loadSpace, type SpaceAudit } from "@/lib/space";
 import { Chevron, MissionBar, Spinner, StatusGlyph, scoreTone } from "@/lib/ui";
@@ -14,21 +14,24 @@ export type View = "all" | "favorites" | "trash";
 const PATH: Record<View, string> = { all: "/espace/rapports", favorites: "/espace/rapports/favoris", trash: "/espace/rapports/corbeille" };
 const STATUS = ["tous", "en-cours", "termines"] as const;
 
-const dateFmt = (lang: string) => (d: string) =>
-  new Date(d).toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR", { timeZone: "Europe/Paris", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+const dateFmt = (lang: Lang) => (d: string) =>
+  new Date(d).toLocaleDateString(locale(lang), { timeZone: "Europe/Paris", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
-// One line for the real payment test linked to an audit (report content: stays in French like the reports).
-function PayLine({ pay, multi }: { pay: { status: string; verdict: string | null; with_login: boolean }; multi: boolean }) {
+// One line for the real payment test linked to an audit.
+function PayLine({ pay, multi, lang }: { pay: { status: string; verdict: string | null; with_login: boolean }; multi: boolean; lang: Lang }) {
+  const t = tr(lang);
+  const PAYMENT_VERDICTS = paymentVerdicts(lang);
+  const P = t("Paiement", "Payment");
   const reached = pay.verdict === "bank_declined" || pay.verdict === "payment_accepted";
   const [text, cls] =
     pay.status !== "done" && pay.status !== "error"
-      ? ["Paiement : test en cours", "text-ink-2"]
+      ? [`${P} : ${t("test en cours", "test running")}`, "text-ink-2"]
       : reached
-        ? ["Paiement : transmis à la banque", "text-pass"]
+        ? [`${P} : ${t("transmis à la banque", "sent to the bank")}`, "text-pass"]
         : pay.verdict === "inconclusive" || pay.verdict === "three_ds_timeout"
-          ? [`Paiement : ${PAYMENT_VERDICTS[pay.verdict!].toLowerCase()}`, "text-warn"]
-          : [`Paiement : ${(PAYMENT_VERDICTS[pay.verdict ?? ""] ?? "erreur").toLowerCase()}`, "text-fail"];
-  const who = multi || pay.with_login ? (pay.with_login ? " (connecté)" : " (sans compte)") : "";
+          ? [`${P} : ${PAYMENT_VERDICTS[pay.verdict!].toLowerCase()}`, "text-warn"]
+          : [`${P} : ${(PAYMENT_VERDICTS[pay.verdict ?? ""] ?? t("erreur", "error")).toLowerCase()}`, "text-fail"];
+  const who = multi || pay.with_login ? (pay.with_login ? t(" (connecté)", " (signed in)") : t(" (sans compte)", " (no account)")) : "";
   return <span className={`type-small block font-semibold ${cls}`}>{text}{who}</span>;
 }
 
@@ -209,7 +212,7 @@ export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
                           {a.compare_to && <span className="font-normal text-ink-2"> · {a.model ? r.vsModels : r.vsCompetitor}</span>}
                         </span>
                         <span className="type-small text-ink-2">{sub.join(" · ")}</span>
-                        {a.pay.map((p, i) => <PayLine key={i} pay={p} multi={a.pay.length > 1} />)}
+                        {a.pay.map((p, i) => <PayLine key={i} pay={p} multi={a.pay.length > 1} lang={lang} />)}
                       </span>
                       <span className="type-small hidden truncate text-ink-2 md:block">{a.users?.email === user.email ? r.you : a.users?.email ?? "—"}</span>
                       <span className="hidden md:block">

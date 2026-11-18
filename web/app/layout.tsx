@@ -6,10 +6,15 @@ import { Mark } from "@/lib/ui";
 import { getDict, getLang } from "@/lib/lang";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "AgentProof · Le client mystère IA de ton site e-commerce",
-  description: "Un vrai agent IA essaie d'acheter sur ton site. Score, preuves, comparaison et corrections.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const en = (await getLang()) === "en";
+  return {
+    title: en ? "AgentProof · The AI mystery shopper for your e-commerce site" : "AgentProof · Le client mystère IA de ton site e-commerce",
+    description: en
+      ? "A real AI agent tries to buy on your site. Score, proof, comparison and fixes."
+      : "Un vrai agent IA essaie d'acheter sur ton site. Score, preuves, comparaison et corrections.",
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: [

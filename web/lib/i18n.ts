@@ -195,3 +195,69 @@ const en: Dict = {
 
 export const DICTS: Record<Lang, Dict> = { fr, en };
 export const dict = (lang: Lang) => DICTS[lang];
+
+// Inline translation for page text: t("Bonjour", "Hello"). Keeps each sentence next to its markup.
+export type T = <V>(fr: V, en: V) => V;
+export const tr = (lang: Lang): T => (fr, en) => (lang === "en" ? en : fr);
+export const locale = (lang: Lang) => (lang === "en" ? "en-GB" : "fr-FR");
+
+// Mission titles live in the database in French; their English names, keyed by the French title.
+const MISSION_EN: Record<string, string> = {
+  "Recherche + taille": "Search + size",
+  "Menu + filtre taille": "Menu + size filter",
+  "Filtre de prix": "Price filter",
+  "Variante couleur": "Colour variant",
+  "Article en promo": "Item on sale",
+  "Deux articles": "Two items",
+  "Quantité dans le panier": "Quantity in the cart",
+  "Frais de livraison": "Delivery costs",
+  "Recherche avec faute": "Search with a typo",
+  "Parcours depuis l'accueil": "Journey from the home page",
+  "Test de paiement": "Payment test",
+};
+export const missionTitle = (title: string | null | undefined, lang: Lang) => (lang === "en" ? MISSION_EN[title ?? ""] ?? title ?? "" : title ?? "");
+
+// The free static check (lib/automations.ts) stores French sentences; English versions by pattern, for the report page.
+const STATIC_EN: [RegExp, string][] = [
+  [/^robots\.txt ferme le site aux agents d'achat$/, "robots.txt closes the site to shopping agents"],
+  [/^Interdits sur tout le site : (.*)\. Ces agents lisent la page pour un client, en direct\.$/, "Banned from the whole site: $1. These agents read the page for a customer, live."],
+  [/^robots\.txt bloque certains robots IA$/, "robots.txt blocks some AI bots"],
+  [/^Interdits : (.*)\. Les agents d'achat restent autorisés, mais le site sort des réponses de ces IA\.$/, "Banned: $1. Shopping agents are still allowed, but the site drops out of these AIs' answers."],
+  [/^robots\.txt laisse passer les agents IA$/, "robots.txt lets AI agents through"],
+  [/^Aucune règle n'interdit tout le site à (.*)\.$/, "No rule bans the whole site to $1."],
+  [/^Pas de robots\.txt$/, "No robots.txt"],
+  [/^Rien n'est interdit aux agents\.$/, "Nothing is banned for agents."],
+  [/^robots\.txt illisible$/, "robots.txt unreadable"],
+  [/^Le site répond (.*)\.$/, "The site answers $1."],
+  [/^Pas de réponse\.$/, "No answer."],
+  [/^Le site refuse une requête automatique simple$/, "The site refuses a simple automated request"],
+  [/^Réponse (.*) sans navigateur complet : les agents qui lisent le HTML directement sont bloqués\.$/, "Answer $1 without a full browser: agents that read the HTML directly are blocked."],
+  [/^Page d'accueil lisible sans navigateur$/, "Home page readable without a browser"],
+  [/^Un agent qui lit le HTML obtient la page\.$/, "An agent that reads the HTML gets the page."],
+  [/^Protection anti-bot ou captcha détectée$/, "Anti-bot protection or captcha detected"],
+  [/^(.*)\. Un vrai agent d'achat risque un défi qu'il ne doit pas résoudre\.$/, "$1. A real shopping agent risks a challenge it must not solve."],
+  [/^Aucun captcha ni anti-bot dans la page d'accueil$/, "No captcha or anti-bot on the home page"],
+  [/^Aucun script connu \((.*)\)\.$/, "No known script ($1)."],
+  [/^Données structurées présentes$/, "Structured data present"],
+  [/^Aucune donnée structurée sur l'accueil$/, "No structured data on the home page"],
+  [/^Types schema\.org : (.*?)\. La recherche du site est déclarée \(SearchAction\)\.$/, "schema.org types: $1. The site's search is declared (SearchAction)."],
+  [/^Types schema\.org : (.*?)\. La recherche du site n'est pas déclarée \(SearchAction\)\.$/, "schema.org types: $1. The site's search is not declared (SearchAction)."],
+  [/^Pas de JSON-LD schema\.org : un agent doit tout deviner à partir de l'écran\.$/, "No schema.org JSON-LD: an agent has to guess everything from the screen."],
+  [/^Plateforme : (.*)$/, "Platform: $1"],
+  [/^Détectée dans le code de la page d'accueil\.$/, "Detected in the home page code."],
+  [/^Catalogue public lisible \(products\.json\)$/, "Public catalogue readable (products.json)"],
+  [/^Un agent peut lister produits, prix et variantes sans parcourir les pages\.$/, "An agent can list products, prices and variants without browsing the pages."],
+  [/^Fiche produit décrite pour les machines$/, "Product page described for machines"],
+  [/^schema\.org Product présent sur (.*)\.$/, "schema.org Product present on $1."],
+  [/^Fiche produit sans données Product$/, "Product page without Product data"],
+  [/^Pas de schema\.org Product sur (.*) : prix et disponibilité restent à lire à l'écran\.$/, "No schema.org Product on $1: price and availability have to be read from the screen."],
+  [/^llms\.txt présent$/, "llms.txt present"],
+  [/^Le site donne aux IA un résumé de ses pages\.$/, "The site gives AIs a summary of its pages."],
+  [/^Pas de llms\.txt$/, "No llms.txt"],
+  [/^Facultatif : un fichier qui résume le site pour les IA\.$/, "Optional: a file that summarises the site for AIs."],
+];
+export const staticText = (text: string, lang: Lang) => {
+  if (lang !== "en") return text;
+  for (const [re, en] of STATIC_EN) if (re.test(text)) return text.replace(re, en);
+  return text;
+};
