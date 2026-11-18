@@ -1,21 +1,23 @@
 # AgentProof · roadmap jusqu'au dépôt
 
-Mise à jour le mercredi 18 novembre 2026, 15 h (heure de Paris).
+Mise à jour le mercredi 18 novembre 2026, 16 h 40 (heure de Paris).
 
-## Où on en est (mercredi 18, 15 h)
+## Où on en est (mercredi 18, 16 h 40)
 
-- **Produit en ligne** : https://agentproof-iota-tawny.vercel.app. Parcours complet qui tourne : formulaire, agent H en direct, juge Hugging Face, rapport, replay, classement, espace d'équipe.
-- **Benchmark ordinateur fait** (17 nov) : 10 sites mode, 36 missions réussies sur 52 (69 %), ~90 s et 0,03 $ par mission.
+- **Produit en ligne** : https://agentproof-iota-tawny.vercel.app. Parcours complet qui tourne : formulaire, agent H en direct, juge Hugging Face, rapport, replay, plan de corrections, classement, espace d'équipe, PDF, badge.
+- **Benchmark ordinateur fait** (17 nov) : 10 sites mode, ~90 s et 0,03 $ par mission.
+- **Benchmark mobile fait** (18 nov) : sur les 5 mêmes sites, 13 missions réussies sur 23 (57 %) sur mobile contre 45 sur 47 (96 %) sur ordinateur.
 - **Fiabilité mesurée** : accord juge / agent 81 % (114 / 140 runs), répétabilité 81 % (30 / 37).
-- **PR 5 fusionnée** : retours de l'équipe (file d'attente des missions, appels externes bornés, priorité aux audits sur la surveillance).
-- **En cours** : benchmark mobile (écran 390×844), accord juge / humain (vérification manuelle d'Adonaï, calcul d'Alexandre).
+- **Problèmes techniques réglés** : faux succès (juge visuel à l'aveugle), résultats instables (rejeu des échecs, moyenne de 2 passages), erreurs de l'agent H mises hors score.
+- **Problèmes techniques restants** : audits lents (7 à 17 min, correctif prêt : PR 10), sites anti-bot (IP de datacenter), mobile simulé par la taille d'écran seulement, accord juge / humain pas encore mesuré.
+- **Checkpoint 2** : parcours, architecture, roadmap et Loom faits.
 
 ## Mercredi 18 novembre
 
 | Heure | Tâche | Livrable |
 |---|---|---|
-| avant 17 h | Checkpoint 2 aux mentors : parcours utilisateur, architecture, Loom 2 min, cette roadmap | `docs/checkpoint-2/` + Loom |
-| 17 h → 20 h | Lancer le benchmark mobile sur les 10 sites du classement (5 missions chacun) | runs mobiles dans Supabase |
+| avant 17 h | Checkpoint 2 aux mentors : parcours utilisateur, architecture, Loom 2 min, cette roadmap | `docs/checkpoint-2/` + Loom ✓ |
+| soir | Mesurer le gain du correctif de vitesse sur le lot mobile, puis fusionner la PR 10 (objectif : audit en ~5 min) | PR 10 |
 | soir | Traiter les retours de l'équipe encore ouverts dans `retours/` | PR |
 | 17 h → jeudi 9 h | Peer review | formulaire rempli |
 
@@ -23,7 +25,7 @@ Mise à jour le mercredi 18 novembre 2026, 15 h (heure de Paris).
 
 | Heure | Tâche | Livrable |
 |---|---|---|
-| matin | Résultats du benchmark mobile : tableau ordinateur contre mobile dans le README et le classement | README, `/classement` |
+| matin | Vérifier à la main les blocages mobiles « compte obligatoire » (Celio, Sézane) | note dans le README |
 | matin | Démo à blanc : 3 audits sur des sites de la liste de démo, en conditions réelles, chronométrés | durées notées, bugs corrigés |
 | **midi** | **Accord juge / humain** reçu d'Alexandre : l'afficher sur `/methode` et dans le README, avec la taille de l'échantillon | `/methode`, README |
 | après-midi | Export du dataset Hugging Face à jour (ordinateur + mobile) | `georgesdoxuan/agentproof-runs` |
