@@ -143,6 +143,17 @@ export function AgentCursor({ x, y, animate = false, className = "" }: { x: numb
   );
 }
 
+// AgentProof mark: the agent's cursor heading for the blue dot (the checkout).
+export function Mark({ className = "h-[22px] w-[22px]" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 64 64" className={className} aria-hidden>
+      <rect width="64" height="64" rx="15" fill="var(--ink)" />
+      <path d="M20 14l28 16-12 3-6 11z" fill="var(--bg)" stroke="var(--bg)" strokeWidth="2" strokeLinejoin="round" />
+      <circle cx="45" cy="46" r="5" fill="var(--blue)" />
+    </svg>
+  );
+}
+
 // ---------- helpers ----------
 export const blockerLabel = (b: string | null) => (b ? BLOCKERS[b] ?? b : "—");
 
@@ -273,9 +284,9 @@ export function Recommendations({ text }: { text: string }) {
   return (
     <div className="space-y-6">
       {intro.length > 0 && <p className="type-intro max-w-[760px] text-ink-2">{intro.join(" ")}</p>}
-      <ol className="grid gap-5 md:grid-cols-3">
+      <ol className="grid gap-5 md:grid-cols-3 print:grid-cols-1 print:gap-[3mm]">
         {items.map((it, i) => (
-          <li key={i} className="tile flex flex-col p-7!">
+          <li key={i} className="tile flex flex-col p-7! print:p-[5mm]!">
             <span className="type-small text-ink-2">Correction {i + 1}</span>
             <p className="mt-3 font-semibold">{it.problem}</p>
             {it.fix.length > 0 && (

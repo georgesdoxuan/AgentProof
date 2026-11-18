@@ -290,7 +290,7 @@ export async function runStaticChecks(log: string[]) {
     .eq("kind", "checkout")
     .gte("created_at", since)
     .or(`static_check.is.null,static_check->>pending_at.lt.${stale}`)
-    .order("created_at")
+    .order("created_at", { ascending: false }) // newest first: a fresh audit is read within a minute, older ones fill in after
     .limit(1);
   for (const a of (data ?? []) as any[]) {
     const pending = { pending_at: new Date().toISOString() };

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { Nav } from "./nav";
 import { currentUser } from "@/lib/auth";
+import { Mark } from "@/lib/ui";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,16 +16,6 @@ export const viewport: Viewport = {
     { media: "(prefers-color-scheme: dark)", color: "#000000" },
   ],
 };
-
-function Mark({ className = "h-[22px] w-[22px]" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 64 64" className={className} aria-hidden>
-      <rect width="64" height="64" rx="15" fill="var(--ink)" />
-      <path d="M20 14l28 16-12 3-6 11z" fill="var(--bg)" stroke="var(--bg)" strokeWidth="2" strokeLinejoin="round" />
-      <circle cx="45" cy="46" r="5" fill="var(--blue)" />
-    </svg>
-  );
-}
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

@@ -6,7 +6,7 @@ import { DEFAULT_MODEL, PAYMENT_STAGES, PAYMENT_VERDICTS, db } from "@/lib/engin
 import { BrowserFrame, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, summarize } from "@/lib/ui";
 import { headers } from "next/headers";
 import { CopyField } from "@/app/espace/controls";
-import { StatusGlyph } from "@/lib/ui";
+import { Mark, StatusGlyph, scoreTone, toneWord } from "@/lib/ui";
 import { AutoRefresh, PrintButton } from "./refresh";
 
 const RUN_FIELDS =
@@ -16,6 +16,115 @@ const RUN_FIELDS =
 function perMission(runs: any[]) {
   const d = runs.filter((r) => r.status === "done" && r.duration_s);
   return d.length ? { s: Math.round(d.reduce((t, r) => t + r.duration_s, 0) / d.length), usd: d.reduce((t, r) => t + Number(r.cost_usd ?? 0), 0) / d.length } : null;
+}
+
+const longDate = (d: string) => new Date(d).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris", day: "numeric", month: "long", year: "numeric" });
+const TONE_TEXT = { pass: "text-pass", warn: "text-warn", fail: "text-fail", none: "text-ink-2" } as const;
+
+// PDF only: running footer on every page but the cover (Chrome draws @page margin boxes).
+function PrintPage({ left }: { left: string }) {
+  const safe = JSON.stringify(left.replace(/[<>\\"]/g, ""));
+  const box = "font: 500 7.5pt -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif; color: #86868b;";
+  return (
+    <style>{`@page { size: A4; margin: 16mm 15mm 18mm; @bottom-left { content: ${safe}; ${box} } @bottom-right { content: counter(page) " / " counter(pages); ${box} } }
+@page :first { margin: 0; @bottom-left { content: none } @bottom-right { content: none } }`}</style>
+  );
+}
+
+// PDF only: the cover. One verdict a reader gets in five seconds: who, when, the score, what blocks first.
+function PrintCover(p: {
+  site: { name: string; url: string; domain: string };
+  date: string;
+  device: string;
+  model: string | null;
+  s: ReturnType<typeof summarize>;
+  cost: number;
+  alert: { from: number; to: number } | null;
+  brand: { brand_name: string | null; brand_logo: string | null } | null;
+  reportUrl: string;
+}) {
+  const { s } = p;
+  const tone = scoreTone(s.score);
+  const top = s.blockers[0];
+  return (
+    <section className="hidden print:flex print-cover flex-col justify-between bg-bg p-[18mm] text-ink">
+      <header className="flex items-center justify-between">
+        {p.brand?.brand_name ? (
+          <span className="flex items-center gap-3 text-[15pt] font-semibold">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {p.brand.brand_logo && <img src={p.brand.brand_logo} alt="" className="h-9 w-auto max-w-[45mm] object-contain" />}
+            {p.brand.brand_name}
+          </span>
+        ) : (
+          <span className="flex items-center gap-2.5 text-[15pt] font-semibold tracking-[0.011em]">
+            <Mark className="h-7 w-7" />
+            AgentProof
+          </span>
+        )}
+        <span className="text-right text-[9pt] leading-snug text-ink-2">
+          Audit d&apos;achat par agent IA
+          <br />
+          {p.date}
+        </span>
+      </header>
+
+      <div>
+        <h1 className="text-[40pt] font-semibold leading-[1.05] tracking-[-0.02em] [text-wrap:balance]">{p.site.name}</h1>
+        <p className="mt-2 text-[13pt] text-link">{p.site.domain}</p>
+
+        <div className="mt-[14mm] flex items-end justify-between gap-8 border-t-[1.5pt] border-ink pt-[6mm]">
+          <p className="text-[96pt] font-semibold leading-[0.85] tracking-[-0.03em] tnum">
+            {s.score ?? "—"}
+            <span className="ml-1 text-[36pt] text-ink-2">%</span>
+          </p>
+          <p className={`flex items-center gap-2 pb-2 text-[15pt] font-semibold ${TONE_TEXT[tone]}`}>
+            <StatusGlyph tone={tone} className="h-[15pt] w-[15pt]" />
+            {toneWord[tone]}
+          </p>
+        </div>
+        <div className="mt-[6mm]">
+          <MissionBar ok={s.ok} done={s.done} total={s.total} size="lg" />
+        </div>
+        <p className="mt-[5mm] max-w-[150mm] text-[13pt] leading-snug">
+          L&apos;agent atteint la première page du checkout dans <strong>{s.ok} mission{s.ok > 1 ? "s" : ""} sur {s.done}</strong> comptée{s.done > 1 ? "s" : ""}.
+          {s.excluded + s.unverified > 0 && <span className="text-ink-2"> {s.excluded + s.unverified} hors score.</span>}
+        </p>
+        {p.alert && (
+          <p className="mt-[3mm] text-[11pt] font-semibold text-fail">
+            En baisse : {p.alert.from} % au précédent audit, {p.alert.to} % aujourd&apos;hui.
+          </p>
+        )}
+
+        <dl className="mt-[12mm] grid grid-cols-3 border-t border-line text-[9.5pt]">
+          {(
+            [
+              ["Premier blocage", top ? `${blockerLabel(top[0])} · ${top[1]} mission${top[1] > 1 ? "s" : ""}` : "Aucun"],
+              ["Parcours testé", `${p.device === "mobile" ? "Mobile" : "Ordinateur"} · ${p.model ?? DEFAULT_MODEL}`],
+              ["Coût de l'agent", `${p.cost.toFixed(2)} $ pour ${s.total} missions`],
+            ] as const
+          ).map(([k, v]) => (
+            <div key={k} className="border-r border-line py-[4mm] pr-[4mm] last:border-0 [&:not(:first-child)]:pl-[4mm]">
+              <dt className="text-ink-2">{k}</dt>
+              <dd className="mt-1 font-semibold leading-snug">{v}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+
+      <footer className="grid gap-[4mm] border-t border-line pt-[5mm] text-[8.5pt] leading-relaxed text-ink-2">
+        <p className="max-w-[150mm]">
+          Un agent IA computer-use (Holo, H Company) joue des missions d&apos;achat réelles sur le site, comme un client, et s&apos;arrête au premier écran du checkout : il ne paie
+          jamais, ne saisit aucune donnée personnelle et ne résout aucun captcha. Un juge visuel (Hugging Face) vérifie chaque dernière capture sans connaître l&apos;avis de
+          l&apos;agent.
+        </p>
+        <p>
+          Rapport en ligne, avec le replay étape par étape de chaque mission :
+          <br />
+          <span className="font-semibold text-ink">{p.reportUrl.replace(/^https?:\/\//, "")}</span>
+        </p>
+      </footer>
+    </section>
+  );
 }
 
 async function loadAudit(id: string) {
@@ -56,11 +165,27 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   // A linked audit of the same site is a model comparison, not a competitor.
   const modelCompare = !!competitor && competitor.site_id === audit.site_id;
   return (
-    <div className="bg-bg-2 pb-24 pt-16 max-[734px]:pt-10">
+    <div className="bg-bg-2 pb-24 pt-16 max-[734px]:pt-10 print:bg-bg print:p-0">
       {running && <AutoRefresh />}
       {branded && <style>{"body > header, body > footer { display: none; }"}</style>}
-      <div className="wrap-wide space-y-20 max-[734px]:space-y-14">
-        <header>
+      {!paymentOnly && (
+        <>
+          <PrintPage left={`${branded ? brand!.brand_name : "AgentProof"} · ${audit.sites.domain} · ${longDate(audit.created_at)}`} />
+          <PrintCover
+            site={audit.sites}
+            date={longDate(audit.created_at)}
+            device={audit.device}
+            model={audit.model}
+            s={s}
+            cost={cost}
+            alert={alert}
+            brand={branded ? brand : null}
+            reportUrl={`${base}/audit/${audit.id}`}
+          />
+        </>
+      )}
+      <div className="wrap-wide space-y-20 max-[734px]:space-y-14 print:space-y-[9mm]">
+        <header className={paymentOnly ? undefined : "print:hidden"}>
           {branded && (
             <p className="mb-10 flex items-center gap-3 type-headline">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -105,8 +230,8 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
 
         {/* Verdict */}
         {!paymentOnly && (
-        <section className="grid gap-5 lg:grid-cols-[1.5fr_1fr]" aria-label="Score">
-          <div className="tile">
+        <section className="grid gap-5 lg:grid-cols-[1.5fr_1fr] print:block" aria-label="Score">
+          <div className="tile print:hidden">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="type-headline">Score agent</h2>
               <ToneLabel score={s.score} />
@@ -165,7 +290,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
               </span>
             </Link>
           ) : (
-            <div className="tile flex flex-col justify-center">
+            <div className="tile flex flex-col justify-center print:hidden">
               <h2 className="type-headline">Pas de concurrent dans cet audit.</h2>
               <p className="mt-2 text-ink-2">Compare ce score avec les autres sites mode.</p>
               <Link href="/classement" className="more mt-2">
@@ -335,7 +460,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={r.screenshot_url} alt={`Dernier écran vu par l'agent : ${r.missions.title}`} className="block w-full" />
                       {r.status === "done" && r.success !== null && (
-                        <Verdict success={!!r.success} label={r.success ? undefined : blockerLabel(r.blocker_type)} className="absolute bottom-3 left-3" />
+                        <Verdict success={!!r.success} label={r.success ? undefined : blockerLabel(r.blocker_type)} className="no-print absolute bottom-3 left-3" />
                       )}
                     </BrowserFrame>
                   </a>

@@ -351,6 +351,54 @@ body {
   .tile {
     border: 1px solid var(--line);
   }
+  /* A4 is narrower than the md breakpoint: keep each mission on one row, text beside its capture, several per page. */
+  article.tile {
+    grid-template-columns: minmax(0, 1fr) 260px;
+    gap: 20px;
+    padding: 20px;
+  }
+  h2 {
+    break-after: avoid;
+  }
+  /* Cover: the whole first page (its @page has no margin), then the report starts on page 2. */
+  .print-cover {
+    width: 210mm;
+    height: 297mm;
+    break-after: page;
+  }
+  .wrap,
+  .wrap-wide {
+    width: 100% !important;
+    max-width: none !important;
+  }
+  /* Report sections read like a printed audit: a rule over each section title, tighter type. */
+  .type-h2 {
+    font-size: 19pt !important;
+    line-height: 1.15 !important;
+    letter-spacing: -0.01em;
+  }
+  section > h2.type-h2,
+  section > div:has(> h2.type-h2) {
+    border-top: 1.5pt solid var(--ink);
+    padding-top: 3mm;
+    margin-bottom: 5mm !important;
+  }
+  .type-h3 {
+    font-size: 13pt !important;
+  }
+  .type-intro {
+    font-size: 12pt !important;
+    line-height: 1.45 !important;
+  }
+  .tile {
+    border-radius: 10px;
+    padding: 6mm;
+  }
+  ul.bg-tile,
+  ol.bg-tile {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+  }
   body {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
