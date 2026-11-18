@@ -1,7 +1,7 @@
 # Loom 2 minutes · texte du présentateur
 
 Site : https://agentproof-iota-tawny.vercel.app (pas besoin de se connecter).
-Avant de commencer : un onglet sur l'accueil, un 2e onglet sur le rapport Promod (bouton « Voir un exemple de rapport »).
+Avant de commencer : un onglet sur l'accueil, un 2e onglet sur le rapport Promod (bouton « Voir un exemple de rapport »), un 3e onglet avec le schéma `docs/checkpoint-2/architecture.png` (glisser le fichier dans Chrome).
 
 ---
 
@@ -19,6 +19,11 @@ Avant de commencer : un onglet sur l'accueil, un 2e onglet sur le rapport Promod
 *(Onglet du rapport Promod. Montre le score 60 %, puis descends à « Ce qui arrête l'agent. ». Sur la mission « Menu + filtre taille », clique « Voir le replay » et fais défiler quelques étapes. Reviens avec « ‹ Rapport Promod » et descends à « Plan de corrections. ».)*
 
 « Voici le rapport. Un score : la part des missions menées jusqu'au checkout, ici 3 sur 5. Les blocages, classés par fréquence. Pour chaque échec, la capture du moment exact où l'agent bloque. Et le replay étape par étape : ce que l'agent voyait, où il a cliqué, pourquoi. Un juge visuel Hugging Face relit la dernière capture à l'aveugle, pour éviter les faux succès. Ensuite, un LLM écrit le plan de corrections. »
+
+**1:20 · La stack technique**
+*(Passe sur l'onglet du schéma d'architecture. Montre les blocs en les nommant.)*
+
+« Côté technique : l'app est en Next.js, hébergée sur Vercel. Les audits, les résultats et les captures sont dans Supabase. Le moteur lance les sessions de l'agent sur l'Agents API de H Company, avec les modèles Holo, qui pilotent un vrai navigateur dans le cloud. Le juge visuel et le plan de corrections tournent sur Hugging Face, avec un modèle open source, Qwen. n8n déclenche le moteur chaque minute et envoie les e-mails, et chaque modification du code est déployée automatiquement par GitHub Actions. »
 
 **1:25 · L'avancement, ce qui bloque, la suite**
 *(Clique « Classement » en haut de la page. Montre les sites sur ordinateur en haut, puis descends jusqu'aux lignes « Mobile ».)*
