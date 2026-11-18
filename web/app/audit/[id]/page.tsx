@@ -100,7 +100,7 @@ function PrintCover(p: {
           </span>
         ) : (
           <span className="flex items-center gap-2.5 text-[15pt]">
-            <Mark className="h-7 w-7" />
+            <Mark className="h-9 w-9" />
             <Wordmark />
           </span>
         )}
