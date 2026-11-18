@@ -25,4 +25,7 @@ La démo montre au moins un site avec un blocage réel, dû au site et compté d
 Je n'ai pas vérifié si le mobile bloque davantage : il faut lancer les audits pour le savoir (crédits H).
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait
+- Piste 2 : chaque rapport a une section « Ce que l'agent a dû contourner » (bandeau cookies, pop-up, recherche à reprendre, filtre, parcours long), hors score ; le classement affiche l'obstacle franchi quand il n'y a aucun blocage.
+- Piste 1 : benchmark mobile sur Celio, Jules, Sézane, Asphalte, Promod : 13/23 (57 %) contre 96 % sur ordinateur. Détail dans le README, lignes mobiles dans le classement.
+- Piste 3 : `/methode#paiement` raconte les tests de paiement du 17 nov comme la suite, lien depuis l'accueil.

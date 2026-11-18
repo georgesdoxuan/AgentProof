@@ -80,6 +80,20 @@ curl localhost:3000/api/tick -H "x-tick-secret: $TICK_SECRET"   # fait avancer l
 
 Détail mission par mission, captures et replays : classement en ligne et dataset Hugging Face.
 
+## Benchmark mobile (18 nov 2026)
+
+5 sites du classement × 5 missions, écran de téléphone (390×844), même agent. **13 missions réussies sur 23 comptées (57 %)**, contre 45 sur 47 (96 %) sur ordinateur pour les mêmes sites. Environ 105 s par mission, 1,43 $ au total.
+
+| Site | Mobile | Ordinateur (classement) | Blocages relevés sur mobile |
+|---|---|---|---|
+| Jules | 5/5 | 9/9 | — |
+| Asphalte | 3/4 | 10/10 | bouton qui ne réagit pas |
+| Celio | 2/5 | 10/10 | compte obligatoire (3) |
+| Promod | 2/5 | 7/9 | sélecteur de taille (2), bandeau cookies |
+| Sézane | 1/4 | 9/9 | compte obligatoire (2), bouton qui ne réagit pas |
+
+Les sites « prêts pour les agents » sur ordinateur bloquent bien plus sur mobile. À vérifier à la main : les blocages « compte obligatoire » de Celio et Sézane, qui ne sortent pas sur ordinateur.
+
 ## Test de paiement réel (équipe)
 
 R&D interne, hors produit : page `/test-paiement`, réservée aux comptes de l'équipe AgentProof (`STAFF_EMAILS`). L'agent achète l'article le moins cher et paie **une seule fois** avec une carte virtuelle Revolut de l'équipe, sur un compte à 0 €. Un refus « fonds insuffisants » prouve que le paiement a atteint la banque (il serait passé avec des fonds). Le 3D Secure est validé par un humain sur son téléphone. Verdicts : paiement transmis à la banque, bloqué au 3D Secure, formulaire de carte inutilisable, paiement jamais atteint, compte obligatoire, anti-bot, erreur.
