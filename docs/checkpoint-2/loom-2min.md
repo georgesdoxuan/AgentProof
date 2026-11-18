@@ -1,7 +1,7 @@
 # Loom 2 minutes · guide pas à pas
 
 Mini pitch du checkpoint 2 (mercredi 18 nov, avant 17 h) : problème, solution, avancement.
-Ce guide est fait pour quelqu'un qui n'a jamais utilisé AgentProof. Chaque étape dit **quoi ouvrir**, **où cliquer** (entouré en rouge sur la capture) et **quoi dire**.
+Captures prises sur le site en ligne le 18 nov à 15 h 35 (dernière version de main). Ce guide est fait pour quelqu'un qui n'a jamais utilisé AgentProof. Chaque étape dit **quoi ouvrir**, **où cliquer** (entouré en rouge sur la capture) et **quoi dire**.
 
 ## En 30 secondes : c'est quoi AgentProof ?
 
@@ -84,17 +84,17 @@ La page du replay s'ouvre. **Fais défiler** doucement : chaque étape montre l'
 
 ![Lien Classement](loom-captures/8a-lien-classement.png)
 
-**Montre :** les sites à 100 % en haut, puis en bas les versions **Mobile** de Celio (40 %) et Sézane (25 %), et Kiabi tout en bas (bloqué par son anti-bot).
+**Montre :** en haut, les sites testés sur **Ordinateur**, presque tous à 100 %. Puis descends : les lignes **Mobile** sont bien plus bas (Celio 40 %, Promod 40 %, Sézane 25 %). Tout en bas, Kiabi, qui bloque l'agent avec son anti-bot.
 
 ![Classement](loom-captures/8b-classement.png)
 
-> « Le produit est en ligne. On a audité 10 marques de mode françaises. Au premier passage, 36 missions sur 52 ont réussi, soit 69 %. Une mission dure environ 90 secondes et coûte 3 centimes. Le juge donne le même verdict que l'agent dans 81 % des 140 runs vérifiés. Et on vient de lancer le mobile : regardez, Celio et Sézane chutent fortement sur téléphone. Kiabi, lui, bloque l'agent avec son anti-bot. »
+> « Le produit est en ligne et on a audité 10 marques de mode françaises. Une mission dure environ 90 secondes et coûte 3 centimes. Et voici notre résultat du jour : sur ordinateur, l'agent réussit 96 % des missions sur ces sites. Sur téléphone, sur les mêmes sites, seulement 57 %. Des sites "prêts pour les agents" sur ordinateur bloquent sur mobile, et leurs marchands ne le savent pas. »
 
 ## Étape 8 · 1:50 – 2:00 · La suite
 
 **Clic :** aucun, reste sur le classement.
 
-> « D'ici vendredi : finir le benchmark mobile, mesurer l'accord du juge avec un humain, et faire la démo live devant vous. Le classement est gratuit, l'audit coûte 490 euros, le suivi mensuel 149 euros. Merci ! »
+> « D'ici vendredi : vérifier à la main les blocages mobiles, mesurer l'accord du juge avec un humain, rendre les audits plus rapides, et faire la démo live devant vous. Le classement est gratuit, l'audit coûte 490 euros, le suivi mensuel 149 euros. Merci ! »
 
 Arrête l'enregistrement.
 

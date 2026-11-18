@@ -85,7 +85,7 @@ Environ 850 mots. Suit l'ordre du deck demandé (problème, solution, démo, bus
 > - le juge est d'accord avec l'agent dans 81 % des 140 runs vérifiés ;
 > - [à remplir jeudi] le juge est d'accord avec un humain dans __ % des __ runs vérifiés à la main ;
 > - un site rejoué deux fois donne le même verdict dans 81 % des cas, donc le classement fait la moyenne des deux derniers passages ;
-> - [à remplir] sur mobile : __ % de réussite, contre 69 % sur ordinateur.
+> - sur mobile, sur les 5 mêmes sites : 57 % de réussite (13 sur 23), contre 96 % sur ordinateur. Les sites prêts sur ordinateur bloquent sur téléphone.
 >
 > Un audit complet de 5 missions coûte moins de 50 centimes en calcul, rejeux compris. On le vend 490 euros.
 
@@ -125,5 +125,5 @@ Environ 850 mots. Suit l'ordre du deck demandé (problème, solution, démo, bus
 | Accord juge / agent | 114 / 140 runs, 81 % | README, Fiabilité |
 | Répétabilité | 30 / 37 missions comparables, 81 % | idem |
 | Accord juge / humain | à venir jeudi midi | retours/alexandre |
-| Benchmark mobile | en cours | |
+| Benchmark mobile (5 sites) | 13 / 23, 57 %, contre 45 / 47, 96 % sur ordinateur | README, benchmark du 18 nov |
 | Prix | gratuit / 490 € / 149 € par mois / 30 % agences | CONTEXT.md |
