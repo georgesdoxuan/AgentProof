@@ -65,7 +65,7 @@ export async function MissionBar({ ok, done, total, size = "md" }: { ok: number;
 }
 
 // ---------- runs ----------
-export async function StatusBadge({ run }: { run: { status: string; success: boolean | null } }) {
+export async function StatusBadge({ run }: { run: { status: string; success: boolean | null; blocker_type?: string | null } }) {
   const t = await getT();
   if (run.status === "launched")
     return (
@@ -81,7 +81,9 @@ export async function StatusBadge({ run }: { run: { status: string; success: boo
         ? [t("Non vérifiée", "Unverified"), "none"]
         : run.success
           ? [t("Réussie", "Passed"), "pass"]
-          : [t("Bloquée", "Blocked"), "fail"];
+          : EXCLUDED.includes(run.blocker_type ?? "")
+            ? [t("Hors score", "Out of score"), "none"]
+            : [t("Bloquée", "Blocked"), "fail"];
   return (
     <span className={`inline-flex items-center gap-1.5 font-semibold ${toneText[tone]}`}>
       <StatusGlyph tone={tone} />

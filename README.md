@@ -129,3 +129,4 @@ Espace › Automations : l'équipe colle une ou plusieurs URL. Une fois par jour
 | 17 nov | La console affiche « services indisponibles » alors que l'API répond normalement. |
 | 17 nov | La limite Free de 5 requêtes/min par clé impose un ordonnanceur ; pas documentée dans « Plans and limits », seulement sur la page des clés. |
 | 17 nov | La ressource `screenshots/step-N.png` de la doc renvoie 404 ; l'URL de capture se trouve dans les événements d'observation. |
+| 18 nov | Sur Kiabi, Holo envoie en boucle `scroll_web` avec `scroll_element` sous forme de chaîne JSON au lieu d'un objet : jusqu'à 19 appels rejetés (`validation_errors` dans les `policy_event`) sur 30 étapes, et la mission échoue. Le moteur classe ces échecs en `agent_tool_error`, hors score. |

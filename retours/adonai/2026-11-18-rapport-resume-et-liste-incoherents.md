@@ -23,4 +23,6 @@ Sur le rapport Kiabi, la mission anti-bot affiche « Hors score » avec sa raiso
 - `web/lib/ui.tsx:165` et `:178` : le résumé, lui, sépare bien les runs exclus.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait
+- `StatusBadge` (`web/lib/ui.tsx`) affiche « Hors score » en gris pour un run exclu. La raison reste affichée en dessous (anti-bot, rupture, mission impossible, agent). La conclusion indique « Mission hors score : ce résultat ne compte ni pour ni contre le site. » Le verdict rouge n'est plus posé sur la capture d'une mission exclue.
+- Rapport Kiabi : le résumé annonce 0 bloquée et 5 hors score ; la liste montre 4 « Hors score » et 1 « Non vérifiée ». Quand aucun parcours n'est compté, le rapport affiche « À confirmer » au lieu de « En attente ».

@@ -24,4 +24,6 @@ Sur /classement, Balibaris et Sézane affichent « Aucun ». Le blocage principa
 - Le texte de la page dit « Rupture de stock et anti-bot restent hors score », mais `EXCLUDED` exclut aussi « Mission impossible sur ce catalogue » et « L'agent a manqué d'étapes ». Le texte peut citer les quatre.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait
+- `topBlocker` (`web/app/classement/board.tsx`) ignore les types de `EXCLUDED`. Balibaris, Sézane et Bonobo affichent « Aucun ».
+- Le texte « Score » de la page cite toutes les causes hors score : rupture de stock, anti-bot, mission impossible, et les échecs dus à l'agent (étapes épuisées, erreur d'outil).

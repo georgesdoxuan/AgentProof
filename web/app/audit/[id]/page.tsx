@@ -28,14 +28,18 @@ function scopeText(runs: any[], s: ReturnType<typeof summarize>, device: string,
   const reasons = [...new Set(excluded.map((r) => blockerLabel(r.blocker_type, lang).toLowerCase()))].join(", ");
   if (lang === "en")
     return [
-      `Score based on ${s.done} journey${pl(s.done)} on ${device === "mobile" ? "mobile" : "desktop"}, from the home page to the checkout entrance.`,
+      s.done
+        ? `Score based on ${s.done} journey${pl(s.done)} on ${device === "mobile" ? "mobile" : "desktop"}, from the home page to the checkout entrance.`
+        : `No journey counted on ${device === "mobile" ? "mobile" : "desktop"}: no score for this site until a new audit.`,
       excluded.length ? `${n(excluded.length, "mission")} excluded from the score (${reasons}).` : "",
       s.unverified ? `${n(s.unverified, "mission")} unverified, outside the score.` : "",
       s.errors ? `${n(s.errors, "mission")} not played (technical error).` : "",
       paymentTested ? "Payment tested separately, see below." : "Payment not tested.",
     ].filter(Boolean).join(" ");
   return [
-    `Score calculé sur ${n(s.done, "parcours")} sur ${device === "mobile" ? "mobile" : "ordinateur"}, de l'accueil jusqu'à l'entrée du checkout.`,
+    s.done
+      ? `Score calculé sur ${n(s.done, "parcours")} sur ${device === "mobile" ? "mobile" : "ordinateur"}, de l'accueil jusqu'à l'entrée du checkout.`
+      : `Aucun parcours compté sur ${device === "mobile" ? "mobile" : "ordinateur"} : pas de score pour ce site avant un nouvel audit.`,
     excluded.length ? `${n(excluded.length, "mission")} exclue${excluded.length > 1 ? "s" : ""} du score (${reasons}).` : "",
     s.unverified ? `${n(s.unverified, "mission")} non vérifiée${s.unverified > 1 ? "s" : ""}, hors score.` : "",
     s.errors ? `${n(s.errors, "mission")} non jouée${s.errors > 1 ? "s" : ""} (erreur technique).` : "",
@@ -46,6 +50,7 @@ function scopeText(runs: any[], s: ReturnType<typeof summarize>, device: string,
 // Mission conclusion in the reader's language, built from the verdict (not the agent's free text, which may be in English).
 function conclusion(r: any, t: T) {
   if (r.success === null) return t("Résultat non vérifié par le juge visuel : mission hors score.", "Result not verified by the visual judge: mission outside the score.");
+  if (!r.success && EXCLUDED.includes(r.blocker_type)) return t("Mission hors score : ce résultat ne compte ni pour ni contre le site.", "Mission outside the score: this result counts neither for nor against the site.");
   if (!r.success) return t("L'agent n'atteint pas l'entrée du checkout.", "The agent does not reach the checkout entrance.");
   const login = /login|connexion|signin|sign-in|account|compte/i.test(r.final_url ?? "") || /connect|inscri|compte/i.test(r.judge?.reason ?? "");
   return login
@@ -296,7 +301,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
           <div className="tile print:hidden">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="type-headline">{t("Score agent", "Agent score")}</h2>
-              <ToneLabel score={s.score} />
+              {s.score == null && audit.status === "done" ? <span className="type-small font-semibold text-ink-2">{t("À confirmer", "To be confirmed")}</span> : <ToneLabel score={s.score} />}
             </div>
             <p className="mt-6 text-[96px] font-semibold leading-none tracking-[-0.015em] tnum max-[734px]:text-[72px]">
               {s.score ?? "—"}
@@ -486,6 +491,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                       {t("Mission rejouée : le premier essai a échoué", "Mission replayed: the first attempt failed")} ({r.first_attempt.blocker_type ? blockerLabel(r.first_attempt.blocker_type, lang) : t("erreur technique", "technical error")}).
                       {r.status === "done" &&
                         r.success !== null &&
+                        !(r.success === false && EXCLUDED.includes(r.blocker_type)) &&
                         (r.success
                           ? t(" Le second a réussi : l’échec n’était pas reproductible.", " The second passed: the failure was not reproducible.")
                           : t(" Le second confirme l’échec.", " The second confirms the failure."))}
