@@ -274,9 +274,15 @@ async function loginVault(teamId: string | null, siteId: number) {
   return (team?.h_vault_id as string) ?? null;
 }
 
-// ---------- tick: the only place that calls H, max 5 requests per call ----------
-// ponytail: one global budget per tick, driven by an n8n cron every minute. Free H keys allow 5 req/min.
+// ---------- tick: the only place that calls H ----------
+// Driven by an n8n cron every minute. Inside one call, the engine makes a pass every PASS_EVERY_MS for LOOP_MS:
+// a finished session is collected and its slot refilled within seconds, not at the next minute.
+// The key page announced 5 req/min, but H answers x-ratelimit-limit: 40000 and no 429 on bursts (measured 18 nov):
+// the real cap is the 3 concurrent sessions. A 429 still ends the call cleanly.
 const MAX_ACTIVE = 3; // H Free plan: 3 concurrent sessions
+const BUDGET_PER_PASS = Number(process.env.H_BUDGET_PER_TICK ?? 20);
+const LOOP_MS = 45_000; // the route allows 60 s
+const PASS_EVERY_MS = 10_000;
 const MISSION_STEPS = 30;
 const STALE_MIN = 20;
 const PAY_STEPS = 80; // a checkout form alone can take 15 steps; payment tests are rare, so they get more room
@@ -284,38 +290,70 @@ const PAY_STALE_MIN = 30;
 
 const TERMINAL = new Set(["completed", "idle", "failed", "timed_out", "interrupted"]);
 
-export async function tick() {
-  let budget = Number(process.env.H_BUDGET_PER_TICK ?? 5);
+// loopMs = 0: one pass only (used right after an audit is created, so it starts without waiting for the cron).
+export async function tick(loopMs = LOOP_MS) {
   const log: string[] = [];
+  const end = Date.now() + loopMs;
+  let budget = 0;
+  for (;;) {
+    budget = BUDGET_PER_PASS;
+    const ok = await pass(log, () => budget, (n) => (budget -= n));
+    // 3. Close finished audits and replay failed missions (no H request).
+    await closeAudits(log);
+    if (!ok || Date.now() + PASS_EVERY_MS > end) break;
+    const { count } = await db.from("runs").select("id", { count: "exact", head: true }).in("status", ["todo", "launched"]);
+    if (!count) break;
+    await new Promise((r) => setTimeout(r, PASS_EVERY_MS));
+  }
+
+  // 4. Daily site watch (no H request; an audit it starts is launched by a later pass).
+  const auto = await import("./automations");
+  await auto.runStaticChecks(log).catch((e) => log.push(`static check error: ${e}`));
+  await auto.runMonthlyAudits(log).catch((e) => log.push(`monthly audits error: ${e}`));
+  await auto.runDueAutomations(log).catch((e) => log.push(`automations error: ${e}`));
+  return { log, budgetLeft: budget };
+}
+
+// One pass: collect finished sessions, then fill free slots. false when H rate-limited us.
+async function pass(log: string[], left: () => number, spend: (n: number) => void) {
   try {
     // 1. One request lists recent sessions; only finished runs cost more (events + screenshot).
     const { data: launched } = await db.from("runs").select("*, missions(title, slug), audits(device)").eq("status", "launched");
     if (launched?.length) {
-      budget--;
+      spend(1);
       const page = await (await h("/sessions?size=100&sort=-created_at")).json();
       const status = new Map<string, string>(page.items.map((x: { id: string; status: string }) => [x.id, x.status]));
+      const done: { run: any; st: string }[] = [];
       for (const run of launched) {
         const st = status.get(run.session_id) ?? "";
         const stale = Date.now() - new Date(run.launched_at).getTime() > (isPayment(run) ? PAY_STALE_MIN : STALE_MIN) * 60_000;
         if (!TERMINAL.has(st) && !stale) continue;
-        if (budget < 2) break;
-        budget -= 2;
-        try {
-          // Whole session in one request: tool errors are counted over every step, not just the last ones.
-          const events = await (await h(`/sessions/${run.session_id}/events?sort=-timestamp&size=200`)).json();
-          await finalize(run, events.items, !TERMINAL.has(st) ? "stale" : ["completed", "idle"].includes(st) ? "completed" : "error");
-          log.push(`finalized run ${run.id}`);
-        } catch (e) {
-          if (e instanceof RateLimited) throw e;
-          await markError(run.id, e);
-          log.push(`run ${run.id} error`);
-        }
+        if (left() < 2) break;
+        spend(2);
+        done.push({ run, st });
       }
+      // Finished sessions are collected and judged in parallel: the judge of one never delays the next.
+      const results = await Promise.allSettled(
+        done.map(async ({ run, st }) => {
+          try {
+            // Whole session in one request: tool errors are counted over every step, not just the last ones.
+            const events = await (await h(`/sessions/${run.session_id}/events?sort=-timestamp&size=200`)).json();
+            await finalize(run, events.items, !TERMINAL.has(st) ? "stale" : ["completed", "idle"].includes(st) ? "completed" : "error");
+            log.push(`finalized run ${run.id}`);
+          } catch (e) {
+            if (e instanceof RateLimited) throw e;
+            await markError(run.id, e);
+            log.push(`run ${run.id} error`);
+          }
+        }),
+      );
+      const limited = results.find((r) => r.status === "rejected");
+      if (limited) throw (limited as PromiseRejectedResult).reason;
     }
 
     // 2. Launch todo runs while there are free slots, request budget and token budget.
     const { count: active } = await db.from("runs").select("id", { count: "exact", head: true }).eq("status", "launched");
-    const slots = Math.min(MAX_ACTIVE - (active ?? 0), budget - 1); // -1: the quota check below
+    const slots = Math.min(MAX_ACTIVE - (active ?? 0), left() - 1); // -1: the quota check below
     if (slots > 0) {
       const { data: todo } = await db
         .from("runs")
@@ -324,7 +362,7 @@ export async function tick() {
         .order("created_at")
         .limit(slots);
       // One request to H's quota, only when there is something to launch.
-      if (todo?.length) budget--;
+      if (todo?.length) spend(1);
       const launchable = todo?.length && (await withinTokenBudget()) ? todo : [];
       if (todo?.length && !launchable.length) log.push("token reserve reached, nothing launched");
       for (const run of launchable) {
@@ -337,7 +375,13 @@ export async function tick() {
           .eq("status", "todo")
           .select("id");
         if (!reserved?.length) continue;
-        budget--;
+        // Two passes can run at once (cron + the kick at audit creation): never go over the H session cap.
+        const { count: now } = await db.from("runs").select("id", { count: "exact", head: true }).eq("status", "launched");
+        if ((now ?? 0) > MAX_ACTIVE) {
+          await db.from("runs").update({ status: "todo", launched_at: null }).eq("id", run.id).eq("launched_at", launchedAt);
+          break;
+        }
+        spend(1);
         try {
           // One key per reservation: a retried request never starts a second paid session, and a run reset to todo can launch again.
           const s = await (await h("/sessions", { method: "POST", body: JSON.stringify(await sessionRequest(run)), headers: { "Idempotency-Key": `agentproof-run-${run.id}-${launchedAt}` } })).json();
@@ -356,17 +400,9 @@ export async function tick() {
   } catch (e) {
     if (!(e instanceof RateLimited)) throw e;
     log.push("rate limited, next tick");
+    return false;
   }
-
-  // 3. Close finished audits (no H request).
-  await closeAudits(log);
-
-  // 4. Daily site watch (no H request; an audit it starts is launched by a later tick).
-  const auto = await import("./automations");
-  await auto.runStaticChecks(log).catch((e) => log.push(`static check error: ${e}`));
-  await auto.runMonthlyAudits(log).catch((e) => log.push(`monthly audits error: ${e}`));
-  await auto.runDueAutomations(log).catch((e) => log.push(`automations error: ${e}`));
-  return { log, budgetLeft: budget };
+  return true;
 }
 
 async function markError(id: number, e: unknown) {
@@ -668,12 +704,10 @@ async function closeAudits(log: string[]) {
     .select("id, kind, sites(domain), runs(id, status, success, blocker_type, blocker_detail, judge, attempts, session_id, screenshot_url, share_url, steps, cost_usd, error, missions(title))")
     .eq("status", "running");
   for (const a of audits ?? []) {
-    if (a.runs.some((r: any) => r.status === "todo" || r.status === "launched")) continue;
+    // A failed mission is replayed as soon as it fails, while the others still run: no extra wave at the end.
     const replayed = await retryFailures(a);
-    if (replayed) {
-      log.push(`audit ${a.id}: ${replayed} failed mission(s) replayed`);
-      continue;
-    }
+    if (replayed) log.push(`audit ${a.id}: ${replayed} failed mission(s) replayed`);
+    if (replayed || a.runs.some((r: any) => r.status === "todo" || r.status === "launched")) continue;
     // Reserve first: two concurrent ticks must not close and notify the same audit twice.
     const { data: closed } = await db.from("audits").update({ status: "done", finished_at: new Date().toISOString() }).eq("id", a.id).eq("status", "running").select("id");
     if (!closed?.length) continue;
