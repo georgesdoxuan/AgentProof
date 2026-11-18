@@ -21,7 +21,7 @@ export default async function Paiement() {
   const t = await getT();
 
   return (
-    <SpaceShell
+    <SpaceShell narrow
       team={team}
       teams={teams}
       title={t("Moyen de paiement", "Payment method")}

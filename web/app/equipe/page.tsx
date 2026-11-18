@@ -52,7 +52,7 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
   const base = process.env.PUBLIC_URL || `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
 
   return (
-    <SpaceShell
+    <SpaceShell narrow
       team={team}
       teams={teams}
       title={t("Équipe", "Team")}

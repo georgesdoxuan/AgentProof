@@ -21,7 +21,7 @@ export default async function Comptes() {
   const t = await getT();
 
   return (
-    <SpaceShell
+    <SpaceShell narrow
       team={team}
       teams={teams}
       title={t("Comptes de test", "Test accounts")}

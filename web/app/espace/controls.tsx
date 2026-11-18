@@ -7,8 +7,11 @@ import type { Dict } from "@/lib/i18n";
 // lib/ui pulls in the server engine, so client controls keep their own styles.
 // Pop-up button look for native <select>: keeps the system menu, drops the default chrome.
 const popUp =
-  "h-9 cursor-pointer appearance-none rounded-[8px] bg-fill bg-[length:10px] bg-[right_10px_center] bg-no-repeat pl-3 pr-8 type-small font-semibold text-ink transition-colors hover:bg-line/60 focus-visible:outline-2 focus-visible:outline-blue " +
-  "bg-[url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M2 5l3-3 3 3M2 9l3 3 3-3' fill='none' stroke='%2386868b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")]";
+  "h-9 cursor-pointer appearance-none rounded-[8px] bg-fill bg-[length:10px] bg-[right_10px_center] bg-no-repeat pl-3 pr-8 type-small font-semibold text-ink transition-colors hover:bg-line/60 focus-visible:outline-2 focus-visible:outline-blue";
+// Up/down chevrons, set inline: as an arbitrary Tailwind background class the data URL never reached the CSS.
+const popUpChevrons = {
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M2 5l3-3 3 3M2 9l3 3 3-3' fill='none' stroke='%2386868b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
+};
 
 // SF Symbols-style outline glyphs, 24 grid, drawn with the label's color.
 const ICON = {
@@ -36,7 +39,7 @@ const glyph = (d: string, cls: string) => (
   </svg>
 );
 const itemCls = (current: boolean) =>
-  `flex items-center gap-2.5 whitespace-nowrap rounded-[8px] transition-colors duration-200 lg:min-h-10 lg:px-3 max-lg:h-9 max-lg:px-4 max-lg:type-small max-lg:font-semibold ${
+  `flex items-center gap-2.5 whitespace-nowrap rounded-[8px] transition-colors duration-200 lg:min-h-9 lg:px-3 lg:text-[15px] max-lg:h-9 max-lg:px-4 max-lg:type-small max-lg:font-semibold ${
     current ? "bg-tile font-semibold text-ink shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#3a3a3c]" : "text-ink-2 hover:bg-tile/60 hover:text-ink max-lg:hover:bg-transparent"
   }`;
 
@@ -51,11 +54,11 @@ const GROUPS = [
 export function SpaceNav({ t }: { t: Dict["space"] }) {
   const path = usePathname();
   return (
-    <nav aria-label={t.label} className="max-lg:-mx-1 max-lg:overflow-x-auto">
-      <div className="lg:space-y-5 max-lg:inline-flex max-lg:gap-1 max-lg:rounded-[10px] max-lg:bg-fill max-lg:p-[3px]">
+    <nav aria-label={t.label} className="max-lg:-mx-6 max-lg:overflow-x-auto max-lg:px-6 max-lg:[scrollbar-width:none] sm:max-lg:-mx-8 sm:max-lg:px-8">
+      <div className="lg:space-y-6 max-lg:inline-flex max-lg:gap-1 max-lg:rounded-[10px] max-lg:bg-fill max-lg:p-[3px]">
         {GROUPS.map(([group, items]) => (
           <div key={group} className="max-lg:contents">
-            <p id={`nav-${group}`} className="type-caption mb-1 px-3 font-semibold text-ink-2 max-lg:hidden">
+            <p id={`nav-${group}`} className="type-caption mb-1.5 px-3 font-semibold text-ink-2 max-lg:hidden">
               {t.groups[group]}
             </p>
             <ul aria-labelledby={`nav-${group}`} className="flex flex-col gap-0.5 max-lg:contents">
@@ -76,12 +79,12 @@ export function SpaceNav({ t }: { t: Dict["space"] }) {
                       {t.sections[href as keyof typeof t.sections]}
                     </Link>
                     {children.length > 0 && (
-                      <ul className="mt-0.5 flex flex-col gap-0.5 pl-6 max-lg:hidden">
+                      <ul className="mt-0.5 flex flex-col gap-0.5 pl-7 max-lg:hidden">
                         {children.map(([c, cIcon]) => {
                           const on = path === c || path.startsWith(`${c}/`);
                           return (
                             <li key={c}>
-                              <Link href={c} aria-current={on ? "page" : undefined} className={`${itemCls(on)} lg:min-h-9 type-small`}>
+                              <Link href={c} aria-current={on ? "page" : undefined} className={`${itemCls(on)} lg:min-h-8 lg:text-[14px]`}>
                                 {glyph(cIcon, `h-4 w-4 shrink-0 ${on ? "text-blue" : ""}`)}
                                 {t.sections[c as keyof typeof t.sections]}
                               </Link>
@@ -102,9 +105,9 @@ export function SpaceNav({ t }: { t: Dict["space"] }) {
 }
 
 // A pop-up that applies its choice right away, like a Settings row.
-export function AutoSubmitSelect({ name, defaultValue, label, options }: { name: string; defaultValue: string; label: string; options: [string, string][] }) {
+export function AutoSubmitSelect({ name, defaultValue, label, options, className = "" }: { name: string; defaultValue: string; label: string; options: [string, string][]; className?: string }) {
   return (
-    <select name={name} defaultValue={defaultValue} aria-label={label} className={popUp} onChange={(e) => e.currentTarget.form?.requestSubmit()}>
+    <select name={name} defaultValue={defaultValue} aria-label={label} className={`${popUp} ${className}`} style={popUpChevrons} onChange={(e) => e.currentTarget.form?.requestSubmit()}>
       {options.map(([v, l]) => (
         <option key={v} value={v}>
           {l}
