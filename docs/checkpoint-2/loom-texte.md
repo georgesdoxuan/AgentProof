@@ -23,11 +23,13 @@ Avant de commencer : un onglet sur l'accueil, un 2e onglet sur le rapport Promod
 **1:25 · L'avancement, ce qui bloque, la suite**
 *(Clique « Classement » en haut de la page. Montre les sites sur ordinateur en haut, puis descends jusqu'aux lignes « Mobile ».)*
 
-« Où on en est : le produit est en ligne, de bout en bout. On a testé 10 marques de mode. Sur ordinateur, l'agent arrive jusqu'à la page de paiement dans 96 % des cas. Sur téléphone, sur les mêmes sites, seulement 57 % : ces sites bloquent un acheteur IA sur mobile. Une mission, c'est 90 secondes et 3 centimes.
+« Où on en est : le produit tourne en ligne, de bout en bout, et on a déjà testé 10 marques de mode.
 
-Ce qui bloque encore : un audit prend jusqu'à 17 minutes, parce que notre compte H ne fait tourner que 3 agents en même temps. On a un correctif qui divise ce temps. Certains sites bloquent notre agent avec leur anti-bot. Et il nous manque une preuve : que notre juge IA est d'accord avec un humain. On le mesure demain.
+Côté technique, on a réglé plusieurs problèmes. L'agent croyait parfois avoir réussi alors qu'il était seulement sur le panier : un juge visuel vérifie maintenant chaque résultat à l'aveugle. Un même site ne donnait pas toujours le même résultat : on rejoue chaque échec et on fait la moyenne de deux passages. Et quand l'agent H se trompe lui-même, ses erreurs sont mises à part au lieu de pénaliser le site.
 
-D'ici vendredi : des audits plus rapides, chaque correction reliée à sa preuve, un ticket prêt pour le développeur du marchand, et la démo live devant vous. Merci ! »
+Ce qui reste : un audit prend encore jusqu'à 17 minutes, parce que notre compte H ne fait tourner que 3 agents en même temps. Notre correctif est prêt et sera en ligne demain. Les sites avec un anti-bot bloquent encore notre agent. Le mobile ne simule que la taille de l'écran. Et on doit prouver que notre juge est d'accord avec un humain : on le mesure demain.
+
+Vendredi, on fait la démo live devant vous. Merci ! »
 
 ---
 
