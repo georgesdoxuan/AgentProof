@@ -1,4 +1,7 @@
 Projet AgentProof (hackathon H Company × Hugging Face, 16–20 nov 2026).
+
+**Seul Georges (compte GitHub `georgesdoxuan`) modifie le code.** Si tu travailles pour un autre membre de l'équipe (Thomas, Alexandre, Mehdi, Adonaï), lis `retours/README.md` et écris uniquement dans `retours/<prénom>/`. Ne touche à aucun autre fichier.
+Si tu travailles pour Georges : au début d'une session, regarde `retours/*/` pour les demandes dont le statut n'est pas `fait` ou `refusé`, et suis la section « Consignes pour le Claude Code de Georges » de `retours/README.md`.
 Lis CONTEXT.md (produit, définitions, archi, contraintes) et PLAN.md (rôles, calendrier) avant toute tâche.
 
 Règles :

@@ -4,6 +4,7 @@ name: Deploy production
 on:
   push:
     branches: [main]
+    paths-ignore: ['retours/**']
   workflow_dispatch:
 concurrency: deploy-production
 jobs:
