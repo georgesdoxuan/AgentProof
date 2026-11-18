@@ -63,7 +63,7 @@ export function MissionBar({ ok, done, total, size = "md" }: { ok: number; done:
 }
 
 // ---------- runs ----------
-export function StatusBadge({ run }: { run: { status: string; success: boolean | null } }) {
+export function StatusBadge({ run }: { run: { status: string; success: boolean | null; blocker_type?: string | null } }) {
   if (run.status === "launched")
     return (
       <span className="inline-flex items-center gap-1.5 font-semibold text-ink-2">
@@ -78,7 +78,9 @@ export function StatusBadge({ run }: { run: { status: string; success: boolean |
         ? ["Non vérifiée", "none"]
         : run.success
           ? ["Réussie", "pass"]
-          : ["Bloquée", "fail"];
+          : EXCLUDED.includes(run.blocker_type ?? "")
+            ? ["Hors score", "none"]
+            : ["Bloquée", "fail"];
   return (
     <span className={`inline-flex items-center gap-1.5 font-semibold ${toneText[tone]}`}>
       <StatusGlyph tone={tone} />
