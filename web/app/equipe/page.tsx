@@ -1,17 +1,18 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/engine";
-import { ROLE_LABEL, type Role, teamContext } from "@/lib/auth";
+import { type Role, teamContext } from "@/lib/auth";
+import { dict, locale, tr } from "@/lib/i18n";
+import { getLang, getT } from "@/lib/lang";
 import { Avatar, Field, Group, Row, Segmented } from "@/lib/ui";
 import { AutoSubmitSelect, ConfirmButton, CopyField } from "../espace/controls";
 import { SpaceShell } from "../espace/shell";
 
-export const metadata = { title: "Équipe · AgentProof" };
+export async function generateMetadata() {
+  const t = await getT();
+  return { title: `${t("Équipe", "Team")} · AgentProof` };
+}
 
-const ROLES: [string, string][] = [
-  ["viewer", "Lecteur"],
-  ["admin", "Admin"],
-];
 
 function Hidden({ action, ...rest }: { action: string } & Record<string, string>) {
   return (
@@ -31,6 +32,14 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
   const { user, teams, team } = ctx;
   const isOwner = team.role === "owner";
   const sp = await searchParams;
+  const lang = await getLang();
+  const t = tr(lang);
+  const ROLE_LABEL = dict(lang).roles;
+  const ROLES: [string, string][] = [
+    ["viewer", ROLE_LABEL.viewer],
+    ["admin", ROLE_LABEL.admin],
+  ];
+  const day = (d: string) => new Date(d).toLocaleDateString(locale(lang), { day: "numeric", month: "long" });
 
   const [{ data: members }, { data: invites }, { data: brand }] = await Promise.all([
     db.from("memberships").select("role, created_at, users(id, email)").eq("team_id", team.id).order("created_at"),
@@ -46,21 +55,28 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
     <SpaceShell
       team={team}
       teams={teams}
-      title="Équipe"
-      intro="Admin : lance des audits et lit les rapports. Lecteur : lit les rapports. Seul le propriétaire gère les membres."
+      title={t("Équipe", "Team")}
+      intro={t(
+        "Admin : lance des audits et lit les rapports. Lecteur : lit les rapports. Seul le propriétaire gère les membres.",
+        "Admin: runs audits and reads reports. Viewer: reads reports. Only the owner manages members.",
+      )}
     >
       {sp.invite && (
         <Group
-          title={sp.envoye === "1" ? `Invitation envoyée à ${sp.email}` : `Invitation créée pour ${sp.email}`}
-          footer={sp.envoye === "1" ? "Lien valable 7 jours, réservé à cette adresse." : "L'e-mail n'est pas parti. Partage ce lien toi-même : valable 7 jours, réservé à cette adresse."}
+          title={sp.envoye === "1" ? t(`Invitation envoyée à ${sp.email}`, `Invitation sent to ${sp.email}`) : t(`Invitation créée pour ${sp.email}`, `Invitation created for ${sp.email}`)}
+          footer={
+            sp.envoye === "1"
+              ? t("Lien valable 7 jours, réservé à cette adresse.", "Link valid for 7 days, for this address only.")
+              : t("L'e-mail n'est pas parti. Partage ce lien toi-même : valable 7 jours, réservé à cette adresse.", "The e-mail was not sent. Share this link yourself: valid for 7 days, for this address only.")
+          }
         >
           <div role="status" className="p-4">
-            <CopyField value={`${base}/invitation/${sp.invite}`} label="Lien d'invitation" />
+            <CopyField value={`${base}/invitation/${sp.invite}`} label={t("Lien d'invitation", "Invitation link")} lang={lang} />
           </div>
         </Group>
       )}
 
-      <Group title={`Membres · ${members?.length ?? 0}`}>
+      <Group title={`${t("Membres", "Members")} · ${members?.length ?? 0}`}>
         {(members ?? []).map((m: any) => {
           const me = m.users.id === user.id;
           return (
@@ -69,20 +85,25 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
               <span className="min-w-0 flex-1">
                 <span className="block truncate">
                   {m.users.email}
-                  {me && <span className="text-ink-2"> · toi</span>}
+                  {me && <span className="text-ink-2"> · {t("toi", "you")}</span>}
                 </span>
-                <span className="type-small text-ink-2">Depuis le {new Date(m.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}</span>
+                <span className="type-small text-ink-2">
+                  {t("Depuis le", "Since")} {day(m.created_at)}
+                </span>
               </span>
               {isOwner && m.role !== "owner" ? (
                 <span className="flex items-center gap-3">
                   <form action="/api/team" method="post">
                     <Hidden action="role" user={m.users.id} />
-                    <AutoSubmitSelect name="role" defaultValue={m.role} label={`Accès de ${m.users.email}`} options={ROLES} />
+                    <AutoSubmitSelect name="role" defaultValue={m.role} label={t(`Accès de ${m.users.email}`, `Access for ${m.users.email}`)} options={ROLES} />
                   </form>
                   <form action="/api/team" method="post">
                     <Hidden action="remove" user={m.users.id} />
-                    <ConfirmButton message={`Retirer ${m.users.email} de l'équipe ${team.name} ?`} className="type-small inline-flex min-h-11 items-center px-1 text-fail hover:underline">
-                      Retirer
+                    <ConfirmButton
+                      message={t(`Retirer ${m.users.email} de l'équipe ${team.name} ?`, `Remove ${m.users.email} from the team ${team.name}?`)}
+                      className="type-small inline-flex min-h-11 items-center px-1 text-fail hover:underline"
+                    >
+                      {t("Retirer", "Remove")}
                     </ConfirmButton>
                   </form>
                 </span>
@@ -96,19 +117,19 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
 
       {isOwner && (
         <>
-          <Group title="Inviter un membre" footer="La personne reçoit un lien par e-mail et se connecte avec cette adresse.">
+          <Group title={t("Inviter un membre", "Invite a member")} footer={t("La personne reçoit un lien par e-mail et se connecte avec cette adresse.", "They get a link by e-mail and sign in with this address.")}>
             <form action="/api/team" method="post" className="grid gap-4 p-5 sm:p-6">
               <Hidden action="invite" />
-              <Field label="E-mail du membre" name="email" type="email" required />
+              <Field label={t("E-mail du membre", "Member's e-mail")} name="email" type="email" required />
               <div className="flex flex-wrap items-center justify-between gap-4">
-                <Segmented name="role" label="Accès" value="viewer" options={ROLES} />
-                <button className="btn">Envoyer l&apos;invitation</button>
+                <Segmented name="role" label={t("Accès", "Access")} value="viewer" options={ROLES} />
+                <button className="btn">{t("Envoyer l’invitation", "Send the invitation")}</button>
               </div>
             </form>
           </Group>
 
           {!!invites?.length && (
-            <Group title="Invitations en attente">
+            <Group title={t("Invitations en attente", "Pending invitations")}>
               {invites.map((i: any) => {
                 const expired = new Date(i.expires_at) < new Date();
                 return (
@@ -117,13 +138,16 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
                     <span className="min-w-0 flex-1">
                       <span className="block truncate">{i.email}</span>
                       <span className={`type-small ${expired ? "text-fail" : "text-ink-2"}`}>
-                        {ROLE_LABEL[i.role as Role]} · {expired ? "expirée" : `expire le ${new Date(i.expires_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}`}
+                        {ROLE_LABEL[i.role as Role]} · {expired ? t("expirée", "expired") : `${t("expire le", "expires on")} ${day(i.expires_at)}`}
                       </span>
                     </span>
                     <form action="/api/team" method="post">
                       <Hidden action="revoke" invitation={i.id} />
-                      <ConfirmButton message={`Annuler l'invitation de ${i.email} ?`} className="type-small inline-flex min-h-11 items-center px-1 text-fail hover:underline">
-                        Annuler
+                      <ConfirmButton
+                        message={t(`Annuler l'invitation de ${i.email} ?`, `Cancel the invitation for ${i.email}?`)}
+                        className="type-small inline-flex min-h-11 items-center px-1 text-fail hover:underline"
+                      >
+                        {t("Annuler", "Cancel")}
                       </ConfirmButton>
                     </form>
                   </Row>
@@ -132,26 +156,29 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
             </Group>
           )}
 
-          <Group title="Nom de l'équipe">
+          <Group title={t("Nom de l'équipe", "Team name")}>
             <form action="/api/team" method="post" className="flex flex-wrap items-center gap-3 p-5 sm:p-6">
               <Hidden action="rename" />
               <div className="min-w-[220px] flex-1">
-                <Field label="Nom" name="name" type="text" required defaultValue={team.name} />
+                <Field label={t("Nom", "Name")} name="name" type="text" required defaultValue={team.name} />
               </div>
-              <button className="btn btn-secondary">Renommer</button>
+              <button className="btn btn-secondary">{t("Renommer", "Rename")}</button>
             </form>
           </Group>
 
           <Group
-            title="Marque blanche"
-            footer="Pour les agences : ton nom et ton logo remplacent AgentProof sur les rapports de l'équipe (page web et PDF). Laisse le nom vide pour revenir à AgentProof."
+            title={t("Marque blanche", "White label")}
+            footer={t(
+              "Pour les agences : ton nom et ton logo remplacent AgentProof sur les rapports de l'équipe (page web et PDF). Laisse le nom vide pour revenir à AgentProof.",
+              "For agencies: your name and logo replace AgentProof on the team's reports (web page and PDF). Leave the name empty to go back to AgentProof.",
+            )}
           >
             <form action="/api/team" method="post" className="grid gap-4 p-5 sm:p-6">
               <Hidden action="brand" />
-              <Field label="Nom affiché sur les rapports" name="brand_name" type="text" defaultValue={brand?.brand_name ?? ""} />
-              <Field label="Logo (adresse https d'une image)" name="brand_logo" type="url" defaultValue={brand?.brand_logo ?? ""} />
+              <Field label={t("Nom affiché sur les rapports", "Name shown on reports")} name="brand_name" type="text" defaultValue={brand?.brand_name ?? ""} />
+              <Field label={t("Logo (adresse https d'une image)", "Logo (https address of an image)")} name="brand_logo" type="url" defaultValue={brand?.brand_logo ?? ""} />
               <div>
-                <button className="btn btn-secondary">Enregistrer</button>
+                <button className="btn btn-secondary">{t("Enregistrer", "Save")}</button>
               </div>
             </form>
           </Group>
@@ -159,11 +186,11 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
       )}
 
       {!isOwner && (
-        <Group footer="Tu perds l'accès aux rapports de l'équipe. Le propriétaire peut t'inviter à nouveau.">
+        <Group footer={t("Tu perds l'accès aux rapports de l'équipe. Le propriétaire peut t'inviter à nouveau.", "You lose access to the team's reports. The owner can invite you again.")}>
           <form action="/api/team" method="post">
             <Hidden action="leave" />
-            <ConfirmButton message={`Quitter l'équipe ${team.name} ?`} className="flex min-h-[60px] w-full items-center px-5 text-left text-fail hover:bg-bg-2/60">
-              Quitter l&apos;équipe
+            <ConfirmButton message={t(`Quitter l'équipe ${team.name} ?`, `Leave the team ${team.name}?`)} className="flex min-h-[60px] w-full items-center px-5 text-left text-fail hover:bg-bg-2/60">
+              {t("Quitter l’équipe", "Leave the team")}
             </ConfirmButton>
           </form>
         </Group>

@@ -42,6 +42,23 @@ export const BLOCKERS: Record<string, string> = {
   agent_tool_error: "Erreur d'outil de l'agent",
   other: "Autre",
 };
+export const BLOCKERS_EN: Record<string, string> = {
+  none: "None",
+  cookie_banner: "Cookie banner",
+  popup: "Pop-up",
+  search_failed: "Unusable search",
+  filter_failed: "Unusable filters",
+  size_selector: "Size / variant selector",
+  button_unresponsive: "Unresponsive button",
+  captcha_or_bot_block: "Captcha / anti-bot block",
+  login_required: "Account required",
+  out_of_stock: "Out of stock",
+  page_error_or_timeout: "Error or page too slow",
+  mission_not_applicable: "Mission impossible on this catalogue",
+  agent_out_of_steps: "The agent ran out of steps",
+  agent_tool_error: "Agent tool error",
+  other: "Other",
+};
 // Outcomes that say nothing about the site's interface: shown in the report, kept out of the score.
 export const EXCLUDED = ["out_of_stock", "captcha_or_bot_block", "mission_not_applicable", "agent_out_of_steps", "agent_tool_error"];
 // Score of one audit: successful runs over verified runs, excluded outcomes left out. null when nothing counts yet.
@@ -74,6 +91,18 @@ export const PAYMENT_VERDICTS: Record<string, string> = {
   other: "Autre",
   inconclusive: "Non concluant : l'agent a manqué d'étapes",
 };
+export const PAYMENT_VERDICTS_EN: Record<string, string> = {
+  bank_declined: "Payment sent to the bank (declined, no funds)",
+  payment_accepted: "Payment accepted",
+  three_ds_timeout: "Blocked at 3D Secure",
+  card_form_unusable: "Unusable card form",
+  not_reached_payment: "Payment never reached",
+  login_required: "Account required",
+  bot_block: "Captcha / anti-bot",
+  technical_error: "Technical error",
+  other: "Other",
+  inconclusive: "Inconclusive: the agent ran out of steps",
+};
 // How far the agent got, so a failed payment test still says something.
 export const PAYMENT_STAGES: Record<string, string> = {
   home: "Accueil",
@@ -84,6 +113,19 @@ export const PAYMENT_STAGES: Record<string, string> = {
   card_form: "Formulaire de carte",
   payment_submitted: "Paiement envoyé",
 };
+export const PAYMENT_STAGES_EN: Record<string, string> = {
+  home: "Home page",
+  product: "Product page",
+  cart: "Cart",
+  checkout: "Checkout",
+  shipping: "Address and delivery",
+  card_form: "Card form",
+  payment_submitted: "Payment sent",
+};
+// Label maps in the reader's language.
+export const blockerNames = (lang: "fr" | "en") => (lang === "en" ? BLOCKERS_EN : BLOCKERS);
+export const paymentVerdicts = (lang: "fr" | "en") => (lang === "en" ? PAYMENT_VERDICTS_EN : PAYMENT_VERDICTS);
+export const paymentStages = (lang: "fr" | "en") => (lang === "en" ? PAYMENT_STAGES_EN : PAYMENT_STAGES);
 type PaymentAnswer = {
   payment_submitted: boolean; result: string; furthest_stage?: string; three_ds_seen: boolean; site_message: string;
   payment_provider: string; payment_methods: string; final_url: string; steps_summary: string;
@@ -139,6 +181,7 @@ export async function recentAudit(input: string, device: string, teamId: string)
     .eq("team_id", teamId)
     .eq("kind", "checkout")
     .eq("device", device)
+    .is("deleted_at", null) // a report in the trash is never handed back
     .or(`model.is.null,model.eq.${DEFAULT_MODEL}`)
     .gte("created_at", since)
     .order("created_at", { ascending: false })
@@ -662,6 +705,7 @@ async function scoreAlert(auditId: string) {
     .eq("device", a.device)
     .eq("kind", "checkout")
     .eq("status", "done")
+    .is("deleted_at", null)
     .neq("id", a.id)
     .lt("created_at", a.created_at)
     .order("created_at", { ascending: false })

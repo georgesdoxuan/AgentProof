@@ -1,3 +1,4 @@
+import { locale, type Lang } from "./i18n";
 import "server-only";
 import { AGENT_ONLY, db } from "./engine";
 import { summarize } from "./ui";
@@ -20,6 +21,9 @@ export type SpaceAudit = {
   status: string;
   compare_to: string | null;
   model: string | null;
+  title: string | null; // custom name given by the team; null = the site's domain
+  favorite: boolean;
+  deleted_at: string | null; // in the trash since then
   recommendations: string | null;
   site_id: number;
   sites: { domain: string; name: string; url: string } | null;
@@ -57,16 +61,16 @@ export type SiteView = {
 };
 
 export const siteKey = (domain: string, device: string) => (device === "mobile" ? `${domain}/mobile` : domain);
-export const deviceLabel = (d: string) => (d === "mobile" ? "Mobile" : "Ordinateur");
-export const shortDate = (d: string) =>
-  new Date(d).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+export const deviceLabel = (d: string, lang: Lang = "fr") => (d === "mobile" ? "Mobile" : lang === "en" ? "Desktop" : "Ordinateur");
+export const shortDate = (d: string, lang: Lang = "fr") =>
+  new Date(d).toLocaleDateString(locale(lang), { timeZone: "Europe/Paris", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
 export async function loadSpace(teamId: string) {
   const [{ data }, { data: fixes }, { data: board }] = await Promise.all([
     db
       .from("audits")
       .select(
-        "id, created_at, device, status, compare_to, model, recommendations, site_id, payment_test, sites(domain, name, url), users:created_by(email), runs(id, status, success, blocker_type, blocker_detail, screenshot_url, final_url)",
+        "id, created_at, device, status, compare_to, model, title, favorite, deleted_at, recommendations, site_id, payment_test, sites(domain, name, url), users:created_by(email), runs(id, status, success, blocker_type, blocker_detail, screenshot_url, final_url)",
       )
       .eq("team_id", teamId)
       .eq("kind", "checkout")
@@ -87,7 +91,9 @@ export async function loadSpace(teamId: string) {
   const byId = new Map(all.map((a) => [a.id, a]));
   // Competitor audits show inside the main site, not as sites of their own.
   const competitorIds = new Set(all.map((a) => a.compare_to).filter(Boolean));
-  const audits = all.filter((a) => !competitorIds.has(a.id));
+  // Reports in the trash leave every view (sites, checklist, home) until restored; the trash page lists them.
+  const trash = all.filter((a) => !competitorIds.has(a.id) && a.deleted_at).sort((x, y) => Date.parse(y.deleted_at!) - Date.parse(x.deleted_at!));
+  const audits = all.filter((a) => !competitorIds.has(a.id) && !a.deleted_at);
 
   const sites = new Map<string, SiteView>();
   for (const a of audits) {
@@ -142,7 +148,7 @@ export async function loadSpace(teamId: string) {
     v.verified = siteFixes.filter((f) => Date.parse(f.fixed_at) < latestAt && !present.has(f.blocker_type)).map((f) => f.blocker_type);
   }
 
-  return { audits, sites: [...sites.values()] };
+  return { audits, trash, sites: [...sites.values()] };
 }
 
 // What to fix first across every site: blockers still open, the ones costing the most missions first.
@@ -169,3 +175,19 @@ export const FIX_HINT: Record<string, string> = {
   page_error_or_timeout: "Réduire le temps de chargement des pages produit et panier, et corriger les erreurs serveur.",
   other: "Ouvrir le replay de la mission pour voir l'écran exact où l'agent s'arrête.",
 };
+const FIX_HINT_EN: Record<string, string> = {
+  cookie_banner: "Keep the cookie banner away from the “Add to cart” button and put “Reject all” on the same level as “Accept”.",
+  popup: "Delay the newsletter pop-up until after add-to-cart, with a visible, clickable close button.",
+  search_failed: "Make search reachable from every page and return results for simple queries (“black sweater”).",
+  filter_failed: "Use real links or checkboxes for filters, and update the list without an ambiguous reload.",
+  size_selector: "Use buttons or a native menu for size, with a readable label and an explicit “unavailable” state.",
+  button_unresponsive: "Check that the button reacts to the first click, with no blocking script or transparent element on top.",
+  captcha_or_bot_block: "Let identified shopping agents through, or keep the captcha for truly suspicious behaviour.",
+  login_required: "Offer guest checkout before any account creation.",
+  out_of_stock: "Hide or clearly flag out-of-stock products in lists and search.",
+  mission_not_applicable: "Nothing to fix: the mission asks for a product the catalogue does not offer. It is left out of the score.",
+  agent_out_of_steps: "The agent ran out of steps before concluding. Open the replay: a journey to checkout that is too long also costs sales.",
+  page_error_or_timeout: "Reduce the loading time of product and cart pages, and fix server errors.",
+  other: "Open the mission replay to see the exact screen where the agent stops.",
+};
+export const fixHints = (lang: Lang) => (lang === "en" ? FIX_HINT_EN : FIX_HINT);

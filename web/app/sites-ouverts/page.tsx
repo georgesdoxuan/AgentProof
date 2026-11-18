@@ -2,13 +2,20 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { db } from "@/lib/engine";
 import { StatusGlyph, scoreTone } from "@/lib/ui";
+import { getLang, getT } from "@/lib/lang";
+import { tr } from "@/lib/i18n";
 
-export const metadata = { title: "Sites ouverts aux audits · AgentProof" };
+export async function generateMetadata() {
+  const t = await getT();
+  return { title: `${t("Sites ouverts aux audits", "Sites open to audits")} · AgentProof` };
+}
 
 // Landing page when ALLOWED_DOMAINS (demo day) refuses a site: say why, then list the open sites with their latest public report.
 export default async function SitesOuverts({ searchParams }: { searchParams: Promise<{ site?: string }> }) {
   await connection();
   const { site } = await searchParams;
+  const lang = await getLang();
+  const t = tr(lang);
   const allowed = (process.env.ALLOWED_DOMAINS ?? "").split(",").map((d) => d.trim()).filter(Boolean);
   // Public reports only (benchmark audits, no team): a team's own audit is never listed here.
   const { data: audits } = allowed.length
@@ -29,9 +36,12 @@ export default async function SitesOuverts({ searchParams }: { searchParams: Pro
   return (
     <div className="bg-bg-2 pb-24 pt-20 max-[734px]:pt-12">
       <div className="mx-auto w-[min(692px,87.5%)]">
-        <h1 className="type-h1">{site ? `${site} n'est pas ouvert aux audits aujourd'hui.` : "Sites ouverts aux audits."}</h1>
+        <h1 className="type-h1">{site ? t(`${site} n’est pas ouvert aux audits aujourd’hui.`, `${site} is not open to audits today.`) : t("Sites ouverts aux audits.", "Sites open to audits.")}</h1>
         <p className="type-intro mt-5 text-ink-2">
-          Pendant la démo, les audits sont limités à quelques sites pour protéger nos crédits d&apos;agent. Pour chaque site ouvert, tu peux consulter son dernier rapport public : captures, replays et plan de corrections.
+          {t(
+            "Pendant la démo, les audits sont limités à quelques sites pour protéger nos crédits d’agent. Pour chaque site ouvert, tu peux consulter son dernier rapport public : captures, replays et plan de corrections.",
+            "During the demo, audits are limited to a few sites to protect our agent credits. For each open site, you can read its latest public report: screenshots, replays and fix plan.",
+          )}
         </p>
 
         {allowed.length ? (
@@ -45,7 +55,7 @@ export default async function SitesOuverts({ searchParams }: { searchParams: Pro
                     <span className="type-headline block truncate">{a?.sites.name ?? d}</span>
                     {a?.finished_at && (
                       <span className="type-small text-ink-2">
-                        Dernier audit le {new Date(a.finished_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", timeZone: "Europe/Paris" })}
+                        {t("Dernier audit le", "Latest audit on")} {new Date(a.finished_at).toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR", { day: "numeric", month: "long", timeZone: "Europe/Paris" })}
                       </span>
                     )}
                   </span>
@@ -58,10 +68,10 @@ export default async function SitesOuverts({ searchParams }: { searchParams: Pro
                     )}
                     {a ? (
                       <Link href={`/audit/${a.id}`} className="more">
-                        Voir le rapport
+                        {t("Voir le rapport", "See the report")}
                       </Link>
                     ) : (
-                      <span className="type-small text-ink-2">Pas encore de rapport public</span>
+                      <span className="type-small text-ink-2">{t("Pas encore de rapport public", "No public report yet")}</span>
                     )}
                   </span>
                 </li>
@@ -69,15 +79,15 @@ export default async function SitesOuverts({ searchParams }: { searchParams: Pro
             })}
           </ul>
         ) : (
-          <p className="mt-10 text-ink-2">Tous les sites sont ouverts aux audits en ce moment.</p>
+          <p className="mt-10 text-ink-2">{t("Tous les sites sont ouverts aux audits en ce moment.", "All sites are open to audits right now.")}</p>
         )}
 
         <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2">
           <Link href="/#tester" className="more">
-            Tester un site de la liste
+            {t("Tester un site de la liste", "Test a site from the list")}
           </Link>
           <Link href="/classement" className="more">
-            Voir le classement
+            {t("Voir le classement", "See the ranking")}
           </Link>
         </div>
       </div>
