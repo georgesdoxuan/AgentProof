@@ -441,9 +441,9 @@ export function Field({ label, name, required, type = "url", defaultValue }: { l
 // Segmented control (radio group): one look for every short exclusive choice, as on the home form.
 // An option may carry a line icon (third item), drawn before its label.
 // On phones the icons drop out and the padding tightens, so three choices fit a card at 390 px.
-export function Segmented({ name, options, value, label }: { name: string; options: ([string, React.ReactNode] | [string, React.ReactNode, string])[]; value: string; label: string }) {
+export function Segmented({ name, options, value, label, className = "" }: { name: string; options: ([string, React.ReactNode] | [string, React.ReactNode, string])[]; value: string; label: string; className?: string }) {
   return (
-    <fieldset className="inline-grid auto-cols-fr grid-flow-col rounded-[10px] bg-fill p-[3px]">
+    <fieldset className={`inline-grid auto-cols-fr grid-flow-col rounded-[10px] bg-fill p-[3px] ${className}`}>
       <legend className="sr-only">{label}</legend>
       {options.map(([v, l, icon]) => (
         <label key={v} className="relative cursor-pointer">
