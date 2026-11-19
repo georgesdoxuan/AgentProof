@@ -7,6 +7,7 @@ export async function generateMetadata() {
 }
 
 // Rapports › Favoris: the reports the team starred.
-export default async function Favoris({ searchParams }: { searchParams: Promise<{ vue?: string }> }) {
-  return <ReportsList view="favorites" vue={(await searchParams).vue} />;
+export default async function Favoris({ searchParams }: { searchParams: Promise<{ vue?: string; q?: string }> }) {
+  const { vue, q } = await searchParams;
+  return <ReportsList view="favorites" vue={vue} q={q} />;
 }
