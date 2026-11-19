@@ -124,7 +124,7 @@ Depuis votre espace, vous pouvez aussi :
 
 - **cocher ou décocher** les missions à jouer ;
 - **modifier une mission**, pour cet audit seulement ou pour toute l'équipe, puis revenir à la version par défaut si besoin ;
-- **ajouter vos propres missions** en langage courant. Des idées sont proposées : produit précis, code promo, guide des tailles, politique de retours et d'échanges.
+- **ajouter vos propres missions** en langage courant. Des idées sont proposées : produit précis, code promo, guide des tailles, retours et échanges, retirer un article du panier, quantité, livraison, commande en invité, taille épuisée, prix cohérent entre la fiche et le panier.
 
 Quelle que soit la consigne, l'agent s'arrête toujours à la première page du checkout.
 
@@ -135,7 +135,7 @@ Quelle que soit la consigne, l'agent s'arrête toujours à la première page du 
 
 ### Avant de valider
 
-En lançant l'audit, vous confirmez gérer ce site ou être autorisé à le tester. La **durée estimée** s'affiche avant le lancement : elle est calculée à partir des derniers audits et tient compte des audits déjà en file d'attente.
+En lançant l'audit, vous confirmez gérer ce site ou être autorisé à le tester. La **durée estimée** et le **nombre de crédits** s'affichent avant le lancement, à côté des missions. La durée est calculée à partir des derniers audits et tient compte des audits déjà en file d'attente. Les crédits tiennent compte du concurrent, d'Ordinateur + Mobile et du test de paiement ; au survol, vous voyez le maximum si des missions ratées sont rejouées.
 
 Si le site a déjà été audité il y a moins de 7 jours, AgentProof vous ouvre le rapport existant au lieu d'en relancer un.
 
@@ -146,6 +146,7 @@ Si le site a déjà été audité il y a moins de 7 jours, AgentProof vous ouvre
 - Avec un concurrent ou en Ordinateur + Mobile, comptez environ le double du temps.
 - Chaque mission ratée est **rejouée une fois** avant la fin de l'audit, pour écarter un échec dû au hasard. C'est le second essai qui compte.
 - Quand l'audit est terminé, **un e-mail part** avec le lien du rapport.
+- Vous pouvez **annuler l'audit** depuis le rapport (lien « Annuler l'audit » sous la progression, propriétaire et admins). Les missions pas encore lancées sont retirées et leurs crédits rendus ; celles que l'agent joue déjà se terminent et restent dans le rapport.
 
 ## 7. Lire le rapport
 
@@ -160,6 +161,12 @@ Le **score agent** est la part des missions menées jusqu'au checkout. Repères 
 | 70 % et plus | Prêt pour les agents |
 | 40 à 69 % | Fragile |
 | Moins de 40 % | Bloquant |
+
+Sous le score, le rapport affiche le nombre de missions (« 3/5 ») et ce que le score couvre. Si l'échantillon est court, il dit de combien de points un seul résultat déplace le score.
+
+Quand des missions sont hors score (anti-bot, rupture de stock…), un **taux réel** s'affiche aussi : il compte ces missions comme des échecs, comme les vivrait l'agent d'un vrai client. Le score mesure votre interface ; le taux réel mesure ce qu'un agent obtient vraiment aujourd'hui.
+
+Une mission qui n'a réussi qu'au **2ᵉ essai** est marquée « Réussie au 2ᵉ essai » : elle compte comme réussie, mais le résultat est instable.
 
 Si vous avez ajouté un concurrent, son score s'affiche à côté (**Face au concurrent**). Si un audit précédent existe, vous voyez aussi l'évolution.
 
@@ -195,6 +202,7 @@ Cette partie n'entre pas dans le score : le score, c'est l'achat réel par l'age
 ### Partager le rapport
 
 - **Envoyez le lien** du rapport, ou **téléchargez-le en PDF**.
+- **Exportez les missions en CSV ou en JSON** (liens à côté de « Télécharger en PDF ») pour un tableur ou vos propres outils : verdict, blocage, détail, étapes, durée, coût, capture et lien du replay de chaque mission.
 - Les membres de votre équipe le retrouvent dans **Rapports**.
 - Un **badge « Agent-ready »** avec le score peut être affiché sur votre site (code HTML fourni dans le rapport). Il indique le mois de l'audit et devient gris au bout de 90 jours : un score est un fait daté.
 
@@ -211,7 +219,7 @@ La page de chaque site, dans **Sites**, montre le dernier score, la courbe de sc
 
 ## 9. Ranger ses rapports : favoris, renommage, corbeille
 
-Tout se passe dans **Rapports**, qui a trois rubriques : **Tous**, **Favoris** et **Corbeille**. Vous pouvez filtrer l'historique entre les audits en cours et terminés.
+Tout se passe dans **Rapports**, qui a trois rubriques : **Tous**, **Favoris** et **Corbeille**. Vous pouvez filtrer l'historique entre les audits en cours et terminés, et **chercher** un rapport par nom de site ou de rapport.
 
 - **Favoris** : cliquez sur l'étoile ★ d'un rapport pour le retrouver dans Favoris.
 - **Renommer** : depuis le menu d'actions du rapport. Laissez le champ vide pour reprendre le nom du site.
@@ -246,7 +254,9 @@ Automations vous donne une **adresse secrète** à appeler après un déploiemen
 
 ### Suivi mensuel
 
-Avec le suivi mensuel, un **audit complet repart tous les 30 jours**, et vous êtes alerté si le score baisse de plus de **5, 10 ou 20 points**, selon votre réglage.
+Avec le suivi mensuel, un **audit complet repart tous les 30 jours**, et vous êtes alerté si le score baisse de plus de **5, 10 ou 20 points**, selon votre réglage. L'alerte, et le rapport, disent **pourquoi** : les missions qui passaient et bloquent maintenant, avec leur blocage, et les changements de page vus par les automations entre les deux audits.
+
+Une même modification de page n'est signalée qu'**une fois par 24 h** : une page qui change puis revient ne vous envoie pas d'alertes en boucle.
 
 L'accueil de votre espace résume le mois : audits terminés, vérifications de pages, changements détectés, mises en ligne vérifiées, corrections prouvées, et ce qu'il faut corriger en priorité.
 
@@ -259,6 +269,13 @@ Pendant un audit, l'agent s'arrête toujours avant de payer. Le **test de paieme
 - Un refus « fonds insuffisants » prouve que le paiement a bien atteint la banque.
 
 **Attention :** avec une carte approvisionnée, la commande est réelle. Utilisez une carte virtuelle à 0 € pour ne rien acheter, et gardez votre téléphone à portée pour valider le 3D Secure.
+
+Garde-fous :
+
+- **Confirmation à chaque test** : une case « Je confirme un paiement réel avec cette carte » doit être cochée au lancement, sinon le test est refusé.
+- **Plafond de 150 €** livraison comprise : au-delà, l'agent prend un article moins cher, ou s'arrête avant de payer.
+- **Une seule tentative**, jamais une autre carte ni un autre moyen de paiement.
+- **Replay privé**, visible seulement par votre équipe. Numéro, expiration et cryptogramme sont masqués dans le texte, et les captures sont **floutées dès que l'agent tape la carte** (un clic les affiche). Les captures sont effacées 4 h après le test.
 
 Pour le préparer :
 
@@ -311,9 +328,9 @@ La page **Abonnement et crédits** montre les crédits utilisés ce mois-ci, par
 
 | Offre | Prix | Ce qu'elle comprend |
 |---|---|---|
-| **Gratuit** | 0 € | Le classement public, et 15 crédits par mois, soit 3 audits complets. |
+| **Gratuit** | 0 € | Le classement public, et 15 crédits par mois, soit jusqu'à 3 audits complets. |
 | **Audit complet** | 490 € par site | Un rapport ponctuel sur un site, ordinateur ou mobile : missions, captures, replays, comparaison avec un concurrent, plan de corrections en PDF. |
-| **Suivi mensuel** | 149 € par mois | Un audit complet automatique chaque mois, vos pages relues chaque jour et après chaque mise en ligne, des alertes Slack et e-mail, et 150 crédits par mois pour relancer des audits quand vous voulez (environ 30 audits). |
+| **Suivi mensuel** | 149 € par mois | Un audit complet automatique chaque mois, vos pages relues chaque jour et après chaque mise en ligne, des alertes Slack et e-mail, et 150 crédits par mois pour relancer des audits quand vous voulez (jusqu'à 30 audits, moins si des missions ratées sont rejouées). |
 | **Agences** | 30 % de commission | Rapports et PDF en marque blanche, un espace d'équipe pour tous vos clients, 600 crédits par mois. Sur contact. |
 
 **Pendant l'essai**, le paiement en ligne n'est pas encore ouvert : rien n'est bloqué ni facturé, même au-delà des crédits. L'audit lancé aujourd'hui est le même que l'audit complet à 490 €. Les prix affichés sont ceux qui s'appliqueront à l'ouverture du paiement, et le barème des crédits peut encore évoluer d'ici là.

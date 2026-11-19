@@ -87,6 +87,16 @@ export const FAQ: Faq[] = [
     keys: "temps duree long rapide attendre minutes delai fini termine time wait fast slow finished",
   },
   {
+    id: "annuler",
+    cat: "audits",
+    q: { fr: "Puis-je annuler un audit en cours ?", en: "Can I cancel a running audit?" },
+    a: {
+      fr: "Oui, depuis le rapport : « Annuler l'audit ». Les missions pas encore lancées sont retirées et leurs crédits rendus ; celles en cours se terminent et restent dans le rapport. Propriétaire et admins seulement.",
+      en: "Yes, from the report: “Cancel the audit”. Missions not started yet are dropped and their credits given back; those running finish and stay in the report. Owner and admins only.",
+    },
+    keys: "annuler arreter stopper interrompre audit en cours cancel stop abort running",
+  },
+  {
     id: "missions",
     cat: "audits",
     q: { fr: "Quelles missions l'agent joue-t-il ?", en: "Which missions does the agent play?" },
@@ -185,8 +195,8 @@ export const FAQ: Faq[] = [
     cat: "score",
     q: { fr: "Que veut dire « hors score » ?", en: "What does “out of score” mean?" },
     a: {
-      fr: "Une mission sans lien avec l'interface du site : rupture de stock, anti-bot, article absent du catalogue, ou erreur de l'agent. Elle est affichée à part et ne compte pas dans le score, comme une mission que le juge n'a pas pu vérifier.",
-      en: "A mission unrelated to the site's interface: out of stock, anti-bot, item not in the catalogue, or an agent error. It is shown separately and does not count in the score, like a mission the judge could not verify.",
+      fr: "Une mission sans lien avec l'interface du site : rupture de stock, anti-bot, article absent du catalogue, ou erreur de l'agent. Elle est affichée à part et ne compte pas dans le score, comme une mission que le juge n'a pas pu vérifier. Le rapport affiche aussi un taux réel, qui compte ces missions comme des échecs.",
+      en: "A mission unrelated to the site's interface: out of stock, anti-bot, item not in the catalogue, or an agent error. It is shown separately and does not count in the score, like a mission the judge could not verify. The report also shows a real rate, which counts these missions as failures.",
     },
     keys: "exclu exclue gris non verifiee rupture stock anti bot captcha excluded grey unverified",
   },
@@ -195,8 +205,8 @@ export const FAQ: Faq[] = [
     cat: "score",
     q: { fr: "Un échec peut-il venir du hasard ?", en: "Can a failure be bad luck?" },
     a: {
-      fr: "Chaque mission ratée est rejouée une fois avant la fin de l'audit, et c'est le second essai qui compte. Dans le classement, le score est la moyenne des deux derniers passages.",
-      en: "Every failed mission is replayed once before the audit ends, and the second attempt is the one that counts. In the ranking, the score is the average of the last two runs.",
+      fr: "Chaque mission ratée est rejouée une fois avant la fin de l'audit, et c'est le second essai qui compte. Une mission réussie au 2ᵉ essai seulement est signalée comme instable. Dans le classement, le score est la moyenne des deux derniers passages.",
+      en: "Every failed mission is replayed once before the audit ends, and the second attempt is the one that counts. A mission that passed only on the second try is flagged as unstable. In the ranking, the score is the average of the last two runs.",
     },
     keys: "fiable fiabilite hasard rejouer relance second essai erreur faux reliable luck retry replay wrong",
   },
@@ -235,8 +245,8 @@ export const FAQ: Faq[] = [
     cat: "score",
     q: { fr: "Comment partager un rapport ?", en: "How do I share a report?" },
     a: {
-      fr: "Envoie le lien du rapport, ou télécharge-le en PDF depuis le rapport. Les membres de ton équipe le retrouvent dans Rapports.",
-      en: "Send the report link, or download it as a PDF from the report. Your team members find it in Reports.",
+      fr: "Envoie le lien du rapport, ou télécharge-le en PDF depuis le rapport. Les missions s'exportent aussi en CSV ou en JSON. Les membres de ton équipe le retrouvent dans Rapports.",
+      en: "Send the report link, or download it as a PDF from the report. Missions also export as CSV or JSON. Your team members find it in Reports.",
     },
     keys: "partager envoyer exporter telecharger pdf imprimer lien share send export download print",
   },
@@ -400,8 +410,8 @@ export const FAQ: Faq[] = [
     cat: "automations",
     q: { fr: "Suis-je prévenu si mon score baisse ?", en: "Am I alerted if my score drops?" },
     a: {
-      fr: "Oui, avec le suivi mensuel : un audit complet tous les 30 jours, et une alerte par e-mail et sur Slack si le score baisse de plus de 5, 10 ou 20 points, selon ton réglage.",
-      en: "Yes, with monthly tracking: a full audit every 30 days, and an e-mail and Slack alert if the score drops by more than 5, 10 or 20 points, as you set it.",
+      fr: "Oui, avec le suivi mensuel : un audit complet tous les 30 jours, et une alerte par e-mail et sur Slack si le score baisse de plus de 5, 10 ou 20 points, selon ton réglage. L'alerte dit quelles missions ont lâché et quelles pages ont changé entre les deux audits.",
+      en: "Yes, with monthly tracking: a full audit every 30 days, and an e-mail and Slack alert if the score drops by more than 5, 10 or 20 points, as you set it. The alert says which missions broke and which pages changed between the two audits.",
     },
     keys: "baisse chute regression score alerte seuil mensuel drop fall threshold monthly alert",
   },
@@ -531,8 +541,8 @@ export const FAQ: Faq[] = [
     cat: "payment",
     q: { fr: "Le test peut-il passer une vraie commande ?", en: "Can the test place a real order?" },
     a: {
-      fr: "Oui, si la carte a des fonds. Utilise une carte virtuelle à 0 € pour ne rien acheter, et garde ton téléphone à portée pour valider le 3D Secure.",
-      en: "Yes, if the card has funds. Use a virtual card at €0 to buy nothing, and keep your phone at hand to approve 3D Secure.",
+      fr: "Oui, si la carte a des fonds. Chaque test demande ta confirmation, et l'agent ne paie jamais plus de 150 € livraison comprise. Utilise une carte virtuelle à 0 € pour ne rien acheter, et garde ton téléphone à portée pour valider le 3D Secure.",
+      en: "Yes, if the card has funds. Every test asks for your confirmation, and the agent never pays more than €150 shipping included. Use a virtual card at €0 to buy nothing, and keep your phone at hand to approve 3D Secure.",
     },
     keys: "vraie commande achat reel debit argent 3d secure virtuelle risque real order charged money virtual risk",
   },
