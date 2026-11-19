@@ -212,7 +212,23 @@ export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
             ))}
           </nav>
           {view !== "trash" && scoped.length > 0 && (
-            // Narrow screens show one control (the sub-sections): two stacked segmented controls both starting with "Tous" read as one.
+            // Narrow screens: the same filters as two toggle chips beside the sub-section tabs (no second "Tous", which
+            // would read as the same control). Tapping the active chip goes back to all.
+            <nav aria-label={r.filtersLabel} className="flex gap-2 lg:hidden">
+              {([["en-cours", r.filters.running, "live"], ["termines", r.filters.done, "none"]] as const).map(([v, l, icon]) => (
+                <Link
+                  key={v}
+                  href={status === v ? PATH[view] : `${PATH[view]}?vue=${v}`}
+                  scroll={false}
+                  aria-current={status === v ? "true" : undefined}
+                  className="rounded-full focus-visible:outline-2 focus-visible:outline-blue"
+                >
+                  <Chip icon={icon} tone={status === v ? "blue" : "plain"}>{l}</Chip>
+                </Link>
+              ))}
+            </nav>
+          )}
+          {view !== "trash" && scoped.length > 0 && (
             <nav aria-label={r.filtersLabel} className="inline-flex rounded-[10px] bg-fill p-[3px] max-lg:hidden">
               {([["tous", r.filters.all], ["en-cours", r.filters.running], ["termines", r.filters.done]] as const).map(([v, l]) => (
                 <Link key={v} href={v === "tous" ? PATH[view] : `${PATH[view]}?vue=${v}`} scroll={false} aria-current={status === v ? "true" : undefined} className={tab}>

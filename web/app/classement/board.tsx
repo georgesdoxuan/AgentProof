@@ -76,15 +76,19 @@ export async function Leaderboard({ device = "desktop", base }: { device?: Devic
                   <li key={s.audit_id} className="border-b border-hairline last:border-0">
                     <Link
                       href={`/audit/${s.audit_id}`}
-                      className={`grid grid-cols-[1.75rem_1fr_auto] items-center gap-x-4 gap-y-2 px-6 py-5 transition-colors duration-200 hover:bg-bg-2/60 max-[734px]:px-5 ${COLS}`}
+                      className={`grid grid-cols-[1.75rem_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-6 py-5 max-[400px]:grid-cols-[minmax(0,1fr)_auto] max-[400px]:gap-x-3 max-[400px]:px-4 transition-colors duration-200 hover:bg-bg-2/60 max-[734px]:px-5 ${COLS}`}
                     >
-                      <span className="text-ink-2 tnum">{i + 1}</span>
+                      <span className="text-ink-2 tnum max-[400px]:hidden">{i + 1}</span>
                       <span className="flex min-w-0 items-center gap-3">
                         <SiteLogo domain={s.domain} name={s.name} />
                         <span className="min-w-0">
-                          <span className="type-headline block truncate">{s.name}</span>
+                          <span className="type-headline block truncate">
+                            <span className="min-[401px]:hidden tnum text-ink-2">{i + 1}. </span>
+                            {s.name}
+                          </span>
                           <span className="type-small text-ink-2">
-                            <DeviceTag device={s.device} lang={lang} /> · {s.passes} audit{s.passes > 1 ? "s" : ""}, {s.runs_done} missions
+                            <span className="max-[400px]:hidden"><DeviceTag device={s.device} lang={lang} /> · </span>
+                            {s.passes} audit{s.passes > 1 ? "s" : ""}, {s.runs_done} missions
                           </span>
                         </span>
                       </span>
@@ -93,7 +97,7 @@ export async function Leaderboard({ device = "desktop", base }: { device?: Devic
                         {s.score ?? "—"}
                         <span className="-ml-1 text-[17px] font-normal text-ink-2">%</span>
                       </span>
-                      <span className="col-span-3 col-start-2 flex items-center gap-3 md:col-span-1 md:col-start-auto">
+                      <span className="col-span-3 col-start-2 flex items-center gap-3 max-[400px]:col-span-2 max-[400px]:col-start-1 md:col-span-1 md:col-start-auto">
                         <span className="w-24 shrink-0">
                           <MissionBar ok={s.runs_success ?? 0} done={s.runs_scored ?? 0} total={s.runs_scored ?? 0} size="sm" />
                         </span>
@@ -117,7 +121,7 @@ export async function Leaderboard({ device = "desktop", base }: { device?: Devic
                           <ToneLabel score={s.score} />
                         )}
                       </span>
-                      <span className="type-small col-span-3 col-start-2 text-ink-2 md:col-span-1 md:col-start-auto">
+                      <span className="type-small col-span-3 col-start-2 text-ink-2 max-[400px]:col-span-2 max-[400px]:col-start-1 md:col-span-1 md:col-start-auto">
                         <span className="md:hidden">{t("Blocage principal", "Main blocker")} : </span>
                         {blocker ? (
                           <span className="inline-flex items-center gap-1.5 align-middle text-ink">
