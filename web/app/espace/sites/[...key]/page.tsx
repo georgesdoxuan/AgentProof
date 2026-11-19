@@ -216,10 +216,16 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
                 <MissionBar ok={a.s.ok} done={a.s.done} total={a.s.total} size="sm" />
               </span>
               <span className="flex items-center justify-end gap-2 whitespace-nowrap font-semibold tnum">
-                {a.status === "done" ? (
+                {a.status === "done" && a.s.score == null ? (
+                  // Same wording as the reports list: nothing counted, not an unexplained "— %".
+                  <span className="type-small flex items-center gap-1.5 text-ink-2">
+                    <StatusGlyph tone="unsure" className="h-4 w-4" />
+                    {t("Sans score", "No score")}
+                  </span>
+                ) : a.status === "done" ? (
                   <>
                     <StatusGlyph tone={scoreTone(a.s.score)} className="h-4 w-4" />
-                    {a.s.score ?? "—"} %
+                    {a.s.score} %
                   </>
                 ) : (
                   <span className="type-small flex items-center gap-2 font-normal text-ink-2">
