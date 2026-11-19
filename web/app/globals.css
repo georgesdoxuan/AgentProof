@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
 /* AgentProof design tokens, modeled on apple.com.
-   One color, one meaning: blue = action, pass / warn / fail = audit outcome only.
+   One color, one meaning: blue = action, pass / warn / fail = audit outcome only,
+   live (yellow) = an audit still running; a finished audit uses pass (green).
    Contrast ratios are text on --bg / on --bg-2. */
 :root {
   --bg: #ffffff;
@@ -18,6 +19,8 @@
   --pass: #00792e; /* 5.6 / 5.1 */
   --warn: #b25000; /* 5.2 / 4.8 */
   --fail: #d70015; /* 5.4 / 4.9 */
+  --live: #856500; /* running: text and glyphs, 5.4 / 5.0 */
+  --live-fill: #ffcc00; /* running: dots, bars, chip tint (never text) */
   --nav: rgb(255 255 255 / 0.72);
   --glass: rgb(255 255 255 / 0.78);
   --pop: #ffffff; /* hints and menus: opaque, so the text under them never shows through */
@@ -43,6 +46,8 @@
     --pass: #30d158;
     --warn: #ff9f0a;
     --fail: #ff6961;
+    --live: #ffd60a; /* 12.1 on tile */
+    --live-fill: #ffd60a;
     --nav: rgb(22 22 23 / 0.72);
     --glass: rgb(28 28 30 / 0.78);
     --pop: #2c2c2e;
@@ -89,6 +94,8 @@
   --color-pass: var(--pass);
   --color-warn: var(--warn);
   --color-fail: var(--fail);
+  --color-live: var(--live);
+  --color-live-fill: var(--live-fill);
   --color-glass: var(--glass);
   --color-pop: var(--pop);
   /* SF Pro on Apple devices through the system font: optical sizes switch on their own. Never shipped as a webfont. */
@@ -422,6 +429,8 @@ body {
     --pass: #00792e;
     --warn: #b25000;
     --fail: #d70015;
+    --live: #856500;
+    --live-fill: #ffcc00;
     --shot-shadow: none;
     color-scheme: light;
   }

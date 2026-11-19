@@ -20,6 +20,7 @@ export type SpaceAudit = {
   created_at: string;
   device: string;
   status: string;
+  finished_at: string | null; // set when the audit closes (status "done")
   compare_to: string | null;
   model: string | null;
   title: string | null; // custom name given by the team; null = the site's domain
@@ -134,7 +135,7 @@ async function loadSpaceOnce(teamId: string) {
     db
       .from("audits")
       .select(
-        "id, created_at, device, status, compare_to, model, title, favorite, deleted_at, recommendations, site_id, payment_test, proof_of, sites(domain, name, url), users:created_by(email), runs(id, status, success, blocker_type, blocker_detail, screenshot_url, final_url)",
+        "id, created_at, device, status, finished_at, compare_to, model, title, favorite, deleted_at, recommendations, site_id, payment_test, proof_of, sites(domain, name, url), users:created_by(email), runs(id, status, success, blocker_type, blocker_detail, screenshot_url, final_url)",
       )
       .eq("team_id", teamId)
       .eq("kind", "checkout")
