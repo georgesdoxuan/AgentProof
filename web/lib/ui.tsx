@@ -218,6 +218,17 @@ const ICON: Record<string, string> = {
   desktop: LINE.desktop,
   both: LINE.both,
   credit: LINE.credit,
+  team: LINE.team,
+  card: LINE.card,
+  key: LINE.key,
+  bolt: LINE.bolt,
+  person: LINE.person,
+  invite: LINE.invite,
+  plus: LINE.plus,
+  globe: LINE.globe,
+  pencil: LINE.pencil,
+  download: LINE.download,
+  signout: LINE.signout,
   // Pricing tiers on the home page.
   ranking: "M5 20V13M12 20V5M19 20v-9",
   audit: "M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM20 20l-4.9-4.9M7.5 10.5l2 2 3.5-3.5",
@@ -459,12 +470,18 @@ export function Segmented({ name, options, value, label, className = "" }: { nam
 }
 
 // Inset grouped list, like iOS Settings: a titled group of rows separated by hairlines.
-export function Group({ title, footer, aside, children }: { title?: string; footer?: React.ReactNode; aside?: React.ReactNode; children: React.ReactNode }) {
+// `icon`: a bare line glyph before the title, as on the Automations cards (20px, secondary ink).
+export function Group({ title, icon, footer, aside, children }: { title?: string; icon?: string; footer?: React.ReactNode; aside?: React.ReactNode; children: React.ReactNode }) {
   return (
     <section>
       {(title || aside) && (
-        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-1">
-          {title && <h2 className="type-headline">{footer ? <Hint tip={footer}>{title}</Hint> : title}</h2>}
+        <div className="mb-3 flex min-h-7 flex-wrap items-center justify-between gap-x-4 gap-y-1 px-1">
+          {title && (
+            <h2 className="type-headline flex min-w-0 items-center gap-2.5">
+              {icon && <Icon name={icon} className="h-5 w-5 text-ink-2" />}
+              <span className="min-w-0">{footer ? <Hint tip={footer}>{title}</Hint> : title}</span>
+            </h2>
+          )}
           {aside}
         </div>
       )}
@@ -472,6 +489,19 @@ export function Group({ title, footer, aside, children }: { title?: string; foot
       {/* A titled group keeps its explanation on the title, shown on hover; an untitled one has nowhere else to put it. */}
       {footer && !title && <p className="type-small mt-2.5 px-1 text-ink-2">{footer}</p>}
     </section>
+  );
+}
+
+// Réglages tabs: what the team has on the leading side, what to add or change in a narrower column beside it.
+// Two columns from 56rem of page width (a container query on SpaceShell, so the same with the sidebar folded or open),
+// one below, main first. Every column stacks its groups on the page's 40px rhythm.
+export function Columns({ main, side }: { main: React.ReactNode; side?: React.ReactNode }) {
+  const col = "grid min-w-0 content-start gap-10 max-[734px]:gap-8";
+  return (
+    <div className={`grid items-start gap-10 max-[734px]:gap-8 ${side ? "@4xl:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] @6xl:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]" : ""}`}>
+      <div className={col}>{main}</div>
+      {side && <div className={col}>{side}</div>}
+    </div>
   );
 }
 

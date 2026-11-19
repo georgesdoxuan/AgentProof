@@ -4,7 +4,7 @@ import { db } from "@/lib/engine";
 import { type Role, teamContext } from "@/lib/auth";
 import { dict, locale, tr } from "@/lib/i18n";
 import { getLang, getT } from "@/lib/lang";
-import { Avatar, Field, Group, Row, Segmented } from "@/lib/ui";
+import { Avatar, Columns, Field, Group, Row, Segmented } from "@/lib/ui";
 import { AutoSubmitSelect, ConfirmButton, CopyField } from "../../controls";
 import { SpaceShell } from "../../shell";
 
@@ -52,15 +52,18 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
   const base = process.env.PUBLIC_URL || `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
 
   return (
-    <SpaceShell narrow
+    <SpaceShell
       settings
       hint={t(
         "Admin : lance des audits et lit les rapports. Lecteur : lit les rapports. Seul le propriétaire gère les membres.",
         "Admin: runs audits and reads reports. Viewer: reads reports. Only the owner manages members.",
       )}
     >
+      <Columns
+        main={<>
       {sp.invite && (
         <Group
+          icon="mail"
           title={sp.envoye === "1" ? t(`Invitation envoyée à ${sp.email}`, `Invitation sent to ${sp.email}`) : t(`E-mail non envoyé : partage ce lien à ${sp.email}`, `E-mail not sent: share this link with ${sp.email}`)}
           footer={
             sp.envoye === "1"
@@ -74,7 +77,7 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
         </Group>
       )}
 
-      <Group title={`${t("Membres", "Members")} · ${members?.length ?? 0}`}>
+      <Group icon="team" title={`${t("Membres", "Members")} · ${members?.length ?? 0}`}>
         {(members ?? []).map((m: any) => {
           const me = m.users.id === user.id;
           return (
@@ -113,9 +116,39 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
         })}
       </Group>
 
+      {isOwner && !!invites?.length && (
+        <Group icon="clock" title={t("Invitations en attente", "Pending invitations")}>
+          {invites.map((i: any) => {
+            const expired = new Date(i.expires_at) < new Date();
+            return (
+              <Row key={i.id}>
+                <Avatar email={i.email} className="h-9 w-9 opacity-50" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate">{i.email}</span>
+                  <span className={`type-small ${expired ? "text-fail" : "text-ink-2"}`}>
+                    {ROLE_LABEL[i.role as Role]} · {expired ? t("expirée", "expired") : `${t("expire le", "expires on")} ${day(i.expires_at)}`}
+                  </span>
+                </span>
+                <form action="/api/team" method="post">
+                  <Hidden action="revoke" invitation={i.id} />
+                  <ConfirmButton
+                    message={t(`Annuler l'invitation de ${i.email} ?`, `Cancel the invitation for ${i.email}?`)}
+                    className="type-small inline-flex min-h-11 items-center px-1 text-fail hover:underline"
+                  >
+                    {t("Annuler", "Cancel")}
+                  </ConfirmButton>
+                </form>
+              </Row>
+            );
+          })}
+        </Group>
+      )}
+
+        </>}
+        side={<>
       {isOwner && (
         <>
-          <Group title={t("Inviter un membre", "Invite a member")} footer={t("La personne reçoit un lien par e-mail et se connecte avec cette adresse.", "They get a link by e-mail and sign in with this address.")}>
+          <Group icon="invite" title={t("Inviter un membre", "Invite a member")} footer={t("La personne reçoit un lien par e-mail et se connecte avec cette adresse.", "They get a link by e-mail and sign in with this address.")}>
             <form action="/api/team" method="post" className="grid gap-4 p-5 sm:p-6">
               <Hidden action="invite" />
               <Field label={t("E-mail du membre", "Member's e-mail")} name="email" type="email" required />
@@ -126,35 +159,7 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
             </form>
           </Group>
 
-          {!!invites?.length && (
-            <Group title={t("Invitations en attente", "Pending invitations")}>
-              {invites.map((i: any) => {
-                const expired = new Date(i.expires_at) < new Date();
-                return (
-                  <Row key={i.id}>
-                    <Avatar email={i.email} className="h-9 w-9 opacity-50" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate">{i.email}</span>
-                      <span className={`type-small ${expired ? "text-fail" : "text-ink-2"}`}>
-                        {ROLE_LABEL[i.role as Role]} · {expired ? t("expirée", "expired") : `${t("expire le", "expires on")} ${day(i.expires_at)}`}
-                      </span>
-                    </span>
-                    <form action="/api/team" method="post">
-                      <Hidden action="revoke" invitation={i.id} />
-                      <ConfirmButton
-                        message={t(`Annuler l'invitation de ${i.email} ?`, `Cancel the invitation for ${i.email}?`)}
-                        className="type-small inline-flex min-h-11 items-center px-1 text-fail hover:underline"
-                      >
-                        {t("Annuler", "Cancel")}
-                      </ConfirmButton>
-                    </form>
-                  </Row>
-                );
-              })}
-            </Group>
-          )}
-
-          <Group title={t("Nom de l'équipe", "Team name")}>
+          <Group icon="pencil" title={t("Nom de l'équipe", "Team name")}>
             <form action="/api/team" method="post" className="flex flex-wrap items-center gap-3 p-5 sm:p-6">
               <Hidden action="rename" />
               <div className="min-w-[220px] flex-1">
@@ -165,6 +170,7 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
           </Group>
 
           <Group
+            icon="doc"
             title={t("Marque blanche", "White label")}
             footer={t(
               "Pour les agences : ton nom et ton logo remplacent AgentProof sur les rapports de l'équipe (page web et PDF). Laisse le nom vide pour revenir à AgentProof.",
@@ -193,6 +199,8 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
           </form>
         </Group>
       )}
+        </>}
+      />
     </SpaceShell>
   );
 }
