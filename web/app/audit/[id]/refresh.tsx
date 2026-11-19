@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { markSeen } from "@/lib/seen";
 
 // The PDF report is the browser's own "Save as PDF": print styles in globals.css drop the navigation and buttons.
 export function PrintButton({ label = "Télécharger en PDF" }: { label?: string }) {
@@ -27,5 +28,11 @@ export function HashLanding() {
   useEffect(() => {
     if (location.hash.length > 1 && document.getElementById(decodeURIComponent(location.hash.slice(1)))) location.replace(location.href);
   }, []);
+  return null;
+}
+
+// A finished report, opened from anywhere (Rapports, a link): its green card in the space's sidebar has done its job.
+export function MarkSeen({ id }: { id: string }) {
+  useEffect(() => markSeen(id), [id]);
   return null;
 }
