@@ -83,7 +83,7 @@ AgentProof fonctionne pour **tout site e-commerce qui vend des produits physique
 2. Entrez votre adresse e-mail. Vous recevez un **lien de connexion valable 15 minutes**. Il n'y a pas de mot de passe.
 3. À la première connexion, un **espace d'équipe** est créé pour vous. Vous en êtes le propriétaire.
 
-Votre espace se trouve sous **Mon espace**. La barre de gauche donne accès à Accueil, Sites, Rapports et Réglages ; le bouton en bas de la barre la replie en icônes. **Réglages** regroupe en onglets Équipe, Abonnement, Paiement, Comptes de test, Automations, Corbeille et Compte. Le **Classement** s’ouvre depuis la page Sites.
+Votre espace se trouve sous **Mon espace**. La barre de gauche donne accès à Accueil, Sites, Rapports, Automations et Réglages ; le bouton en haut de la barre la replie en icônes. **Réglages** regroupe en onglets Équipe, Abonnement, Paiement, Comptes de test, Corbeille et Compte. Le **Classement** s’ouvre depuis la page Sites.
 
 L'interface existe en **français et en anglais** : la langue se règle dans **Compte**. Les rapports d'audit restent en français pour l'instant.
 
@@ -228,7 +228,7 @@ Le rangement se fait dans **Rapports**, qui a deux rubriques : **Tous** et **Fav
 
 ## 10. Suivre son site : automations, Slack, suivi mensuel
 
-Un site change souvent : nouveau thème, nouveau bandeau cookies, nouveau widget de chat. Les **automations** surveillent ces changements. Elles se trouvent dans **Réglages › Automations**, en cinq cartes. Chaque réglage s'enregistre aussitôt et un message « Enregistré » le confirme en bas de l'écran.
+Un site change souvent : nouveau thème, nouveau bandeau cookies, nouveau widget de chat. Les **automations** surveillent ces changements. Elles ont leur entrée **Automations** dans la barre de gauche, en cinq cartes. Chaque réglage s'enregistre aussitôt et un message « Enregistré » le confirme en haut de l'écran.
 
 ### Surveillance des pages (gratuit)
 
@@ -329,7 +329,7 @@ Dans **Équipe**, indiquez le nom et le logo à afficher : ils **remplacent Agen
 
 La page **Abonnement et crédits** montre les crédits utilisés ce mois-ci, par type et par site, et une projection de fin de mois. Vous êtes prévenu à **80 %** et à **100 %** du forfait, par e-mail et sur Slack si vous l'avez branché. Les crédits repartent le **1er de chaque mois**.
 
-**Plafond par site** : dans Réglages › Automations (carte Plafond de crédits), l'équipe peut fixer un nombre maximum de crédits par site et par mois (tous appareils). Une fois ce plafond atteint, les audits automatiques sur ce site (page modifiée, mise en ligne, audit mensuel) ne partent plus jusqu'au 1er du mois (un audit mensuel retenu attend le mois suivant), et l'automation note pourquoi. Un audit lancé à la main passe toujours. Laissez le champ vide pour ne fixer aucun plafond.
+**Plafond par site** : dans Automations (carte Plafond de crédits), l'équipe peut fixer un nombre maximum de crédits par site et par mois (tous appareils). Une fois ce plafond atteint, les audits automatiques sur ce site (page modifiée, mise en ligne, audit mensuel) ne partent plus jusqu'au 1er du mois (un audit mensuel retenu attend le mois suivant), et l'automation note pourquoi. Un audit lancé à la main passe toujours. Laissez le champ vide pour ne fixer aucun plafond.
 
 ### Les offres
 

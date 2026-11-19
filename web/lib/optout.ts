@@ -35,6 +35,6 @@ export async function sendAlert(to: string, subject: string, text: string, link:
   const footer =
     `\n\n—\nTu reçois cette alerte car une automatisation AgentProof suit ce site. ` +
     `Pour ne plus recevoir d'alertes : ${optoutLink(to)}\n` +
-    `Pour régler les alertes de ton équipe : ${process.env.PUBLIC_URL ?? ""}/espace/reglages/automations`;
+    `Pour régler les alertes de ton équipe : ${process.env.PUBLIC_URL ?? ""}/espace/automations`;
   return sendMail(to, subject, text + footer, link);
 }

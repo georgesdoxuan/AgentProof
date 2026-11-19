@@ -324,13 +324,13 @@ function Watch({ t, lang, collapsed }: { t: T; lang: Lang; collapsed: boolean })
   const line = !w ? "" : w.pages ? `${w.pages} ${w.pages > 1 ? t.pages : t.page} · ${t.next} ${next}` : t.watchOff;
   if (collapsed)
     return (
-      <Link href="/espace/reglages/automations" title={`${t.watch} · ${line}`} aria-label={t.watch} className={`relative grid h-9 w-12 place-items-center rounded-[8px] hover:bg-tile/60 ${w?.pages ? "text-ink" : "text-ink-2"}`}>
+      <Link href="/espace/automations" title={`${t.watch} · ${line}`} aria-label={t.watch} className={`relative grid h-9 w-12 place-items-center rounded-[8px] hover:bg-tile/60 ${w?.pages ? "text-ink" : "text-ink-2"}`}>
         {glyph(G.eye, "h-[18px] w-[18px]")}
         {!!w?.pages && <span className="absolute right-2.5 top-1.5 h-2 w-2 rounded-full bg-pass ring-2 ring-bg-2" aria-hidden />}
       </Link>
     );
   return (
-    <Link href="/espace/reglages/automations" className="flex min-h-12 items-center gap-2.5 rounded-[8px] px-3 transition-colors hover:bg-tile/60">
+    <Link href="/espace/automations" className="flex min-h-12 items-center gap-2.5 rounded-[8px] px-3 transition-colors hover:bg-tile/60">
       <span className="relative shrink-0 text-ink-2">
         {glyph(G.eye, "h-[18px] w-[18px]")}
         {!!w?.pages && <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-pass ring-2 ring-bg-2" aria-hidden />}

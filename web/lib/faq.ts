@@ -386,10 +386,10 @@ export const FAQ: Faq[] = [
     cat: "credits",
     q: { fr: "Puis-je limiter les crédits dépensés sur un site ?", en: "Can I limit the credits spent on one site?" },
     a: {
-      fr: "Oui : fixe un plafond de crédits par site et par mois dans Réglages › Automations, carte Plafond de crédits. Au-delà, les audits automatiques sur ce site s'arrêtent jusqu'au 1er du mois ; un audit lancé à la main passe toujours.",
-      en: "Yes: set a monthly credit cap per site in Settings › Automations, Credit cap card. Past it, automatic audits on that site stop until the 1st of the month; an audit launched by hand always goes through.",
+      fr: "Oui : fixe un plafond de crédits par site et par mois dans Automations (barre de gauche), carte Plafond de crédits. Au-delà, les audits automatiques sur ce site s'arrêtent jusqu'au 1er du mois ; un audit lancé à la main passe toujours.",
+      en: "Yes: set a monthly credit cap per site in Automations (left sidebar), Credit cap card. Past it, automatic audits on that site stop until the 1st of the month; an audit launched by hand always goes through.",
     },
-    link: { href: "/espace/reglages/automations#plafond", fr: "Plafond de crédits", en: "Credit cap" },
+    link: { href: "/espace/automations#plafond", fr: "Plafond de crédits", en: "Credit cap" },
     keys: "plafond limite budget maximum site credits depense automatique cap limit budget spending",
   },
   {
@@ -423,7 +423,7 @@ export const FAQ: Faq[] = [
       fr: "Elles relisent tes pages (bandeau cookies, captcha, boutons, formulaires, robots.txt) à la fréquence choisie et après chaque mise en ligne. Si quelque chose change, tu es prévenu, et un audit peut repartir tout seul.",
       en: "They reread your pages (cookie banner, captcha, buttons, forms, robots.txt) at the chosen frequency and after every release. When something changes, you are told, and an audit can start on its own.",
     },
-    link: { href: "/espace/reglages/automations", fr: "Automations", en: "Automations" },
+    link: { href: "/espace/automations", fr: "Automations", en: "Automations" },
     keys: "surveillance suivi monitoring veille changement alerte automatique watch track monitor change automatic",
   },
   {
@@ -441,10 +441,10 @@ export const FAQ: Faq[] = [
     cat: "automations",
     q: { fr: "Comment recevoir les alertes sur Slack ?", en: "How do I get alerts on Slack?" },
     a: {
-      fr: "Dans Réglages › Automations, carte Alertes, clique sur « Connecter » à côté de Slack et choisis le canal : un message de test part aussitôt. Discord, n8n, Make ou Zapier : colle une URL dans le champ Webhook, puis « Tester ».",
-      en: "In Settings › Automations, Alerts card, click “Connect” next to Slack and pick the channel: a test message goes out right away. Discord, n8n, Make or Zapier: paste a URL in the Webhook field, then “Test”.",
+      fr: "Dans Automations (barre de gauche), carte Alertes, clique sur « Connecter » à côté de Slack et choisis le canal : un message de test part aussitôt. Discord, n8n, Make ou Zapier : colle une URL dans le champ Webhook, puis « Tester ».",
+      en: "In Automations (left sidebar), Alerts card, click “Connect” next to Slack and pick the channel: a test message goes out right away. Discord, n8n, Make or Zapier: paste a URL in the Webhook field, then “Test”.",
     },
-    link: { href: "/espace/reglages/automations", fr: "Automations", en: "Automations" },
+    link: { href: "/espace/automations", fr: "Automations", en: "Automations" },
     keys: "slack discord teams webhook zapier make n8n notification canal message alertes channel notify",
   },
   {
@@ -455,7 +455,7 @@ export const FAQ: Faq[] = [
       fr: "Oui. Appelle l'adresse secrète donnée dans Automations après un déploiement (Vercel, Shopify ou GitHub) : toutes les pages suivies sont vérifiées dans la minute.",
       en: "Yes. Call the secret address shown in Automations after a deployment (Vercel, Shopify or GitHub): every tracked page is checked within a minute.",
     },
-    link: { href: "/espace/reglages/automations", fr: "Automations", en: "Automations" },
+    link: { href: "/espace/automations", fr: "Automations", en: "Automations" },
     keys: "deploiement mise en ligne release deploy hook vercel shopify github theme publication ci",
   },
   {

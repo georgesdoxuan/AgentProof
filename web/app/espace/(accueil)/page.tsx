@@ -165,7 +165,7 @@ export default async function Accueil() {
             <h2 id="mois" className="type-headline">
               {t("Ce mois-ci", "This month")} · {month.start.toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR", { month: "long", year: "numeric", timeZone: "UTC" })}
             </h2>
-            <Link href="/espace/reglages/automations" className="type-small text-link hover:underline">
+            <Link href="/espace/automations" className="type-small text-link hover:underline">
               {t("Automations", "Automations")}
             </Link>
           </div>
