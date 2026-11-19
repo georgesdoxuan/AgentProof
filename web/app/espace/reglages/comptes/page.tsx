@@ -3,9 +3,9 @@ import { canLaunch, teamContext } from "@/lib/auth";
 import { listSiteLogins } from "@/lib/engine";
 import { Chip, Empty, Field, Group, Note, Row } from "@/lib/ui";
 import { getT } from "@/lib/lang";
-import { ConfirmButton } from "../controls";
-import { SpaceShell } from "../shell";
-import { SiteLogo } from "../../site-logo";
+import { ConfirmButton } from "../../controls";
+import { SpaceShell } from "../../shell";
+import { SiteLogo } from "../../../site-logo";
 
 export async function generateMetadata() {
   const t = await getT();
@@ -14,7 +14,7 @@ export async function generateMetadata() {
 
 export default async function Comptes() {
   const ctx = await teamContext();
-  if (!ctx) redirect("/connexion?next=/espace/comptes");
+  if (!ctx) redirect("/connexion?next=/espace/reglages/comptes");
   if (!ctx.team) redirect("/espace");
   const { team } = ctx;
   const logins = await listSiteLogins(team.id);
@@ -23,7 +23,7 @@ export default async function Comptes() {
 
   return (
     <SpaceShell narrow
-      title={t("Comptes de test", "Test accounts")}
+      settings
       hint={t(
         "Pour les sites qui exigent un compte avant de payer. Avec un compte enregistré, le test de paiement tourne deux fois : sans compte, puis connecté.",
         "For sites that require an account before paying. With a saved account, the payment test runs twice: without an account, then signed in.",

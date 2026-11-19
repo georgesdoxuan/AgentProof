@@ -110,7 +110,7 @@ export async function creditAlerts(log: string[] = []) {
     q = t.credit_alert ? q.eq("credit_alert", t.credit_alert) : q.is("credit_alert", null);
     const { data: won } = await q.select("id");
     if (!won?.length) continue;
-    const link = `${process.env.PUBLIC_URL ?? ""}/espace/abonnement`;
+    const link = `${process.env.PUBLIC_URL ?? ""}/espace/reglages/abonnement`;
     const text =
       level >= 100
         ? `l'espace « ${t.name} » a utilisé tous ses crédits du mois (${used} sur ${included}). Les audits restent possibles pendant l'essai ; pense à changer d'offre.`

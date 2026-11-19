@@ -44,7 +44,7 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
           <Note
             icon="credit"
             action={
-              <Link href="/espace/abonnement" className="text-link hover:underline">
+              <Link href="/espace/reglages/abonnement" className="text-link hover:underline">
                 {t("Abonnement", "Plan")}
               </Link>
             }

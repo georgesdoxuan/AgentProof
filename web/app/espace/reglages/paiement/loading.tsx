@@ -1,4 +1,4 @@
-import { SkSettings } from "../../skeleton";
+import { SkSettings } from "../../../skeleton";
 
 export default function Loading() {
   return <SkSettings />;

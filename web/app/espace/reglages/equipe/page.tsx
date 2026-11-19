@@ -5,8 +5,8 @@ import { type Role, teamContext } from "@/lib/auth";
 import { dict, locale, tr } from "@/lib/i18n";
 import { getLang, getT } from "@/lib/lang";
 import { Avatar, Field, Group, Row, Segmented } from "@/lib/ui";
-import { AutoSubmitSelect, ConfirmButton, CopyField } from "../espace/controls";
-import { SpaceShell } from "../espace/shell";
+import { AutoSubmitSelect, ConfirmButton, CopyField } from "../../controls";
+import { SpaceShell } from "../../shell";
 
 export async function generateMetadata() {
   const t = await getT();
@@ -27,7 +27,7 @@ function Hidden({ action, ...rest }: { action: string } & Record<string, string>
 
 export default async function Equipe({ searchParams }: { searchParams: Promise<{ invite?: string; email?: string; envoye?: string }> }) {
   const ctx = await teamContext();
-  if (!ctx) redirect("/connexion?next=/equipe");
+  if (!ctx) redirect("/connexion?next=/espace/reglages/equipe");
   if (!ctx.team) redirect("/espace");
   const { user, team } = ctx;
   const isOwner = team.role === "owner";
@@ -53,7 +53,7 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
 
   return (
     <SpaceShell narrow
-      title={t("Équipe", "Team")}
+      settings
       hint={t(
         "Admin : lance des audits et lit les rapports. Lecteur : lit les rapports. Seul le propriétaire gère les membres.",
         "Admin: runs audits and reads reports. Viewer: reads reports. Only the owner manages members.",

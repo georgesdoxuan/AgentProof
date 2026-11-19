@@ -8,7 +8,7 @@ const fail = (text: string, status = 400) => new Response(text, { status, header
 // GET: download my data as JSON (RGPD art. 15 and 20).
 export async function GET(req: Request) {
   const user = await currentUser();
-  if (!user) return go(req, "/connexion?next=/compte");
+  if (!user) return go(req, "/connexion?next=/espace/reglages/compte");
   return new Response(JSON.stringify(await exportAccount(user), null, 2), {
     headers: {
       "Content-Type": "application/json; charset=utf-8",
@@ -21,11 +21,11 @@ export async function GET(req: Request) {
 // POST action=delete: erase my account (RGPD art. 17). The user retypes their e-mail: no accidental click deletes anything.
 export async function POST(req: Request) {
   const user = await currentUser();
-  if (!user) return go(req, "/connexion?next=/compte");
+  if (!user) return go(req, "/connexion?next=/espace/reglages/compte");
   const form = await req.formData();
   if (form.get("action") !== "delete") return fail(await msg("Action inconnue.", "Unknown action."));
   if (String(form.get("confirm") ?? "").trim().toLowerCase() !== user.email.toLowerCase())
-    return go(req, "/compte?erreur=confirmation#supprimer");
+    return go(req, "/espace/reglages/compte?erreur=confirmation#supprimer");
   try {
     await deleteAccount(user);
   } catch (e) {

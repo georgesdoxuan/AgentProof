@@ -106,7 +106,7 @@ export function PaymentPicker({ cards, lang, tip }: { cards: PayCard[]; lang: La
                 ))}
               </ul>
               <div className="mt-1 border-t border-hairline pt-1">
-                <Link href="/espace/paiement" className="type-small flex min-h-10 items-center rounded-[9px] px-2.5 text-link hover:bg-fill">
+                <Link href="/espace/reglages/paiement" className="type-small flex min-h-10 items-center rounded-[9px] px-2.5 text-link hover:bg-fill">
                   {cards.length > 1 ? t("Gérer les cartes", "Manage cards") : t("Changer ou ajouter une carte", "Change or add a card")}
                 </Link>
               </div>

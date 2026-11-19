@@ -57,7 +57,7 @@ function Answer({ faq, lang }: { faq: Faq; lang: Lang }) {
       </p>
       {faq.link && (
         <Link href={faq.link.href} className={`${lk} mt-2 inline-flex items-center gap-1`}>
-          {faq.link.href === "/espace/abonnement" && <Glyph d={GLYPH.credit} className="mr-0.5 h-[1.05em] w-[1.05em]" />}
+          {faq.link.href === "/espace/reglages/abonnement" && <Glyph d={GLYPH.credit} className="mr-0.5 h-[1.05em] w-[1.05em]" />}
           {faq.link[lang]}
           <Arrow />
         </Link>
