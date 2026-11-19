@@ -325,6 +325,10 @@ body {
   to { transform: rotate(360deg); }
 }
 /* Hero copy fades in once on load, the way apple.com product heroes do. Nothing else on the site enters. */
+/* The sidebar's fixed tooltips (side.tsx): a short slide from the button they name. */
+@keyframes ap-tip-in {
+  from { opacity: 0; translate: -4px 0; }
+}
 @keyframes ap-fade {
   from { opacity: 0; }
   to { opacity: 1; }
