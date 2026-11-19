@@ -80,8 +80,9 @@ export const FAQ: Faq[] = [
     cat: "audits",
     q: { fr: "Combien de temps dure un audit ?", en: "How long does an audit take?" },
     a: {
-      fr: "10 à 20 minutes pour cinq missions. Le rapport est consultable pendant l'audit, et un e-mail part quand il est terminé.",
-      en: "10 to 20 minutes for five missions. You can read the report while the audit runs, and an e-mail goes out when it is done.",
+      // {duree}: measured on the latest audits (lib/estimate.ts), filled in by the help page.
+      fr: "{duree} pour cinq missions, d'après les derniers audits, plus l'attente si d'autres audits tournent déjà. Avec un concurrent ou en Ordinateur + Mobile, compte environ le double. Le rapport est consultable pendant l'audit, et un e-mail part quand il est terminé.",
+      en: "{duree} for five missions, based on the latest audits, plus the wait if other audits are already running. With a competitor or Desktop + Mobile, count about twice as long. You can read the report while the audit runs, and an e-mail goes out when it is done.",
     },
     keys: "temps duree long rapide attendre minutes delai fini termine time wait fast slow finished",
   },
@@ -279,8 +280,8 @@ export const FAQ: Faq[] = [
     cat: "credits",
     q: { fr: "C'est quoi un crédit ?", en: "What is a credit?" },
     a: {
-      fr: "Une mission jouée par l'agent sur un site. Un audit complet de cinq missions utilise cinq crédits, concurrent compris mission par mission. Un test de paiement en utilise deux.",
-      en: "One mission the agent runs on a site. A full five-mission audit uses five credits, the competitor counted mission by mission. A payment test uses two.",
+      fr: "Une mission jouée par l'agent sur un site. Un audit complet de cinq missions utilise cinq crédits, concurrent compris mission par mission : Ordinateur + Mobile en utilise donc dix. Un test de paiement en utilise deux.",
+      en: "One mission the agent runs on a site. A full five-mission audit uses five credits, the competitor counted mission by mission: Desktop + Mobile therefore uses ten. A payment test uses two.",
     },
     link: { href: "/espace/abonnement", fr: "Abonnement et crédits", en: "Plan and credits" },
     keys: "credits consommation cout prix combien bareme decompte usage cost price how much",

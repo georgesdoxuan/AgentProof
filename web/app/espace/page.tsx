@@ -7,6 +7,7 @@ import { dict, tr, type Lang, type T } from "@/lib/i18n";
 import { getDict, getLang } from "@/lib/lang";
 import { loadSpace, priorities, shortDate, type SiteView } from "@/lib/space";
 import { monthRecap } from "@/lib/month";
+import { loadPace, estimateMinutes, minutesLabel } from "@/lib/estimate";
 import { Chevron, Chip, Chips, DeviceTag, Field, Group, Icon, MissionBar, MissionLegend, Row, Note, Spinner, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
 import { AutoRefresh } from "../audit/[id]/refresh";
 import { SpaceShell } from "./shell";
@@ -44,6 +45,8 @@ export default async function Accueil() {
   if (!team) return <NoTeam email={user.email} lang={lang} />;
 
   const { audits, sites } = await loadSpace(team.id);
+  // Only the empty space shows how long a first audit takes.
+  const pace = audits.length ? null : await loadPace();
   const running = audits.filter((a) => a.status !== "done");
   const todo = priorities(sites);
   const open = sites.flatMap((s) => s.blockers.filter((b) => b.state !== "check"));
@@ -90,7 +93,7 @@ export default async function Accueil() {
             {(
               [
                 ["pin", t("Indique ton site", "Enter your site"), t("Son adresse, et un concurrent si tu veux te comparer.", "Its address, and a competitor if you want to compare."), null],
-                ["audit", t("L'agent essaie d'acheter", "The agent tries to buy"), t("Cinq missions réelles, de la recherche au checkout.", "Five real missions, from search to checkout."), t("10–20 min", "10–20 min")],
+                ["audit", t("L'agent essaie d'acheter", "The agent tries to buy"), t("Cinq missions réelles, de la recherche au checkout.", "Five real missions, from search to checkout."), pace && minutesLabel(estimateMinutes(5, pace.desktop))],
                 ["wrench", t("Corrige ce qui bloque", "Fix what blocks"), t("Capture du blocage, correction proposée, puis relance pour vérifier.", "Screenshot of the blocker, a suggested fix, then a rerun to check."), null],
               ] as const
             ).map(([icon, h, d, chip], i) => (

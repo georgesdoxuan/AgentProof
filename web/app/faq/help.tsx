@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { GLYPH, Glyph } from "@/lib/glyphs";
 import { CATEGORIES, CONTACT, FAQ, POPULAR, RELEVANT, search, type Faq } from "@/lib/faq";
 import type { Lang } from "@/lib/i18n";
 
@@ -38,8 +39,12 @@ const T = {
 const lk = "text-link hover:underline";
 
 // The contact address inside an answer becomes a mail link.
+// "{duree}" in an answer is the measured audit time, passed by the page.
+const DurationCtx = createContext("6–9 min");
+
 function Answer({ faq, lang }: { faq: Faq; lang: Lang }) {
-  const parts = faq.a[lang].split(CONTACT);
+  const duration = useContext(DurationCtx);
+  const parts = faq.a[lang].replace("{duree}", lang === "en" ? duration : duration.replace("–", " à ")).split(CONTACT);
   return (
     <>
       <p>
@@ -52,6 +57,7 @@ function Answer({ faq, lang }: { faq: Faq; lang: Lang }) {
       </p>
       {faq.link && (
         <Link href={faq.link.href} className={`${lk} mt-2 inline-flex items-center gap-1`}>
+          {faq.link.href === "/espace/abonnement" && <Glyph d={GLYPH.credit} className="mr-0.5 h-[1.05em] w-[1.05em]" />}
           {faq.link[lang]}
           <Arrow />
         </Link>
@@ -84,7 +90,15 @@ function Item({ faq, lang }: { faq: Faq; lang: Lang }) {
 
 const catName = (id: Faq["cat"], lang: Lang) => CATEGORIES.find((c) => c.id === id)![lang];
 
-export function HelpCenter({ lang, initial }: { lang: Lang; initial: string }) {
+export function HelpCenter({ lang, initial, duration }: { lang: Lang; initial: string; duration: string }) {
+  return (
+    <DurationCtx.Provider value={duration}>
+      <Help lang={lang} initial={initial} />
+    </DurationCtx.Provider>
+  );
+}
+
+function Help({ lang, initial }: { lang: Lang; initial: string }) {
   const t = T[lang];
   const [q, setQ] = useState(initial);
   const query = useDeferredValue(q);
@@ -214,7 +228,8 @@ export function HelpCenter({ lang, initial }: { lang: Lang; initial: string }) {
             <ul className="flex gap-2 max-[734px]:w-max min-[735px]:flex-wrap">
               {CATEGORIES.map((c) => (
                 <li key={c.id}>
-                  <a href={`#${c.id}`} className="type-small inline-flex h-8 items-center whitespace-nowrap rounded-full bg-tile px-3.5 text-ink ring-1 ring-hairline transition-colors hover:bg-fill">
+                  <a href={`#${c.id}`} className="type-small inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full bg-tile px-3.5 text-ink ring-1 ring-hairline transition-colors hover:bg-fill">
+                    {c.id === "credits" && <Glyph d={GLYPH.credit} className="h-[15px] w-[15px] text-ink-2" />}
                     {c[lang]}
                   </a>
                 </li>
@@ -223,7 +238,10 @@ export function HelpCenter({ lang, initial }: { lang: Lang; initial: string }) {
           </nav>
           {CATEGORIES.map((c) => (
             <section key={c.id} id={c.id} className="mt-10 scroll-mt-[96px]">
-              <h2 className="type-headline mb-3 px-1">{c[lang]}</h2>
+              <h2 className="type-headline mb-3 flex items-center gap-2 px-1">
+                {c.id === "credits" && <Glyph d={GLYPH.credit} className="h-5 w-5 text-ink-2" />}
+                {c[lang]}
+              </h2>
               <div className="overflow-hidden rounded-[18px] bg-tile">
                 {FAQ.filter((f) => f.cat === c.id).map((f) => (
                   <Item key={f.id} faq={f} lang={lang} />

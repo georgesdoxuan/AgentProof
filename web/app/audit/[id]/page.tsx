@@ -8,7 +8,7 @@ import { rankText } from "@/app/espace/parts";
 import { reportSuffix } from "@/lib/space";
 import { locale, missionTitle, staticText, tr, type Lang, type T } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
-import { BlockerIcon, BrowserFrame, Chip, Chips, MissionIcon, Chevron, Note, DeviceTag, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, hurdles, summarize } from "@/lib/ui";
+import { BlockerIcon, BrowserFrame, Chip, Chips, Icon, MissionIcon, Chevron, Note, DeviceTag, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, hurdles, summarize } from "@/lib/ui";
 import { Hint } from "@/lib/hint";
 import { headers } from "next/headers";
 import { CopyField } from "@/app/espace/controls";
@@ -267,6 +267,12 @@ async function loadAudit(id: string) {
   return data;
 }
 
+// The desktop half of a Desktop + Mobile launch links the mobile one; the mobile report finds its desktop half back.
+async function devicePair(audit: { id: string; device: string }) {
+  const { data } = await db.from("audits").select("id").eq("compare_to", audit.id).neq("device", audit.device).limit(1).maybeSingle();
+  return data ? loadAudit(data.id) : null;
+}
+
 export default async function AuditPage({ params }: { params: Promise<{ id: string }> }) {
   await connection();
   const lang = await getLang();
@@ -281,7 +287,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   const [ctx, payAudit, competitor, { data: brand }, suffix] = await Promise.all([
     audit.kind === "payment" || audit.payment_test ? teamContext() : null,
     audit.payment_test ? loadAudit(audit.payment_test) : null,
-    audit.compare_to ? loadAudit(audit.compare_to) : null,
+    audit.compare_to ? loadAudit(audit.compare_to) : audit.kind === "checkout" ? devicePair(audit) : null,
     // Agency white label: their name and logo replace AgentProof's on this report.
     audit.team_id ? db.from("teams").select("brand_name, brand_logo").eq("id", audit.team_id).maybeSingle() : { data: null },
     // Same name as another report of the team: " (1)", " (2)"…, as in the reports list.
@@ -311,29 +317,34 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   const scope = scopeText(runs, s, audit.device, pays.some((p) => p.status === "done"), lang);
 
   const paymentOnly = runs.length === 0 && pays.length > 0;
-  // A linked audit of the same site is a model comparison, not a competitor.
-  const modelCompare = !!competitor && competitor.site_id === audit.site_id;
+  // A linked audit of the same site is a model comparison (same device) or the other half of Desktop + Mobile.
+  const deviceCompare = !!competitor && competitor.site_id === audit.site_id && competitor.device !== audit.device;
+  const modelCompare = !!competitor && competitor.site_id === audit.site_id && !deviceCompare;
+  const deviceName = (d: string) => (d === "mobile" ? "Mobile" : t("Ordinateur", "Desktop"));
   // A competitor sits next to the score; a model comparison is for the technical reader and goes after the fix plan.
   const compareCard = competitor && c ? (
             <Link href={`/audit/${competitor.id}`} className="tile group flex flex-col transition-colors duration-200 hover:bg-tile/80">
-              <h2 className="type-headline">{modelCompare ? t("Deux modèles, mêmes missions", "Two models, same missions") : t("Face au concurrent", "Against the competitor")}</h2>
+              <h2 className="type-headline">
+                {deviceCompare ? t("Ordinateur et mobile, mêmes missions", "Desktop and mobile, same missions") : modelCompare ? t("Deux modèles, mêmes missions", "Two models, same missions") : t("Face au concurrent", "Against the competitor")}
+              </h2>
               <div className="mt-8 space-y-6">
                 {(
                   [
-                    [modelCompare ? audit.model ?? DEFAULT_MODEL : audit.sites.name, s, true, perMission(runs), modelCompare ? null : audit.sites.domain],
-                    [modelCompare ? competitor.model ?? DEFAULT_MODEL : competitor.sites.name, c, false, perMission(competitor.runs), modelCompare ? null : competitor.sites.domain],
+                    [deviceCompare ? deviceName(audit.device) : modelCompare ? audit.model ?? DEFAULT_MODEL : audit.sites.name, s, true, perMission(runs), modelCompare || deviceCompare ? null : audit.sites.domain, deviceCompare ? audit.device : null],
+                    [deviceCompare ? deviceName(competitor.device) : modelCompare ? competitor.model ?? DEFAULT_MODEL : competitor.sites.name, c, false, perMission(competitor.runs), modelCompare || deviceCompare ? null : competitor.sites.domain, deviceCompare ? competitor.device : null],
                   ] as const
-                ).map(([name, x, self, pm, domain]) => (
+                ).map(([name, x, self, pm, domain, device]) => (
                   <div key={name} className="space-y-2.5">
                     <div className="flex items-baseline justify-between gap-3">
                       <span className={`flex min-w-0 items-center gap-2.5 ${self ? "font-semibold" : "text-ink-2"}`}>
                         {domain && <SiteLogo domain={domain} name={name} size="sm" />}
+                        {device && <Icon name={device} className="h-5 w-5 self-center" />}
                         <span className="truncate">{name}</span>
                       </span>
                       <span className="text-[21px] font-semibold tnum">{x.score ?? "—"} %</span>
                     </div>
                     <MissionBar ok={x.ok} done={x.done} total={x.total} />
-                    {modelCompare && pm && (
+                    {(modelCompare || deviceCompare) && pm && (
                       <p className="type-small text-ink-2 tnum">
                         {pm.s} s · {usd(pm.usd, 3, lang)} {t("par mission", "per mission")}
                       </p>
@@ -342,7 +353,9 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                 ))}
               </div>
               <span className="more mt-auto pt-6 group-hover:underline">
-                {modelCompare ? `${t("Rapport", "Report")} ${competitor.model ?? DEFAULT_MODEL}` : t(`Rapport de ${competitor.sites.name}`, `${competitor.sites.name} report`)}
+                {deviceCompare
+                  ? competitor.device === "mobile" ? t("Rapport mobile", "Mobile report") : t("Rapport ordinateur", "Desktop report")
+                  : modelCompare ? `${t("Rapport", "Report")} ${competitor.model ?? DEFAULT_MODEL}` : t(`Rapport de ${competitor.sites.name}`, `${competitor.sites.name} report`)}
               </span>
             </Link>
   ) : null;

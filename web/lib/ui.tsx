@@ -4,6 +4,7 @@ import { getLang, getT } from "./lang";
 import { accountColor } from "./avatar";
 import { CopyButton } from "@/app/espace/controls";
 import { Hint } from "./hint";
+import { GLYPH as LINE } from "./glyphs";
 
 // ---------- score ----------
 // Never color alone: every tone has a word and a glyph.
@@ -214,15 +215,17 @@ const ICON: Record<string, string> = {
   agent_tool_error: "M14.5 5.5a4.5 4.5 0 0 0-5.8 5.8L3.5 16.5a2.1 2.1 0 0 0 3 3l5.2-5.2a4.5 4.5 0 0 0 5.8-5.8l-2.7 2.7-2.6-.4-.4-2.6z",
   other: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM8 12h.01M12 12h.01M16 12h.01",
   payment: "M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM3 10h18M7 15h3",
-  desktop: "M4 4h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM8.5 20h7M12 16v4",
+  desktop: LINE.desktop,
+  both: LINE.both,
+  credit: LINE.credit,
   // Pricing tiers on the home page.
   ranking: "M5 20V13M12 20V5M19 20v-9",
   audit: "M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM20 20l-4.9-4.9M7.5 10.5l2 2 3.5-3.5",
   monthly: "M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM4 10h16M8 3v4M16 3v4M9.5 15l2 2 3.5-3.5",
   agency: "M9 4a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM3 19.5a6 6 0 0 1 12 0M16 4.5a3 3 0 0 1 0 5.5M18 13.6a6 6 0 0 1 3 5.9",
-  mobile: "M8 2.5h8a1.5 1.5 0 0 1 1.5 1.5v16a1.5 1.5 0 0 1-1.5 1.5H8A1.5 1.5 0 0 1 6.5 20V4A1.5 1.5 0 0 1 8 2.5zM11 18.5h2",
+  mobile: LINE.mobile,
   // Facts shown as chips instead of sentences (duration, rules, delivery, access).
-  clock: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7.5V12l3 2",
+  clock: LINE.clock,
   mail: "M4 5.5h16a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-11a1 1 0 0 1 1-1zM3.5 6.5 12 13l8.5-6.5",
   lock: "M6 10.5h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1zM8 10.5V7.5a4 4 0 0 1 8 0v3",
   nopay: "M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM3 10h18M4 4l16 16",
@@ -436,14 +439,16 @@ export function Field({ label, name, required, type = "url", defaultValue }: { l
 
 // ---------- controls shared by the team space ----------
 // Segmented control (radio group): one look for every short exclusive choice, as on the home form.
-export function Segmented({ name, options, value, label }: { name: string; options: [string, string][]; value: string; label: string }) {
+// An option may carry a line icon (third item), drawn before its label.
+export function Segmented({ name, options, value, label }: { name: string; options: ([string, string] | [string, string, string])[]; value: string; label: string }) {
   return (
     <fieldset className="inline-grid auto-cols-fr grid-flow-col rounded-[10px] bg-fill p-[3px]">
       <legend className="sr-only">{label}</legend>
-      {options.map(([v, l]) => (
+      {options.map(([v, l, icon]) => (
         <label key={v} className="relative cursor-pointer">
           <input type="radio" name={name} value={v} defaultChecked={v === value} className="peer sr-only" />
-          <span className="type-small flex h-9 items-center justify-center whitespace-nowrap rounded-[8px] px-4 font-semibold text-ink-2 transition-colors duration-200 peer-checked:bg-tile peer-checked:text-ink peer-checked:shadow-[0_1px_3px_rgb(0_0_0/0.12)] peer-focus-visible:outline-2 peer-focus-visible:outline-blue dark:peer-checked:bg-[#636366]">
+          <span className="type-small flex h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-[8px] px-4 font-semibold text-ink-2 transition-colors duration-200 peer-checked:bg-tile peer-checked:text-ink peer-checked:shadow-[0_1px_3px_rgb(0_0_0/0.12)] peer-focus-visible:outline-2 peer-focus-visible:outline-blue dark:peer-checked:bg-[#636366]">
+            {icon && <Icon name={icon} className="h-[17px] w-[17px]" />}
             {l}
           </span>
         </label>
