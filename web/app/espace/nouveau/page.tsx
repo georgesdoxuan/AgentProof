@@ -103,6 +103,7 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
             />
             <button className="btn">{t("Lancer l’audit", "Run the audit")}</button>
           </div>
+          <p className="type-caption text-ink-2">{t("Mobile : format téléphone simulé (écran 390 × 844), pas un vrai smartphone.", "Mobile: simulated phone format (390 × 844 screen), not a real smartphone.")}</p>
         </form>
       </Group>
     </SpaceShell>

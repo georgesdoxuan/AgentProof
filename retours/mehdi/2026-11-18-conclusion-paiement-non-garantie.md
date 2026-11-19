@@ -18,4 +18,5 @@ La méthode conserve les résultats observés sans garantir qu’une carte appro
 2026-11-18 — Proposition validée par Mehdi pour transmission à Georges avant la démonstration de vendredi 11 h. web/app/methode/page.tsx, textes ou traductions associés. Effort estimé : trente minutes. Modification éditoriale ; aucune donnée de carte à ajouter et aucun paiement, audit ou e-mail à déclencher.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait. /methode (FR et EN) : « la tentative a été transmise à la banque, mais la réussite du paiement et la confirmation de commande ne sont pas démontrées ».
+- Commit : 37f407c (PR feat/chantiers-audit)

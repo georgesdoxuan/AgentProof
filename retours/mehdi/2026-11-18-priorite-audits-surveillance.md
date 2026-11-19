@@ -18,4 +18,5 @@ Simuler une surveillance lente et plusieurs audits en attente : le traitement pr
 2026-11-18 — Demande validée par Mehdi pour réduire le délai jusqu’au rapport exploitable avant vendredi 11 h. web/lib/engine.ts, web/lib/automations.ts, web/app/api/tick/route.ts. Conserver les échéances et la dernière référence valide. Mesurer durée par phase, attente en file et ancienneté de la tâche de surveillance la plus ancienne. Effort estimé : une demi-journée à une journée pour une limite de temps et un report sûrs, à confirmer par Georges. Conserver les quotas et la fréquence d’appels actuels tant que leurs limites ne sont pas vérifiées. Aucun gain chiffré n’est annoncé sans mesure. Conserver le nombre de missions, le juge, les preuves et les contrôles de sécurité.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait. Le tick traite d'abord les audits. Le contrôle statique ne démarre que s'il reste plus de 25 s sur la route, la surveillance quotidienne plus de 15 s ; sinon le journal note « postponed » et la tâche reste due en base, reprise au tick suivant (dès que la file d'audits est vide, il reste toujours assez de temps).
+- Commit : 37f407c (PR feat/chantiers-audit)

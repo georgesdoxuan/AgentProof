@@ -18,4 +18,5 @@ Avant de lancer un audit, on comprend la différence entre format téléphone et
 2026-11-18 — Proposition validée par Mehdi pour transmission à Georges avant la démonstration de vendredi 11 h. Formulaire d’audit dans web/app/page.tsx ou composant associé ; libellés du rapport et traductions si concernés. Effort estimé : une heure. Il s’agit d’une précision de l’interface, pas d’un nouveau moteur mobile.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait. Sous le choix d'appareil (accueil et Espace › Nouvel audit) : « Mobile : format téléphone simulé (écran 390 × 844), pas un vrai smartphone. » Le ticket copié dit aussi « format téléphone simulé ».
+- Commit : 37f407c (PR feat/chantiers-audit)

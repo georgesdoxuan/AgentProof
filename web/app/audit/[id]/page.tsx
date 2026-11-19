@@ -48,6 +48,7 @@ function scopeText(runs: any[], s: ReturnType<typeof summarize>, device: string,
       s.done
         ? `Score based on ${s.done} journey${pl(s.done)} on ${device === "mobile" ? "mobile" : "desktop"}, from the home page to the checkout entrance.`
         : `No journey counted on ${device === "mobile" ? "mobile" : "desktop"}: no score for this site until a new audit.`,
+      s.done && s.done < 5 ? `Short sample: one result more or less moves the score by ${Math.round(100 / s.done)} points.` : "",
       excluded.length ? `${n(excluded.length, "mission")} excluded from the score (${reasons}).` : "",
       s.unverified ? `${n(s.unverified, "mission")} unverified, outside the score.` : "",
       s.errors ? `${n(s.errors, "mission")} not played (technical error).` : "",
@@ -57,6 +58,7 @@ function scopeText(runs: any[], s: ReturnType<typeof summarize>, device: string,
     s.done
       ? `Score calculé sur ${n(s.done, "parcours")} sur ${device === "mobile" ? "mobile" : "ordinateur"}, de l'accueil jusqu'à l'entrée du checkout.`
       : `Aucun parcours compté sur ${device === "mobile" ? "mobile" : "ordinateur"} : pas de score pour ce site avant un nouvel audit.`,
+    s.done && s.done < 5 ? `Échantillon court : un résultat de plus ou de moins déplace le score de ${Math.round(100 / s.done)} points.` : "",
     excluded.length ? `${n(excluded.length, "mission")} exclue${excluded.length > 1 ? "s" : ""} du score (${reasons}).` : "",
     s.unverified ? `${n(s.unverified, "mission")} non vérifiée${s.unverified > 1 ? "s" : ""}, hors score.` : "",
     s.errors ? `${n(s.errors, "mission")} non jouée${s.errors > 1 ? "s" : ""} (erreur technique).` : "",
@@ -73,6 +75,15 @@ function conclusion(r: any, t: T) {
   return login
     ? t("Entrée du checkout atteinte : page de connexion ou d'inscription.", "Checkout entrance reached: sign-in or sign-up page.")
     : t("Entrée du checkout atteinte.", "Checkout entrance reached.");
+}
+
+// The agent sometimes files "only reservable in store" under button_unresponsive: say what it saw, not a broken button.
+// Display only: the stored verdict and the score do not change.
+const IN_STORE_ONLY = /r[ée]serv\S* en magasin|retrait en magasin|click\s*(&|and)\s*collect|(indisponible|pas disponible|non disponible) en ligne|reserve in store|not available online/i;
+function missionBlocker(r: any, lang: Lang) {
+  if (r.blocker_type === "button_unresponsive" && IN_STORE_ONLY.test(`${r.blocker_detail ?? ""} ${r.agent_answer?.steps_summary ?? ""} ${r.judge?.reason ?? ""}`))
+    return lang === "en" ? "Online purchase unavailable (to check)" : "Achat en ligne indisponible (à vérifier)";
+  return blockerLabel(r.blocker_type, lang);
 }
 
 const longDate = (d: string, lang: Lang) => new Date(d).toLocaleDateString(locale(lang), { timeZone: "Europe/Paris", day: "numeric", month: "long", year: "numeric" });
@@ -237,6 +248,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   const h = await headers();
   const base = process.env.PUBLIC_URL || `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
   const statik = audit.static_check as { items?: { key: string; label: string; tone: "pass" | "warn" | "fail" | "none"; detail: string }[]; agents?: AgentAccess[] | null } | null;
+  const protocols = (statik?.items ?? []).filter((it) => ["ucp", "acp", "webmcp"].includes(it.key));
   const alert = audit.score_alert as { from: number; to: number; previous: string } | null;
 
   const runs = [...audit.runs].sort((a: any, b: any) => a.missions.position - b.missions.position);
@@ -424,6 +436,33 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
         </section>
         )}
 
+        {/* Two roads an agent can take: clicking through the screen (the score) or a commerce protocol (static check, no agent). */}
+        {!paymentOnly && protocols.length > 0 && (
+          <section className="tile grid gap-6 md:grid-cols-2" aria-label={t("Deux voies d’achat", "Two buying roads")}>
+            <div>
+              <h2 className="type-headline">{t("Par l’écran", "Through the screen")}</h2>
+              <p className="mt-2 text-[40px] font-semibold leading-none tnum">{s.score ?? "—"} %</p>
+              <p className="type-small mt-2 text-ink-2">{t("Agents qui regardent et cliquent comme un client : le score de cet audit.", "Agents that look and click like a customer: this audit's score.")}</p>
+            </div>
+            <div>
+              <h2 className="type-headline">{t("Par protocole", "Through a protocol")}</h2>
+              <ul className="mt-3 space-y-1.5">
+                {protocols.map((it) => (
+                  <li key={it.key} className="flex items-center gap-2.5">
+                    <StatusGlyph tone={it.tone === "pass" ? "pass" : "none"} className="h-4 w-4" />
+                    <span>{staticText(it.label, lang)}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="type-small mt-2 text-ink-2">
+                {protocols.some((it) => it.tone === "pass")
+                  ? t("Le site s’ouvre aussi aux agents qui achètent par API (Google, Shopify, OpenAI).", "The site also opens to agents that buy through an API (Google, Shopify, OpenAI).")
+                  : t("Aucun protocole d’achat pour agents : seuls ceux qui cliquent à l’écran peuvent acheter.", "No agent commerce protocol: only agents that click on screen can buy.")}
+              </p>
+            </div>
+          </section>
+        )}
+
         {pays.map((pay) => (
           <section key={pay.id} className="tile">
             <div className="type-small flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -528,7 +567,11 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
         {audit.recommendations && (
           <section>
             <SectionHead title={t("Plan de corrections.", "Fix plan.")} />
-            <Recommendations text={audit.recommendations} />
+            <Recommendations
+              text={audit.recommendations}
+              missions={runs.map((r: any, i: number) => ({ n: i + 1, title: r.missions.title, shot: r.screenshot_url, replay: `${base}/replay/${r.id}?a=${audit.id}` }))}
+              ticket={{ report: `${base}/audit/${audit.id}`, site: audit.sites.domain, device: audit.device === "mobile" ? t("mobile (format téléphone simulé)", "mobile (simulated phone format)") : t("ordinateur", "desktop"), date: longDate(audit.created_at, lang) }}
+            />
             <p className="type-caption mt-4 max-w-[680px] text-ink-2">
               {t(
                 "Les constats viennent des verdicts des missions ci-dessous. Les hypothèses et corrections sont générées par IA (modèle open source sur Hugging Face) : à vérifier avant d’agir.",
@@ -566,7 +609,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                       {!r.success && r.success !== null && (
                         <p className="mb-2 flex items-center gap-2.5 font-semibold">
                           <BlockerIcon type={r.blocker_type} />
-                          {blockerLabel(r.blocker_type, lang)}
+                          {missionBlocker(r, lang)}
                         </p>
                       )}
                       <p className="text-ink-2">{conclusion(r, t)}</p>
@@ -649,7 +692,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={r.screenshot_url} alt={`${t("Dernier écran vu par l'agent", "Last screen the agent saw")} : ${missionTitle(r.missions.title, lang)}`} className="block w-full" />
                       {r.status === "done" && r.success !== null && (
-                        <Verdict success={!!r.success} label={r.success ? undefined : blockerLabel(r.blocker_type, lang)} className="no-print absolute bottom-3 left-3" />
+                        <Verdict success={!!r.success} label={r.success ? undefined : missionBlocker(r, lang)} className="no-print absolute bottom-3 left-3" />
                       )}
                     </BrowserFrame>
                   </a>

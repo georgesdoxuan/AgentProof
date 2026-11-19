@@ -245,7 +245,11 @@ export async function agentAccess(url: string): Promise<AgentAccess[]> {
 
 export async function staticCheck(url: string): Promise<StaticItem[]> {
   const origin = new URL(url).origin;
-  const [robots, home, llms, catalog] = await Promise.all([get(`${origin}/robots.txt`), get(url), get(`${origin}/llms.txt`), get(`${origin}/products.json?limit=1`)]);
+  const [robots, home, llms, catalog, ucp, acp] = await Promise.all([
+    get(`${origin}/robots.txt`), get(url), get(`${origin}/llms.txt`), get(`${origin}/products.json?limit=1`),
+    get(`${origin}/.well-known/ucp`), get(`${origin}/.well-known/acp.json`),
+  ]);
+  let productText = "";
   const items: StaticItem[] = [];
 
   if (robots.status === 200) {
@@ -297,6 +301,7 @@ export async function staticCheck(url: string): Promise<StaticItem[]> {
   if (catalog.status === 200 && catalog.text.trim().startsWith("{")) {
     const handle = (JSON.parse(catalog.text).products?.[0]?.handle as string) ?? null;
     const product = handle ? await get(`${origin}/products/${handle}`) : { status: 0, text: "" };
+    productText = product.text;
     const hasProduct = /"@type"\s*:\s*"Product"/.test(product.text);
     items.push({ key: "catalog", label: "Catalogue public lisible (products.json)", tone: "pass", detail: "Un agent peut lister produits, prix et variantes sans parcourir les pages." });
     if (product.status === 200)
@@ -307,11 +312,59 @@ export async function staticCheck(url: string): Promise<StaticItem[]> {
       );
   }
 
+  items.push(...protocolItems(ucp, acp, html, productText));
+
   items.push(
     llms.status === 200 && !/<html/i.test(llms.text)
       ? { key: "llms", label: "llms.txt présent", tone: "pass", detail: "Le site donne aux IA un résumé de ses pages." }
       : { key: "llms", label: "Pas de llms.txt", tone: "none", detail: "Facultatif : un fichier qui résume le site pour les IA." },
   );
+  return items;
+}
+
+// Agentic commerce protocols: the "API road" an agent can take instead of the screen.
+// UCP (Google + Shopify): public profile at /.well-known/ucp. ACP (OpenAI + Stripe): no official public file, so only a
+// manifest at /.well-known/acp.json counts as proof. WebMCP: tools the page registers for in-browser agents (modelContext).
+// ponytail: WebMCP is looked for in the home page HTML only; tools registered by a script loaded later are missed.
+const isJson = (r: { status: number; text: string }) => r.status === 200 && /^\s*[{[]/.test(r.text);
+export function protocolItems(ucp: { status: number; text: string }, acp: { status: number; text: string }, html: string, productHtml = ""): StaticItem[] {
+  const items: StaticItem[] = [];
+  const caps = isJson(ucp) ? [...new Set(ucp.text.match(/dev\.ucp\.[a-z_.]+/g) ?? [])] : [];
+  items.push(
+    isJson(ucp)
+      ? {
+          key: "ucp",
+          label: caps.some((c) => c.startsWith("dev.ucp.shopping.checkout")) ? "Profil UCP avec checkout" : "Profil UCP publié",
+          tone: caps.some((c) => c.startsWith("dev.ucp.shopping.checkout")) ? "pass" : "warn",
+          detail: caps.length ? `Capacités déclarées : ${caps.slice(0, 6).join(", ")}.` : "Le fichier /.well-known/ucp existe mais ne déclare aucune capacité lisible.",
+        }
+      : { key: "ucp", label: "Pas de profil UCP", tone: "warn", detail: "Aucun fichier /.well-known/ucp : les agents de Google et de Shopify ne peuvent pas acheter par API, seulement par l'écran." },
+  );
+  items.push(
+    isJson(acp)
+      ? { key: "acp", label: "Manifeste ACP publié", tone: "pass", detail: "Fichier /.well-known/acp.json présent : le site annonce un checkout pour les agents (OpenAI, Stripe)." }
+      : { key: "acp", label: "Pas de manifeste ACP public", tone: "none", detail: "Facultatif : ACP passe souvent par Stripe sans fichier public, l'absence ne prouve rien." },
+  );
+  if (html)
+    items.push(
+      /modelContext|registerTool\s*\(/.test(html)
+        ? { key: "webmcp", label: "Outils WebMCP dans la page", tone: "pass", detail: "La page déclare des outils qu'un agent du navigateur peut appeler sans lire l'écran." }
+        : { key: "webmcp", label: "Pas d'outil WebMCP sur l'accueil", tone: "none", detail: "Standard en essai dans Chrome : un agent doit cliquer comme un humain." },
+    );
+  const all = `${html}\n${productHtml}`;
+  const ret = /MerchantReturnPolicy|hasMerchantReturnPolicy/.test(all);
+  const ship = /OfferShippingDetails|shippingDetails/.test(all);
+  if (html || productHtml)
+    items.push(
+      ret && ship
+        ? { key: "policies", label: "Livraison et retours décrits pour les machines", tone: "pass", detail: "schema.org déclare les frais de port et la politique de retour." }
+        : {
+            key: "policies",
+            label: "Livraison ou retours absents des données structurées",
+            tone: "warn",
+            detail: `Manque : ${[!ship && "frais de port (shippingDetails)", !ret && "politique de retour (hasMerchantReturnPolicy)"].filter(Boolean).join(", ")}. Un agent doit les chercher à l'écran.`,
+          },
+    );
   return items;
 }
 

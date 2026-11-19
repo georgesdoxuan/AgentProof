@@ -18,5 +18,6 @@ Avec des réponses H et HF simulées lentes ou bloquées, le traitement sort ava
 2026-11-18 — Demande validée par Mehdi pour réduire le délai jusqu’au rapport exploitable avant vendredi 11 h. Priorité initiale : instrumentation et délais explicites ; effort estimé d’une demi-journée à une journée selon les reprises existantes. Mesurer le temps des appels, dépassements de tick et reprises réussies. Ne pas réessayer automatiquement un paiement. Aucun test payant, e-mail réel ou déploiement sans autorisation. Aucun gain chiffré n’est annoncé sans mesure. Conserver le nombre de missions, le juge, les preuves et les contrôles de sécurité.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait. Délais d'expiration : 20 s sur chaque appel H, 25 s par tentative Hugging Face, 10 s vers n8n (notification), 15 s pour l'e-mail. Création de session : après un délai dépassé, une seconde requête part avec la même clé d'idempotence (H rend la même session) ; ensuite seulement le run passe en erreur.
+- Commit : 37f407c (PR #29)
 - Pas traité dans la PR #10 (vitesse des audits). Les passes s'arrêtent avant 45 s, mais h() et hf() n'ont toujours pas de délai d'expiration propre.

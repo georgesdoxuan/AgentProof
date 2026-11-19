@@ -203,6 +203,7 @@ export default async function Home() {
                 ))}
               </div>
             </fieldset>
+            <p className="type-caption -mt-1 text-ink-2">{t("Mobile : format téléphone simulé (écran 390 × 844), pas un vrai smartphone.", "Mobile: simulated phone format (390 × 844 screen), not a real smartphone.")}</p>
             <button className="btn mt-4 min-h-[56px] w-full rounded-[12px]">{t("Lancer l’audit", "Run the audit")}</button>
             <div className="type-small mt-2 rounded-[12px] bg-bg-2 p-5 text-ink-2 dark:bg-[#2c2c2e]">
               <p className="font-semibold text-ink">{t("Après le clic", "After the click")}</p>

@@ -21,6 +21,8 @@
   --nav: rgb(255 255 255 / 0.72);
   --glass: rgb(255 255 255 / 0.78);
   --shot-shadow: 0 2px 6px rgb(0 0 0 / 0.04), 0 24px 60px -20px rgb(0 0 0 / 0.22);
+  --sk: #e8e8ed; /* loading placeholders */
+  --sk-hi: #f5f5f7;
   color-scheme: light;
 }
 
@@ -43,6 +45,8 @@
     --nav: rgb(22 22 23 / 0.72);
     --glass: rgb(28 28 30 / 0.78);
     --shot-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 24px 60px -20px rgb(0 0 0 / 0.8);
+    --sk: #2c2c2e;
+    --sk-hi: #3a3a3c;
     color-scheme: dark;
   }
 }
@@ -328,6 +332,40 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .ap-fade, .ap-travel, .ap-tap, .ap-banner, .ap-verdict { animation-duration: 1ms; animation-delay: 0s !important; }
   .ap-ring, .ap-spin { animation: none; }
+}
+
+/* ---------- Loading: grey placeholders in the page's own layout, one soft light sweeping across all of them ---------- */
+/* Fixed attachment: every placeholder shares one viewport-wide gradient, so the sweep crosses the page in a single pass. */
+.sk {
+  background-color: var(--sk);
+  background-image: linear-gradient(100deg, transparent 35%, var(--sk-hi) 50%, transparent 65%);
+  background-size: 200vw 100%;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  animation: ap-sk 1.6s var(--ease-apple) infinite;
+}
+@keyframes ap-sk {
+  from { background-position: -200vw 0; }
+  to { background-position: 100vw 0; }
+}
+/* Navigation feedback: a thin blue line under the window's top edge while the next page loads (app/progress.tsx). */
+@keyframes ap-progress {
+  0% { transform: scaleX(0); opacity: 1; }
+  4% { transform: scaleX(0.3); }
+  30% { transform: scaleX(0.65); }
+  70% { transform: scaleX(0.85); }
+  95% { transform: scaleX(0.9); opacity: 1; }
+  100% { transform: scaleX(0.9); opacity: 0; }
+}
+/* 20 s then it fades by itself, in case a click never leads to a new URL. */
+.ap-progress-run { animation: ap-progress 20s ease-out 0.12s both; }
+.ap-progress-done { transform: scaleX(1); opacity: 0; transition: transform 0.25s var(--ease-apple), opacity 0.3s var(--ease-apple) 0.15s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sk { animation: none; background-image: none; }
+  /* No growing bar: a still line that simply appears, then goes. */
+  .ap-progress-run { animation: none; transform: scaleX(1); opacity: 0.6; }
+  .ap-progress-done { transition: none; }
 }
 
 @media (prefers-reduced-transparency: reduce) {
