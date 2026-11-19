@@ -6,7 +6,7 @@ import { BlurredShot } from "./blurred";
 import { canSeePayment } from "@/lib/auth";
 import { AutoRefresh } from "@/app/audit/[id]/refresh";
 import { AgentCursor, BrowserFrame, Chevron, StatusGlyph, Verdict, blockerLabel } from "@/lib/ui";
-import { missionTitle, tr } from "@/lib/i18n";
+import { loginName, missionTitle, tr } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 
 const ACTIONS: Record<string, [string, string]> = {
@@ -36,7 +36,7 @@ export default async function Replay({ params, searchParams }: { params: Promise
   if (!Number.isInteger(id) || !a || !/^[0-9a-f-]{36}$/.test(a)) notFound();
   const { data: run } = await db
     .from("runs")
-    .select("id, audit_id, status, success, blocker_type, first_attempt, with_login, payment_verdict, finished_at, missions(title, slug), audits(team_id, sites(name))")
+    .select("id, audit_id, status, success, blocker_type, first_attempt, with_login, login:login_id(label, login_hint), payment_verdict, finished_at, missions(title, slug), audits(team_id, sites(name))")
     .eq("id", id)
     .maybeSingle();
   if (!run || run.audit_id !== a) notFound();
@@ -98,7 +98,7 @@ export default async function Replay({ params, searchParams }: { params: Promise
           )}
           <h1 className="type-h1 mt-3">
             {payment
-              ? t("Test de paiement réel", "Real payment test") + (r.with_login ? t(" · connecté avec le compte de test", " · signed in with the test account") : t(" · sans compte", " · without an account"))
+              ? t("Test de paiement réel", "Real payment test") + (r.with_login ? t(" · connecté avec ", " · signed in with ") + loginName(r.login, lang) : t(" · sans compte", " · without an account"))
               : missionTitle(r.missions.title, lang)}
           </h1>
           {payment && r.payment_verdict && (

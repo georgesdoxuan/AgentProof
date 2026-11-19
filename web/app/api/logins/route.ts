@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     if (form.get("action") === "delete") await deleteSiteLogin(ctx.team.id, Number(form.get("id")));
     else {
       if (form.get("consent") !== "1") return fail(await msg("Coche la case pour confirmer que ce compte t'appartient.", "Tick the box to confirm this account is yours."));
-      await addSiteLogin(ctx.team.id, String(form.get("site") ?? ""), String(form.get("login") ?? "").trim(), String(form.get("password") ?? ""), ctx.user.id);
+      await addSiteLogin(ctx.team.id, String(form.get("site") ?? ""), String(form.get("login") ?? "").trim(), String(form.get("password") ?? ""), ctx.user.id, String(form.get("label") ?? ""));
     }
   } catch (e) {
     return fail(`${await msg("Erreur", "Error")} : ${(e as Error).message}`);

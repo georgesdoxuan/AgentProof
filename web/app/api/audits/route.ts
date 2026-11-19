@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { after } from "next/server";
-import { COMPARE_MODEL, DEFAULT_MODEL, attachEmail, auditsFromIp, createAudit, createPaymentTest, db, normalizeUrl, recentAudit, tick } from "@/lib/engine";
+import { COMPARE_MODEL, DEFAULT_MODEL, LOGIN_REFUSED, attachEmail, auditsFromIp, createAudit, createPaymentTest, db, normalizeUrl, recentAudit, tick } from "@/lib/engine";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { cardSecret } from "@/lib/cards";
 import { refreshLogo } from "@/lib/logo";
@@ -75,6 +75,10 @@ export async function POST(req: Request) {
     // A real payment needs the team's explicit yes, every time: the form's confirmation box, never a default.
     if (payment && form.get("pay_confirm") !== "1") return retry(req, form, "confirmation");
     if (payment && !(await cardSecret(ctx.team.id))) return retry(req, form, "carte");
+    // "With a test account": the account picked on the form (checked against the team and the site in createPaymentTest).
+    const withAccount = payment && form.get("account") === "login";
+    const loginId = withAccount ? Number(form.get("login")) : null;
+    if (withAccount && !(Number.isInteger(loginId) && loginId! > 0)) return retry(req, form, "compte");
 
     // The missions picked on the launch form (JSON). Absent (no JavaScript, home form): the first default missions.
     // A pick other than the plain defaults is a new question: never answered with last week's report.
@@ -110,7 +114,7 @@ export async function POST(req: Request) {
       : competitor && !paymentOnly
         ? await createAudit(competitor, { device, missions: FORM_MISSIONS, missionIds, model, ipHash, ...team })
         : undefined;
-    const paymentTest = payment ? await createPaymentTest(url, team) : undefined;
+    const paymentTest = payment ? await createPaymentTest(url, { ...team, loginId }) : undefined;
     const id = await createAudit(url, { device, missions: paymentOnly ? 0 : FORM_MISSIONS, missionIds: paymentOnly ? undefined : missionIds, compareTo, paymentTest, model: models ? DEFAULT_MODEL : model, email: email || undefined, ipHash, ...team });
     // Launch the first missions now instead of waiting up to a minute for the cron.
     after(() => tick(0).catch(() => {}));
@@ -119,6 +123,7 @@ export async function POST(req: Request) {
     return Response.redirect(new URL(`/audit/${id}`, req.url), 303);
   } catch (e) {
     // The only expected failure is an address that is not a public site; anything else is ours, said as such.
-    return retry(req, form, String((e as Error).message).startsWith("URL invalide") ? "url" : "technique");
+    const m = String((e as Error).message);
+    return retry(req, form, m.startsWith("URL invalide") ? "url" : m === LOGIN_REFUSED ? "compte" : "technique");
   }
 }

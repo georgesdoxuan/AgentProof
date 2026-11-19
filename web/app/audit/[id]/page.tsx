@@ -6,7 +6,7 @@ import { DEFAULT_MODEL, EXCLUDED, PAY_REACHED_BANK, db, payShown, scoreOf } from
 import { byRank } from "@/app/classement/board";
 import { rankText } from "@/app/espace/parts";
 import { reportSuffix } from "@/lib/space";
-import { locale, missionTitle, staticText, tr, type Lang, type T } from "@/lib/i18n";
+import { locale, loginName, missionTitle, staticText, tr, type Lang, type T } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 import { BlockerIcon, BrowserFrame, Chip, Chips, ExPay, Icon, MissionIcon, Chevron, Note, DeviceTag, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, hurdles, summarize } from "@/lib/ui";
 import { Hint } from "@/lib/hint";
@@ -39,7 +39,7 @@ import { SiteLogo } from "../../site-logo";
 const usd = (n: number, digits: number, lang: Lang) => (lang === "en" ? `$${n.toFixed(digits)}` : `${n.toFixed(digits).replace(".", ",")} $`);
 
 const RUN_FIELDS =
-  "id, status, payment_verdict, with_login, session_id, success, reached_checkout, blocker_type, blocker_detail, screenshot_url, final_url, steps, duration_s, cost_usd, judge, agent_answer, attempts, first_attempt, missions(title, position, team_id, base:base_id(title))";
+  "id, status, payment_verdict, with_login, login:login_id(label, login_hint), session_id, success, reached_checkout, blocker_type, blocker_detail, screenshot_url, final_url, steps, duration_s, cost_usd, judge, agent_answer, attempts, first_attempt, missions(title, position, team_id, base:base_id(title))";
 
 // Average duration and agent cost per finished mission: what a model comparison is about.
 function perMission(runs: any[]) {
@@ -306,7 +306,8 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   // Real payment tests: only the team that ran them, or AgentProof staff.
   const inTeam = !!audit.team_id && !!ctx?.teams.some((t) => t.id === audit.team_id);
   if (audit.kind === "payment" && !inTeam && !(await staffUser()).isStaff) notFound();
-  // One run without account, plus one signed in when the team saved a test account for the site.
+  // The payment test as launched: without an account, or signed in with the test account picked on the launch form
+  // (reports from before 19/11/2026 may hold both runs).
   const pays: any[] = inTeam && payAudit ? [...(payAudit.runs ?? [])].map(payShown).sort((a: any, b: any) => +a.with_login - +b.with_login) : [];
   const branded = !!brand?.brand_name;
   const h = await headers();
@@ -740,7 +741,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             <div className="type-small flex flex-wrap items-center gap-x-3 gap-y-1">
               <span className="text-ink-2">
                 {t("Test de paiement réel", "Real payment test")}
-                {pays.length > 1 || pay.with_login ? (pay.with_login ? t(" · connecté avec le compte de test", " · signed in with the test account") : t(" · sans compte", " · without an account")) : ""}
+                {pay.with_login ? t(" · connecté avec ", " · signed in with ") + loginName(pay.login, lang) : t(" · sans compte", " · without an account")}
               </span>
               <StatusBadge run={pay} />
             </div>

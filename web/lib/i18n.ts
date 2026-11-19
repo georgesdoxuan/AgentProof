@@ -413,3 +413,9 @@ export const staticText = (text: string, lang: Lang) => {
   for (const [re, en] of STATIC_EN) if (re.test(text)) return text.replace(re, en);
   return text;
 };
+
+// The test account a payment run signed in with: its name and masked login (never a password), or a generic name
+// for runs without that record (before 19/11/2026, or an account removed since).
+export const loginName = (l: { label: string | null; login_hint: string } | null | undefined, lang: Lang) =>
+  l ? (l.label ? (lang === "en" ? `“${l.label}” (${l.login_hint})` : `« ${l.label} » (${l.login_hint})`) : l.login_hint) : lang === "en" ? "the test account" : "le compte de test";
+
