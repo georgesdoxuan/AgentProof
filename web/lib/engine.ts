@@ -756,6 +756,42 @@ async function closeAudits(log: string[]) {
   }
 }
 
+// Cancel a running audit (and the audits launched with it: competitor, other device, payment test).
+// Missions not started yet are dropped and their credit given back; a replay not started yet falls back to its
+// first attempt, whose credit stays spent. Missions the agent is already playing finish normally: the H session
+// is not cut mid-way. When nothing is left running, the audit closes at once, without the "report ready" e-mail.
+export async function cancelAudit(id: string) {
+  const { data: main } = await db.from("audits").select("id, compare_to, payment_test").eq("id", id).single();
+  if (!main) return 0;
+  const ids = [main.id, main.compare_to, main.payment_test].filter(Boolean) as string[];
+  const { data: todo } = await db.from("runs").select("id, audit_id, attempts, first_attempt").in("audit_id", ids).eq("status", "todo");
+  const fresh = (todo ?? []).filter((r) => (r.attempts ?? 1) <= 1);
+  const replays = (todo ?? []).filter((r) => (r.attempts ?? 1) > 1 && r.first_attempt);
+  if (fresh.length) {
+    await db.from("credit_usage").delete().in("run_id", fresh.map((r) => r.id));
+    await db.from("runs").delete().in("id", fresh.map((r) => r.id)).eq("status", "todo");
+  }
+  for (const r of replays) {
+    const fa = r.first_attempt as any;
+    await db.from("credit_usage").delete().eq("run_id", r.id).eq("attempt", r.attempts);
+    await db
+      .from("runs")
+      .update({
+        status: fa.error ? "error" : "done", session_id: fa.session_id ?? null, success: fa.success ?? null, blocker_type: fa.blocker_type ?? null,
+        blocker_detail: fa.blocker_detail ?? null, screenshot_url: fa.screenshot_url ?? null, share_url: fa.share_url ?? null, steps: fa.steps ?? null,
+        cost_usd: fa.cost_usd ?? null, error: fa.error ?? null, first_attempt: null, finished_at: new Date().toISOString(),
+      })
+      .eq("id", r.id)
+      .eq("status", "todo");
+  }
+  // Close the audits with nothing left in flight; the others close on the next tick, once their last mission ends.
+  for (const aid of ids) {
+    const { count } = await db.from("runs").select("id", { count: "exact", head: true }).eq("audit_id", aid).in("status", ["todo", "launched"]);
+    if (!count) await db.from("audits").update({ status: "done", finished_at: new Date().toISOString() }).eq("id", aid).eq("status", "running");
+  }
+  return fresh.length + replays.length;
+}
+
 // Score drop alert (monthly follow-up): same team, site, device and model as the previous finished audit,
 // down by the team's threshold (teams.score_drop, 10 points by default) or more.
 // Stored on the audit for the report, e-mailed to whoever launched it, and posted to the team's webhook.

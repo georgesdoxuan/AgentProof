@@ -16,7 +16,7 @@ type Pace = { desktop: PaceRange; mobile: PaceRange; queued: number };
 
 // What the rest of the form multiplies: both devices, a competitor or the model comparison each play the missions twice.
 function useLaunchShape(ref: RefObject<HTMLElement | null>) {
-  const [shape, setShape] = useState({ device: "desktop", times: 1 });
+  const [shape, setShape] = useState({ device: "desktop", times: 1, pay: 0 });
   useEffect(() => {
     const form = ref.current?.closest("form");
     if (!form) return;
@@ -24,7 +24,9 @@ function useLaunchShape(ref: RefObject<HTMLElement | null>) {
       const f = new FormData(form);
       const device = String(f.get("device") ?? "desktop");
       const linked = String(f.get("competitor") ?? "").trim() !== "" || f.get("models") === "1";
-      setShape({ device, times: (device === "both" ? 2 : 1) * (linked ? 2 : 1) });
+      // A real payment test costs 2 credits on top (lib/credits.ts RATES.payment).
+      const pay = f.get("mode") === "payment" || f.get("payment") === "1" ? 2 : 0;
+      setShape({ device, times: f.get("mode") === "payment" ? 0 : (device === "both" ? 2 : 1) * (linked ? 2 : 1), pay });
     };
     sync();
     form.addEventListener("input", sync);
@@ -47,6 +49,7 @@ export function MissionPicker({ items: initial, lang, max, pace }: { items: Pick
   const n = picked.length;
   const shape = useLaunchShape(boxRef);
   const runs = n * shape.times;
+  const credits = runs + shape.pay;
   // The slower device sets the pace when both play.
   const minutes = estimateMinutes(runs, shape.device === "desktop" ? pace.desktop : pace.mobile, pace.queued);
 
@@ -116,9 +119,12 @@ export function MissionPicker({ items: initial, lang, max, pace }: { items: Pick
                 <Glyph d={GLYPH.clock} className="h-[15px] w-[15px]" />
                 {minutesLabel(minutes)}
               </span>
-              <span className="inline-flex items-center gap-1">
+              <span
+                className="inline-flex items-center gap-1"
+                title={t(`${credits} crédits, jusqu’à ${credits + runs} si des missions ratées sont rejouées`, `${credits} credits, up to ${credits + runs} if failed missions are replayed`)}
+              >
                 <Glyph d={GLYPH.credit} className="h-[15px] w-[15px]" />
-                {t(`${runs} crédit${runs > 1 ? "s" : ""}`, `${runs} credit${runs > 1 ? "s" : ""}`)}
+                {t(`${credits} crédit${credits > 1 ? "s" : ""}`, `${credits} credit${credits > 1 ? "s" : ""}`)}
               </span>
             </span>
           ) : (

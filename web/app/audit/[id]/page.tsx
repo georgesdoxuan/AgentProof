@@ -1,4 +1,4 @@
-import { staffUser, teamContext } from "@/lib/auth";
+import { canLaunch, staffUser, teamContext } from "@/lib/auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
@@ -298,7 +298,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   if (!audit) notFound();
   // Everything else the report needs, read in parallel (one round trip instead of four).
   const [ctx, payAudit, competitor, { data: brand }, suffix] = await Promise.all([
-    audit.kind === "payment" || audit.payment_test ? teamContext() : null,
+    audit.team_id ? teamContext() : null, // payment privacy, and who may cancel a running audit
     audit.payment_test ? loadAudit(audit.payment_test) : null,
     audit.compare_to ? loadAudit(audit.compare_to) : audit.kind === "checkout" ? devicePair(audit) : null,
     // Agency white label: their name and logo replace AgentProof's on this report.
@@ -323,6 +323,8 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   const s = summarize(runs);
   const c = competitor ? summarize(competitor.runs) : null;
   const running = audit.status === "running" || competitor?.status === "running" || pays.some((p) => p.status !== "done");
+  // Owner or admin of the report's team, with that team open: the reports API acts on the current team only.
+  const canCancel = running && !!ctx?.team && ctx.team.id === audit.team_id && canLaunch(ctx.team.role);
   const cost = runs.reduce((t: number, r: any) => t + Number(r.cost_usd ?? 0), 0);
   const maxBlock = s.blockers[0]?.[1] ?? 1;
   const got = hurdles(runs, lang);
@@ -425,6 +427,16 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
               {new Date(audit.created_at).toLocaleString(locale(lang), { timeZone: "Europe/Paris", dateStyle: "long", timeStyle: "short" })}
             </time>
             {!running && !paymentOnly && <PrintButton label={t("Télécharger en PDF", "Download as PDF")} />}
+            {!running && !paymentOnly && (
+              <span className="no-print inline-flex gap-3">
+                <a href={`/audit/${audit.id}/export?format=csv`} className="text-link hover:underline">
+                  CSV
+                </a>
+                <a href={`/audit/${audit.id}/export?format=json`} className="text-link hover:underline">
+                  JSON
+                </a>
+              </span>
+            )}
           </p>
           {audit.proof_of && (
             <p className="mt-6 rounded-[12px] bg-tile px-4 py-3 type-small">
@@ -473,6 +485,23 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
               </span>
               <Chip icon="live" tone="blue">{t("Direct", "Live")}</Chip>
             </p>
+          )}
+          {canCancel && (
+            <details className="group mt-3 print:hidden">
+              <summary className="type-small inline-flex cursor-pointer list-none text-link hover:underline [&::-webkit-details-marker]:hidden">{t("Annuler l’audit", "Cancel the audit")}</summary>
+              <form action="/api/reports" method="post" className="type-small mt-3 flex max-w-[560px] flex-wrap items-center gap-3 rounded-[12px] bg-tile px-4 py-3 text-ink-2">
+                <input type="hidden" name="action" value="cancel" />
+                <input type="hidden" name="id" value={audit.id} />
+                <input type="hidden" name="back" value={`/audit/${audit.id}`} />
+                <span className="min-w-0 flex-1">
+                  {t(
+                    "Les missions pas encore lancées sont retirées et leurs crédits rendus. Celles en cours se terminent et restent dans le rapport.",
+                    "Missions not started yet are dropped and their credits given back. Those already running finish and stay in the report.",
+                  )}
+                </span>
+                <button className="btn-secondary min-h-9 rounded-full px-4 font-semibold text-fail">{t("Confirmer l’annulation", "Confirm cancellation")}</button>
+              </form>
+            </details>
           )}
         </header>
 

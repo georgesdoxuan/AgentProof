@@ -1,11 +1,11 @@
-import { db } from "@/lib/engine";
+import { cancelAudit, db } from "@/lib/engine";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { msg } from "@/lib/lang";
 import { purgeAudit as purge } from "@/lib/purge";
 
 // Report management in the team space: favourite, rename, trash, restore, delete for good. Owner and admin only.
 // Every action is scoped to the current team; the form sends back where to land (a /espace/rapports page).
-const ACTIONS = ["favorite", "unfavorite", "rename", "trash", "restore", "purge", "empty"] as const;
+const ACTIONS = ["favorite", "unfavorite", "rename", "trash", "restore", "purge", "empty", "cancel"] as const;
 type Action = (typeof ACTIONS)[number];
 const TITLE_MAX = 120;
 
@@ -17,7 +17,8 @@ export async function POST(req: Request) {
   if (!ctx.team) return Response.redirect(new URL("/espace", req.url), 303);
   const form = await req.formData();
   const back = String(form.get("back") ?? "");
-  const next = new URL(/^\/espace\/rapports[\w/-]*(\?[\w=&-]*)?$/.test(back) ? back : "/espace/rapports", req.url);
+  // Back to a reports page, or to the report itself (cancel from the report header).
+  const next = new URL(/^\/espace\/rapports[\w/-]*(\?[\w=&-]*)?$/.test(back) || /^\/audit\/[0-9a-f-]{36}$/.test(back) ? back : "/espace/rapports", req.url);
   if (!canLaunch(ctx.team.role)) return fail(await msg("Ton rôle (lecteur) permet de consulter les rapports, pas de les modifier.", "Your role (viewer) lets you read reports, not change them."), 403);
 
   const action = String(form.get("action") ?? "") as Action;
@@ -44,7 +45,10 @@ export async function POST(req: Request) {
     await db.from("audits").update({ title: title || null }).eq("id", id);
   } else if (action === "trash") await db.from("audits").update({ deleted_at: now }).eq("id", id);
   else if (action === "restore") await db.from("audits").update({ deleted_at: null }).eq("id", id);
-  else if (action === "purge") {
+  else if (action === "cancel") {
+    if (audit.status === "done") return fail(await msg("Cet audit est déjà terminé.", "This audit has already finished."), 409);
+    await cancelAudit(id);
+  } else if (action === "purge") {
     // Only from the trash, and never while the agent is still playing missions on it.
     if (!audit.deleted_at) return fail(await msg("Mets d'abord le rapport à la corbeille.", "Move the report to the trash first."));
     if (audit.status !== "done") return fail(await msg("Audit en cours : attends qu'il se termine pour le supprimer définitivement.", "Audit running: wait for it to finish before deleting it permanently."), 409);
