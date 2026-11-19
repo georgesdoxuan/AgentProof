@@ -10,6 +10,7 @@ import { locale, loginName, missionTitle, staticText, tr, type Lang, type T } fr
 import { getLang } from "@/lib/lang";
 import { BlockerIcon, BrowserFrame, Chip, Chips, ExPay, Icon, MissionIcon, Chevron, Note, DeviceTag, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, hurdles, summarize } from "@/lib/ui";
 import { Hint } from "@/lib/hint";
+import { ClampText } from "@/lib/clamp";
 import { headers } from "next/headers";
 import { CopyField } from "@/app/espace/controls";
 import { Mark, Wordmark, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
@@ -971,8 +972,10 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                         <Chevron className="h-2.5 w-2.5 transition-transform duration-200 group-open:rotate-90" />
                         {t("Réponse originale de l’agent", "The agent's original answer")}
                       </summary>
-                      {r.blocker_detail && <p className="mt-2">{r.blocker_detail}</p>}
-                      {r.agent_answer?.steps_summary && r.agent_answer.steps_summary !== r.blocker_detail && <p className="mt-2">{r.agent_answer.steps_summary}</p>}
+                      <ClampText lang={lang} lines={6} className="mt-2">
+                        {r.blocker_detail && <p>{r.blocker_detail}</p>}
+                        {r.agent_answer?.steps_summary && r.agent_answer.steps_summary !== r.blocker_detail && <p className={r.blocker_detail ? "mt-2" : ""}>{r.agent_answer.steps_summary}</p>}
+                      </ClampText>
                     </details>
                   )}
                   {r.status === "launched" && r.session_id && (
