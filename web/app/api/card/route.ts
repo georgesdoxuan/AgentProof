@@ -9,14 +9,14 @@ const fail = (msg: string, status = 400) => new Response(msg, { status, headers:
 // Team payment card: owner or admin only. The number, expiry and CVC are encrypted before they reach the database.
 export async function POST(req: Request) {
   const ctx = await teamContext();
-  if (!ctx) return go(req, "/connexion?next=/espace/paiement");
+  if (!ctx) return go(req, "/connexion?next=/espace/reglages/paiement");
   if (!ctx.team || !canLaunch(ctx.team.role)) return fail(await msg("Seuls le propriétaire et les admins de l'équipe gèrent la carte.", "Only the team's owner and admins manage the card."), 403);
   const form = await req.formData();
   const str = (k: string) => String(form.get(k) ?? "").trim();
 
   if (str("action") === "delete") {
     await db.from("team_cards").delete().eq("team_id", ctx.team.id);
-    return go(req, "/espace/paiement");
+    return go(req, "/espace/reglages/paiement");
   }
 
   const number = str("number").replace(/[\s-]/g, "");
@@ -52,5 +52,5 @@ export async function POST(req: Request) {
     updated_at: new Date().toISOString(),
   });
   if (error) return fail(`${await msg("Erreur", "Error")} : ${error.message}`, 500);
-  return go(req, "/espace/paiement");
+  return go(req, "/espace/reglages/paiement");
 }

@@ -4,7 +4,7 @@ import { postWebhook } from "@/lib/automations";
 
 // Slack sends the admin back here with a code: exchange it for the channel's incoming webhook and save it on the team.
 const back = (req: Request, slack: string) => {
-  const to = new URL("/espace/automations", req.url);
+  const to = new URL("/espace/reglages/automations", req.url);
   to.searchParams.set("slack", slack);
   return new Response(null, { status: 303, headers: { Location: to.toString(), "Set-Cookie": "slack_state=; Path=/api/slack; Max-Age=0" } });
 };
@@ -15,7 +15,7 @@ export async function GET(req: Request) {
   const code = url.searchParams.get("code");
   const cookie = req.headers.get("cookie")?.match(/(?:^|;\s*)slack_state=([^;]+)/)?.[1];
   const ctx = await teamContext();
-  if (!ctx) return Response.redirect(new URL("/connexion?next=/espace/automations", req.url), 303);
+  if (!ctx) return Response.redirect(new URL("/connexion?next=/espace/reglages/automations", req.url), 303);
   // Refused on Slack's screen, or a link not started from this browser and this team.
   if (!code || !cookie || cookie !== state || state.split(".")[0] !== ctx.team?.id || !canLaunch(ctx.team.role)) return back(req, "refused");
 

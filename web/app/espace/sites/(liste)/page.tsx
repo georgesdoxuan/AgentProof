@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { loadSpace } from "@/lib/space";
 import { getT } from "@/lib/lang";
-import { Empty, MissionLegend } from "@/lib/ui";
+import { Empty, Icon, MissionLegend } from "@/lib/ui";
 import { SpaceShell } from "../../shell";
 import { SiteCard, SitesTabs } from "../../parts";
 
@@ -22,11 +22,17 @@ export default async function Sites() {
       title="Sites"
       hint={t("Le dernier score de chaque site, son évolution et ce qu'il reste à corriger.", "The latest score of each site, its trend and what is left to fix.")}
       actions={
-        canLaunch(team.role) ? (
-          <Link href="/espace/nouveau" className="btn">
-            {t("Ajouter un site", "Add a site")}
+        <div className="flex flex-wrap gap-3">
+          <Link href="/espace/classement" className="btn btn-secondary gap-2">
+            <Icon name="ranking" />
+            {t("Classement", "Ranking")}
           </Link>
-        ) : undefined
+          {canLaunch(team.role) && (
+            <Link href="/espace/nouveau" className="btn">
+              {t("Ajouter un site", "Add a site")}
+            </Link>
+          )}
+        </div>
       }
     >
       <div>

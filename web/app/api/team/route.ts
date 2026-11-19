@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     const name = str("name");
     if (!name) return fail(await msg("Donne un nom à l'équipe.", "Give the team a name."));
     await setTeam(await createTeam(name, user.id));
-    return go(req, "/equipe");
+    return go(req, "/espace/reglages/equipe");
   }
 
   if (action === "switch") {
@@ -79,25 +79,25 @@ export async function POST(req: Request) {
       link,
     );
     // The owner sees the link once, to share it by hand if the e-mail does not arrive.
-    return go(req, `/equipe?${new URLSearchParams({ invite: token, email, envoye: sent ? "1" : "0" })}`);
+    return go(req, `/espace/reglages/equipe?${new URLSearchParams({ invite: token, email, envoye: sent ? "1" : "0" })}`);
   }
 
   if (action === "role") {
     if (!ROLES.includes(str("role"))) return fail(await msg("Rôle invalide.", "Invalid role."));
     if (str("user") === team.owner_id) return fail(await msg("Le rôle du propriétaire ne change pas.", "The owner's role does not change."));
     await db.from("memberships").update({ role: str("role") }).eq("team_id", team.id).eq("user_id", str("user"));
-    return go(req, "/equipe");
+    return go(req, "/espace/reglages/equipe");
   }
 
   if (action === "remove") {
     if (str("user") === team.owner_id) return fail(await msg("Le propriétaire ne peut pas être retiré.", "The owner cannot be removed."));
     await db.from("memberships").delete().eq("team_id", team.id).eq("user_id", str("user"));
-    return go(req, "/equipe");
+    return go(req, "/espace/reglages/equipe");
   }
 
   if (action === "revoke") {
     await db.from("invitations").delete().eq("team_id", team.id).eq("id", str("invitation"));
-    return go(req, "/equipe");
+    return go(req, "/espace/reglages/equipe");
   }
 
   // White label for agencies: their name and logo on the team's public reports, instead of AgentProof's.
@@ -106,13 +106,13 @@ export async function POST(req: Request) {
     const logo = str("brand_logo");
     if (logo && (logo.length > 500 || !/^https:\/\/[^\s"'<>]+$/.test(logo))) return fail(await msg("Le logo doit être une adresse https vers une image.", "The logo must be an https address of an image."));
     await db.from("teams").update({ brand_name: name || null, brand_logo: name && logo ? logo : null }).eq("id", team.id);
-    return go(req, "/equipe");
+    return go(req, "/espace/reglages/equipe");
   }
 
   if (action === "rename") {
     if (!str("name")) return fail(await msg("Donne un nom à l'équipe.", "Give the team a name."));
     await db.from("teams").update({ name: str("name").slice(0, 80) }).eq("id", team.id);
-    return go(req, "/equipe");
+    return go(req, "/espace/reglages/equipe");
   }
 
   return fail(await msg("Action inconnue.", "Unknown action."));

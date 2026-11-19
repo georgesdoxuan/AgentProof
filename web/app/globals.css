@@ -233,9 +233,8 @@ body {
   width: min(1200px, 87.5%);
   margin-inline: auto;
 }
-/* The header keeps the same width on every page, app pages included: it used to run edge to edge in the team space
-   (logo against the sidebar), so the logo and the account button jumped ~96 px sideways between the public pages and
-   the space. */
+/* The header runs edge to edge on every page, logo on the leading edge at the sidebar's own gutter (24px; 32px from
+   640px to 1023px, like the stacked sidebar), so neither the logo nor the account button moves between pages. */
 /* Product-page tile: radius 30 / 25 / 20, padding 40 / 30. */
 @utility tile {
   border-radius: 30px;

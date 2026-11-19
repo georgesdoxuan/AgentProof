@@ -127,10 +127,10 @@ export function Nav({ email, t }: { email: string | null; t: Dict["nav"] }) {
         className="fixed inset-auto top-[56px] right-[calc((100vw-min(1200px,87.5vw))/2)] m-0 w-64 rounded-[14px] border-0 bg-tile p-1.5 text-ink shadow-[0_12px_40px_-12px_rgb(0_0_0/0.35)] ring-1 ring-hairline"
       >
         <p className="type-caption truncate px-3 pb-1.5 pt-2 text-ink-2">{email}</p>
-        <Link href="/equipe" onClick={hide} className={item}>
+        <Link href="/espace/reglages/equipe" onClick={hide} className={item}>
           {t.team}
         </Link>
-        <Link href="/compte" onClick={hide} className={item}>
+        <Link href="/espace/reglages/compte" onClick={hide} className={item}>
           {t.account}
         </Link>
         <form action="/api/auth" method="post" className="mt-1 border-t border-hairline pt-1">

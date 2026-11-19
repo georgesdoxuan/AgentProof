@@ -3,7 +3,7 @@ import { db, normalizeUrl } from "@/lib/engine";
 import { INTERVALS, SCORE_DROPS, checkAutomation, postWebhook, webhookOk } from "@/lib/automations";
 import { msg } from "@/lib/lang";
 
-const go = (req: Request) => Response.redirect(new URL("/espace/automations", req.url), 303);
+const go = (req: Request) => Response.redirect(new URL("/espace/reglages/automations", req.url), 303);
 const fail = (msg: string, status = 400) => new Response(msg, { status, headers: { "Content-Type": "text/plain; charset=utf-8" } });
 const MAX_PER_TEAM = 20;
 export const maxDuration = 60;
@@ -12,7 +12,7 @@ export const maxDuration = 60;
 // state: "off" = paused, "notify" = alert only, "audit" = alert and launch a new audit.
 export async function POST(req: Request) {
   const ctx = await teamContext();
-  if (!ctx) return Response.redirect(new URL("/connexion?next=/espace/automations", req.url), 303);
+  if (!ctx) return Response.redirect(new URL("/connexion?next=/espace/reglages/automations", req.url), 303);
   if (!ctx.team || !canLaunch(ctx.team.role)) return fail(await msg("Seuls le propriétaire et les admins de l'équipe gèrent les automations.", "Only the team's owner and admins manage automations."), 403);
   const teamId = ctx.team.id;
   const form = await req.formData();

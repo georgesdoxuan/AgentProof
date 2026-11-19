@@ -70,7 +70,7 @@ export const FAQ: Faq[] = [
       fr: "Le classement public est gratuit, et chaque espace a 15 crédits par mois, soit 3 audits. Le paiement en ligne n'est pas encore ouvert : pendant l'essai, rien n'est bloqué ni facturé.",
       en: "The public ranking is free, and every space gets 15 credits a month, that is 3 audits. Online payment is not open yet: during the trial, nothing is blocked or charged.",
     },
-    link: { href: "/espace/abonnement", fr: "Abonnement et crédits", en: "Plan and credits" },
+    link: { href: "/espace/reglages/abonnement", fr: "Abonnement et crédits", en: "Plan and credits" },
     keys: "prix tarif cout combien payer gratuitement essai offre free trial price cost how much",
   },
 
@@ -304,7 +304,7 @@ export const FAQ: Faq[] = [
       fr: "Cinq crédits, un par mission. L'offre gratuite en donne 15 par mois, soit 3 audits. Pendant l'essai, rien n'est facturé.",
       en: "Five credits, one per mission. The free plan gives 15 a month, that is 3 audits. During the trial, nothing is charged.",
     },
-    link: { href: "/espace/abonnement", fr: "Abonnement et crédits", en: "Plan and credits" },
+    link: { href: "/espace/reglages/abonnement", fr: "Abonnement et crédits", en: "Plan and credits" },
     keys: "prix cout combien tarif payer facture audit price cost how much pay",
   },
   {
@@ -315,7 +315,7 @@ export const FAQ: Faq[] = [
       fr: "Une mission jouée par l'agent sur un site. Un audit complet de cinq missions utilise cinq crédits, concurrent compris mission par mission : Ordinateur + Mobile en utilise donc dix. Un test de paiement en utilise deux.",
       en: "One mission the agent runs on a site. A full five-mission audit uses five credits, the competitor counted mission by mission: Desktop + Mobile therefore uses ten. A payment test uses two.",
     },
-    link: { href: "/espace/abonnement", fr: "Abonnement et crédits", en: "Plan and credits" },
+    link: { href: "/espace/reglages/abonnement", fr: "Abonnement et crédits", en: "Plan and credits" },
     keys: "credits consommation cout prix combien bareme decompte usage cost price how much",
   },
   {
@@ -326,7 +326,7 @@ export const FAQ: Faq[] = [
       fr: "Gratuit : le classement public et 15 crédits par mois, soit 3 audits. Audit complet : 490 € par site, un rapport ponctuel. Suivi mensuel : 149 € par mois, avec un audit complet automatique chaque mois, tes pages relues chaque jour sans agent ni crédit, et 150 crédits pour relancer des audits quand tu veux (5 crédits par audit, l'audit automatique compris : environ 30 audits par mois). Agences : 600 crédits pour plusieurs sites clients. Rien n'est facturé tant que le paiement en ligne n'est pas ouvert.",
       en: "Free: the public ranking and 15 credits a month, that is 3 audits. Full audit: €490 per site, a one-off report. Monthly tracking: €149 a month, with an automatic full audit every month, your pages read daily without the agent and without credits, and 150 credits to rerun audits whenever you want (5 credits per audit, the automatic one included: about 30 audits a month). Agencies: 600 credits for several client sites. Nothing is charged while online payment is closed.",
     },
-    link: { href: "/espace/abonnement", fr: "Abonnement et crédits", en: "Plan and credits" },
+    link: { href: "/espace/reglages/abonnement", fr: "Abonnement et crédits", en: "Plan and credits" },
     keys: "abonnement forfait plan tarifs prix offre agence mensuel subscription pricing price agency monthly",
   },
   {
@@ -358,7 +358,7 @@ export const FAQ: Faq[] = [
       fr: "Le paiement en ligne n'est pas encore ouvert : il n'y a rien à résilier. Le changement d'offre arrive bientôt dans Abonnement et crédits.",
       en: "Online payment is not open yet: there is nothing to cancel. Changing plan is coming soon in Plan and credits.",
     },
-    link: { href: "/espace/abonnement", fr: "Abonnement et crédits", en: "Plan and credits" },
+    link: { href: "/espace/reglages/abonnement", fr: "Abonnement et crédits", en: "Plan and credits" },
     keys: "resilier annuler arreter changer offre abonnement upgrade cancel change plan stop subscription",
   },
   {
@@ -392,7 +392,7 @@ export const FAQ: Faq[] = [
       fr: "Elles relisent tes pages (bandeau cookies, captcha, boutons, formulaires, robots.txt) à la fréquence choisie et après chaque mise en ligne. Si quelque chose change, tu es prévenu, et un audit peut repartir tout seul.",
       en: "They reread your pages (cookie banner, captcha, buttons, forms, robots.txt) at the chosen frequency and after every release. When something changes, you are told, and an audit can start on its own.",
     },
-    link: { href: "/espace/automations", fr: "Automations", en: "Automations" },
+    link: { href: "/espace/reglages/automations", fr: "Automations", en: "Automations" },
     keys: "surveillance suivi monitoring veille changement alerte automatique watch track monitor change automatic",
   },
   {
@@ -413,7 +413,7 @@ export const FAQ: Faq[] = [
       fr: "Dans Automations, clique sur « Connecter Slack » et choisis le canal : un message de test part aussitôt. Discord, n8n, Make ou Zapier : colle une URL de webhook entrant.",
       en: "In Automations, click “Connect Slack” and pick the channel: a test message goes out right away. Discord, n8n, Make or Zapier: paste an incoming webhook URL.",
     },
-    link: { href: "/espace/automations", fr: "Automations", en: "Automations" },
+    link: { href: "/espace/reglages/automations", fr: "Automations", en: "Automations" },
     keys: "slack discord teams webhook zapier make n8n notification canal message alertes channel notify",
   },
   {
@@ -424,7 +424,7 @@ export const FAQ: Faq[] = [
       fr: "Oui. Appelle l'adresse secrète donnée dans Automations après un déploiement (Vercel, Shopify ou GitHub) : toutes les pages suivies sont vérifiées dans la minute.",
       en: "Yes. Call the secret address shown in Automations after a deployment (Vercel, Shopify or GitHub): every tracked page is checked within a minute.",
     },
-    link: { href: "/espace/automations", fr: "Automations", en: "Automations" },
+    link: { href: "/espace/reglages/automations", fr: "Automations", en: "Automations" },
     keys: "deploiement mise en ligne release deploy hook vercel shopify github theme publication ci",
   },
   {
@@ -457,7 +457,7 @@ export const FAQ: Faq[] = [
       fr: "Dans Équipe, entre son adresse : il reçoit un lien valable 7 jours, réservé à cette adresse. Seul le propriétaire de l'équipe gère les membres.",
       en: "In Team, enter their address: they get a link valid for 7 days, for that address only. Only the team's owner manages members.",
     },
-    link: { href: "/equipe", fr: "Équipe", en: "Team" },
+    link: { href: "/espace/reglages/equipe", fr: "Équipe", en: "Team" },
     keys: "inviter ajouter membre collegue collaborateur partager acces invitation invite add member colleague access",
   },
   {
@@ -478,7 +478,7 @@ export const FAQ: Faq[] = [
       fr: "Oui, pour les agences : dans Équipe, ton nom et ton logo remplacent AgentProof sur les rapports de l'équipe, en ligne et en PDF.",
       en: "Yes, for agencies: in Team, your name and logo replace AgentProof on the team's reports, online and as PDF.",
     },
-    link: { href: "/equipe", fr: "Équipe", en: "Team" },
+    link: { href: "/espace/reglages/equipe", fr: "Équipe", en: "Team" },
     keys: "marque blanche logo agence personnaliser branding white label agency client",
   },
   {
@@ -555,7 +555,7 @@ export const FAQ: Faq[] = [
       fr: "Dans Moyen de paiement. Numéro, date et cryptogramme sont chiffrés et ne sont plus jamais affichés. Seuls le propriétaire et les admins gèrent la carte.",
       en: "In Payment method. Number, date and security code are encrypted and never shown again. Only the owner and admins manage the card.",
     },
-    link: { href: "/espace/paiement", fr: "Moyen de paiement", en: "Payment method" },
+    link: { href: "/espace/reglages/paiement", fr: "Moyen de paiement", en: "Payment method" },
     keys: "carte bancaire ajouter enregistrer cb visa moyen paiement securite chiffre card add save credit secure encrypted",
   },
   {
@@ -576,7 +576,7 @@ export const FAQ: Faq[] = [
       fr: "Ajoute un compte de test dans Comptes de test. Le test tourne alors deux fois : sans compte, puis connecté. Les mots de passe restent dans un coffre-fort chez H Company ; l'agent ne les voit jamais.",
       en: "Add a test account in Test accounts. The test then runs twice: without an account, then signed in. Passwords stay in a vault at H Company; the agent never sees them.",
     },
-    link: { href: "/espace/comptes", fr: "Comptes de test", en: "Test accounts" },
+    link: { href: "/espace/reglages/comptes", fr: "Comptes de test", en: "Test accounts" },
     keys: "compte test connexion identifiant mot de passe login obligatoire account password required sign in",
   },
 ];
