@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { LangSwitch, Nav, Sections } from "./nav";
+import { FooterNote, Nav, Sections } from "./nav";
 import { NavProgress } from "./progress";
 import { currentUser } from "@/lib/auth";
 import { Icon, Mark, Wordmark } from "@/lib/ui";
@@ -49,44 +49,67 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               <Wordmark className="text-[21px] leading-none max-[734px]:text-[19px]" />
             </Link>
             <Sections t={t.sections} />
-            <Nav email={(await currentUser())?.email ?? null} t={t.nav} />
+            <Nav email={(await currentUser())?.email ?? null} t={t.nav} lang={lang} langLabel={t.footer.language} />
           </nav>
         </header>
         {/* The page fills the window, so a short page never leaves a band of another color under the footer. */}
         <main id="contenu" className="flex flex-1 flex-col">{children}</main>
+        {/* SaaS footer (Linear, Vercel, Stripe): brand and one line on the left, link columns, then fine print. */}
         <footer className="bg-bg-2 type-caption text-ink-2">
-          <div className="wrap-wide border-t border-line py-5">
-            <p className="flex items-start gap-2 py-2">
-              <Icon name="shield" className="mt-px h-4 w-4 shrink-0" />
-              {t.footer.rules}
-            </p>
-            <div className="mt-2 flex flex-col gap-2 border-t border-line pt-4 sm:flex-row sm:justify-between">
-              <p>{t.footer.event}</p>
-              {/* A div, not a p: the language switch is a form, and a form inside a p breaks hydration. */}
-              <div className="flex flex-wrap gap-x-4 gap-y-1">
-                <span>{t.footer.credits}</span>
-                <Link href="/methode" className="hover:text-ink hover:underline">{t.footer.method}</Link>
-                <Link href="/faq" className="hover:text-ink hover:underline">{lang === "en" ? "Help" : "Aide"}</Link>
-                {/* A plain link, no embed: nothing from Instagram loads until the visitor clicks. */}
-                <a href="https://www.instagram.com/unstock.ai/" target="_blank" rel="noopener noreferrer" className="hover:text-ink hover:underline">
-                  Instagram — Unstock<span className="sr-only">{lang === "en" ? " (opens in a new tab)" : " (nouvel onglet)"}</span>
-                </a>
-                <LangSwitch lang={lang} />
+          <div className="wrap-wide border-t border-line">
+            <div className="grid gap-x-8 gap-y-10 py-12 sm:grid-cols-[1fr_auto_auto_auto] max-sm:grid-cols-2 max-sm:py-10">
+              <div className="max-sm:col-span-2">
+                <Link href="/" aria-label={t.home} className="-ml-0.5 inline-flex items-center gap-2 rounded-md">
+                  <Mark className="h-6 w-6" />
+                  <Wordmark className="type-body leading-none text-ink" />
+                </Link>
+                <p className="mt-3 max-w-[30ch]">{t.footer.tagline}</p>
               </div>
+              <FooterColumn title={t.footer.product} links={[
+                ["/methode", t.footer.method],
+                ["/classement", t.footer.ranking],
+                ["/#tarifs", t.footer.pricing],
+                ["/faq", t.footer.help],
+              ]} />
+              <FooterColumn title={t.footer.legal} links={LEGAL_PAGES.map((p) => [p.href, lang === "en" ? p.en : p.fr])} />
+              <FooterColumn title={t.footer.follow} links={[["https://www.instagram.com/unstock.ai/", "Instagram — Unstock", t.footer.newTab]]} />
             </div>
-            <nav aria-label={t.footer.legal} className="mt-3 border-t border-line pt-4">
-              <ul className="flex flex-wrap gap-x-4 gap-y-1">
-                {LEGAL_PAGES.map((p) => (
-                  <li key={p.href}>
-                    <Link href={p.href} className="inline-flex min-h-6 items-center hover:text-ink hover:underline">{lang === "en" ? p.en : p.fr}</Link>
-                  </li>
-                ))}
+            <div className="flex flex-col gap-3 border-t border-line py-6 text-[12px] leading-[1.5]">
+              <p className="flex items-start gap-1.5"><Icon name="shield" className="mt-px h-3.5 w-3.5" />{t.footer.rules}</p>
+              <ul className="flex flex-wrap gap-x-5 gap-y-1.5">
+                <li>© 2026 {t.footer.event.replace(/\.$/, "")}</li>
+                <li className="flex items-center gap-1.5"><Icon name="sparkle" className="h-3.5 w-3.5" />{t.footer.agent}</li>
+                <li className="flex items-center gap-1.5"><Icon name="eye" className="h-3.5 w-3.5" />{t.footer.judge}</li>
               </ul>
-            </nav>
+              <FooterNote text={t.footer.source} />
+            </div>
           </div>
         </footer>
         <CookieNotice text={t.footer.cookies} short={t.footer.cookiesShort} more={t.footer.cookiesMore} ok={t.footer.cookiesOk} />
       </body>
     </html>
+  );
+}
+
+// One footer column: a small title in ink, then plain grey links. External links open in a new tab, said aloud.
+function FooterColumn({ title, links }: { title: string; links: [string, string, string?][] }) {
+  return (
+    <nav aria-label={title}>
+      <p className="font-semibold text-ink">{title}</p>
+      <ul className="mt-3 space-y-2">
+        {links.map(([href, label, newTab]) => (
+          <li key={href}>
+            {newTab ? (
+              // A plain link, no embed: nothing from Instagram loads until the visitor clicks.
+              <a href={href} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-ink">
+                {label}<span className="sr-only"> ({newTab})</span>
+              </a>
+            ) : (
+              <Link href={href} className="transition-colors hover:text-ink">{label}</Link>
+            )}
+          </li>
+        ))}
+      </ul>
+    </nav>
   );
 }
