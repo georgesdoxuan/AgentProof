@@ -24,7 +24,8 @@ export function LangSwitch({ lang }: { lang: Lang }) {
   );
 }
 
-// Home only: the page's sections, in the site header (one bar, not two). Centered beside the logo on wide screens,
+// Home only: the page's sections, plus "Méthode" (its own page: visitors want the method before giving their site).
+// In the site header (one bar, not two). Centered beside the logo on wide screens,
 // a second row under it below 1024 px. The section crossing the middle of the window is marked current.
 export function Sections({ t }: { t: Dict["sections"] }) {
   const path = usePathname();
@@ -50,7 +51,7 @@ export function Sections({ t }: { t: Dict["sections"] }) {
       {ids.map((id) => (
         <li key={id}>
           <a
-            href={`#${id}`}
+            href={id === "methode" ? "/methode" : `#${id}`}
             aria-current={current === id ? "location" : undefined}
             className="relative inline-flex h-11 items-center whitespace-nowrap text-ink/80 transition-colors after:absolute after:inset-x-0 after:bottom-2 after:h-px after:origin-center after:scale-x-0 after:bg-ink after:transition-transform hover:text-ink aria-[current=location]:text-ink aria-[current=location]:after:scale-x-100 lg:h-[52px] lg:after:bottom-3"
           >

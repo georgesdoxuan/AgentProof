@@ -291,11 +291,22 @@ export const FAQ: Faq[] = [
     cat: "credits",
     q: { fr: "Quelles sont les offres ?", en: "What are the plans?" },
     a: {
-      fr: "Gratuit : 15 crédits par mois. Suivi mensuel : 149 € par mois pour 150 crédits, de quoi auditer un site chaque jour. Agences : 600 crédits pour plusieurs sites clients.",
-      en: "Free: 15 credits a month. Monthly tracking: €149 a month for 150 credits, enough to audit one site every day. Agencies: 600 credits for several client sites.",
+      fr: "Gratuit : le classement public et 15 crédits par mois, soit 3 audits. Audit complet : 490 € par site, un rapport ponctuel. Suivi mensuel : 149 € par mois, avec un audit complet automatique chaque mois, tes pages relues chaque jour sans agent ni crédit, et 150 crédits pour relancer des audits quand tu veux (5 crédits par audit, l'audit automatique compris : environ 30 audits par mois). Agences : 600 crédits pour plusieurs sites clients. Rien n'est facturé tant que le paiement en ligne n'est pas ouvert.",
+      en: "Free: the public ranking and 15 credits a month, that is 3 audits. Full audit: €490 per site, a one-off report. Monthly tracking: €149 a month, with an automatic full audit every month, your pages read daily without the agent and without credits, and 150 credits to rerun audits whenever you want (5 credits per audit, the automatic one included: about 30 audits a month). Agencies: 600 credits for several client sites. Nothing is charged while online payment is closed.",
     },
     link: { href: "/espace/abonnement", fr: "Abonnement et crédits", en: "Plan and credits" },
     keys: "abonnement forfait plan tarifs prix offre agence mensuel subscription pricing price agency monthly",
+  },
+  {
+    id: "essai-ou-audit",
+    cat: "credits",
+    q: { fr: "Qu'apporte l'audit à 490 € de plus que l'essai gratuit ?", en: "What does the €490 audit add to the free trial?" },
+    a: {
+      fr: "Aujourd'hui, rien : c'est le même audit (cinq missions, captures, replays, comparaison avec un concurrent, plan de corrections en PDF), offert pendant l'essai car le paiement en ligne n'est pas encore ouvert. Les prix affichés sont ceux qui s'appliqueront à l'ouverture du paiement ; rien n'est facturé avant. Le suivi mensuel, lui, ajoute l'audit automatique chaque mois et la relecture quotidienne des pages.",
+      en: "Today, nothing: it is the same audit (five missions, screenshots, replays, competitor comparison, fix plan as a PDF), free during the trial because online payment is not open yet. The prices shown are those that will apply once payment opens; nothing is charged before. The monthly plan adds the automatic monthly audit and the daily page reads.",
+    },
+    link: { href: "/#tarifs", fr: "Tarifs", en: "Pricing" },
+    keys: "essai gratuit difference 490 audit payant unite valeur pourquoi trial free difference paid one-off why",
   },
   {
     id: "plus-de-credits",
