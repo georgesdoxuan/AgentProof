@@ -211,8 +211,9 @@ export default async function Abonnement() {
         <Row>
           <form action="/api/automations" method="post" className="flex w-full flex-wrap items-center gap-x-4 gap-y-3">
             <input type="hidden" name="action" value="site_cap" />
-            <span className="min-w-0 flex-1">
+            <span className="min-w-0 basis-full sm:basis-0 sm:flex-1">
               <Hint
+                side="top"
                 tip={t(
                   "Crédits par site et par mois, tous appareils. Au-delà, les audits automatiques (page modifiée, mise en ligne, audit mensuel) ne partent plus jusqu'au 1er du mois ; un audit mensuel retenu attend le suivant. Un audit lancé à la main passe toujours. Vide : aucun plafond.",
                   "Credits per site and per month, all devices. Past it, automatic audits (page changed, release, monthly audit) stop until the 1st of the month; a held monthly audit waits for the next one. An audit launched by hand always goes through. Empty: no cap.",
