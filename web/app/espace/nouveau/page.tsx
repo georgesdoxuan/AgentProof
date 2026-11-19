@@ -75,7 +75,7 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
             icon="info"
             action={
               erreur === "carte" ? (
-                <Link href="/espace/paiement" className="text-link hover:underline">{t("Paiement", "Payment method")}</Link>
+                <Link href="/espace/reglages/paiement" className="text-link hover:underline">{t("Paiement", "Payment method")}</Link>
               ) : erreur === "technique" ? (
                 <a href={`mailto:${LEGAL.contact}`} className="text-link hover:underline">{t("Nous écrire", "Write to us")}</a>
               ) : undefined
