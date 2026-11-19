@@ -3,31 +3,39 @@ import { connection } from "next/server";
 import { db } from "@/lib/engine";
 import { currentUser } from "@/lib/auth";
 import { AgentCursor, BrowserFrame, Chip, Chips, Field, Icon, MissionBar, StatusGlyph, Verdict, blockerLabel, scoreTone } from "@/lib/ui";
-import { tr, type Lang, type T } from "@/lib/i18n";
+import { missionTitle, tr, type Lang, type T } from "@/lib/i18n";
 import { getDict, getLang } from "@/lib/lang";
 import { Sections } from "../nav";
 import { byRank } from "../classement/board";
 import { LEGAL } from "@/lib/legal";
 import { loadPace, estimateMinutes, minutesLabel } from "@/lib/estimate";
 import { SiteLogo } from "../site-logo";
+import { FORM_FAQ } from "@/lib/faq";
 
 // Report opened by "Voir un exemple de rapport": real counted blockers, captures, replays and a plan. Env var to swap it without code.
 const EXAMPLE_AUDIT = process.env.EXAMPLE_AUDIT_ID ?? "8c843d3f-3d95-4834-aace-21880a85f499"; // Promod, 78 %
 // The "Preuves" tile shows one chosen blocked mission, not the latest failure: a new audit must never swap in an unreadable capture.
 const PROOF_RUN = Number(process.env.PROOF_RUN_ID ?? 228); // Promod, product page with no size selector
+// The demo on the home page: one blocked mission of EXAMPLE_AUDIT, its screenshot and the fix the report gives for it.
+// Read from the database at render: a recording, never a live agent session (no H call).
+const DEMO_RUN = Number(process.env.DEMO_RUN_ID ?? 19); // Promod, mission 2 « Menu + filtre taille », size selector
 
 export default async function Home() {
   await connection();
   const lang = await getLang();
   const t = tr(lang);
-  const [user, { data: scores }, { data: proof }, pace] = await Promise.all([
+  const [user, { data: scores }, { data: proof }, pace, { data: demoRun }, { data: demoAudit }] = await Promise.all([
     currentUser(),
     db.from("site_scores").select("*"),
     // A real blocked mission for the "Preuves" tile: evidence over illustration.
     db.from("runs").select("screenshot_url, final_url, blocker_type").eq("id", PROOF_RUN).maybeSingle(),
     // Time of a 5-mission audit, measured on the latest audits (queue left out: it changes by the minute).
     loadPace(),
+    db.from("runs").select("id, audit_id, success, blocker_type, screenshot_url, final_url, agent_answer, missions(title, position)").eq("id", DEMO_RUN).maybeSingle(),
+    db.from("audits").select("id, device, finished_at, recommendations, sites(domain, name)").eq("id", EXAMPLE_AUDIT).maybeSingle(),
   ]);
+  // Only when the run belongs to the example audit: capture, result and fix always come from the same audit.
+  const demo = demoRun && demoAudit && demoRun.audit_id === demoAudit.id && demoRun.success === false && demoRun.screenshot_url ? { run: demoRun, audit: demoAudit } : null;
 
   // Same order as /classement, so the two never disagree.
   const desktop = (scores ?? []).filter((s) => s.device === "desktop");
@@ -92,8 +100,8 @@ export default async function Home() {
           </BrowserFrame>
           <figcaption className="type-small mx-auto mt-5 max-w-[520px] text-ink-2">
             {t(
-              "L’agent clique sur « Ajouter au panier ». Un bandeau cookies surgit et le recouvre. La mission s’arrête là.",
-              "The agent clicks “Add to cart”. A cookie banner pops up and covers it. The mission ends there.",
+              "Illustration : l’agent clique sur « Ajouter au panier ». Un bandeau cookies surgit et le recouvre. La mission s’arrête là.",
+              "Illustration: the agent clicks “Add to cart”. A cookie banner pops up and covers it. The mission ends there.",
             )}
           </figcaption>
         </figure>
@@ -123,6 +131,8 @@ export default async function Home() {
           </p>
         </div>
       </section>
+
+      {demo && <Demo demo={demo} lang={lang} t={t} />}
 
       {/* What you get */}
       <section id="ce-que-tu-recois" className="section scroll-mt-[96px] lg:scroll-mt-[52px] bg-bg-2">
@@ -265,6 +275,7 @@ export default async function Home() {
               </Link>
             </p>
           </form>
+          <FormFaq lang={lang} t={t} />
         </div>
       </section>
 
@@ -343,6 +354,8 @@ export default async function Home() {
 
       <Pricing lang={lang} t={t} />
 
+      <Team t={t} />
+
       <div>
         <ol className="wrap-wide type-caption pb-6 text-ink-2">
           <li id="note-1" className="scroll-mt-20">
@@ -355,6 +368,197 @@ export default async function Home() {
         </ol>
       </div>
     </>
+  );
+}
+
+// The fix plan block that names this mission (« title »), split into its tagged lines. Null when the plan has none.
+function fixFor(plan: string | null | undefined, title: string) {
+  const blocks = (plan ?? "").split(/\n(?=\d+[.)]\s)/);
+  const block = blocks.find((b) => /^\d+[.)]\s/.test(b) && b.split("\n")[0].includes(`« ${title} »`));
+  if (!block) return null;
+  const [head, ...lines] = block.split("\n");
+  const get = (k: string) => lines.find((l) => l.startsWith(`${k} :`))?.slice(k.length + 2).trim().replace(/\s*;\s*juge visuel\s*:.*$/, "");
+  const problem = head.replace(/^\d+[.)]\s*/, "").split(" · ")[0];
+  const fix = get("Correction possible");
+  return fix ? { problem, observed: get("Observé"), hypothesis: get("Hypothèse"), fix } : null;
+}
+
+type DemoData = {
+  run: { id: number; blocker_type: string | null; screenshot_url: string | null; final_url: string | null; agent_answer: unknown; missions: unknown };
+  audit: { id: string; device: string; finished_at: string | null; recommendations: string | null; sites: unknown };
+};
+
+function DemoStep({ t, n, title, children }: { t: T; n: number; title: string; children: React.ReactNode }) {
+  return (
+    <li className="tile flex min-w-0 flex-col">
+      <p className="type-eyebrow text-ink-2">{t(`Étape ${n}`, `Step ${n}`)}</p>
+      <h3 className="type-h3 mt-2">{title}</h3>
+      {children}
+    </li>
+  );
+}
+
+// A real mission, its screenshot, then the fix the report proposes: three still screens from one finished audit.
+// No video, no autoplay, no sound; the screenshot has a text alternative and every step is plain text.
+function Demo({ demo, lang, t }: { demo: DemoData; lang: Lang; t: T }) {
+  const { run, audit } = demo;
+  const mission = run.missions as { title: string; position: number };
+  const site = audit.sites as { domain: string; name: string };
+  const summary = (run.agent_answer as { steps_summary?: string } | null)?.steps_summary;
+  const fix = fixFor(audit.recommendations, mission.title);
+  const date = audit.finished_at ? new Date(audit.finished_at).toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Paris" }) : "";
+  const label = blockerLabel(run.blocker_type, lang);
+  return (
+    <section id="demo" className="section scroll-mt-[96px] lg:scroll-mt-[52px] bg-bg-2" aria-labelledby="demo-titre">
+      <div className="wrap-wide">
+        <h2 id="demo-titre" className="type-h1">{t("Un vrai rapport, en trois écrans.", "A real report, in three screens.")}</h2>
+        <p className="type-intro mt-4 max-w-[720px] text-ink-2">
+          {t(
+            `Mission ${mission.position} de l’audit de ${site.name}, tel que le client le reçoit.`,
+            `Mission ${mission.position} of the ${site.name} audit, as the client receives it.`,
+          )}
+        </p>
+        <Chips className="mt-4">
+          <Chip icon="play">{t("Enregistrement, pas un agent en direct", "Recording, not a live agent")}</Chip>
+          <Chip icon={audit.device === "mobile" ? "mobile" : "desktop"}>{audit.device === "mobile" ? "Mobile" : t("Ordinateur", "Desktop")}</Chip>
+          {date && <Chip icon="clock">{t(`Audit du ${date}`, `Audit of ${date}`)}</Chip>}
+        </Chips>
+        <ol className="mt-10 grid gap-5 max-[734px]:mt-8 lg:grid-cols-3">
+          <DemoStep t={t} n={1} title={t("La mission", "The mission")}>
+            <p className="mt-3 font-semibold">{missionTitle(mission.title, lang)}</p>
+            {summary && (
+              <blockquote className="type-small mt-3 border-l-2 border-line pl-3 text-ink-2" lang="fr">
+                {summary}
+              </blockquote>
+            )}
+            <p className="type-caption mt-3 text-ink-2">{t("Le compte rendu de l’agent, mot pour mot.", "The agent’s own account, word for word.")}</p>
+          </DemoStep>
+          <DemoStep t={t} n={2} title={t("La capture", "The screenshot")}>
+            <div className="relative mt-4">
+              <BrowserFrame url={run.final_url}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={run.screenshot_url!}
+                  alt={t(`Dernier écran vu par l’agent sur ${site.domain} : page produit, mission bloquée (${label}).`, `Last screen the agent saw on ${site.domain}: product page, mission blocked (${label}).`)}
+                  className="block w-full"
+                  loading="lazy"
+                />
+              </BrowserFrame>
+              <Verdict success={false} label={label} className="absolute left-3 top-12" />
+            </div>
+            <p className="type-small mt-4 text-ink-2">{t("Le juge visuel relit cette capture avant de confirmer le verdict.", "The visual judge reviews this screenshot before confirming the verdict.")}</p>
+          </DemoStep>
+          <DemoStep t={t} n={3} title={t("La correction proposée", "The suggested fix")}>
+            {fix ? (
+              <dl className="type-small mt-3 space-y-2" lang="fr">
+                {fix.observed && (
+                  <div>
+                    <dt className="inline font-semibold">{t("Observé", "Observed")} : </dt>
+                    <dd className="inline text-ink-2">{fix.observed}</dd>
+                  </div>
+                )}
+                {fix.hypothesis && (
+                  <div>
+                    <dt className="inline font-semibold text-warn">{t("Hypothèse", "Hypothesis")} : </dt>
+                    <dd className="inline text-ink-2">{fix.hypothesis}</dd>
+                  </div>
+                )}
+                <div>
+                  <dt className="inline font-semibold">{t("Correction possible", "Possible fix")} : </dt>
+                  <dd className="inline text-ink-2">{fix.fix}</dd>
+                </div>
+              </dl>
+            ) : (
+              <p className="type-small mt-3 text-ink-2">{t("Le plan de corrections est dans le rapport complet.", "The fix plan is in the full report.")}</p>
+            )}
+            <p className="type-caption mt-auto pt-4 text-ink-2">
+              {t("Hypothèse et correction sont générées par IA : à vérifier avant d’agir.", "Hypothesis and fix are AI-generated: check them before acting.")}
+              {lang === "en" && " Report text in French."}
+            </p>
+          </DemoStep>
+        </ol>
+        <p className="mt-6 flex flex-wrap gap-x-6 gap-y-2">
+          <Link href={`/audit/${audit.id}#mission-${mission.position}`} className="more">
+            {t("Voir ce rapport complet", "See the full report")}
+          </Link>
+          <Link href={`/replay/${run.id}?a=${audit.id}`} className="more">
+            {t("Rejouer la mission pas à pas", "Replay the mission step by step")}
+          </Link>
+        </p>
+      </div>
+    </section>
+  );
+}
+
+// Three answers from the help centre, folded, under the form: the same text as /faq, one click to the rest.
+function FormFaq({ lang, t }: { lang: Lang; t: T }) {
+  return (
+    <div className="mt-12">
+      <h3 className="type-headline">{t("Avant de lancer", "Before you run it")}</h3>
+      <div className="mt-3 overflow-hidden rounded-[18px] bg-bg-2 dark:bg-tile">
+        {FORM_FAQ.map((f) => (
+          <details key={f.id} className="group border-b border-hairline last:border-0">
+            <summary className="flex min-h-[52px] cursor-pointer list-none items-center gap-4 px-5 py-3 font-medium transition-colors hover:bg-fill/40 [&::-webkit-details-marker]:hidden">
+              <span className="flex-1">{f.q[lang]}</span>
+              <svg viewBox="0 0 12 12" className="h-3 w-3 shrink-0 text-ink-2 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M1.5 4L6 8.5 10.5 4" />
+              </svg>
+            </summary>
+            <div className="type-small -mt-1 px-5 pb-5 text-ink-2">
+              <p>{f.a[lang]}</p>
+              <Link href={`/faq#${f.id}`} className="mt-2 inline-block text-link hover:underline">
+                {t("Dans l’aide", "In the help centre")}
+              </Link>
+            </div>
+          </details>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Who is behind it, from what is already public (legal notice, footer): no invented names, clients or quotes.
+// First names and roles of the team members go here only once each of them agrees.
+function Team({ t }: { t: T }) {
+  return (
+    <section id="equipe" className="section scroll-mt-[96px] lg:scroll-mt-[52px] bg-bg-2" aria-labelledby="equipe-titre">
+      <div className="wrap">
+        <h2 id="equipe-titre" className="type-h1">{t("Qui fait AgentProof.", "Who makes AgentProof.")}</h2>
+        <div className="mt-10 grid gap-5 max-[734px]:mt-8 md:grid-cols-2">
+          <article className="tile">
+            <Icon name="agency" className="h-7 w-7 text-blue" />
+            <h3 className="type-headline mt-5">{t("Une équipe de cinq étudiants", "A team of five students")}</h3>
+            <p className="mt-2 text-ink-2">
+              {t(
+                "AgentProof est né au hackathon H Company × Hugging Face d’Eugenia School, en novembre 2026. L’équipe se partage le produit et la technique, les consignes de l’agent et la qualité du juge, les automatisations, la vérification des données et le business.",
+                "AgentProof was built at the H Company × Hugging Face hackathon at Eugenia School, in November 2026. The team shares product and engineering, the agent’s instructions and the judge’s quality, automations, data checks and business.",
+              )}
+            </p>
+            <p className="type-small mt-4 text-ink-2">
+              {t("Responsable de la publication : ", "Publisher: ")}
+              {LEGAL.publisher} ·{" "}
+              <a href={`mailto:${LEGAL.contact}`} className="text-link hover:underline">
+                {LEGAL.contact}
+              </a>
+            </p>
+          </article>
+          <article className="tile">
+            <Icon name="eye" className="h-7 w-7 text-blue" />
+            <h3 className="type-headline mt-5">{t("Des preuves, pas des promesses", "Evidence, not promises")}</h3>
+            <p className="mt-2 text-ink-2">
+              {t(
+                "Pas encore de client ni de partenaire. Les marques du classement sont des sites que nous avons audités sur leurs pages publiques : elles ne sont ni clientes ni partenaires. Chaque score renvoie à son rapport, avec captures et replays.",
+                "No client or partner yet. The brands in the ranking are sites we audited on their public pages: they are neither clients nor partners. Every score links to its report, with screenshots and replays.",
+              )}
+            </p>
+            <p className="mt-4 flex flex-wrap gap-x-5 gap-y-1 type-small">
+              <Link href="/methode" className="text-link hover:underline">{t("La méthode", "The method")}</Link>
+              <Link href="/mentions-legales" className="text-link hover:underline">{t("Mentions légales", "Legal notice")}</Link>
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
   );
 }
 
