@@ -22,7 +22,7 @@ export function SideProvider({ initial, children }: { initial: Promise<SideData 
   const first = useRef(true);
   useEffect(() => {
     let live = true;
-    initial.then((d) => live && d && setData(d)).catch(() => {});
+    Promise.resolve(initial).then((d) => live && d && setData(d), () => {});
     return () => {
       live = false;
     };
