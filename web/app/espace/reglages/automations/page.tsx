@@ -6,7 +6,7 @@ import { AUTO_AUDIT_MISSIONS, listAutomations } from "@/lib/automations";
 import { RATES } from "@/lib/credits";
 import { db } from "@/lib/engine";
 import { Chip, Chips, Empty, Icon, Note, Row, StatusGlyph, type Tone } from "@/lib/ui";
-import { AutoSubmitSelect, ConfirmButton, CopyField, Flash } from "../../controls";
+import { AutoSubmitSelect, ConfirmButton, CopyField, Flash, KeepScroll } from "../../controls";
 import { SpaceShell } from "../../shell";
 import { shortDate } from "@/lib/space";
 import { locale, tr, type Lang, type T } from "@/lib/i18n";
@@ -530,6 +530,7 @@ export default async function Automations({ searchParams }: { searchParams: Prom
         </Row>
       </Card>
 
+      <KeepScroll />
       {toast && <Flash key={`${sp.ok ?? ""}${sp.err ?? ""}${sp.slack ?? ""}`} tone={toast.tone} text={toast.text} close={t("Fermer", "Close")} />}
     </SpaceShell>
   );

@@ -356,7 +356,7 @@ export function SitesByExt({ initial, chips, cards }: { initial: string; chips: 
   );
 }
 
-// Result of a settings form, after the server redirect (?ok=… or ?err=…): a toast at the bottom of the window,
+// Result of a settings form, after the server redirect (?ok=… or ?err=…): a toast under the header (the cookie notice owns the bottom),
 // so nothing in the page moves. "Saved" fades after 4 s; an error stays until closed. The code leaves the URL
 // at once, so a reload does not show it again.
 export function Flash({ tone, text, close }: { tone: "ok" | "err"; text: string; close: string }) {
@@ -374,7 +374,7 @@ export function Flash({ tone, text, close }: { tone: "ok" | "err"; text: string;
   }, [tone]);
   if (!open) return null;
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex justify-center px-4" role={tone === "err" ? "alert" : "status"}>
+    <div className="pointer-events-none fixed inset-x-0 top-[68px] z-[60] flex justify-center px-4" role={tone === "err" ? "alert" : "status"}>
       <div className="ap-toast pointer-events-auto flex max-w-[520px] items-center gap-3 rounded-[14px] bg-[#1d1d1f] py-2.5 pl-4 pr-2 text-[15px] text-white shadow-[0_8px_30px_rgb(0_0_0/0.25)] dark:bg-[#3a3a3c]">
         <svg viewBox="0 0 24 24" className={`h-5 w-5 shrink-0 ${tone === "ok" ? "text-[#30d158]" : "text-[#ff6961]"}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           {tone === "ok" ? <path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM8 12.5l2.8 2.8L16 10" /> : <path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7.5v5.5M12 16.3v.1" />}
@@ -386,4 +386,27 @@ export function Flash({ tone, text, close }: { tone: "ok" | "err"; text: string;
       </div>
     </div>
   );
+}
+
+// Settings forms post and come back with a full page load: the page reopens where the reader was, not at the top.
+// The position is kept for one load only (sessionStorage), so a link from elsewhere still opens at the top.
+const SCROLL_KEY = "ap_keep_scroll";
+export function KeepScroll() {
+  useEffect(() => {
+    try {
+      const y = sessionStorage.getItem(SCROLL_KEY);
+      if (y) {
+        sessionStorage.removeItem(SCROLL_KEY);
+        window.scrollTo({ top: Number(y), behavior: "instant" });
+      }
+    } catch {}
+    const keep = () => {
+      try {
+        sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
+      } catch {}
+    };
+    document.addEventListener("submit", keep, true);
+    return () => document.removeEventListener("submit", keep, true);
+  }, []);
+  return null;
 }

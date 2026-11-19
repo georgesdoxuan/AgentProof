@@ -348,9 +348,9 @@ body {
 }
 .target-flash:target { animation: ap-flash 2.6s var(--ease-apple) both; }
 
-/* Settings toast (controls.tsx Flash): rises a few pixels from the bottom edge. */
+/* Settings toast (controls.tsx Flash): drops a few pixels under the header. */
 @keyframes ap-toast {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(-8px); }
 }
 .ap-toast { animation: ap-toast 0.3s var(--ease-apple) both; }
 /* Settings switch (Automations): an iOS-style track and knob drawn from a button with aria-checked. */
