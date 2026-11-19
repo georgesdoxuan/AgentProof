@@ -98,6 +98,7 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
                 </Hint>
                 <Segmented
                   name="mode"
+                  className="max-sm:w-full"
                   label={t("Type de test", "Test type")}
                   value="audit"
                   options={[

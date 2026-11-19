@@ -198,7 +198,7 @@ function bbox(px: Buffer, W: number, H: number): [number, number, number, number
 export async function cutout(png: Buffer): Promise<{ light: Buffer; dark: Buffer } | null> {
   const N = 256;
   const { data, info } = await sharp(png).resize(N, N, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-  const px = Buffer.from(data), W = info.width, H = info.height;
+  const px = Buffer.from(data), W = info.width, H = info.height, src = Buffer.from(data);
   peel(px, W, [0, 0, W - 1, H - 1]);
   // A plate left behind (square or rounded tile filling its box): peel it too, once.
   const b = bbox(px, W, H);
@@ -223,14 +223,36 @@ export async function cutout(png: Buffer): Promise<{ light: Buffer; dark: Buffer
   for (let i = 0; i < px.length; i += 4) if (px[i + 3] > 128) { n++; s += sat(px[i], px[i + 1], px[i + 2]); l += lum(px[i], px[i + 1], px[i + 2]); }
   if (!n) return null;
   const mono = s / n < 0.12;
+  // A solid tile (most of its box filled), like a colored square or a black plate with the name knocked out in white.
+  const on = (x: number, y: number) => px[(y * W + x) * 4 + 3] > 128;
+  const bb = bbox(px, W, H);
+  let fill = 0;
+  if (bb) for (let y = bb[1]; y <= bb[3]; y++) for (let x = bb[0]; x <= bb[2]; x++) if (on(x, y)) fill++;
+  const tile = !!bb && fill / ((bb[2] - bb[0] + 1) * (bb[3] - bb[1] + 1)) > 0.6;
+  // A white mark that reaches the tile's edge (Decathlon's swoosh, Uniqlo's letters, Nike's swoosh on black): the peel
+  // runs into it and leaves holes, black on a dark page. Put back what it removed inside the logo, as in the source:
+  // pixels with logo on all four sides (left, right, above, below), or on two opposite sides for a solid tile.
+  if (!mono || tile) {
+    const L = new Int32Array(H).fill(W), R = new Int32Array(H).fill(-1), T = new Int32Array(W).fill(H), B = new Int32Array(W).fill(-1);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (on(x, y)) { L[y] = Math.min(L[y], x); R[y] = x; T[x] = Math.min(T[x], y); B[x] = Math.max(B[x], y); }
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const i = (y * W + x) * 4, row = x > L[y] && x < R[y], col = y > T[x] && y < B[x];
+      if (px[i + 3] < 250 && src[i + 3] > 200 && (tile ? row || col : row && col)) px.set(src.subarray(i, i + 4), i);
+    }
+    // A one-color plate goes (see below): its soft outer rim would be left as a thin frame.
+    if (mono && bb) for (let y = bb[1]; y <= bb[3]; y++) for (let x = bb[0]; x <= bb[2]; x++)
+      if (Math.min(x - bb[0], bb[2] - x, y - bb[1], bb[3] - y) < 3) px[(y * W + x) * 4 + 3] = 0;
+  }
   const variant = (dark: boolean) => {
     const out = Buffer.from(px);
     for (let i = 0; i < out.length; i += 4) {
       if (!out[i + 3]) continue;
       const L = lum(out[i], out[i + 1], out[i + 2]);
       if (mono) {
-        // one-color logo: ink = theme text color, inner details (white on black) stay as holes
-        const ink = l / n > 128 ? 255 - L : L; // white mark: its dark parts are the details
+        // one-color logo: ink = theme text color, inner details (white on black) stay as holes; for a white mark, its
+        // dark parts are the details. A one-color plate (Aesop's black band): the plate is the
+        // background and the letters knocked out of it are the mark, so the plate goes and the letters take the ink.
+        const ink = (l / n > 128) !== tile ? 255 - L : L;
         const a = 1 - ink / 255;
         out[i + 3] = Math.round(out[i + 3] * Math.min(1, Math.max(0, (a - 0.08) / 0.84)));
         out.fill(dark ? 245 : 29, i, i + 3);
@@ -270,18 +292,30 @@ export async function findLogo(domain: string, url: string): Promise<{ png: Buff
     const png = await vetImage(from, 48);
     if (png) return { png, source, from };
   }
-  // Last resort before the initial: the site's own 32 px favicon (soft on retina, but the right brand).
-  for (const c of cands.filter((c) => c.source === "favicon")) {
-    const png = await vetImage(c.url, 32);
-    if (png) return { png, source: "favicon-32", from: c.url };
+  // Last resort before the initial: a 32 px favicon (soft on retina, but the right brand). The ones the page declares,
+  // then the root one and the services: when the home page is behind an anti-bot wall (H&M, many Shopify stores
+  // answering 429), they are the only source left.
+  const small: [string, string][] = [
+    ...cands.filter((c) => c.source === "favicon").map((c): [string, string] => ["favicon-32", c.url]),
+    ["favicon-32", new URL("/favicon.ico", url).href],
+    ...SERVICES.map((svc) => { const [source, from] = svc(domain); return [`${source}-32`, from] as [string, string]; }),
+  ];
+  for (const [source, from] of small) {
+    const png = await vetImage(from, 32);
+    if (png) return { png, source, from };
   }
   return null;
 }
 
+// A site where nothing was found (anti-bot wall, timeout, site down that day) is tried again after this delay,
+// so a passing failure does not leave a brand on its initial forever.
+const RETRY_MS = 3 * 24 * 3600 * 1000;
+
 // Finds, stores and caches a site's logo. Safe to call again: `force` retries a site already checked.
 export async function refreshLogo(domain: string, force = false) {
   const { data: site } = await db.from("sites").select("domain, url, logo_url, logo_checked_at").eq("domain", domain).maybeSingle();
-  if (!site || (site.logo_checked_at && !force)) return site?.logo_url ?? null;
+  const fresh = site?.logo_checked_at && (site.logo_url || Date.now() - new Date(site.logo_checked_at).getTime() < RETRY_MS);
+  if (!site || (fresh && !force)) return site?.logo_url ?? null;
   const found = await findLogo(site.domain, site.url).catch(() => null);
   let logo_url: string | null = null;
   const cut = found ? await cutout(found.png).catch(() => null) : null;
