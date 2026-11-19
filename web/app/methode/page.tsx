@@ -183,7 +183,7 @@ export default async function Methode() {
           </p>
           <p>
             On 17 November 2026 the agent paid once, with a team virtual card on a €0 account, on 5 sites. On 2 of them (Asphalte and a small online shop) the payment reached
-            the bank, which declined it for insufficient funds: with money on the card, the order would have gone through. Elsewhere the agent was stopped before paying: anti-bot
+            the bank, which declined it for insufficient funds: the attempt was sent to the bank, but a successful payment and an order confirmation are not proven. Elsewhere the agent was stopped before paying: anti-bot
             (Nike), account required (Adidas), payment step not reached (Jules).
           </p>
           <p>
@@ -268,8 +268,8 @@ export default async function Methode() {
           </p>
           <p>
             Le 17 novembre 2026, l&apos;agent a payé une fois, avec une carte virtuelle de l&apos;équipe sur un compte à 0 €, sur 5 sites. Sur 2 d&apos;entre eux (Asphalte et une
-            petite boutique en ligne), le paiement est arrivé jusqu&apos;à la banque, qui l&apos;a refusé faute de fonds : avec de l&apos;argent sur la carte, la commande serait
-            passée. Ailleurs, l&apos;agent a été arrêté avant de payer : anti-bot (Nike), compte obligatoire (Adidas), étape de paiement non atteinte (Jules).
+            petite boutique en ligne), le paiement est arrivé jusqu&apos;à la banque, qui l&apos;a refusé faute de fonds : la tentative a été transmise à la banque, mais la réussite du
+            paiement et la confirmation de commande ne sont pas démontrées. Ailleurs, l&apos;agent a été arrêté avant de payer : anti-bot (Nike), compte obligatoire (Adidas), étape de paiement non atteinte (Jules).
           </p>
           <p>
             Prochaine étape : des cartes émises par nous, refusées en temps réel par notre serveur, pour que la preuve bancaire soit automatique et qu&apos;aucun 3D Secure ne
