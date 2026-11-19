@@ -123,8 +123,8 @@ export async function SiteCard({ site, manage = false }: { site: SiteView; manag
               const n = site.audits.length;
               const d = deviceLabel(site.device, lang).toLowerCase();
               return n > 1
-                ? t(`Ses ${n} rapports (${d}) partent avec lui. Tu peux le restaurer depuis la corbeille.`, `Its ${n} reports (${d}) go with it. You can restore it from the trash.`)
-                : t(`Son rapport (${d}) part avec lui. Tu peux le restaurer depuis la corbeille.`, `Its report (${d}) goes with it. You can restore it from the trash.`);
+                ? t(`${n} rapports (${d}) inclus · restaurable`, `${n} reports (${d}) included · restorable`)
+                : t(`1 rapport (${d}) inclus · restaurable`, `1 report (${d}) included · restorable`);
             })()}
           </p>
         </div>

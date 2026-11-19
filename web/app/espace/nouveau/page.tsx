@@ -4,7 +4,7 @@ import { canLaunch, teamContext } from "@/lib/auth";
 import { cardView } from "@/lib/cards";
 import { loadCredits } from "@/lib/credits";
 import { COMPARE_MODEL, DEFAULT_MODEL } from "@/lib/engine";
-import { Field, Group, Segmented } from "@/lib/ui";
+import { Field, Group, Note, Segmented } from "@/lib/ui";
 import { Hint } from "@/lib/hint";
 import { getLang, getT } from "@/lib/lang";
 import { MAX_PER_AUDIT, pickItems, teamMissions } from "@/lib/missions";
@@ -41,16 +41,20 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
     >
       {/* Soft limit: past the month's credits the team is told, never blocked (payment is not open yet). */}
       {credits.used >= credits.included && (
-        <p role="status" className="type-small rounded-[14px] bg-tile px-5 py-4">
-          <span className="font-semibold text-warn">{t("Crédits du mois épuisés.", "This month's credits are used up.")}</span>{" "}
-          {t(
-            `Tu as utilisé ${credits.used} crédits sur ${credits.included}. L'audit reste possible pendant l'essai, rien n'est facturé.`,
-            `You used ${credits.used} of ${credits.included} credits. Audits still run during the trial, nothing is charged.`,
-          )}{" "}
-          <Link href="/espace/abonnement" className="text-link hover:underline">
-            {t("Voir l'abonnement", "See your plan")}
-          </Link>
-        </p>
+        <div role="status">
+          <Note
+            icon="info"
+            action={
+              <Link href="/espace/abonnement" className="text-link hover:underline">
+                {t("Abonnement", "Plan")}
+              </Link>
+            }
+          >
+            <span className="font-semibold text-warn">{t(`Crédits épuisés · ${credits.used}/${credits.included}`, `Credits used up · ${credits.used}/${credits.included}`)}</span>
+            {" · "}
+            {t("rien n'est facturé pendant l'essai", "nothing is charged during the trial")}
+          </Note>
+        </div>
       )}
       <Group>
         <form action="/api/audits" method="post" className="grid gap-5 p-6 sm:p-8">

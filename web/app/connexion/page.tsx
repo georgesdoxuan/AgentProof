@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { currentUser, safeNext } from "@/lib/auth";
-import { Field } from "@/lib/ui";
+import { Chip, Chips, Field } from "@/lib/ui";
 import { getT } from "@/lib/lang";
 import { LEGAL } from "@/lib/legal";
 
@@ -40,12 +40,18 @@ export default async function Connexion({ searchParams }: { searchParams: Promis
             <button className="btn min-h-[52px] w-full rounded-[12px]">{t("Me connecter", "Sign me in")}</button>
           </form>
         ) : sp.envoye ? (
-          <p className="type-intro mt-5 text-center text-ink-2">
-            {t("Lien de connexion envoyé à", "Sign-in link sent to")} <span className="text-ink">{sp.envoye}</span>. {t("Il reste valable 15 minutes.", "It is valid for 15 minutes.")}
-          </p>
+          <div className="mt-6 grid justify-items-center gap-4 text-center">
+            <p className="type-intro text-ink-2">
+              {t("Lien envoyé à", "Link sent to")} <span className="text-ink">{sp.envoye}</span>
+            </p>
+            <Chip icon="clock">{t("Valable 15 min", "Valid for 15 min")}</Chip>
+          </div>
         ) : (
           <form action="/api/auth" method="post" className="mt-10 grid gap-4">
-            <p className="type-intro text-center text-ink-2">{t("Pas de mot de passe : on t’envoie un lien par e-mail.", "No password: we send you a link by e-mail.")}</p>
+            <Chips className="justify-center">
+              <Chip icon="mail">{t("Lien par e-mail", "Link by e-mail")}</Chip>
+              <Chip icon="lock">{t("Sans mot de passe", "No password")}</Chip>
+            </Chips>
             <input type="hidden" name="action" value="login" />
             <input type="hidden" name="next" value={next} />
             <Field label={t("Ton e-mail", "Your e-mail")} name="email" type="email" required defaultValue={sp.email} />

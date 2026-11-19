@@ -6,7 +6,7 @@ import { paymentVerdicts } from "@/lib/engine";
 import { locale, tr, type Dict, type Lang } from "@/lib/i18n";
 import { getDict, getLang } from "@/lib/lang";
 import { loadSpace, type SpaceAudit } from "@/lib/space";
-import { Chevron, DeviceTag, Icon, MissionBar, Spinner, StatusGlyph, scoreTone } from "@/lib/ui";
+import { Chevron, Chip, Chips, DeviceTag, Icon, MissionBar, Spinner, StatusGlyph, scoreTone } from "@/lib/ui";
 import { CloseMenu, ConfirmButton } from "../controls";
 import { SpaceShell } from "../shell";
 import { SiteLogo } from "../../site-logo";
@@ -160,7 +160,12 @@ export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
   const back = status === "tous" ? PATH[view] : `${PATH[view]}?vue=${status}`;
 
   const intro =
-    view === "trash" ? undefined : view === "favorites" ? r.favCount(scoped.length) || undefined : scoped.length ? r.count(scoped.length, running.length) : undefined;
+    view === "trash" || !scoped.length ? undefined : (
+      <Chips>
+        <Chip icon={view === "favorites" ? "star" : "doc"}>{r.countOnly(scoped.length)}</Chip>
+        {running.length > 0 && <Chip icon="live" tone="blue">{r.running(running.length)}</Chip>}
+      </Chips>
+    );
   const title = view === "all" ? r.title : `${r.title} · ${r.sections[view]}`;
   const tab = "type-small flex h-8 items-center rounded-[8px] px-3.5 font-semibold text-ink-2 transition-colors aria-[current=true]:bg-tile aria-[current=true]:text-ink aria-[current=true]:shadow-[0_1px_3px_rgb(0_0_0/0.12)] dark:aria-[current=true]:bg-[#636366]";
 
@@ -270,11 +275,14 @@ export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
               );
             })
           ) : (
-            <div className="px-6 py-14 text-center">
+            <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
+              <span className="grid h-12 w-12 place-items-center rounded-full bg-fill text-ink-2" aria-hidden>
+                <Icon name={view === "trash" ? "trash" : view === "favorites" ? "star" : "doc"} className="h-6 w-6" />
+              </span>
               <p className="type-headline">
                 {view === "trash" ? r.emptyTrash : view === "favorites" && !scoped.length ? r.emptyFavorites : scoped.length ? r.emptyView : r.emptyAll}
               </p>
-              <p className="mt-1 text-ink-2">
+              <p className="type-small text-ink-2">
                 {view === "favorites" && !scoped.length ? (
                   audits.length ? r.emptyFavoritesNote : null
                 ) : view !== "all" || scoped.length ? (

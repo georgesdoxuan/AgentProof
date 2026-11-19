@@ -46,11 +46,8 @@ export default async function SitesOuverts({ searchParams }: { searchParams: Pro
         </h1>
         <p className="type-intro mt-5 text-ink-2">
           {allowed.length
-            ? t(
-                "Pendant la démo, les audits sont limités à quelques sites pour protéger nos crédits d’agent. Pour chaque site ouvert, tu peux consulter son dernier rapport public : captures, replays et plan de corrections.",
-                "During the demo, audits are limited to a few sites to protect our agent credits. For each open site, you can read its latest public report: screenshots, replays and fix plan.",
-              )
-            : t("Aucune limite en ce moment : tu peux lancer un audit sur n’importe quel site.", "No limit right now: you can run an audit on any site.")}
+            ? t("Démo limitée à quelques sites. Chacun a son dernier rapport public.", "Demo limited to a few sites. Each has its latest public report.")
+            : t("Aucune limite en ce moment.", "No limit right now.")}
         </p>
 
         {allowed.length ? (

@@ -4,7 +4,7 @@ import { canLaunch, teamContext } from "@/lib/auth";
 import { locale } from "@/lib/i18n";
 import { getLang, getT } from "@/lib/lang";
 import { loadSpace } from "@/lib/space";
-import { DeviceTag, Spinner } from "@/lib/ui";
+import { DeviceTag, Icon, Spinner } from "@/lib/ui";
 import { ConfirmButton } from "../../controls";
 import { SpaceShell } from "../../shell";
 import { SitesTabs } from "../../parts";
@@ -80,7 +80,7 @@ export default async function SitesCorbeille() {
                   <span className="min-w-0">
                     <span className="block truncate font-semibold">{s.label}</span>
                     <span className="type-small block text-ink-2">
-                      <DeviceTag device={s.device} lang={lang} /> · {reportsOf(s.audits.length)} · {t(`Mis à la corbeille le ${date(s.deleted_at)}`, `Moved to trash on ${date(s.deleted_at)}`)}
+                      <DeviceTag device={s.device} lang={lang} /> · {reportsOf(s.audits.length)} · <span className="inline-flex items-center gap-1 align-[-2px]" title={t("Mis à la corbeille", "Moved to trash")}><Icon name="trash" className="h-3.5 w-3.5" />{date(s.deleted_at)}</span>
                     </span>
                   </span>
                 </div>
@@ -118,9 +118,10 @@ export default async function SitesCorbeille() {
               </div>
             ))
           ) : (
-            <div className="px-6 py-14 text-center">
-              <p className="type-headline">{t("La corbeille est vide.", "The trash is empty.")}</p>
-              <p className="mt-1">
+            <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
+              <span className="grid h-12 w-12 place-items-center rounded-full bg-fill text-ink-2" aria-hidden><Icon name="trash" className="h-6 w-6" /></span>
+              <p className="type-headline">{t("Corbeille vide", "Trash is empty")}</p>
+              <p className="type-small">
                 <Link href="/espace/sites" className="text-link hover:underline">
                   {t("Voir tous les sites", "See all sites")}
                 </Link>

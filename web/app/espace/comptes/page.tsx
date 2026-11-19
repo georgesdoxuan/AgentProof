@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { listSiteLogins } from "@/lib/engine";
-import { Field, Group, Row } from "@/lib/ui";
+import { Chip, Empty, Field, Group, Note, Row } from "@/lib/ui";
 import { getT } from "@/lib/lang";
 import { ConfirmButton } from "../controls";
 import { SpaceShell } from "../shell";
@@ -34,6 +34,7 @@ export default async function Comptes() {
       {logins.length ? (
         <Group
           title={t("Comptes enregistrés", "Saved accounts")}
+          aside={<Chip icon="lock">{t("Coffre H Company", "H Company vault")}</Chip>}
           footer={t(
             "Les mots de passe sont rangés dans un coffre-fort chez H Company. AgentProof ne les stocke pas et l'agent ne les voit jamais : il les remplit sur le site sans les lire.",
             "Passwords are kept in a vault at H Company. AgentProof does not store them and the agent never sees them: it fills them in on the site without reading them.",
@@ -59,12 +60,15 @@ export default async function Comptes() {
           ))}
         </Group>
       ) : (
-        <p className="text-ink-2">{t("Aucun compte de test : sur un site qui exige un compte, le test de paiement s’arrête à la connexion.", "No test account: on a site that requires an account, the payment test stops at sign-in.")}</p>
+        <Empty icon="login_required" title={t("Aucun compte de test", "No test account")}>
+          {t("Sans compte, le test s’arrête à la connexion.", "Without one, the test stops at sign-in.")}
+        </Empty>
       )}
 
       {admin ? (
         <Group
           title={t("Ajouter un compte", "Add an account")}
+          aside={<Chip icon="refresh">{t("1 par site", "1 per site")}</Chip>}
           footer={t(
             "Crée d'abord le compte toi-même sur le site, avec une adresse de test. Un compte par site : en ajouter un nouveau remplace l'ancien.",
             "First create the account yourself on the site, with a test address. One account per site: adding a new one replaces the old one.",
@@ -87,7 +91,7 @@ export default async function Comptes() {
           </form>
         </Group>
       ) : (
-        <p className="type-small text-ink-2">{t("Seuls le propriétaire et les admins de l’équipe gèrent les comptes de test.", "Only the team's owner and admins manage test accounts.")}</p>
+        <Note icon="eye">{t("Lecture seule : un admin gère les comptes.", "Read-only: an admin manages the accounts.")}</Note>
       )}
     </SpaceShell>
   );

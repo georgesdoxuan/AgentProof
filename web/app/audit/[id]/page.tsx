@@ -8,7 +8,8 @@ import { rankText } from "@/app/espace/parts";
 import { reportSuffix } from "@/lib/space";
 import { locale, missionTitle, staticText, tr, type Lang, type T } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
-import { BlockerIcon, BrowserFrame, MissionIcon, Chevron, DeviceTag, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, hurdles, summarize } from "@/lib/ui";
+import { BlockerIcon, BrowserFrame, Chip, Chips, MissionIcon, Chevron, Note, DeviceTag, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, hurdles, summarize } from "@/lib/ui";
+import { Hint } from "@/lib/hint";
 import { headers } from "next/headers";
 import { CopyField } from "@/app/espace/controls";
 import { Mark, Wordmark, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
@@ -222,12 +223,13 @@ function PrintCover(p: {
 }
 
 // Report section heading: one size for every section, a one-line purpose under it, an optional figure on the trailing side.
-function SectionHead({ title, intro, aside }: { title: string; intro?: string; aside?: React.ReactNode }) {
+// `intro` is a short line, or a row of chips (lib/ui Chips) for facts that used to be a sentence.
+function SectionHead({ title, intro, aside }: { title: string; intro?: React.ReactNode; aside?: React.ReactNode }) {
   return (
     <div className="section-head mb-6 flex flex-wrap items-end justify-between gap-x-8 gap-y-2">
       <div className="min-w-0 max-w-[680px]">
         <h2 className="type-h3">{title}</h2>
-        {intro && <p className="mt-2 text-ink-2">{intro}</p>}
+        {intro && (typeof intro === "string" ? <p className="mt-2 text-ink-2">{intro}</p> : <div className="mt-3">{intro}</div>)}
       </div>
       {aside}
     </div>
@@ -405,30 +407,42 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             </p>
           )}
           {audit.deleted_at && (
-            <p className="mt-6 rounded-[12px] bg-tile px-4 py-3 type-small print:hidden">
-              {t("Ce rapport est dans la corbeille de l'équipe.", "This report is in the team's trash.")}{" "}
-              <Link href="/espace/rapports/corbeille" className="text-link hover:underline">
-                {t("Ouvrir la corbeille", "Open the trash")}
-              </Link>
-            </p>
+            <Note
+              icon="trash"
+              className="mt-6 max-w-[560px] print:hidden"
+              action={
+                <Link href="/espace/rapports/corbeille" className="text-link hover:underline">
+                  {t("Corbeille", "Trash")}
+                </Link>
+              }
+            >
+              {t("Rapport dans la corbeille", "Report in the trash")}
+            </Note>
           )}
           {alert && (
-            <p className="mt-6 rounded-[12px] bg-tile px-4 py-3 type-small" role="alert">
-              <span className="font-semibold text-fail">{t("Le score baisse", "The score drops")} : {alert.from} % → {alert.to} %.</span>{" "}
-              <Link href={`/audit/${alert.previous}`} className="text-link hover:underline">
-                {t("Voir l’audit précédent", "See the previous audit")}
-              </Link>
-            </p>
+            <div role="alert">
+              <Note
+                icon="trend"
+                className="mt-6 max-w-[560px]"
+                action={
+                  <Link href={`/audit/${alert.previous}`} className="text-link hover:underline">
+                    {t("Audit précédent", "Previous audit")}
+                  </Link>
+                }
+              >
+                <span className="font-semibold text-fail">{t("Score en baisse", "Score down")} · {alert.from} % → {alert.to} %</span>
+              </Note>
+            </div>
           )}
           {running && !paymentOnly && (
             <p className="mt-6 inline-flex items-center gap-2.5 rounded-full bg-tile px-4 py-2 type-small" role="status">
               <Spinner className="h-3.5 w-3.5 text-ink-2" />
               <span>
-                <span className="font-semibold">
-                  {t(`${s.finished} missions terminées sur ${s.total}.`, `${s.finished} of ${s.total} missions finished.`)}
-                </span>{" "}
-                <span className="text-ink-2">{t("La page se met à jour toute seule.", "The page updates by itself.")}</span>
+                <span className="font-semibold tnum">
+                  {t(`${s.finished}/${s.total} missions terminées`, `${s.finished}/${s.total} missions finished`)}
+                </span>
               </span>
+              <Chip icon="live" tone="blue">{t("Direct", "Live")}</Chip>
             </p>
           )}
         </header>
@@ -446,15 +460,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
               <span className="ml-1 text-[40px] font-semibold text-ink-2 max-[734px]:text-[32px]">%</span>
             </p>
             <p className="mt-3 text-ink-2">
-              {lang === "en" ? (
-                <>
-                  Checkout entrance reached in <span className="font-semibold text-ink tnum">{s.ok} of {s.done} mission{s.done > 1 ? "s" : ""}</span> counted.
-                </>
-              ) : (
-                <>
-                  Entrée du checkout atteinte dans <span className="font-semibold text-ink tnum">{s.ok} mission{s.ok > 1 ? "s" : ""} sur {s.done}</span> comptée{s.done > 1 ? "s" : ""}.
-                </>
-              )}
+              {t("Entrée du checkout atteinte", "Checkout entrance reached")} · <span className="font-semibold text-ink tnum">{s.ok}/{s.done}</span>
             </p>
             <div className="mt-auto pt-8">
               <MissionBar ok={s.ok} done={s.done} total={s.total} size="lg" />
@@ -528,7 +534,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             <div>
               <h2 className="type-headline">{t("Par l’écran", "Through the screen")}</h2>
               <p className="mt-2 text-[40px] font-semibold leading-none tnum">{s.score ?? "—"} %</p>
-              <p className="type-small mt-2 text-ink-2">{t("Agents qui regardent et cliquent comme un client : le score de cet audit.", "Agents that look and click like a customer: this audit's score.")}</p>
+              <p className="type-small mt-2 text-ink-2">{t("Agents qui cliquent comme un client", "Agents that click like a customer")}</p>
             </div>
             <div>
               <h2 className="type-headline">{t("Par protocole", "Through a protocol")}</h2>
@@ -613,10 +619,11 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                     {t("Étape la plus loin atteinte", "Furthest step reached")} : <span className="font-semibold">{PAYMENT_STAGES[pay.agent_answer.furthest_stage] ?? pay.agent_answer.furthest_stage}</span>
                   </p>
                 )}
-                <p className="type-small mt-2 text-ink-2">
-                  3D Secure : {pay.agent_answer?.three_ds_seen ? t("demandé", "requested") : t("non", "no")} · {t("Prestataire", "Provider")} : {known(pay.agent_answer?.payment_provider)} · {t("Moyens", "Methods")} :{" "}
-                  {known(pay.agent_answer?.payment_methods)}
-                </p>
+                <Chips className="mt-3">
+                  <Chip icon="lock">3D Secure · {pay.agent_answer?.three_ds_seen ? t("demandé", "requested") : t("non", "no")}</Chip>
+                  <Chip icon="shield">{t("Prestataire", "Provider")} · {known(pay.agent_answer?.payment_provider)}</Chip>
+                  <Chip icon="payment">{known(pay.agent_answer?.payment_methods)}</Chip>
+                </Chips>
                 {pay.judge?.result && pay.judge.result !== pay.payment_verdict && (
                   <p className="type-small mt-2 text-warn">
                     {t("Juge visuel en désaccord", "Visual judge disagrees")} : {PAYMENT_VERDICTS[pay.judge.result] ?? pay.judge.result}. {pay.judge.reason}
@@ -667,12 +674,9 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                   {t("Suivre l’agent", "Follow the agent")}
                 </Link>
               )}
-              <p className="mt-3 text-ink-2">
-                {t(
-                  "L’agent part au plus près du checkout, prend le premier article disponible et paie une fois. Garde ton téléphone à portée pour valider le 3D Secure.",
-                  "The agent starts as close to checkout as it can, takes the first available item and pays once. Keep your phone at hand to approve 3D Secure.",
-                )}
-              </p>
+              <Note icon="mobile" className="mt-4">
+                {t("Garde ton téléphone à portée pour valider le 3D Secure.", "Keep your phone at hand to approve 3D Secure.")}
+              </Note>
               </>
             )}
           </section>
@@ -681,11 +685,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
         {/* 2. Diagnosis: what blocks, then what to fix. */}
         {s.blockers.length > 0 && (
           <section>
-            <SectionHead title={t("Ce qui arrête l’agent.", "What stops the agent.")}
-              intro={t(
-                "Blocages relevés pendant les missions, du plus fréquent au moins fréquent. Ceux marqués hors score ne comptent ni pour ni contre le site.",
-                "Blockers seen during the missions, most frequent first. Those marked outside the score count neither for nor against the site.",
-              )} />
+            <SectionHead title={t("Ce qui arrête l’agent.", "What stops the agent.")} />
             <ol className="overflow-hidden rounded-[18px] bg-tile">
               {s.blockers.slice(0, 3).map(([b, n]) => {
                 const out = EXCLUDED.includes(b);
@@ -695,7 +695,11 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                       <BlockerIcon type={b} />
                       <span className="min-w-0">
                         <span className="font-semibold">{blockerLabel(b, lang)}</span>
-                        {out && <span className="type-small ml-2 whitespace-nowrap text-ink-2">{t("Hors score", "Outside the score")}</span>}
+                        {out && (
+                          <Hint tip={t("Ne compte ni pour ni contre le site.", "Counts neither for nor against the site.")} className="ml-2 align-middle">
+                            <Chip icon="mission_not_applicable">{t("Hors score", "Outside the score")}</Chip>
+                          </Hint>
+                        )}
                       </span>
                     </span>
                     <span className="col-span-2 row-start-2 block h-1.5 overflow-hidden rounded-full bg-fill md:col-span-1 md:row-start-auto" aria-hidden>
@@ -715,10 +719,14 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
         {got.items.length > 0 && (
           <section>
             <SectionHead title={t("Ce que l’agent a dû contourner.", "What the agent had to get past.")}
-              intro={t(
-                `Sur les ${got.passed} missions réussies, les obstacles que l’agent a franchis. Un client pressé ou un agent moins tenace peut s’y arrêter. Relevés dans le compte rendu de l’agent, hors score.`,
-                `Across the ${got.passed} passed missions, the obstacles the agent got past. A hurried shopper or a less persistent agent may stop there. Read from the agent's own report, outside the score.`,
-              )} />
+              intro={
+                <Chips>
+                  <Hint tip={t("Un client pressé ou un agent moins tenace peut s’y arrêter. Relevé dans le compte rendu de l’agent.", "A hurried shopper or a less persistent agent may stop there. Read from the agent's own report.")}>
+                    <Chip icon="none" tone="pass">{t(`${got.passed} missions réussies`, `${got.passed} passed missions`)}</Chip>
+                  </Hint>
+                  <Chip icon="mission_not_applicable">{t("Hors score", "Outside the score")}</Chip>
+                </Chips>
+              } />
             <ul className="overflow-hidden rounded-[18px] bg-tile">
               {got.items.map(([label, n, icon]) => (
                 <li key={label} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-2.5 border-b border-hairline px-6 py-4 last:border-0 md:grid-cols-[minmax(0,18rem)_minmax(0,1fr)_7.5rem]">
@@ -740,18 +748,24 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
 
         {audit.recommendations && (
           <section id="plan" className="scroll-mt-24">
-            <SectionHead title={t("Plan de corrections.", "Fix plan.")} />
+            <SectionHead
+              title={t("Plan de corrections.", "Fix plan.")}
+              intro={
+                <Hint
+                  tip={t(
+                    "Constats : verdicts des missions ci-dessous. Hypothèses et corrections : IA open source (Hugging Face).",
+                    "Findings: verdicts of the missions below. Hypotheses and fixes: open-source AI (Hugging Face), written in French.",
+                  )}
+                >
+                  <Chip icon="sparkle">{t("Hypothèses IA · à vérifier avant d’agir", "AI hypotheses · check before acting")}</Chip>
+                </Hint>
+              }
+            />
             <Recommendations
               text={audit.recommendations}
               missions={runs.map((r: any, i: number) => ({ n: i + 1, title: r.missions.title, shot: r.screenshot_url, replay: `${base}/replay/${r.id}?a=${audit.id}` }))}
               ticket={{ report: `${base}/audit/${audit.id}`, site: audit.sites.domain, device: audit.device === "mobile" ? t("mobile (format téléphone simulé)", "mobile (simulated phone format)") : t("ordinateur", "desktop"), date: longDate(audit.created_at, lang) }}
             />
-            <p className="type-caption mt-4 max-w-[680px] text-ink-2">
-              {t(
-                "Les constats viennent des verdicts des missions ci-dessous. Les hypothèses et corrections sont générées par IA (modèle open source sur Hugging Face) : à vérifier avant d’agir.",
-                "The findings come from the verdicts of the missions below. Hypotheses and fixes are AI-generated (open-source model on Hugging Face) and written in French: check them before acting.",
-              )}
-            </p>
           </section>
         )}
 
@@ -762,11 +776,14 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
         <section className="print-new-page">
           <SectionHead
             title="Missions."
-            intro={t(
-              "Chaque mission part de l’accueil du site et s’arrête à l’entrée du checkout. La capture montre le dernier écran vu par l’agent.",
-              "Each mission starts on the site's home page and stops at the checkout entrance. The screenshot shows the last screen the agent saw.",
-            )}
-            aside={cost > 0 && <span className="type-small text-ink-2 tnum">{t("Coût agent", "Agent cost")} : {usd(cost, 2, lang)}</span>}
+            intro={
+              <Chips>
+                <Hint tip={t("La capture montre le dernier écran vu par l’agent.", "The screenshot shows the last screen the agent saw.")}>
+                  <Chip icon="home">{t("Accueil → entrée du checkout", "Home → checkout entrance")}</Chip>
+                </Hint>
+              </Chips>
+            }
+            aside={cost > 0 && <Chip icon="payment">{t("Coût agent", "Agent cost")} · {usd(cost, 2, lang)}</Chip>}
           />
           <div className="space-y-4">
             {runs.map((r: any, i: number) => (
@@ -781,11 +798,13 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                     {missionTitle(r.missions.title, lang)}
                   </h3>
                   {r.missions.team_id && (
-                    <p className="type-caption mt-1 text-ink-2">
-                      {r.missions.base
-                        ? t(`Mission modifiée par l’équipe (d’après « ${missionTitle(r.missions.base.title, lang)} »)`, `Mission edited by the team (from “${missionTitle(r.missions.base.title, lang)}”)`)
-                        : t("Mission personnalisée, écrite par l’équipe", "Custom mission, written by the team")}
-                    </p>
+                    <Chips className="mt-2">
+                      <Chip icon="wrench">
+                        {r.missions.base
+                          ? t(`Modifiée · d’après « ${missionTitle(r.missions.base.title, lang)} »`, `Edited · from “${missionTitle(r.missions.base.title, lang)}”`)
+                          : t("Mission de l’équipe", "Team mission")}
+                      </Chip>
+                    </Chips>
                   )}
                   {r.status === "done" && (
                     <div className="mt-4">
@@ -805,14 +824,15 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                     </p>
                   )}
                   {r.first_attempt && (
-                    <p className="type-small mt-4 border-l-2 border-line pl-3 text-ink-2">
-                      {t("Mission rejouée : le premier essai a échoué", "Mission replayed: the first attempt failed")} ({r.first_attempt.blocker_type ? blockerLabel(r.first_attempt.blocker_type, lang) : t("erreur technique", "technical error")}).
+                    <p className="type-small mt-4 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-ink-2">
+                      <Chip icon="refresh">{t("Rejouée", "Replayed")}</Chip>
+                      {t("1ᵉʳ essai", "1st try")} : {r.first_attempt.blocker_type ? blockerLabel(r.first_attempt.blocker_type, lang) : t("erreur technique", "technical error")}
                       {r.status === "done" &&
                         r.success !== null &&
                         !(r.success === false && EXCLUDED.includes(r.blocker_type)) &&
                         (r.success
-                          ? t(" Le second a réussi : l’échec n’était pas reproductible.", " The second passed: the failure was not reproducible.")
-                          : t(" Le second confirme l’échec.", " The second confirms the failure."))}
+                          ? t(" · 2ᵉ réussi, échec non reproductible", " · 2nd passed, not reproducible")
+                          : t(" · 2ᵉ confirme l’échec", " · 2nd confirms the failure"))}
                       {r.first_attempt.session_id && (
                         <>
                           {" "}
@@ -883,10 +903,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                   {r.status === "done" && r.success && (
                     // A sign-in page under a cookie banner looks like a failure: say why it counts as reached.
                     <figcaption className="type-caption mt-2 text-ink-2">
-                      {t(
-                        "Première page après le panier (connexion, e-mail ou adresse) : l’entrée du checkout est atteinte.",
-                        "First page after the cart (sign-in, e-mail or address): the checkout entrance is reached.",
-                      )}
+                      {t("Entrée du checkout atteinte : connexion, e-mail ou adresse.", "Checkout entrance reached: sign-in, e-mail or address.")}
                     </figcaption>
                   )}
                   </figure>
@@ -906,17 +923,19 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
           <section>
             <SectionHead
               title={t("Ce que lit un robot, sans navigateur.", "What a bot reads, without a browser.")}
-              intro={t(
-                "Lecture gratuite du code du site, comme les outils qui notent un site sans le tester. Elle complète l’agent, elle ne compte pas dans le score.",
-                "A free read of the site's code, like the tools that rate a site without testing it. It adds to the agent and does not count in the score.",
-              )}
-              aside={statik?.items && <span className="type-small text-ink-2 tnum">{t(`${statik.items.filter((it) => it.tone === "pass").length} sur ${statik.items.filter((it) => it.tone !== "none").length} au vert`, `${statik.items.filter((it) => it.tone === "pass").length} of ${statik.items.filter((it) => it.tone !== "none").length} green`)}</span>}
+              intro={
+                <Chips>
+                  <Chip icon="doc">{t("Lecture du code", "Code reading")}</Chip>
+                  <Chip icon="mission_not_applicable">{t("Hors score", "Outside the score")}</Chip>
+                </Chips>
+              }
+              aside={statik?.items && <Chip icon="none" tone="pass">{t(`${statik.items.filter((it) => it.tone === "pass").length}/${statik.items.filter((it) => it.tone !== "none").length} au vert`, `${statik.items.filter((it) => it.tone === "pass").length}/${statik.items.filter((it) => it.tone !== "none").length} green`)}</Chip>}
             />
             {statik?.items ? (
               <div className="overflow-hidden rounded-[18px] bg-tile">
               <ul className="-mb-px grid lg:grid-cols-2">
                 {statik.items.map((it) => (
-                  <li key={it.key} className="flex items-start gap-3 border-b border-hairline px-6 py-4 lg:odd:border-r">
+                  <li key={it.key} className="flex items-start gap-3 border-b border-hairline px-6 py-4 lg:odd:border-r lg:odd:last:col-span-2 lg:odd:last:border-r-0">
                     <StatusGlyph tone={it.tone} className="mt-0.5 h-5 w-5" />
                     <span className="min-w-0">
                       <span className="font-semibold">{staticText(it.label, lang)}</span>
@@ -928,7 +947,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
               {statik.agents && (
                 <>
                   <h3 className="border-t border-hairline px-6 pb-1 pt-5 font-semibold">{t("Accès par agent IA", "Access per AI agent")}</h3>
-                  <p className="type-small px-6 text-ink-2">{t("Ce que le site laisse passer pour l'agent qu'utilise le client. Accès seulement : la réussite de l'achat, c'est le score de l'agent.", "What the site lets through for the agent a customer uses. Access only: purchase success is the agent's score.")}</p>
+                  <p className="type-small px-6 text-ink-2">{t("Accès seulement : l’achat, c’est le score de l’agent.", "Access only: purchase success is the agent's score.")}</p>
                   <ul className="mt-2 grid lg:grid-cols-2">
                     {statik.agents.map((a) => (
                       <li key={a.name} className="flex items-start gap-3 border-t border-hairline px-6 py-4 lg:odd:border-r">
@@ -957,7 +976,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             <img src={`/badge/${audit.id}.svg`} alt={`Badge AgentProof : ${s.score} %`} height={28} className="h-7 w-auto" />
             <div className="min-w-0">
               <h2 className="type-headline">{t("Badge à afficher sur ton site.", "A badge to show on your site.")}</h2>
-              <p className="type-small mt-1 text-ink-2">{t("Il affiche le score de cet audit et renvoie vers ce rapport.", "It shows this audit's score and links to this report.")}</p>
+              <p className="type-small mt-1 text-ink-2">{t("Score de cet audit, lien vers ce rapport.", "This audit's score, linking to this report.")}</p>
               <div className="mt-4">
                 <CopyField
                   label={t("Code HTML du badge", "Badge HTML code")}

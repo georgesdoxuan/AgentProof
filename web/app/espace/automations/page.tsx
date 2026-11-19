@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { listAutomations } from "@/lib/automations";
 import { db } from "@/lib/engine";
-import { Group, Row, Segmented, StatusGlyph, type Tone } from "@/lib/ui";
+import { Chip, Empty, Group, Note, Row, Segmented, StatusGlyph, type Tone } from "@/lib/ui";
 import { AutoSubmitSelect, ConfirmButton } from "../controls";
 import { SpaceShell } from "../shell";
 import { shortDate } from "@/lib/space";
@@ -147,14 +147,14 @@ export default async function Automations({ searchParams }: { searchParams: Prom
                 })
               ) : (
                 <Row>
-                  <span className="text-ink-2">{t("Pas encore vérifiée.", "Not checked yet.")}</span>
+                  <Chip icon="clock">{t("Pas encore vérifiée", "Not checked yet")}</Chip>
                 </Row>
               )}
             </Group>
           );
         })
       ) : (
-        <p className="text-ink-2">{t("Aucune page suivie pour le moment.", "No tracked page yet.")}</p>
+        <Empty icon="eye" title={t("Aucune page suivie", "No tracked page")} />
       )}
 
       {admin && (
@@ -276,7 +276,7 @@ export default async function Automations({ searchParams }: { searchParams: Prom
           </form>
         </Group>
       ) : (
-        <p className="type-small text-ink-2">{t("Seuls le propriétaire et les admins de l’équipe gèrent les automations.", "Only the team's owner and admins manage automations.")}</p>
+        <Note icon="eye">{t("Lecture seule : un admin gère les automations.", "Read-only: an admin manages automations.")}</Note>
       )}
     </SpaceShell>
   );

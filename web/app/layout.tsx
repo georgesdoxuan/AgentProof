@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { LangSwitch, Nav, Sections } from "./nav";
 import { NavProgress } from "./progress";
 import { currentUser } from "@/lib/auth";
-import { Mark, Wordmark } from "@/lib/ui";
+import { Icon, Mark, Wordmark } from "@/lib/ui";
 import { getDict, getLang } from "@/lib/lang";
 import { LEGAL_PAGES } from "@/lib/legal";
 import { CookieNotice } from "./cookie-notice";
@@ -57,6 +57,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <footer className="bg-bg-2 type-caption text-ink-2">
           <div className="wrap-wide border-t border-line py-5">
             <p className="flex items-start gap-2 py-2">
+              <Icon name="shield" className="mt-px h-4 w-4 shrink-0" />
               {t.footer.rules}
             </p>
             <div className="mt-2 flex flex-col gap-2 border-t border-line pt-4 sm:flex-row sm:justify-between">
