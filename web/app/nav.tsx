@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { LANG_NAME, type Dict, type Lang } from "@/lib/i18n";
 
 const link =
-  "inline-flex h-11 items-center whitespace-nowrap px-2 max-[400px]:px-1 text-ink/80 transition-colors hover:text-ink aria-[current=page]:text-ink-2";
+  "inline-flex h-11 items-center whitespace-nowrap px-2 max-[360px]:px-1 text-ink/80 transition-colors hover:text-ink aria-[current=page]:text-ink-2";
 const item = "flex min-h-9 w-full items-center rounded-[8px] px-3 text-left type-small text-ink transition-colors hover:bg-fill";
 
 // Footer language switch, on every page: a visitor of the public pages has no account page to change it from.
@@ -82,7 +82,7 @@ export function Nav({ email, t }: { email: string | null; t: Dict["nav"] }) {
   const path = usePathname();
   if (!email)
     return (
-      <div className="flex h-[52px] items-center gap-1 type-caption max-[400px]:gap-0 sm:gap-3">
+      <div className="flex h-[52px] items-center gap-1.5 type-caption max-[360px]:gap-0.5 sm:gap-3">
         {/* On the home page the ranking is one of the sections: no second "Classement" in the same bar. */}
         {path !== "/" && <Link href="/classement" aria-current={path === "/classement" ? "page" : undefined} className={link}>
           {t.ranking}
@@ -91,7 +91,7 @@ export function Nav({ email, t }: { email: string | null; t: Dict["nav"] }) {
         <Link href="/connexion" className={link}>
           {t.signIn}
         </Link>
-        <Link href="/#tester" className="inline-flex h-7 items-center whitespace-nowrap rounded-full bg-blue px-[11px] text-white transition-colors hover:bg-[var(--blue-hover)]">
+        <Link href="/#tester" className="ml-1 inline-flex h-7 items-center whitespace-nowrap rounded-full bg-blue px-[11px] text-white transition-colors hover:bg-[var(--blue-hover)]">
           {t.test}<span className="max-[480px]:hidden">&nbsp;{t.testMySite}</span>
         </Link>
       </div>

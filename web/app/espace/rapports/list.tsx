@@ -25,19 +25,21 @@ function PayLine({ pay, multi, lang }: { pay: { status: string; verdict: string 
   const PAYMENT_VERDICTS = paymentVerdicts(lang);
   const P = t("Paiement", "Payment");
   const reached = pay.verdict === "bank_declined" || pay.verdict === "payment_accepted";
-  const [text, cls] =
+  // A small chip, not a red line: the payment test is secondary to the report it hangs off.
+  const [text, tone] =
     pay.status !== "done" && pay.status !== "error"
-      ? [`${P} : ${t("test en cours", "test running")}`, "text-ink-2"]
+      ? [t("test en cours", "test running"), "plain"]
       : reached
-        ? [`${P} : ${t("transmis à la banque", "sent to the bank")}`, "text-pass"]
+        ? [t("transmis à la banque", "sent to the bank"), "pass"]
         : pay.verdict === "inconclusive" || pay.verdict === "three_ds_timeout"
-          ? [`${P} : ${PAYMENT_VERDICTS[pay.verdict!].toLowerCase()}`, "text-warn"]
-          : [`${P} : ${(PAYMENT_VERDICTS[pay.verdict ?? ""] ?? t("erreur", "error")).toLowerCase()}`, "text-fail"];
-  const who = multi || pay.with_login ? (pay.with_login ? t(" (connecté)", " (signed in)") : t(" (sans compte)", " (no account)")) : "";
+          ? [PAYMENT_VERDICTS[pay.verdict!].toLowerCase(), "warn"]
+          : [(PAYMENT_VERDICTS[pay.verdict ?? ""] ?? t("erreur", "error")).toLowerCase(), "plain"];
+  const who = multi || pay.with_login ? (pay.with_login ? t(" · connecté", " · signed in") : t(" · sans compte", " · no account")) : "";
   return (
-    <span className={`type-small flex min-w-0 items-center gap-1 font-semibold ${cls}`} title={`${text}${who}`}>
-      <Icon name="payment" className="h-[1.1em] w-[1.1em] shrink-0" />
-      <span className="md:truncate">{text}{who}</span>
+    <span title={`${P} : ${text}${who}`} className="min-w-0 max-w-full">
+      <Chip icon="payment" tone={tone as "plain" | "pass" | "warn"} className="max-w-full font-medium! [&>span]:truncate">
+        <span>{P} · {text}{who}</span>
+      </Chip>
     </span>
   );
 }
@@ -231,7 +233,11 @@ export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
                         <span className="type-small block text-ink-2">
                           {sub.join(" · ")} · <DeviceTag device={a.device} lang={lang} />
                         </span>
-                        {a.pay.map((p, i) => <PayLine key={i} pay={p} multi={a.pay.length > 1} lang={lang} />)}
+                        {a.pay.length > 0 && (
+                          <span className="mt-1.5 flex flex-wrap gap-1.5">
+                            {a.pay.map((p, i) => <PayLine key={i} pay={p} multi={a.pay.length > 1} lang={lang} />)}
+                          </span>
+                        )}
                       </span>
                       </span>
                       <span className="type-small hidden truncate text-ink-2 md:block">{a.users?.email === user.email ? r.you : a.users?.email ?? "—"}</span>

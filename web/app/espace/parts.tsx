@@ -164,7 +164,16 @@ export async function BlockerItem({ site, b, canEdit, compact = false }: { site:
           {blockerLabel(b.type, lang)}
         </h3>
         {/* The agent's raw note is in whatever language it wrote and gets cut mid-word on a card: the summary cards keep the label and the fix, the site page keeps the note. */}
-        {!compact && b.run?.blocker_detail && <p className="mt-2 text-ink-2">{t("Note de l’agent", "Agent’s note")} : « {b.run.blocker_detail} »</p>}
+        {/* The agent writes in whatever language it likes: its raw note stays folded, as on the report. */}
+        {!compact && b.run?.blocker_detail && (
+          <details className="type-small group mt-3 text-ink-2">
+            <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 text-link [&::-webkit-details-marker]:hidden">
+              <Chevron className="h-2.5 w-2.5 transition-transform duration-200 group-open:rotate-90" />
+              {t("Réponse originale de l’agent", "The agent's original answer")}
+            </summary>
+            <p className="mt-2">« {b.run.blocker_detail} »</p>
+          </details>
+        )}
         <p className={`mt-4 flex gap-2 ${compact ? "type-small" : ""}`}>
           <Chevron className="mt-[0.45em] h-3 w-3 shrink-0 text-link" />
           <span>{FIX_HINT[b.type] ?? FIX_HINT.other}</span>
