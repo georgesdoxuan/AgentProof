@@ -147,7 +147,8 @@ export function Nav({ email, t, lang, langLabel }: { email: string | null; t: Di
           {t.ranking}
         </Link>}
         <LangMenu lang={lang} label={langLabel} />
-        <Help label={t.help} path={path} />
+        {/* Phones: no room for the "?" beside the globe on one line; Aide stays in the footer. */}
+        <span className="contents max-[480px]:hidden"><Help label={t.help} path={path} /></span>
         <Link href="/connexion" className={link}>
           {t.signIn}
         </Link>

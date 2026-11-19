@@ -57,7 +57,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         {/* SaaS footer (Linear, Vercel, Stripe): brand and one line on the left, link columns, then fine print. */}
         <footer className="bg-bg-2 type-caption text-ink-2">
           <div className="wrap-wide border-t border-line">
-            <div className="grid gap-x-8 gap-y-10 py-12 sm:grid-cols-[1fr_auto_auto_auto] max-sm:grid-cols-2 max-sm:py-10">
+            <div className="grid gap-x-8 gap-y-10 py-12 sm:grid-cols-[1.6fr_1fr_1fr_0.8fr] max-sm:grid-cols-2 max-sm:py-10">
               <div className="max-sm:col-span-2">
                 <Link href="/" aria-label={t.home} className="-ml-0.5 inline-flex items-center gap-2 rounded-md">
                   <Mark className="h-6 w-6" />
