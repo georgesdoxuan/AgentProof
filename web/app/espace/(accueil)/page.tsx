@@ -268,7 +268,7 @@ async function NoTeam({ email, lang }: { email: string; lang: Lang }) {
             {invites.map((i: any) => (
               <Row key={i.id}>
                 <span className="flex-1 font-semibold">{i.teams?.name}</span>
-                <span className="type-small text-ink-2">{roles[i.role as "admin" | "viewer"]}</span>
+                <span className="type-small text-ink-2">{roles[i.role as "admin" | "editor" | "viewer"]}</span>
               </Row>
             ))}
           </Group>

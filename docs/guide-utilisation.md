@@ -146,7 +146,7 @@ Si le site a déjà été audité il y a moins de 7 jours, AgentProof vous ouvre
 - Avec un concurrent ou en Ordinateur + Mobile, comptez environ le double du temps.
 - Chaque mission ratée est **rejouée une fois** avant la fin de l'audit, pour écarter un échec dû au hasard. C'est le second essai qui compte.
 - Quand l'audit est terminé, **un e-mail part** avec le lien du rapport.
-- Vous pouvez **annuler l'audit** depuis le rapport (lien « Annuler l'audit » sous la progression, propriétaire et admins). Les missions pas encore lancées sont retirées et leurs crédits rendus ; celles que l'agent joue déjà se terminent et restent dans le rapport.
+- Vous pouvez **annuler l'audit** depuis le rapport (lien « Annuler l'audit » sous la progression, propriétaire, admins et éditeurs). Les missions pas encore lancées sont retirées et leurs crédits rendus ; celles que l'agent joue déjà se terminent et restent dans le rapport.
 
 ## 7. Lire le rapport
 
@@ -284,7 +284,7 @@ Garde-fous :
 
 Pour le préparer :
 
-- **Moyen de paiement** : enregistrez la carte de l'équipe. Numéro, date et cryptogramme sont chiffrés et ne sont plus jamais affichés. Seuls le propriétaire et les admins gèrent la carte.
+- **Moyen de paiement** : enregistrez la carte de l'équipe. Numéro, date et cryptogramme sont chiffrés et ne sont plus jamais affichés. Le propriétaire, les admins et les éditeurs gèrent la carte.
 - **Comptes de test** (si le site exige un compte pour payer) : créez vous-même un compte de test sur le site, puis enregistrez-le. Le test tourne alors deux fois : sans compte, puis connecté. Les mots de passe sont rangés dans un coffre-fort chez H Company ; AgentProof ne les stocke pas et l'agent ne les voit jamais. Un compte par site.
 
 Pour lancer le test : dans « Lancer un audit », choisissez **Tester le paiement** (avec l'audit) ou le type **Paiement seulement**.
@@ -299,9 +299,10 @@ Dans **Équipe**, entrez son adresse e-mail. Il reçoit un lien valable **7 jour
 
 | Rôle | Ce qu'il peut faire |
 |---|---|
-| **Propriétaire** | Tout, et gère les membres. |
-| **Admin** | Lance des audits, gère les automations, la carte et les comptes de test. |
-| **Lecteur** | Lit les rapports. |
+| **Propriétaire** | Tout. Ne peut pas être retiré ni changer de rôle. |
+| **Admin** | Tout, y compris inviter, retirer des membres et changer leurs rôles (sauf le sien et celui du propriétaire). |
+| **Éditeur** | Tout sauf les membres : audits (lancer, annuler), sites, rapports, favoris, corbeille et suppression définitive, automations, plafond de crédits, carte, comptes de test, nom et marque blanche de l'équipe. |
+| **Lecteur** | Lit les rapports, sans rien modifier. |
 
 ### Plusieurs équipes
 

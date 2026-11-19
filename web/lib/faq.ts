@@ -101,8 +101,8 @@ export const FAQ: Faq[] = [
     cat: "audits",
     q: { fr: "Puis-je annuler un audit en cours ?", en: "Can I cancel a running audit?" },
     a: {
-      fr: "Oui, depuis le rapport : « Annuler l'audit ». Les missions pas encore lancées sont retirées et leurs crédits rendus ; celles en cours se terminent et restent dans le rapport. Propriétaire et admins seulement.",
-      en: "Yes, from the report: “Cancel the audit”. Missions not started yet are dropped and their credits given back; those running finish and stay in the report. Owner and admins only.",
+      fr: "Oui, depuis le rapport : « Annuler l'audit ». Les missions pas encore lancées sont retirées et leurs crédits rendus ; celles en cours se terminent et restent dans le rapport. Propriétaire, admins et éditeurs seulement.",
+      en: "Yes, from the report: “Cancel the audit”. Missions not started yet are dropped and their credits given back; those running finish and stay in the report. Owner, admins and editors only.",
     },
     keys: "annuler arreter stopper interrompre audit en cours cancel stop abort running",
   },
@@ -485,8 +485,8 @@ export const FAQ: Faq[] = [
     cat: "team",
     q: { fr: "Comment inviter un collègue ?", en: "How do I invite a colleague?" },
     a: {
-      fr: "Dans Équipe, entre son adresse : il reçoit un lien valable 7 jours, réservé à cette adresse. Seul le propriétaire de l'équipe gère les membres.",
-      en: "In Team, enter their address: they get a link valid for 7 days, for that address only. Only the team's owner manages members.",
+      fr: "Dans Équipe, entre son adresse : il reçoit un lien valable 7 jours, réservé à cette adresse. Seuls le propriétaire et les admins gèrent les membres.",
+      en: "In Team, enter their address: they get a link valid for 7 days, for that address only. Only the team's owner and admins manage members.",
     },
     link: { href: "/espace/reglages/equipe", fr: "Équipe", en: "Team" },
     keys: "inviter ajouter membre collegue collaborateur partager acces invitation invite add member colleague access",
@@ -496,10 +496,10 @@ export const FAQ: Faq[] = [
     cat: "team",
     q: { fr: "Quels sont les rôles dans une équipe ?", en: "What are the team roles?" },
     a: {
-      fr: "Propriétaire : gère les membres. Admin : lance des audits, gère automations, carte et comptes de test. Lecteur : lit les rapports.",
-      en: "Owner: manages members. Admin: runs audits, manages automations, card and test accounts. Viewer: reads reports.",
+      fr: "Propriétaire : tout, ne peut pas être retiré. Admin : tout, y compris inviter, retirer et changer les rôles. Éditeur : tout sauf les membres (audits, sites, rapports, corbeille, automations, carte, comptes de test). Lecteur : lit les rapports.",
+      en: "Owner: everything, cannot be removed. Admin: everything, including inviting, removing and changing roles. Editor: everything but members (audits, sites, reports, trash, automations, card, test accounts). Viewer: reads reports.",
     },
-    keys: "role roles droits permissions admin lecteur proprietaire acces rights viewer owner",
+    keys: "role roles droits permissions admin editeur lecteur proprietaire acces rights editor viewer owner",
   },
   {
     id: "marque-blanche",
@@ -583,8 +583,8 @@ export const FAQ: Faq[] = [
     cat: "payment",
     q: { fr: "Où enregistrer la carte de l'équipe ?", en: "Where do I add the team's card?" },
     a: {
-      fr: "Dans Moyen de paiement. Numéro, date et cryptogramme sont chiffrés et ne sont plus jamais affichés. Seuls le propriétaire et les admins gèrent la carte.",
-      en: "In Payment method. Number, date and security code are encrypted and never shown again. Only the owner and admins manage the card.",
+      fr: "Dans Moyen de paiement. Numéro, date et cryptogramme sont chiffrés et ne sont plus jamais affichés. Le propriétaire, les admins et les éditeurs gèrent la carte.",
+      en: "In Payment method. Number, date and security code are encrypted and never shown again. The owner, admins and editors manage the card.",
     },
     link: { href: "/espace/reglages/paiement", fr: "Moyen de paiement", en: "Payment method" },
     keys: "carte bancaire ajouter enregistrer cb visa moyen paiement securite chiffre card add save credit secure encrypted",

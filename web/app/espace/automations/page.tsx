@@ -61,7 +61,7 @@ const labels = (t: T) => ({
     webhook_off: t("Webhook retiré", "Webhook removed"),
   } as Record<string, string>,
   ERR: {
-    role: t("Seuls le propriétaire et les admins modifient les automations.", "Only the owner and admins change automations."),
+    role: t("Ton rôle (lecteur) ne permet pas de modifier les automations.", "Your role (viewer) cannot change automations."),
     url: t("Adresse invalide : indique le domaine public d'un site, par exemple https://www.exemple.fr.", "Invalid address: enter a site's public domain, for example https://www.example.com."),
     max: t("20 pages suivies au maximum par équipe.", "20 tracked pages at most per team."),
     webhook: t("Le webhook doit commencer par https:// et viser un nom de domaine.", "The webhook must start with https:// and point to a domain name."),

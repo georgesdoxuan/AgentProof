@@ -29,7 +29,7 @@ export default async function Invitation({ params }: { params: Promise<{ token: 
           <>
             <h1 className="type-h1">{t("Invitation invalide.", "Invalid invitation.")}</h1>
             <p className="type-intro text-ink-2">
-              {t("Ce lien a expiré ou a déjà servi. Demande une nouvelle invitation au propriétaire de l’équipe.", "This link has expired or was already used. Ask the team owner for a new invitation.")}
+              {t("Ce lien a expiré ou a déjà servi. Demande une nouvelle invitation au propriétaire ou à un admin de l’équipe.", "This link has expired or was already used. Ask the team owner or an admin for a new invitation.")}
             </p>
           </>
         ) : (
@@ -38,7 +38,7 @@ export default async function Invitation({ params }: { params: Promise<{ token: 
               {t("Rejoindre", "Join")} {(inv.teams as any)?.name}
             </h1>
             <p className="type-intro text-ink-2">
-              {t("Invitation pour", "Invitation for")} <span className="text-ink">{inv.email}</span>, {t("accès", "access:")} {ROLE_LABEL[inv.role as "admin" | "viewer"].toLowerCase()}.
+              {t("Invitation pour", "Invitation for")} <span className="text-ink">{inv.email}</span>, {t("accès", "access:")} {ROLE_LABEL[inv.role as "admin" | "editor" | "viewer"].toLowerCase()}.
             </p>
             {!user ? (
               <Link href={`/connexion?${new URLSearchParams({ next: here, email: inv.email })}`} className="btn justify-self-center">
