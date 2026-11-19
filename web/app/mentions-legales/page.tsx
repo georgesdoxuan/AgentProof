@@ -35,6 +35,12 @@ export default async function MentionsLegales() {
             their owners; they are shown as evidence of a test. Fonts and images used: see Credits.
           </p>
         </Section>
+        <Section title="Trademarks of audited sites">
+          <p>
+            Logos, brand names and trademarks of the audited sites belong to their respective owners. They are used only to identify the sites audited. AgentProof is not
+            affiliated with, sponsored or endorsed by any of these brands.
+          </p>
+        </Section>
         <Section title="Report a content">
           <p>
             To ask for a screenshot, a report or any content to be removed, write to <Mail />.
@@ -64,6 +70,12 @@ export default async function MentionsLegales() {
         <p>
           Le nom, le logo, les textes et l’interface d’AgentProof appartiennent à leurs auteurs. Les captures des rapports montrent des sites publics tiers, qui restent la
           propriété de leurs éditeurs ; elles sont affichées comme preuve d’un test. Polices et images utilisées : voir Crédits.
+        </p>
+      </Section>
+      <Section title="Marques des sites audités">
+        <p>
+          Les logos, noms et marques des sites audités appartiennent à leurs propriétaires respectifs. Ils sont utilisés uniquement pour identifier les sites audités.
+          AgentProof n’est affilié à aucune de ces marques, ni sponsorisé ou approuvé par elles.
         </p>
       </Section>
       <Section title="Signaler un contenu">
