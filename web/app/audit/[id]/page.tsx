@@ -241,9 +241,9 @@ function PrintCover(p: {
 // `intro` is a short line, or a row of chips (lib/ui Chips) for facts that used to be a sentence.
 function SectionHead({ title, intro, aside }: { title: string; intro?: React.ReactNode; aside?: React.ReactNode }) {
   return (
-    <div className="section-head mb-6 flex flex-wrap items-end justify-between gap-x-8 gap-y-2">
+    <div className="section-head mb-4 flex flex-wrap items-end justify-between gap-x-8 gap-y-2">
       <div className="min-w-0 max-w-[680px]">
-        <h2 className="type-h3">{title}</h2>
+        <h2 className="type-h3 text-[24px]!">{title}</h2>
         {intro && (typeof intro === "string" ? <p className="mt-2 text-ink-2">{intro}</p> : <div className="mt-3">{intro}</div>)}
       </div>
       {aside}
@@ -385,7 +385,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   const firstRun = firstBlocker ? runs.find((r: any) => r.status === "done" && r.success === false && r.blocker_type === firstBlocker[0]) : null;
   const firstFix = firstBlocker ? fixHints(lang)[firstBlocker[0]] ?? fixHints(lang).other : null;
   return (
-    <div className="bg-bg-2 pb-24 pt-16 max-[734px]:pt-10 print:bg-bg print:p-0">
+    <div className="bg-bg-2 pb-24 pt-8 max-[734px]:pt-6 print:bg-bg print:p-0">
       {running && <AutoRefresh />}
       {audit.status === "done" && <MarkSeen id={audit.id} />}
       <HashLanding />
@@ -408,7 +408,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
           />
         </>
       )}
-      <div className="wrap-wide space-y-16 max-[734px]:space-y-12 print:space-y-[9mm]">
+      <div className="wrap-wide space-y-12 max-[734px]:space-y-10 print:space-y-[9mm]">
         <header className={paymentOnly ? undefined : "print:hidden"}>
           {branded && (
             <p className="mb-10 flex items-center gap-3 type-headline">
@@ -417,13 +417,13 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
               <span>{t("Rapport préparé par", "Report prepared by")} {brand!.brand_name}</span>
             </p>
           )}
-          <p className="type-eyebrow text-ink-2">{paymentOnly ? t("Test de paiement", "Payment test") : t("Rapport d\u2019audit", "Audit report")} · <DeviceTag device={audit.device} lang={lang} />
+          <p className="type-small font-semibold text-ink-2">{paymentOnly ? t("Test de paiement", "Payment test") : t("Rapport d\u2019audit", "Audit report")} · <DeviceTag device={audit.device} lang={lang} />
           </p>
-          <h1 className="type-h1 mt-3 flex items-center gap-4 break-words">
-            <SiteLogo domain={audit.sites.domain} name={audit.sites.name} size="lg" />
+          <h1 className="type-title mt-1.5 flex items-center gap-3 break-words">
+            <SiteLogo domain={audit.sites.domain} name={audit.sites.name} size="md" />
             <span className="min-w-0">{(audit.title || audit.sites.name) + suffix}</span>
           </h1>
-          <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-ink-2">
+          <p className="type-small mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-ink-2">
             <a href={audit.sites.url} className="text-link hover:underline" target="_blank" rel="noreferrer">
               {audit.sites.url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
             </a>
@@ -562,16 +562,16 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
 
         {/* 1. Verdict: the score, then either the comparison or every mission at a glance. */}
         {!paymentOnly && (
-        <section className="grid gap-5 lg:grid-cols-[3fr_2fr] print:block" aria-label={t("Score", "Score")}>
-          <div className="tile flex flex-col print:hidden">
+        <section className="grid gap-4 lg:grid-cols-[3fr_2fr] print:block" aria-label={t("Score", "Score")}>
+          <div className="tile flex flex-col p-7! max-[734px]:p-6! print:hidden">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="type-headline">{t("Score agent", "Agent score")}</h2>
               {s.score == null && audit.status === "done" ? <span className="type-small font-semibold text-ink-2">{t("À confirmer", "To be confirmed")}</span> : <ToneLabel score={s.score} exPay={s.exPay} />}
             </div>
-            <p className="mt-5 text-[96px] font-semibold leading-none tracking-[-0.015em] tnum max-[734px]:text-[72px]">
+            <p className="mt-4 text-[64px] font-semibold leading-none tracking-[-0.015em] tnum max-[734px]:text-[52px]">
               {s.score ?? "—"}
-              <span className="ml-1 text-[40px] font-semibold text-ink-2 max-[734px]:text-[32px]">%</span>
-              {s.exPay && <ExPay lang={lang} className="ml-3 text-[21px] tracking-normal max-[734px]:text-[17px]" />}
+              <span className="ml-1 text-[28px] font-semibold text-ink-2 max-[734px]:text-[24px]">%</span>
+              {s.exPay && <ExPay lang={lang} className="ml-3 text-[17px] tracking-normal max-[734px]:text-[15px]" />}
             </p>
             <p className="mt-3 text-ink-2">
               {t("Entrée du checkout atteinte", "Checkout entrance reached")} · <span className="font-semibold text-ink tnum">{s.ok}/{s.done}</span>
@@ -588,7 +588,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                 </span>
               </p>
             )}
-            <div className="mt-auto pt-8">
+            <div className="mt-auto pt-6">
               <MissionBar ok={s.ok} done={s.done} total={s.total} size="lg" />
               <ul className="type-small mt-3 flex flex-wrap gap-x-5 gap-y-1 text-ink-2 tnum">
                 <li className="flex items-center gap-1.5">

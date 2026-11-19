@@ -8,14 +8,14 @@ import { SiteLogo } from "../site-logo";
 export const sitePath = (v: SiteView) => `/espace/sites/${v.key}`;
 
 // Same site, same device, fresh pass: skips the 7-day reuse of the last report.
-export async function RelaunchForm({ site, label, dark = false }: { site: SiteView; label?: string; dark?: boolean }) {
+export async function RelaunchForm({ site, label, dark = false, small = false }: { site: SiteView; label?: string; dark?: boolean; small?: boolean }) {
   const t = await getT();
   return (
     <form action="/api/audits" method="post">
       <input type="hidden" name="url" value={site.url} />
       <input type="hidden" name="device" value={site.device} />
       <input type="hidden" name="force" value="1" />
-      <button className={`btn disabled:pointer-events-none disabled:opacity-40 ${dark ? "btn-dark" : ""}`} disabled={!!site.running}>
+      <button className={`btn disabled:pointer-events-none disabled:opacity-40 ${dark ? "btn-dark" : ""} ${small ? "min-h-[40px] px-[18px] text-[15px]" : ""}`} disabled={!!site.running}>
         {site.running ? t("Audit en cours", "Audit running") : (label ?? t("Relancer pour vérifier", "Rerun to check"))}
       </button>
     </form>

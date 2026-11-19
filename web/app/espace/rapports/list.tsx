@@ -353,7 +353,7 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
       title={view === "trash" ? undefined : title}
       settings={view === "trash"}
       narrow={view === "trash"}
-      parent={view === "favorites" ? [PATH.all, r.title] : undefined}
+      bare
       intro={intro}
       hint={view === "trash" ? r.trashIntro : undefined}
     >
