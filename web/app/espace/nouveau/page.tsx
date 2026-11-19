@@ -118,7 +118,7 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
                 ]}
               />
             </div>
-            <label className="type-small inline-flex cursor-pointer items-center gap-3 justify-self-start">
+            <label className="type-small inline-flex cursor-pointer items-center gap-3 justify-self-start ap-not-pay">
               <input type="checkbox" name="models" value="1" className="h-4 w-4 shrink-0 accent-blue" />
               <Hint
                 focusable={false}

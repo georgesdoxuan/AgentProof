@@ -20,6 +20,7 @@
   --fail: #d70015; /* 5.4 / 4.9 */
   --nav: rgb(255 255 255 / 0.72);
   --glass: rgb(255 255 255 / 0.78);
+  --pop: #ffffff; /* hints and menus: opaque, so the text under them never shows through */
   --shot-shadow: 0 2px 6px rgb(0 0 0 / 0.04), 0 24px 60px -20px rgb(0 0 0 / 0.22);
   --sk: #e8e8ed; /* loading placeholders */
   --sk-hi: #f5f5f7;
@@ -44,6 +45,7 @@
     --fail: #ff6961;
     --nav: rgb(22 22 23 / 0.72);
     --glass: rgb(28 28 30 / 0.78);
+    --pop: #2c2c2e;
     --shot-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 24px 60px -20px rgb(0 0 0 / 0.8);
     --sk: #2c2c2e;
     --sk-hi: #3a3a3c;
@@ -88,6 +90,7 @@
   --color-warn: var(--warn);
   --color-fail: var(--fail);
   --color-glass: var(--glass);
+  --color-pop: var(--pop);
   /* SF Pro on Apple devices through the system font: optical sizes switch on their own. Never shipped as a webfont. */
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -481,7 +484,7 @@ body {
 }
 
 /* Hover hints (lib/hint.tsx): explanations stay hidden until the pointer, the keyboard or a tap reaches
-   the text or button they explain. Glass capsule like the verdict, small type, ink on glass. */
+   the text or button they explain. Opaque card with a hairline and soft shadow, small type. */
 @layer components {
 .ap-hint {
   position: relative;
@@ -508,10 +511,8 @@ body {
   max-width: min(320px, calc(100vw - 48px));
   padding: 10px 12px;
   border-radius: 12px;
-  background: var(--glass);
-  -webkit-backdrop-filter: blur(24px) saturate(1.5);
-  backdrop-filter: blur(24px) saturate(1.5);
-  box-shadow: 0 8px 28px rgb(0 0 0 / 0.16), inset 0 0 0 0.5px var(--hairline);
+  background: var(--pop);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.16), inset 0 0 0 0.5px var(--line);
   color: var(--ink);
   font-size: 13px;
   font-weight: 400;
@@ -552,6 +553,8 @@ body {
   .ap-tip { transform: none !important; transition: none !important; }
   .ap-hint[data-align="center"] > .ap-tip { transform: translateX(-50%) !important; }
 }
+/* "Payment only" runs no missions: comparing agents means nothing there (the API ignores it too). */
+form:has(input[name="mode"][value="payment"]:checked) .ap-not-pay { display: none; }
 @media print {
   .ap-tip { display: none; }
 }

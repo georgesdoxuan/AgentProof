@@ -86,7 +86,7 @@ export function PaymentPicker({ cards, lang, tip }: { cards: PayCard[]; lang: La
             </svg>
           </button>
           {open && (
-            <div className="absolute left-0 top-[calc(100%+6px)] z-50 w-[min(280px,calc(100vw-48px))] overflow-hidden rounded-[14px] bg-glass p-1.5 shadow-[0_10px_32px_rgb(0_0_0/0.18),inset_0_0_0_0.5px_var(--hairline)] backdrop-blur-2xl backdrop-saturate-150 motion-safe:animate-[ap-fade_0.15s_ease-out]">
+            <div className="absolute left-0 top-[calc(100%+6px)] z-50 w-[min(280px,calc(100vw-48px))] overflow-hidden rounded-[14px] bg-pop p-1.5 shadow-[0_10px_32px_rgb(0_0_0/0.18),inset_0_0_0_0.5px_var(--line)] motion-safe:animate-[ap-fade_0.15s_ease-out]">
               <ul id={listId} role="listbox" aria-label={t("Cartes de l'équipe", "Team cards")}>
                 {cards.map((c) => (
                   <li key={c.id} role="option" aria-selected={c.id === current.id}>
