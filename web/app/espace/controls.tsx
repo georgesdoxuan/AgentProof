@@ -202,7 +202,7 @@ export function SettingsTabs({ t }: { t: Dict["space"] }) {
               <Link
                 href={href}
                 aria-current={on ? "page" : undefined}
-                className={`relative -mb-px flex h-11 items-center gap-1.5 whitespace-nowrap px-2 type-small @5xl:gap-2 @5xl:px-3 font-semibold transition-colors ${
+                className={`relative -mb-px flex h-11 items-center gap-1 whitespace-nowrap px-2 type-small @5xl:gap-2 @5xl:px-3 font-semibold transition-colors ${
                   on ? "text-ink after:absolute after:inset-x-2 after:bottom-0 @5xl:after:inset-x-3 after:h-0.5 after:rounded-full after:bg-blue" : "text-ink-2 hover:text-ink"
                 }`}
               >
