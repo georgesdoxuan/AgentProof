@@ -5,7 +5,9 @@ import { cardView } from "@/lib/cards";
 import { loadCredits } from "@/lib/credits";
 import { COMPARE_MODEL, DEFAULT_MODEL } from "@/lib/engine";
 import { Chevron, Field, Group, Segmented } from "@/lib/ui";
-import { getT } from "@/lib/lang";
+import { getLang, getT } from "@/lib/lang";
+import { MAX_PER_AUDIT, pickItems, teamMissions } from "@/lib/missions";
+import { MissionPicker } from "./missions";
 import { SpaceShell } from "../shell";
 
 export async function generateMetadata() {
@@ -20,7 +22,9 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
   const { user, teams, team } = ctx;
   // Filled in from the home form when the visitor had to sign in first (see /api/audits).
   const { url, competitor, device } = await searchParams;
-  const [card, credits] = await Promise.all([cardView(team.id), loadCredits(team.id)]);
+  const [card, credits, missions, lang] = await Promise.all([cardView(team.id), loadCredits(team.id), teamMissions(team.id), getLang()]);
+  // Same default as /api/audits: the first FORM_MISSIONS missions (5, or 3 on demo day) come ticked.
+  const items = pickItems(missions, lang, Number(process.env.FORM_MISSIONS ?? 5));
   const t = await getT();
 
   return (
@@ -48,8 +52,8 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
       )}
       <Group
         footer={t(
-          `Cinq missions d'achat, 10 à 20 minutes. Le rapport s'ouvre tout de suite et arrive aussi par e-mail à ${user.email}.`,
-          `Five shopping missions, 10 to 20 minutes. The report opens right away and is also e-mailed to ${user.email}.`,
+          `Le rapport s'ouvre tout de suite et arrive aussi par e-mail à ${user.email}.`,
+          `The report opens right away and is also e-mailed to ${user.email}.`,
         )}
       >
         <form action="/api/audits" method="post" className="grid gap-5 p-6 sm:p-8">
@@ -70,6 +74,8 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
             />
           </div>
           <p className="type-caption text-ink-2">{t("Mobile : format téléphone simulé (écran 390 × 844), pas un vrai smartphone.", "Mobile: simulated phone format (390 × 844 screen), not a real smartphone.")}</p>
+
+          <MissionPicker items={items} lang={lang} max={MAX_PER_AUDIT} />
 
           {/* Engine choices and the paid test stay folded: a merchant only needs the site, a competitor and a device. */}
           <details className="group rounded-[12px] bg-bg-2 dark:bg-[#2c2c2e]">

@@ -34,7 +34,7 @@ import { SiteLogo } from "../../site-logo";
 const usd = (n: number, digits: number, lang: Lang) => (lang === "en" ? `$${n.toFixed(digits)}` : `${n.toFixed(digits).replace(".", ",")} $`);
 
 const RUN_FIELDS =
-  "id, status, payment_verdict, with_login, session_id, success, reached_checkout, blocker_type, blocker_detail, screenshot_url, final_url, steps, duration_s, cost_usd, judge, agent_answer, attempts, first_attempt, missions(title, position)";
+  "id, status, payment_verdict, with_login, session_id, success, reached_checkout, blocker_type, blocker_detail, screenshot_url, final_url, steps, duration_s, cost_usd, judge, agent_answer, attempts, first_attempt, missions(title, position, team_id, base:base_id(title))";
 
 // Average duration and agent cost per finished mission: what a model comparison is about.
 function perMission(runs: any[]) {
@@ -48,6 +48,7 @@ function scopeText(runs: any[], s: ReturnType<typeof summarize>, device: string,
   const pl = (k: number) => (k > 1 ? "s" : "");
   const excluded = runs.filter((r) => r.status === "done" && r.success === false && EXCLUDED.includes(r.blocker_type));
   const reasons = [...new Set(excluded.map((r) => blockerLabel(r.blocker_type, lang).toLowerCase()))].join(", ");
+  const custom = runs.filter((r) => r.missions?.team_id).length;
   if (lang === "en")
     return [
       s.done
@@ -57,7 +58,8 @@ function scopeText(runs: any[], s: ReturnType<typeof summarize>, device: string,
       excluded.length ? `${n(excluded.length, "mission")} excluded from the score (${reasons}).` : "",
       s.unverified ? `${n(s.unverified, "mission")} unverified, outside the score.` : "",
       s.errors ? `${n(s.errors, "mission")} not played (technical error).` : "",
-      paymentTested ? "Payment tested separately, see below." : "Payment not tested.",
+      custom ? `Missions chosen by the team, ${custom} of them written or edited by it: compare this score only with an audit on the same missions.` : "",
+    paymentTested ? "Payment tested separately, see below." : "Payment not tested.",
     ].filter(Boolean).join(" ");
   return [
     s.done
@@ -67,6 +69,7 @@ function scopeText(runs: any[], s: ReturnType<typeof summarize>, device: string,
     excluded.length ? `${n(excluded.length, "mission")} exclue${excluded.length > 1 ? "s" : ""} du score (${reasons}).` : "",
     s.unverified ? `${n(s.unverified, "mission")} non vérifiée${s.unverified > 1 ? "s" : ""}, hors score.` : "",
     s.errors ? `${n(s.errors, "mission")} non jouée${s.errors > 1 ? "s" : ""} (erreur technique).` : "",
+    custom ? `Missions choisies par l'équipe, dont ${custom} écrite${custom > 1 ? "s" : ""} ou modifiée${custom > 1 ? "s" : ""} par elle : ce score ne se compare qu'à un audit sur les mêmes missions.` : "",
     paymentTested ? "Paiement testé à part, voir plus bas." : "Paiement non testé.",
   ].filter(Boolean).join(" ");
 }
@@ -440,7 +443,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                   <li key={r.id} className="border-t border-hairline first:border-0">
                     <a href={`#mission-${i + 1}`} className="flex min-h-[52px] items-center gap-3 px-7 py-2.5 transition-colors hover:bg-bg-2/70 max-[734px]:px-6 dark:hover:bg-white/5">
                       <span className="w-4 shrink-0 type-small text-ink-2 tnum">{i + 1}</span>
-                      <MissionIcon title={r.missions.title} />
+                      <MissionIcon title={r.missions.base?.title ?? r.missions.title} team={!!r.missions.team_id} />
                       <span className="min-w-0 flex-1 truncate">{missionTitle(r.missions.title, lang)}</span>
                       <span className="type-small shrink-0">
                         <StatusBadge run={r} />
@@ -667,9 +670,16 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                     <StatusBadge run={r} />
                   </div>
                   <h3 className="type-h3 mt-2 flex items-start gap-2.5">
-                    <MissionIcon title={r.missions.title} className="mt-[0.15em] h-[0.9em] w-[0.9em]" />
+                    <MissionIcon title={r.missions.base?.title ?? r.missions.title} team={!!r.missions.team_id} className="mt-[0.15em] h-[0.9em] w-[0.9em]" />
                     {missionTitle(r.missions.title, lang)}
                   </h3>
+                  {r.missions.team_id && (
+                    <p className="type-caption mt-1 text-ink-2">
+                      {r.missions.base
+                        ? t(`Mission modifiée par l’équipe (d’après « ${missionTitle(r.missions.base.title, lang)} »)`, `Mission edited by the team (from “${missionTitle(r.missions.base.title, lang)}”)`)
+                        : t("Mission personnalisée, écrite par l’équipe", "Custom mission, written by the team")}
+                    </p>
+                  )}
                   {r.status === "done" && (
                     <div className="mt-4">
                       {!r.success && r.success !== null && (
