@@ -214,8 +214,8 @@ export default async function Abonnement() {
             <span className="min-w-0 flex-1">
               <Hint
                 tip={t(
-                  "Crédits par site et par mois, tous appareils. Au-delà, les audits automatiques (page modifiée, mise en ligne, audit mensuel) ne partent plus jusqu'au 1er du mois. Un audit lancé à la main passe toujours. Vide : aucun plafond.",
-                  "Credits per site and per month, all devices. Past it, automatic audits (page changed, release, monthly audit) stop until the 1st of the month. An audit launched by hand always goes through. Empty: no cap.",
+                  "Crédits par site et par mois, tous appareils. Au-delà, les audits automatiques (page modifiée, mise en ligne, audit mensuel) ne partent plus jusqu'au 1er du mois ; un audit mensuel retenu attend le suivant. Un audit lancé à la main passe toujours. Vide : aucun plafond.",
+                  "Credits per site and per month, all devices. Past it, automatic audits (page changed, release, monthly audit) stop until the 1st of the month; a held monthly audit waits for the next one. An audit launched by hand always goes through. Empty: no cap.",
                 )}
               >
                 <label htmlFor="site_credit_cap">{t("Crédits par site et par mois", "Credits per site per month")}</label>

@@ -324,7 +324,7 @@ Dans **Équipe**, indiquez le nom et le logo à afficher : ils **remplacent Agen
 
 La page **Abonnement et crédits** montre les crédits utilisés ce mois-ci, par type et par site, et une projection de fin de mois. Vous êtes prévenu à **80 %** et à **100 %** du forfait, par e-mail et sur Slack si vous l'avez branché. Les crédits repartent le **1er de chaque mois**.
 
-**Plafond par site** : dans Abonnement et crédits, l'équipe peut fixer un nombre maximum de crédits par site et par mois (tous appareils). Une fois ce plafond atteint, les audits automatiques sur ce site (page modifiée, mise en ligne, audit mensuel) ne partent plus jusqu'au 1er du mois, et l'automation note pourquoi. Un audit lancé à la main passe toujours. Laissez le champ vide pour ne fixer aucun plafond.
+**Plafond par site** : dans Abonnement et crédits, l'équipe peut fixer un nombre maximum de crédits par site et par mois (tous appareils). Une fois ce plafond atteint, les audits automatiques sur ce site (page modifiée, mise en ligne, audit mensuel) ne partent plus jusqu'au 1er du mois (un audit mensuel retenu attend le mois suivant), et l'automation note pourquoi. Un audit lancé à la main passe toujours. Laissez le champ vide pour ne fixer aucun plafond.
 
 ### Les offres
 
