@@ -26,4 +26,5 @@ La section affiche les 5 prénoms et leurs rôles, sans nom de famille ni photo.
 - Une ligne « Projet étudiant, Eugenia School, hackathon H Company × Hugging Face » peut accompagner la section, comme dans `web/lib/legal.ts`.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait (19 nov), en bas de /methode, FR et EN
+- Les prénoms sont publiés : Adonaï, confirme l'accord de chacun à la synchro, sinon on retire la ligne.

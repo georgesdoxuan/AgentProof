@@ -35,4 +35,6 @@ La FAQ s'affiche avec les 5 questions. Chaque réponse correspond à ce que dit 
 - Un `<details>` par question suffit, sans JavaScript.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait (19 nov), en bas de /methode, FR et EN
+- Question 4 : la marge d'erreur chiffrée n'est pas citée, puisque le bloc « Fiabilité mesurée » a été retiré. La réponse renvoie aux captures et replays.
+- Question 1 : « bloquée par protection » devient « anti-bot », le libellé déjà utilisé sur le site.
