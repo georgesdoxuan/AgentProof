@@ -356,17 +356,6 @@ export default async function Home() {
 
       <Team t={t} />
 
-      <div>
-        <ol className="wrap-wide type-caption pb-6 text-ink-2">
-          <li id="note-1" className="scroll-mt-20">
-            1.{" "}
-            {t(
-              "Blend Commerce, sondage auprès de 59 responsables e-commerce, juillet–août 2026 : leur tunnel d’achat ne peut pas être finalisé par un agent IA.",
-              "Blend Commerce, survey of 59 e-commerce managers, July–August 2026: their checkout funnel cannot be completed by an AI agent.",
-            )}
-          </li>
-        </ol>
-      </div>
     </>
   );
 }
