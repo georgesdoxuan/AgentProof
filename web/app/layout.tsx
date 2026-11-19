@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { Nav } from "./nav";
+import { NavProgress } from "./progress";
 import { currentUser } from "@/lib/auth";
 import { Mark, Wordmark } from "@/lib/ui";
 import { getDict, getLang } from "@/lib/lang";
@@ -29,6 +31,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang={lang}>
       <body className="min-h-screen antialiased">
+        <Suspense fallback={null}>
+          <NavProgress />
+        </Suspense>
         <a
           href="#contenu"
           className="sr-only type-small focus:not-sr-only focus:fixed focus:left-4 focus:top-2 focus:z-50 focus:rounded-full focus:bg-ink focus:px-4 focus:py-2 focus:text-bg"

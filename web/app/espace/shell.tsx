@@ -15,9 +15,9 @@ export async function SpaceShell({
   narrow = false,
   children,
 }: {
-  team: TeamRow;
-  teams: TeamRow[];
-  title: string;
+  team?: TeamRow; // left out by loading skeletons: the team block turns into placeholders
+  teams?: TeamRow[];
+  title: React.ReactNode;
   intro?: React.ReactNode;
   actions?: React.ReactNode;
   narrow?: boolean;
@@ -27,29 +27,39 @@ export async function SpaceShell({
   return (
     <div data-app-shell className="min-h-[70vh] bg-bg-2 lg:grid lg:grid-cols-[256px_minmax(0,1fr)]">
       <aside className="min-w-0 space-y-5 px-6 pt-6 sm:px-8 lg:sticky lg:top-[52px] lg:h-[calc(100dvh-52px)] lg:space-y-7 lg:self-start lg:overflow-y-auto lg:border-r lg:border-hairline lg:px-3 lg:py-6">
-        <div className="flex items-center gap-3 lg:px-3">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[9px] bg-ink text-[17px] font-semibold text-bg" aria-hidden>
-            {team.name[0]?.toUpperCase()}
-          </span>
-          <span className="min-w-0 flex-1">
-            {teams.length > 1 ? (
-              // The team's name is the switcher: no second copy of it above a pop-up.
-              <form action="/api/team" method="post">
-                <input type="hidden" name="action" value="switch" />
-                <AutoSubmitSelect
-                  name="team"
-                  defaultValue={team.id}
-                  label={t.space.switchTeam}
-                  options={teams.map((t) => [t.id, t.name])}
-                  className="-ml-1 h-7! max-w-full truncate bg-transparent! pl-1! text-[15px]! hover:bg-fill!"
-                />
-              </form>
-            ) : (
-              <span className="block truncate text-[15px] font-semibold">{team.name}</span>
-            )}
-            <span className="type-caption block text-ink-2">{t.roles[team.role]}</span>
-          </span>
-        </div>
+        {team ? (
+          <div className="flex items-center gap-3 lg:px-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[9px] bg-ink text-[17px] font-semibold text-bg" aria-hidden>
+              {team.name[0]?.toUpperCase()}
+            </span>
+            <span className="min-w-0 flex-1">
+              {teams && teams.length > 1 ? (
+                // The team's name is the switcher: no second copy of it above a pop-up.
+                <form action="/api/team" method="post">
+                  <input type="hidden" name="action" value="switch" />
+                  <AutoSubmitSelect
+                    name="team"
+                    defaultValue={team.id}
+                    label={t.space.switchTeam}
+                    options={teams.map((t) => [t.id, t.name])}
+                    className="-ml-1 h-7! max-w-full truncate bg-transparent! pl-1! text-[15px]! hover:bg-fill!"
+                  />
+                </form>
+              ) : (
+                <span className="block truncate text-[15px] font-semibold">{team.name}</span>
+              )}
+              <span className="type-caption block text-ink-2">{t.roles[team.role]}</span>
+            </span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 lg:px-3" aria-hidden>
+            <span className="sk h-9 w-9 shrink-0 rounded-[9px]" />
+            <span className="min-w-0 flex-1">
+              <span className="block h-7 text-[15px] leading-7"><span className="sk inline-block h-[0.8em] w-28 rounded-[5px] align-middle" /></span>
+              <span className="type-caption block"><span className="sk inline-block h-[0.8em] w-16 rounded-[5px] align-middle" /></span>
+            </span>
+          </div>
+        )}
         <SpaceNav t={t.space} />
       </aside>
 
