@@ -52,6 +52,7 @@ const SAMPLER = () => {
     };
   };
   window.__ls = { frames: [], cls: 0, shifts: [] };
+  window.__lsStop = false;
   new PerformanceObserver((l) => {
     for (const e of l.getEntries()) {
       window.__ls.cls += e.value;
@@ -60,7 +61,10 @@ const SAMPLER = () => {
   }).observe({ type: "layout-shift", buffered: true });
   const tick = () => {
     if (window.__lsStop) return;
-    window.__ls.frames.push({ t: Math.round(performance.now()), ...pick() });
+    // Before the document exists (init script on a full load) there is nothing to measure yet: keep ticking.
+    try {
+      if (document.body) window.__ls.frames.push({ t: Math.round(performance.now()), ...pick() });
+    } catch {}
     requestAnimationFrame(tick);
   };
   tick();
@@ -69,6 +73,7 @@ const SAMPLER = () => {
 const diff = (a, b) => (a && b ? Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1]), Math.abs(a[3] - b[3])) : 0);
 
 function analyse(frames, from, to) {
+  if (!frames?.length) return { moves: { sampler: "no frames recorded" } };
   const first = frames[0];
   const last = frames[frames.length - 1];
   const report = { moves: {} };
