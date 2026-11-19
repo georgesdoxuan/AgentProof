@@ -1,12 +1,12 @@
 import { db } from "@/lib/engine";
-import { baseUrl, createTeam, hashToken, newToken, normalizeEmail, sendMail, setTeam, teamContext } from "@/lib/auth";
+import { baseUrl, canLaunch, canManageMembers, createTeam, hashToken, newToken, normalizeEmail, sendMail, setTeam, teamContext } from "@/lib/auth";
 import { msg } from "@/lib/lang";
 
 const go = (req: Request, path: string) => Response.redirect(new URL(path, req.url), 303);
 const fail = (msg: string, status = 400) => new Response(msg, { status, headers: { "Content-Type": "text/plain; charset=utf-8" } });
-const ROLES = ["admin", "viewer"];
+const ROLES = ["admin", "editor", "viewer"];
 
-// Team actions. Only the owner manages members and their access (admin or viewer).
+// Team actions. The owner and admins manage members and their access; an editor does everything else, a viewer reads.
 export async function POST(req: Request) {
   const ctx = await teamContext();
   if (!ctx) return go(req, "/connexion?next=/espace");
@@ -52,7 +52,9 @@ export async function POST(req: Request) {
     return go(req, "/espace");
   }
 
-  if (team.role !== "owner") return fail(await msg("Seul le propriétaire de l'équipe gère les membres.", "Only the team owner manages members."), 403);
+  const memberAction = ["invite", "role", "remove", "revoke"].includes(String(action));
+  if (memberAction && !canManageMembers(team.role)) return fail(await msg("Réservé aux admins : seuls le propriétaire et les admins invitent, retirent et changent les rôles.", "Admins only: only the owner and admins invite, remove and change roles."), 403);
+  if (!memberAction && !canLaunch(team.role)) return fail(await msg("Ton rôle (lecteur) permet de consulter l'équipe, pas de la modifier.", "Your role (viewer) lets you see the team, not change it."), 403);
 
   if (action === "invite") {
     const email = normalizeEmail(form.get("email"));
@@ -73,24 +75,27 @@ export async function POST(req: Request) {
       email,
       await msg(`${user.email} t'invite dans l'équipe ${team.name} sur AgentProof`, `${user.email} invites you to the team ${team.name} on AgentProof`),
       await msg(
-        `${user.email} t'invite à rejoindre l'équipe « ${team.name} » sur AgentProof (${role === "admin" ? "admin : lancer des audits" : "lecteur : consulter les rapports"}).\n\nRejoindre l'équipe (lien valable 7 jours) :\n${link}`,
-        `${user.email} invites you to join the team “${team.name}” on AgentProof (${role === "admin" ? "admin: run audits" : "viewer: read reports"}).\n\nJoin the team (link valid for 7 days):\n${link}`,
+        `${user.email} t'invite à rejoindre l'équipe « ${team.name} » sur AgentProof (${{ admin: "admin : tout, y compris gérer les membres", editor: "éditeur : lancer des audits et tout gérer sauf les membres", viewer: "lecteur : consulter les rapports" }[role]}).\n\nRejoindre l'équipe (lien valable 7 jours) :\n${link}`,
+        `${user.email} invites you to join the team “${team.name}” on AgentProof (${{ admin: "admin: everything, including members", editor: "editor: run audits and manage everything but members", viewer: "viewer: read reports" }[role]}).\n\nJoin the team (link valid for 7 days):\n${link}`,
       ),
       link,
     );
-    // The owner sees the link once, to share it by hand if the e-mail does not arrive.
+    // The inviter sees the link once, to share it by hand if the e-mail does not arrive.
     return go(req, `/espace/reglages/equipe?${new URLSearchParams({ invite: token, email, envoye: sent ? "1" : "0" })}`);
   }
 
   if (action === "role") {
     if (!ROLES.includes(str("role"))) return fail(await msg("Rôle invalide.", "Invalid role."));
     if (str("user") === team.owner_id) return fail(await msg("Le rôle du propriétaire ne change pas.", "The owner's role does not change."));
-    await db.from("memberships").update({ role: str("role") }).eq("team_id", team.id).eq("user_id", str("user"));
+    if (str("user") === user.id) return fail(await msg("Tu ne peux pas changer ton propre rôle : demande à un autre admin.", "You cannot change your own role: ask another admin."), 403);
+    const { error } = await db.from("memberships").update({ role: str("role") }).eq("team_id", team.id).eq("user_id", str("user"));
+    if (error) return fail(`${await msg("Erreur", "Error")} : ${error.message}`);
     return go(req, "/espace/reglages/equipe");
   }
 
   if (action === "remove") {
     if (str("user") === team.owner_id) return fail(await msg("Le propriétaire ne peut pas être retiré.", "The owner cannot be removed."));
+    if (str("user") === user.id) return fail(await msg("Pour partir, utilise « Quitter l'équipe ».", "To go, use “Leave the team”."));
     await db.from("memberships").delete().eq("team_id", team.id).eq("user_id", str("user"));
     return go(req, "/espace/reglages/equipe");
   }

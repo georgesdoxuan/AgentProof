@@ -132,7 +132,7 @@ const fr = {
     empty: "Vider la corbeille",
     emptyConfirm: (n: number) => `Supprimer définitivement ${n} rapport${n > 1 ? "s" : ""} ? Cette action est irréversible.`,
   },
-  roles: { owner: "Propriétaire", admin: "Admin", viewer: "Lecteur" },
+  roles: { owner: "Propriétaire", admin: "Admin", editor: "Éditeur", viewer: "Lecteur" },
   account: {
     title: "Compte",
     loginNote: "Connexion par lien e-mail, sans mot de passe.",
@@ -275,7 +275,7 @@ const en: Dict = {
     empty: "Empty trash",
     emptyConfirm: (n: number) => `Permanently delete ${n} report${n > 1 ? "s" : ""}? This cannot be undone.`,
   },
-  roles: { owner: "Owner", admin: "Admin", viewer: "Viewer" },
+  roles: { owner: "Owner", admin: "Admin", editor: "Editor", viewer: "Viewer" },
   account: {
     title: "Account",
     loginNote: "Sign in with an e-mail link, no password.",
