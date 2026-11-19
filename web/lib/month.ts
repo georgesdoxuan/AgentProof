@@ -9,6 +9,36 @@ import type { SiteView, SpaceAudit } from "./space";
 export async function monthRecap(teamId: string, audits: SpaceAudit[], sites: SiteView[], at = new Date()) {
   const start = new Date(Date.UTC(at.getUTCFullYear(), at.getUTCMonth(), 1));
   const end = new Date(Date.UTC(at.getUTCFullYear(), at.getUTCMonth() + 1, 1));
+  return periodRecap(teamId, audits, sites, start, end);
+}
+
+// Periods offered on the home page: the last 7 or 30 days, each month since the team's first audit, or everything.
+// The choice lives in a cookie (PERIOD_COOKIE, set by PeriodSelect); the current month is the default.
+export const PERIOD_COOKIE = "ap_accueil_periode";
+export type Period = { key: string; start: Date; end: Date; month: boolean };
+export function periods(audits: SpaceAudit[], now = new Date()): Period[] {
+  const day = 86_400_000;
+  const end = new Date(now.getTime() + day);
+  const first = audits.reduce((m, a) => (a.created_at < m ? a.created_at : m), now.toISOString());
+  const f = new Date(first);
+  const months: Period[] = [];
+  const last = Date.UTC(f.getUTCFullYear(), f.getUTCMonth(), 1);
+  for (let i = 0; i < 24; i++) {
+    const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+    if (i > 0 && start.getTime() < last) break;
+    const key = `${start.getUTCFullYear()}-${String(start.getUTCMonth() + 1).padStart(2, "0")}`;
+    months.push({ key, start, end: new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 1)), month: true });
+  }
+  return [
+    ...months.slice(0, 1),
+    { key: "7d", start: new Date(now.getTime() - 7 * day), end, month: false },
+    { key: "30d", start: new Date(now.getTime() - 30 * day), end, month: false },
+    ...months.slice(1),
+    { key: "all", start: new Date(Date.UTC(f.getUTCFullYear(), f.getUTCMonth(), 1)), end, month: false },
+  ];
+}
+
+export async function periodRecap(teamId: string, audits: SpaceAudit[], sites: SiteView[], start: Date, end: Date) {
   const [since, until] = [start.toISOString(), end.toISOString()];
   const { data: autos } = await db.from("automations").select("id").eq("team_id", teamId);
   const ids = (autos ?? []).map((a) => a.id);
