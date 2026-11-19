@@ -47,7 +47,9 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
   const refused = erreur ? REFUSED[erreur] : undefined;
   // Jury demo: the audits and payment test left are shown (the card is the demo's zero-balance one, set by an admin).
   const jury = isJury(user.email);
-  const [card, credits, missions, lang, pace, lists, logins, juryLeft] = await Promise.all([cardView(team.id), loadCredits(team.id), teamMissions(team.id), getLang(), loadPace(), teamLists(team.id), listSiteLogins(team.id), jury ? loadJuryLeft(user.id, team.id) : null]);
+  const juryLeft = jury ? await loadJuryLeft(user.id, team.id) : null;
+  // A judge whose payment test is used up is not offered the payment choice at all (the server refuses it anyway).
+  const [card, credits, missions, lang, pace, lists, logins] = await Promise.all([juryLeft && !juryLeft.payments ? null : cardView(team.id), loadCredits(team.id), teamMissions(team.id), getLang(), loadPace(), teamLists(team.id), listSiteLogins(team.id)]);
   // Test accounts offered to the payment test: name and masked login only, never a password (it stays in H's vault).
   const accounts = logins.map((l) => ({ id: l.id, label: l.label, hint: l.login_hint, domain: l.sites.domain }));
   // Same default as /api/audits: the first FORM_MISSIONS missions (5, or 3 on demo day) come ticked.
