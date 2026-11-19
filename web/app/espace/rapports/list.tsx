@@ -445,7 +445,7 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
               {(["all", ...present] as const).map((v) => (
                 <label key={v} className="cursor-pointer" title={v === "all" ? undefined : r.types.tip[v]}>
                   <input type="radio" name="ap_rapports_type" value={v} defaultChecked={type === v} className="peer sr-only" />
-                  <span className="type-caption inline-flex min-h-[30px] items-center gap-1.5 whitespace-nowrap rounded-full bg-fill px-3 font-semibold text-ink-2 transition-colors hover:text-ink peer-checked:bg-ink peer-checked:text-bg peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue">
+                  <span className="type-caption inline-flex min-h-[30px] items-center gap-1.5 whitespace-nowrap rounded-full bg-fill px-3 font-semibold text-ink-2 transition-colors hover:bg-line hover:text-ink peer-checked:bg-ink peer-checked:text-bg peer-checked:hover:bg-ink/85 peer-checked:hover:text-bg peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue">
                     {v !== "all" && TYPE_ICONS[v].map((i) => <Icon key={i} name={i} className="h-[14px] w-[14px]" />)}
                     {v === "all" ? r.types.all : r.types[v]}
                     <span className="tnum font-normal opacity-70">{v === "all" ? searched.length : typeCount(v)}</span>
