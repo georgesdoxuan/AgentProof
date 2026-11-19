@@ -92,11 +92,14 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
       )}
       <Group>
         <form action="/api/audits" method="post" className="grid gap-5 p-6 sm:p-8">
-          {/* Kept from the home form or from "Relancer" on a report: the report address and the fresh-pass flag. */}
-          {email && <input type="hidden" name="email" value={email} />}
+          {/* Kept from "Relancer" on a report: a fresh pass, not the 7-day reuse. */}
           {force === "1" && <input type="hidden" name="force" value="1" />}
           <Field label={t("Adresse de ton site", "Your site's address")} name="url" required defaultValue={url} />
           <Field label={t("Un concurrent (facultatif)", "A competitor (optional)")} name="competitor" defaultValue={competitor} />
+          {/* A report address carried over from the home form stays editable: a refused one must be fixable here. */}
+          {(email || erreur === "email") && (
+            <Field label={t("E-mail du rapport (vide : ton adresse de connexion)", "Report e-mail (empty: your sign-in address)")} name="email" type="email" defaultValue={email} />
+          )}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Hint tip={t("Mobile : format téléphone simulé (écran 390 × 844), pas un vrai smartphone. Ordinateur + Mobile : les mêmes missions sur les deux, côte à côte dans le rapport, deux fois plus de crédits.", "Mobile: simulated phone format (390 × 844 screen), not a real smartphone. Desktop + Mobile: the same missions on both, side by side in the report, twice the credits.")}>
               <span className="text-ink-2">{t("Appareil", "Device")}</span>

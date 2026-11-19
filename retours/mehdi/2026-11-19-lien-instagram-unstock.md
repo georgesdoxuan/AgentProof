@@ -18,4 +18,4 @@ Depuis l’accueil et une page de rapport, le lien ouvre le bon profil @unstock.
 2026-11-19 — Demande explicite de Mehdi : créer le profil social, publier deux posts puis ajouter le compte au site. Identifiant final conservé à sa demande : unstock.ai. La bio décrit des tests de parcours e-commerce par agents IA. L’ajout d’un lien cliquable vers le site dans le profil Instagram est limité par Instagram à son application mobile ; l’adresse du site figure provisoirement en texte dans la bio. Ne déposer aucun identifiant de connexion ou secret dans le dépôt.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait. Lien « Instagram — Unstock » dans le pied de page de toutes les pages (accueil, rapports…) vers https://www.instagram.com/unstock.ai/. Nouvel onglet annoncé aux lecteurs d'écran (« nouvel onglet »), rel="noopener noreferrer". Aucun script ni widget Instagram : vérifié, l'accueil ne fait aucune requête vers instagram.com. Le produit reste nommé AgentProof. PR #68.
