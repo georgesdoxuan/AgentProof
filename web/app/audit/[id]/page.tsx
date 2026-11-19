@@ -231,6 +231,9 @@ function SectionHead({ title, intro, aside }: { title: string; intro?: string; a
   );
 }
 
+// The agent writes "unknown" in English when it could not tell: show "?" in both languages.
+const known = (v?: string | null) => (v && !/^unknown$/i.test(v.trim()) ? v : "?");
+
 async function loadAudit(id: string) {
   const { data } = await db.from("audits").select(`*, sites(domain, name, url), runs(${RUN_FIELDS})`).eq("id", id).maybeSingle();
   return data;
@@ -552,8 +555,8 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                   </p>
                 )}
                 <p className="type-small mt-2 text-ink-2">
-                  3D Secure : {pay.agent_answer?.three_ds_seen ? t("demandé", "requested") : t("non", "no")} · {t("Prestataire", "Provider")} : {pay.agent_answer?.payment_provider || "?"} · {t("Moyens", "Methods")} :{" "}
-                  {pay.agent_answer?.payment_methods || "?"}
+                  3D Secure : {pay.agent_answer?.three_ds_seen ? t("demandé", "requested") : t("non", "no")} · {t("Prestataire", "Provider")} : {known(pay.agent_answer?.payment_provider)} · {t("Moyens", "Methods")} :{" "}
+                  {known(pay.agent_answer?.payment_methods)}
                 </p>
                 {pay.judge?.result && pay.judge.result !== pay.payment_verdict && (
                   <p className="type-small mt-2 text-warn">
