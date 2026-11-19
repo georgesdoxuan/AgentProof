@@ -196,7 +196,7 @@ export function NavBadge({ href, t, collapsed }: { href: string; t: T; collapsed
   const d = useSide();
   if (!d) return null;
   const [n, tone, label] =
-    href === "/espace" ? [d.open, "warn", `${d.open} ${d.open > 1 ? t.open : t.openOne}`] : href === "/espace/rapports" ? [d.running.length, "live", `${d.running.length} ${t.running.toLowerCase()}`] : [0, "", ""];
+    href === "/espace/corrections" ? [d.open, "warn", `${d.open} ${d.open > 1 ? t.open : t.openOne}`] : href === "/espace/rapports" ? [d.running.length, "live", `${d.running.length} ${t.running.toLowerCase()}`] : [0, "", ""];
   if (!n) return null;
   const color = tone === "warn" ? "bg-warn" : "bg-live-fill";
   if (collapsed) return <span className={`absolute right-2.5 top-1.5 h-2 w-2 rounded-full ring-2 ring-bg-2 ${color}`} aria-label={label} title={label} />;

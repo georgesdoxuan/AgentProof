@@ -260,7 +260,12 @@ export default async function Accueil() {
               <Icon name="wrench" className="h-5 w-5 shrink-0 text-ink-2" />
               {t("À corriger", "To fix")}
             </h2>
-            <Chip icon="trend" className="max-sm:hidden">{t("Par missions perdues", "By missions lost")}</Chip>
+            <span className="flex items-center gap-4">
+              <Chip icon="trend" className="max-sm:hidden">{t("Par missions perdues", "By missions lost")}</Chip>
+              <Link href="/espace/corrections" className="type-small text-link hover:underline">
+                {t("Tout voir", "See all")}
+              </Link>
+            </span>
           </div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {todo.map(({ site, b }) => (
