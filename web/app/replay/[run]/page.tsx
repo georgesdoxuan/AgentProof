@@ -8,6 +8,7 @@ import { AutoRefresh } from "@/app/audit/[id]/refresh";
 import { AgentCursor, BrowserFrame, Chevron, StatusGlyph, Verdict, blockerLabel } from "@/lib/ui";
 import { loginName, missionTitle, tr } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
+import { ClampText } from "@/lib/clamp";
 
 const ACTIONS: Record<string, [string, string]> = {
   click_web: ["Clic", "Click"],
@@ -128,7 +129,7 @@ export default async function Replay({ params, searchParams }: { params: Promise
         <ol className="mt-16 space-y-12">
           {steps.map(({ s, i }) => (
             <li key={i} className="grid gap-6 md:grid-cols-[minmax(0,1fr)_300px] md:gap-10">
-              <BrowserFrame url={s.url}>
+              <BrowserFrame url={s.url} className="md:self-start">
                 {shotsGone ? (
                   <div className="type-small grid aspect-[16/10] place-items-center bg-bg-2 text-ink-2 dark:bg-[#2c2c2e]">{t("Capture effacée", "Screenshot deleted")}</div>
                 ) : (
@@ -141,7 +142,8 @@ export default async function Replay({ params, searchParams }: { params: Promise
                 )}
                 {!shotsGone && s.x != null && s.y != null && <AgentCursor x={s.x} y={s.y} />}
               </BrowserFrame>
-              <div className="md:sticky md:top-[76px] md:self-start">
+              {/* Never taller than the screenshot beside it (ap-clamp-bound): long reasoning is cut, « Voir plus » unfolds it. */}
+              <div className="ap-clamp-bound flex min-w-0 flex-col">
                 <p className="type-small flex items-center gap-2 text-ink-2 tnum">
                   <span
                     className={`grid h-7 min-w-7 place-items-center rounded-full px-2 font-semibold ${
@@ -158,7 +160,11 @@ export default async function Replay({ params, searchParams }: { params: Promise
                     {s.element && <span className="font-normal text-ink-2"> · {s.element}</span>}
                   </p>
                 )}
-                {s.thought && <p className="mt-3 text-ink-2">« {s.thought} »</p>}
+                {s.thought && (
+                  <ClampText lang={lang} lines={8} fill className="mt-3">
+                    <p className="text-ink-2">« {s.thought} »</p>
+                  </ClampText>
+                )}
               </div>
             </li>
           ))}
