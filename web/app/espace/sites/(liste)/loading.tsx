@@ -1,4 +1,6 @@
-import { Bone, Line, SkSpace } from "../../skeleton";
+import { Bone, Line, SkSpace } from "../../../skeleton";
+
+// In a route group so it wraps only the list, not a site page or the trash (each has its own loading state).
 
 // Sites: one card per site (name, score, missions, what is left to fix).
 export default function Loading() {

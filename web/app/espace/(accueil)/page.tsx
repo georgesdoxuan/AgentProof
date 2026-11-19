@@ -9,10 +9,10 @@ import { loadSpace, priorities, shortDate, type SiteView } from "@/lib/space";
 import { monthRecap } from "@/lib/month";
 import { loadPace, estimateMinutes, minutesLabel } from "@/lib/estimate";
 import { Chevron, Chip, Chips, DeviceTag, Field, Group, Icon, MissionBar, MissionLegend, Row, Note, Spinner, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
-import { AutoRefresh } from "../audit/[id]/refresh";
-import { SpaceShell } from "./shell";
-import { Delta, PriorityCard, sitePath } from "./parts";
-import { SiteLogo } from "../site-logo";
+import { AutoRefresh } from "../../audit/[id]/refresh";
+import { SpaceShell } from "../shell";
+import { Delta, PriorityCard, sitePath } from "../parts";
+import { SiteLogo } from "../../site-logo";
 
 export async function generateMetadata() {
   return { title: `${(await getDict()).space.sections["/espace"]} · AgentProof` };
@@ -39,7 +39,7 @@ function headline(sites: SiteView[], t: T) {
 export default async function Accueil() {
   const ctx = await teamContext();
   if (!ctx) redirect("/connexion?next=/espace");
-  const { user, teams, team } = ctx;
+  const { user, team } = ctx;
   const lang = await getLang();
   const t = tr(lang);
   if (!team) return <NoTeam email={user.email} lang={lang} />;
@@ -73,8 +73,6 @@ export default async function Accueil() {
 
   return (
     <SpaceShell
-      team={team}
-      teams={teams}
       title={audits.length ? headline(sites, t) : t("Ton espace est prêt.", "Your space is ready.")}
       intro={status}
       actions={

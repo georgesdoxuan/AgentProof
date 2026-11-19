@@ -31,7 +31,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const lang = await getLang();
   const t = await getDict();
   return (
-    <html lang={lang}>
+    <html lang={lang} data-scroll-behavior="smooth">
       <body className="flex min-h-screen flex-col antialiased">
         <Suspense fallback={null}>
           <NavProgress />

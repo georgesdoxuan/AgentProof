@@ -26,7 +26,7 @@ export default async function Compte({ searchParams }: { searchParams: Promise<{
   const roles = t.roles;
 
   return (
-    <SpaceShell narrow team={team} teams={teams} title={a.title}>
+    <SpaceShell narrow title={a.title}>
       <Group>
         <Row className="min-h-[76px]">
           <Avatar email={user.email} className="h-11 w-11" />

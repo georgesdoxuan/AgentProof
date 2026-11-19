@@ -4,8 +4,8 @@ import { canLaunch, teamContext } from "@/lib/auth";
 import { loadSpace } from "@/lib/space";
 import { getT } from "@/lib/lang";
 import { Empty, MissionLegend } from "@/lib/ui";
-import { SpaceShell } from "../shell";
-import { SiteCard, SitesTabs } from "../parts";
+import { SpaceShell } from "../../shell";
+import { SiteCard, SitesTabs } from "../../parts";
 
 export const metadata = { title: "Sites · AgentProof" };
 
@@ -13,14 +13,12 @@ export default async function Sites() {
   const ctx = await teamContext();
   if (!ctx) redirect("/connexion?next=/espace/sites");
   if (!ctx.team) redirect("/espace");
-  const { teams, team } = ctx;
+  const { team } = ctx;
   const { sites, trashedSites } = await loadSpace(team.id);
   const t = await getT();
 
   return (
     <SpaceShell
-      team={team}
-      teams={teams}
       title="Sites"
       hint={t("Le dernier score de chaque site, son évolution et ce qu'il reste à corriger.", "The latest score of each site, its trend and what is left to fix.")}
       actions={

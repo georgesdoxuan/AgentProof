@@ -29,19 +29,70 @@ export async function Loading({ children, className }: { children: React.ReactNo
 
 const W = ["46%", "62%", "38%", "54%", "70%", "42%", "58%", "34%"];
 
-// Team space page: the real sidebar and header, placeholders for the title, intro and main action.
-export function SkSpace({ narrow, action, children }: { narrow?: boolean; action?: boolean; children: React.ReactNode }) {
+// Team space page: the sidebar is the layout's (already on screen); this fills the page column with placeholders for
+// the title and, only where the real page has them, the back link, the facts under the title and the main action.
+// A placeholder the page does not have pushes everything below it down for a moment: the page then jumps up.
+export function SkSpace({
+  narrow,
+  action,
+  intro,
+  parent,
+  logo,
+  long,
+  children,
+}: {
+  narrow?: boolean;
+  action?: boolean;
+  /** "chips": a row of Chips (26px), or the widths of each chip; "line": one line of text. Left out when the page has no intro. */
+  intro?: "chips" | "line" | string[];
+  /** A sentence-long title (the space's home): three lines on phones, like the real one. */
+  long?: boolean;
+  /** Child pages (a site, Favoris, Corbeille): the back link above the title. */
+  parent?: boolean;
+  /** Site page: the site's 48px logo beside the title. */
+  logo?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <Loading>
       <SpaceShell
         narrow={narrow}
-        title={<Line w="min(24rem, 85%)" />}
-        intro={<Line w="min(36rem, 100%)" />}
+        parent={parent ? ["#", ""] : undefined}
+        title={
+          logo ? (
+            <span className="flex min-w-0 items-center gap-4">
+              <Bone className="h-12 w-12 shrink-0 rounded-[12px]" />
+              <Line w="min(18rem, 70%)" />
+            </span>
+          ) : long ? (
+            <>
+              <Line w="min(30rem, 100%)" />
+              <span className="block min-[735px]:hidden">
+                <Line w="100%" />
+                <Line w="55%" />
+              </span>
+            </>
+          ) : (
+            <Line w="min(24rem, 85%)" />
+          )
+        }
+        intro={Array.isArray(intro) ? <SkChips w={intro} /> : intro === "chips" ? <SkChips /> : intro === "line" ? <Line w="min(36rem, 100%)" /> : undefined}
         actions={action ? <Bone className="h-12 w-44 rounded-full" /> : undefined}
       >
         {children}
       </SpaceShell>
     </Loading>
+  );
+}
+
+// Same height as lib/ui Chips (26px pills).
+function SkChips({ w = ["5.5rem", "7rem", "6rem"] }: { w?: string[] }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {w.map((w, i) => (
+        <Bone key={i} className="h-[26px] rounded-full" w={w} />
+      ))}
+    </div>
   );
 }
 
@@ -145,10 +196,12 @@ export function SkHeader({ eyebrow = true, intro = 2 }: { eyebrow?: boolean; int
 export function SkBoard({ rows = 8 }: { rows?: number }) {
   return (
     <>
-      <p className="type-small mt-8">
-        <Line w="18rem" />
-      </p>
-      <div className="mt-4 overflow-hidden rounded-[18px] bg-tile">
+      {/* Leaderboard's device switch (42px) and date chip. */}
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+        <Bone className="h-[42px] w-[246px] rounded-[10px]" />
+        <Bone className="h-[26px] w-64 max-w-full rounded-full" />
+      </div>
+      <div className="mt-6 overflow-hidden rounded-[18px] bg-tile">
         <div className="hidden h-[41px] border-b border-hairline md:block" />
         {Array.from({ length: rows }, (_, i) => (
           <div key={i} className="grid min-h-[86px] grid-cols-[1.75rem_1fr_auto] items-center gap-x-4 border-b border-hairline px-6 py-5 last:border-0 max-[734px]:px-5 md:grid-cols-[1.75rem_minmax(0,1fr)_8rem_5rem]">

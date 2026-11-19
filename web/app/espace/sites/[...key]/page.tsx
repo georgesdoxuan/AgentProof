@@ -19,7 +19,7 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
   const ctx = await teamContext();
   if (!ctx) redirect(`/connexion?next=/espace/sites/${key}`);
   if (!ctx.team) redirect("/espace");
-  const { teams, team } = ctx;
+  const { team } = ctx;
   const { sites } = await loadSpace(team.id);
   const site = sites.find((s) => s.key === key);
   if (!site) notFound();
@@ -35,8 +35,6 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
 
   return (
     <SpaceShell
-      team={team}
-      teams={teams}
       parent={["/espace/sites", "Sites"]}
       title={
         <span className="flex min-w-0 items-center gap-4">

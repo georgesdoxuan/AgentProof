@@ -35,7 +35,7 @@ export default async function SitesCorbeille() {
   const ctx = await teamContext();
   if (!ctx) redirect(`/connexion?next=${BACK}`);
   if (!ctx.team) redirect("/espace");
-  const { teams, team } = ctx;
+  const { team } = ctx;
   const [t, lang] = await Promise.all([getT(), getLang()]);
   const { trashedSites } = await loadSpace(team.id);
   const manage = canLaunch(team.role);
@@ -45,8 +45,6 @@ export default async function SitesCorbeille() {
 
   return (
     <SpaceShell
-      team={team}
-      teams={teams}
       title={t("Sites · Corbeille", "Sites · Trash")}
       parent={["/espace/sites", "Sites"]}
       hint={t(

@@ -16,15 +16,13 @@ export default async function Comptes() {
   const ctx = await teamContext();
   if (!ctx) redirect("/connexion?next=/espace/comptes");
   if (!ctx.team) redirect("/espace");
-  const { team, teams } = ctx;
+  const { team } = ctx;
   const logins = await listSiteLogins(team.id);
   const admin = canLaunch(team.role);
   const t = await getT();
 
   return (
     <SpaceShell narrow
-      team={team}
-      teams={teams}
       title={t("Comptes de test", "Test accounts")}
       hint={t(
         "Pour les sites qui exigent un compte avant de payer. Avec un compte enregistré, le test de paiement tourne deux fois : sans compte, puis connecté.",

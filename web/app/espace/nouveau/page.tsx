@@ -22,7 +22,7 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
   const ctx = await teamContext();
   if (!ctx) redirect("/connexion?next=/espace/nouveau");
   if (!ctx.team || !canLaunch(ctx.team.role)) redirect("/espace");
-  const { user, teams, team } = ctx;
+  const { user, team } = ctx;
   // Filled in from the home form when the visitor had to sign in first (see /api/audits).
   const { url, competitor, device } = await searchParams;
   const [card, credits, missions, lang, pace] = await Promise.all([cardView(team.id), loadCredits(team.id), teamMissions(team.id), getLang(), loadPace()]);
@@ -32,8 +32,6 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
 
   return (
     <SpaceShell narrow
-      team={team}
-      teams={teams}
       title={t("Lancer un audit", "Run an audit")}
       hint={t(
         "Un agent IA essaie d'acheter sur ton site, comme un vrai client. Les missions s'arrêtent avant le paiement et ne saisissent aucune donnée personnelle.",

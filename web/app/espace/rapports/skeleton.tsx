@@ -1,9 +1,10 @@
 import { Bone, Line, SkSpace } from "../../skeleton";
 
 // Reports (and its Favorites and Trash sub-sections): filters, then one row per audit.
-export default function Loading() {
+// Loading state of Rapports (chips), Favoris (back link, chips) and Corbeille (back link, no chips).
+export function SkReports({ intro, parent }: { intro?: "chips"; parent?: boolean }) {
   return (
-    <SkSpace>
+    <SkSpace intro={intro} parent={parent}>
       <section>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3 px-1">
           <Bone className="h-[38px] w-[17rem] max-w-full rounded-[10px] lg:hidden" />

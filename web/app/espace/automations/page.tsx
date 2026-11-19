@@ -51,7 +51,7 @@ export default async function Automations({ searchParams }: { searchParams: Prom
   const ctx = await teamContext();
   if (!ctx) redirect("/connexion?next=/espace/automations");
   if (!ctx.team) redirect("/espace");
-  const { team, teams } = ctx;
+  const { team } = ctx;
   const items = await listAutomations(team.id);
   const admin = canLaunch(team.role);
   const lang = await getLang();
@@ -65,8 +65,6 @@ export default async function Automations({ searchParams }: { searchParams: Prom
 
   return (
     <SpaceShell narrow
-      team={team}
-      teams={teams}
       title="Automations"
       hint={t(
         "AgentProof relit tes pages (bandeau cookies, captcha, boutons, formulaires, robots.txt, UCP) à la fréquence choisie et après chaque mise en ligne. S'il y a un changement, tu es prévenu ici, par e-mail et sur Slack. Les prix et les produits ne comptent pas.",

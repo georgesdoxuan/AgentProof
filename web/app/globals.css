@@ -100,6 +100,9 @@
 
 html {
   background: var(--bg);
+  /* Room for the scroll bar is kept even on a short page (a loading placeholder): with a classic scroll bar
+     (Windows, macOS with a mouse) the page would otherwise slide sideways when it comes and goes. */
+  scrollbar-gutter: stable;
   -webkit-text-size-adjust: 100%;
 }
 
@@ -486,7 +489,9 @@ body {
   }
 }
 
-/* Home section links (#tester, #classement...): smooth scroll, unless the visitor asked for less motion. */
+/* Home section links (#tester, #classement...): smooth scroll, unless the visitor asked for less motion.
+   Page changes stay instant: <html data-scroll-behavior="smooth"> tells Next to switch it off while it scrolls a new
+   page to the top. Without it, the jump to the top was animated over a dozen frames and the sidebar slid down. */
 @media (prefers-reduced-motion: no-preference) {
   html { scroll-behavior: smooth; }
 }
