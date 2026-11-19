@@ -18,4 +18,4 @@ Depuis les tarifs et la FAQ, un visiteur comprend pourquoi un audit est affiché
 2026-11-19 — Publication validée par Mehdi. Effort estimé : une à deux heures après arbitrage de l’offre par Georges et Thomas. Sujet distinct de la demande existante gratuit-sous-le-bouton : il s’agit de la valeur et du contenu comparé des offres, pas de répéter le badge gratuit. Aucun gain de conversion non mesuré à annoncer.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait. Sous les tarifs, trois blocs « Pendant l'essai / Audit complet, 490 € / Suivi mensuel, 149 € » et une question FAQ « Qu'apporte l'audit à 490 € de plus que l'essai gratuit ? » : aujourd'hui c'est le même audit, offert pendant l'essai (15 crédits, 3 audits par mois) ; rien n'est facturé avant l'ouverture du paiement. Aucun service ajouté. Écran Abonnement aligné. Commit 66ba2fb.

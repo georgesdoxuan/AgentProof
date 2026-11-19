@@ -29,4 +29,4 @@ Test du 19 nov 2026 avec le skill « visiteurs » (100 visiteurs simulés par IA
 2026-11-19 — Complément de Mehdi : sur l’accueil à 390 px de large, le classement affiche les pourcentages seuls alors que les nombres de missions restent visibles sur ordinateur. Conserver sous chaque score mobile une mention compacte issue des données réelles, par exemple « 10/10 missions », et distinguer missions comptées et exclues si pertinent. Vérification : à 390 px et avec zoom du texte, le nombre reste lisible sans défilement horizontal ; un site à 100 % sur moins de missions ne paraît pas avoir la même couverture. Ne pas changer le score pour résoudre un problème de présentation.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait. « Méthode » ajouté à la barre des sections (vers /methode). Sous le top 5 : nombre de sites classés sur ordinateur, et écart moyen ordinateur/mobile calculé sur les sites audités sur les deux (moyenne simple des scores stockés, affichée seulement à partir de 3 sites ; aucun chiffre en dur). Sur mobile, « x/y missions » sous chaque score. Score inchangé. Commit 66ba2fb.

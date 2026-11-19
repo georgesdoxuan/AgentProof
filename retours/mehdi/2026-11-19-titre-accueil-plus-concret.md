@@ -26,4 +26,4 @@ Test du 19 nov 2026 avec le skill « visiteurs » (100 visiteurs simulés par IA
 - Fichier : `web/app/(accueil)/page.tsx:40-42`. Garder `web/app/layout.tsx:19` (description) cohérent.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait. Titre et sous-titre proposés repris tels quels, version EN dans le même esprit ; description du site (layout.tsx) alignée. Commit 66ba2fb.

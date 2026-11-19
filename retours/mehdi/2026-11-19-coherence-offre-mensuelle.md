@@ -18,4 +18,4 @@ Comparer accueil, FAQ et écran d’abonnement : montant, crédits, cadence et c
 2026-11-19 — Publication validée par Mehdi. Priorité important, avant vendredi 11 h. Effort estimé : une à deux heures de clarification avec le responsable de l’offre puis alignement des textes et traductions. Rechercher les composants actuels d’accueil, FAQ et abonnement avant modification.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait. Même description sur l'accueil, la FAQ (« Quelles sont les offres ? ») et l'écran Abonnement : audit complet automatique chaque mois, 150 crédits par mois pour relancer des audits (5 par audit, l'audit automatique compris, soit environ 30), relecture quotidienne des pages sans agent ni crédit. Quotas inchangés (lib/credits.ts). Commit 66ba2fb.

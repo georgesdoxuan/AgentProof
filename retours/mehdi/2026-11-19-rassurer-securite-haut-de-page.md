@@ -20,4 +20,4 @@ Test du 19 nov 2026 avec le skill « visiteurs » (100 visiteurs simulés par IA
 - Fichier : `web/app/(accueil)/page.tsx`.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait. Sous la ligne « Gratuit » : « Aucun paiement », « Aucune donnée personnelle saisie », « Arrêt à l'entrée du checkout » et un lien « La méthode » vers /methode. Rien d'autre que les règles de CONTEXT.md § 7. Commit 66ba2fb.

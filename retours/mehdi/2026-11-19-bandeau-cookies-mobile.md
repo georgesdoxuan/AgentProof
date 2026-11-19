@@ -20,4 +20,4 @@ Test du 19 nov 2026 avec le skill « visiteurs » (100 visiteurs simulés par IA
 - Fichier : `web/app/cookie-notice.tsx` (bouton `max-[480px]:w-full` et texte sur 3 lignes en mobile). Le commentaire du fichier note déjà qu'il s'agit d'une information, pas d'un consentement.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait. Sous 480 px : une seule ligne compacte (« Cookies nécessaires seulement. En savoir plus » + petit « OK » en lien bleu, sans fond). Bureau inchangé. À 375 px le titre, le sous-titre, « Tester mon site » et « Voir un exemple de rapport » ne sont plus recouverts. Commits 66ba2fb, 9017753.
