@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { Nav } from "./nav";
+import { LangSwitch, Nav } from "./nav";
 import { NavProgress } from "./progress";
 import { currentUser } from "@/lib/auth";
 import { Mark, Wordmark } from "@/lib/ui";
@@ -30,7 +30,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const t = await getDict();
   return (
     <html lang={lang}>
-      <body className="min-h-screen antialiased">
+      <body className="flex min-h-screen flex-col antialiased">
         <Suspense fallback={null}>
           <NavProgress />
         </Suspense>
@@ -49,7 +49,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             <Nav email={(await currentUser())?.email ?? null} t={t.nav} />
           </nav>
         </header>
-        <main id="contenu">{children}</main>
+        {/* The page fills the window, so a short page never leaves a band of another color under the footer. */}
+        <main id="contenu" className="flex flex-1 flex-col">{children}</main>
         <footer className="bg-bg-2 type-caption text-ink-2">
           <div className="wrap-wide border-t border-line py-5">
             <p className="flex items-start gap-2 py-2">
@@ -57,11 +58,13 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             </p>
             <div className="mt-2 flex flex-col gap-2 border-t border-line pt-4 sm:flex-row sm:justify-between">
               <p>{t.footer.event}</p>
-              <p className="flex flex-wrap gap-x-4 gap-y-1">
+              {/* A div, not a p: the language switch is a form, and a form inside a p breaks hydration. */}
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
                 <span>{t.footer.credits}</span>
                 <Link href="/methode" className="hover:text-ink hover:underline">{t.footer.method}</Link>
                 <Link href="/confidentialite" className="hover:text-ink hover:underline">{t.footer.privacy}</Link>
-              </p>
+                <LangSwitch lang={lang} />
+              </div>
             </div>
           </div>
         </footer>

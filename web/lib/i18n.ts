@@ -15,7 +15,7 @@ const fr = {
   home: "AgentProof, accueil",
   nav: { ranking: "Classement", mySpace: "Mon espace", space: "Espace", signIn: "Connexion", test: "Tester", testMySite: "mon site", team: "Équipe", account: "Compte", signOut: "Se déconnecter" },
   footer: {
-    rules: "Pendant un audit, l'agent ne paie jamais, ne saisit aucune donnée personnelle et ne résout aucun captcha. Il s'arrête à la première page du checkout.",
+    rules: "Pendant un audit, l'agent s'arrête à la première page du checkout : il ne paie pas, ne saisit aucune donnée personnelle et ne résout aucun captcha. Le test de paiement est à part, facultatif, et n'utilise que la carte de ton équipe.",
     event: "AgentProof · Hackathon H Company × Hugging Face, novembre 2026.",
     credits: "Agent : Holo, H Company. Juge visuel : Hugging Face.",
     method: "Méthode",
@@ -26,6 +26,7 @@ const fr = {
     switchTeam: "Changer d'équipe",
     back: "Page précédente",
     forward: "Page suivante",
+    more: "Plus",
     groups: { track: "Suivi", agent: "Agent", settings: "Réglages" },
     sections: {
       "/espace": "Accueil",
@@ -106,9 +107,9 @@ const en: Dict = {
   skip: "Skip to content",
   navLabel: "Main navigation",
   home: "AgentProof, home",
-  nav: { ranking: "Ranking", mySpace: "My space", space: "Space", signIn: "Sign in", test: "Test", testMySite: "my site", team: "Team", account: "Account", signOut: "Sign out" },
+  nav: { ranking: "Ranking", mySpace: "My space", space: "Space", signIn: "Sign in", test: "Try", testMySite: "my site", team: "Team", account: "Account", signOut: "Sign out" },
   footer: {
-    rules: "During an audit, the agent never pays, never enters personal data and never solves a captcha. It stops at the first checkout page.",
+    rules: "During an audit, the agent stops at the first checkout page: it doesn't pay, never enters personal data and never solves a captcha. The payment test is separate, optional, and only uses your team's card.",
     event: "AgentProof · H Company × Hugging Face hackathon, November 2026.",
     credits: "Agent: Holo, H Company. Visual judge: Hugging Face.",
     method: "Method",
@@ -119,6 +120,7 @@ const en: Dict = {
     switchTeam: "Switch team",
     back: "Previous page",
     forward: "Next page",
+    more: "More",
     groups: { track: "Overview", agent: "Agent", settings: "Settings" },
     sections: {
       "/espace": "Home",

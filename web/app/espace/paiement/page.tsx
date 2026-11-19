@@ -41,8 +41,12 @@ export default async function Paiement() {
         >
           <Row>
             <span className="type-headline">{card.label}</span>
-            <span className="text-ink-2 tnum">•••• {card.last4}</span>
-            {card.missing && <span className="type-small text-warn">{t("Non configurée sur ce serveur", "Not configured on this server")}</span>}
+            {/* Saved for the team but its details are missing on this server (local dev): no fake digits, just the state. */}
+            {card.missing ? (
+              <span className="type-small text-warn">{t("Détails absents sur ce serveur : les tests de paiement n’y sont pas possibles", "Details missing on this server: payment tests can't run here")}</span>
+            ) : (
+              <span className="text-ink-2 tnum">•••• {card.last4}</span>
+            )}
           </Row>
           {card.holder && (
             <Row>
@@ -86,7 +90,7 @@ export default async function Paiement() {
           footer={t("L'agent saisit ces données sur le site testé. Elles transitent par H Company, qui fait tourner l'agent.", "The agent enters this data on the tested site. It goes through H Company, which runs the agent.")}
         >
           <form action="/api/card" method="post" className="grid gap-4 p-6 sm:p-8">
-            <Field label={t("Nom de la carte (ex. Carte test boutique)", "Card name (e.g. Shop test card)")} name="label" type="text" />
+            <Field label={t("Nom de la carte", "Card name")} name="label" type="text" />
             <Field label={t("Numéro de carte", "Card number")} name="number" type="text" required />
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label={t("Expiration (MM/AA)", "Expiry (MM/YY)")} name="expiry" type="text" required />

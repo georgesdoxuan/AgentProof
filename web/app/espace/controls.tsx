@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
 import type { Dict } from "@/lib/i18n";
 
 // lib/ui pulls in the server engine, so client controls keep their own styles.
@@ -54,7 +54,9 @@ const GROUPS = [
 export function SpaceNav({ t }: { t: Dict["space"] }) {
   const path = usePathname();
   return (
-    <nav aria-label={t.label} className="max-lg:-mx-6 max-lg:overflow-x-auto max-lg:px-6 max-lg:[scrollbar-width:none] sm:max-lg:-mx-8 sm:max-lg:px-8">
+    <>
+    <MobileNav t={t} path={path} />
+    <nav aria-label={t.label} className="max-lg:hidden">
       <div className="lg:space-y-6 max-lg:inline-flex max-lg:gap-1 max-lg:rounded-[10px] max-lg:bg-fill max-lg:p-[3px]">
         {GROUPS.map(([group, items]) => (
           <div key={group} className="max-lg:contents">
@@ -99,6 +101,53 @@ export function SpaceNav({ t }: { t: Dict["space"] }) {
             </ul>
           </div>
         ))}
+      </div>
+    </nav>
+    </>
+  );
+}
+
+// Narrow screens: three tabs a merchant uses every day, everything else behind "Plus", like a tab bar's More.
+// Nine sections in one scrolling strip hid the settings off screen with no hint they existed.
+const MAIN = ["/espace", "/espace/sites", "/espace/rapports"] as const;
+function MobileNav({ t, path }: { t: Dict["space"]; path: string }) {
+  const isOn = (href: string) => (href === "/espace" ? path === href : path === href || path.startsWith(`${href}/`));
+  const rest = GROUPS.flatMap(([, items]) => items as readonly (readonly [string, string])[]).filter(([href]) => !(MAIN as readonly string[]).includes(href));
+  const inRest = rest.find(([href]) => isOn(href));
+  const tab = (on: boolean) =>
+    `flex h-9 items-center whitespace-nowrap rounded-[8px] px-3.5 type-small font-semibold transition-colors ${on ? "bg-tile text-ink shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#3a3a3c]" : "text-ink-2"}`;
+  return (
+    <nav aria-label={t.label} className="lg:hidden">
+      <div className="flex w-full gap-1 rounded-[10px] bg-fill p-[3px]">
+        {MAIN.map((href) => (
+          <Link key={href} href={href} aria-current={isOn(href) ? "page" : undefined} className={`${tab(isOn(href))} flex-auto justify-center`}>
+            {t.sections[href]}
+          </Link>
+        ))}
+        <details className="group relative shrink-0">
+          <summary className={`${tab(!!inRest)} cursor-pointer list-none justify-center gap-1.5 [&::-webkit-details-marker]:hidden`} aria-current={inRest ? "page" : undefined}>
+            {/* Always « Plus »: a long section name would be cut to « M… ». It stays lit, and the page title says where you are. */}
+            <span className="truncate">{t.more}</span>
+            <svg viewBox="0 0 12 12" className="h-2.5 w-2.5 shrink-0 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M1.5 4L6 8.5 10.5 4" />
+            </svg>
+          </summary>
+          <ul className="absolute right-0 top-11 z-30 w-60 rounded-[14px] bg-tile p-1.5 shadow-[0_12px_40px_-12px_rgb(0_0_0/0.35)] ring-1 ring-hairline dark:bg-[#2c2c2e]">
+            {rest.map(([href, icon]) => (
+              <li key={href}>
+                <Link
+                  href={href}
+                  onClick={(e) => e.currentTarget.closest("details")?.removeAttribute("open")}
+                  aria-current={isOn(href) ? "page" : undefined}
+                  className={`flex min-h-11 items-center gap-3 rounded-[8px] px-3 type-small ${isOn(href) ? "font-semibold text-ink" : "text-ink"} hover:bg-fill`}
+                >
+                  {glyph(icon, `h-[18px] w-[18px] shrink-0 ${isOn(href) ? "text-blue" : "text-ink-2"}`)}
+                  {t.sections[href as keyof typeof t.sections]}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </details>
       </div>
     </nav>
   );
@@ -168,29 +217,3 @@ export function CopyButton({ value, label, done }: { value: string; label: strin
 }
 
 // Back / forward, like a browser toolbar. Uses the Navigation API when available to grey out a dead end.
-export function HistoryButtons({ back, forward }: { back: string; forward: string }) {
-  const router = useRouter();
-  const path = usePathname();
-  const [can, setCan] = useState({ back: true, forward: true });
-  useEffect(() => {
-    const nav = (window as unknown as { navigation?: { canGoBack: boolean; canGoForward: boolean } }).navigation;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- reads browser history state once per route change
-    if (nav) setCan({ back: nav.canGoBack, forward: nav.canGoForward });
-  }, [path]);
-  const btn =
-    "grid h-9 w-9 place-items-center rounded-full bg-fill text-ink transition-colors hover:bg-line/60 disabled:cursor-default disabled:opacity-35 focus-visible:outline-2 focus-visible:outline-blue";
-  return (
-    <div className="flex gap-2">
-      <button type="button" className={btn} onClick={() => router.back()} disabled={!can.back} aria-label={back} title={back}>
-        <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <path d="M10 3L5 8l5 5" />
-        </svg>
-      </button>
-      <button type="button" className={btn} onClick={() => router.forward()} disabled={!can.forward} aria-label={forward} title={forward}>
-        <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <path d="M6 3l5 5-5 5" />
-        </svg>
-      </button>
-    </div>
-  );
-}

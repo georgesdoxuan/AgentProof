@@ -36,12 +36,20 @@ export default async function SitesOuverts({ searchParams }: { searchParams: Pro
   return (
     <div className="bg-bg-2 pb-24 pt-20 max-[734px]:pt-12">
       <div className="mx-auto w-[min(692px,87.5%)]">
-        <h1 className="type-h1">{site ? t(`${site} n’est pas ouvert aux audits aujourd’hui.`, `${site} is not open to audits today.`) : t("Sites ouverts aux audits.", "Sites open to audits.")}</h1>
+        <h1 className="type-h1">
+          {site
+            ? t(`${site} n’est pas ouvert aux audits aujourd’hui.`, `${site} is not open to audits today.`)
+            : allowed.length
+              ? t("Sites ouverts aux audits.", "Sites open to audits.")
+              : t("Tous les sites sont ouverts aux audits.", "Every site is open to audits.")}
+        </h1>
         <p className="type-intro mt-5 text-ink-2">
-          {t(
-            "Pendant la démo, les audits sont limités à quelques sites pour protéger nos crédits d’agent. Pour chaque site ouvert, tu peux consulter son dernier rapport public : captures, replays et plan de corrections.",
-            "During the demo, audits are limited to a few sites to protect our agent credits. For each open site, you can read its latest public report: screenshots, replays and fix plan.",
-          )}
+          {allowed.length
+            ? t(
+                "Pendant la démo, les audits sont limités à quelques sites pour protéger nos crédits d’agent. Pour chaque site ouvert, tu peux consulter son dernier rapport public : captures, replays et plan de corrections.",
+                "During the demo, audits are limited to a few sites to protect our agent credits. For each open site, you can read its latest public report: screenshots, replays and fix plan.",
+              )
+            : t("Aucune limite en ce moment : tu peux lancer un audit sur n’importe quel site.", "No limit right now: you can run an audit on any site.")}
         </p>
 
         {allowed.length ? (
@@ -80,13 +88,11 @@ export default async function SitesOuverts({ searchParams }: { searchParams: Pro
               );
             })}
           </ul>
-        ) : (
-          <p className="mt-10 text-ink-2">{t("Tous les sites sont ouverts aux audits en ce moment.", "All sites are open to audits right now.")}</p>
-        )}
+        ) : null}
 
         <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2">
           <Link href="/#tester" className="more">
-            {t("Tester un site de la liste", "Test a site from the list")}
+            {allowed.length ? t("Tester un site de la liste", "Test a site from the list") : t("Tester mon site", "Test my site")}
           </Link>
           <Link href="/classement" className="more">
             {t("Voir le classement", "See the ranking")}

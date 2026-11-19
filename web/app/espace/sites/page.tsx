@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { loadSpace } from "@/lib/space";
 import { getT } from "@/lib/lang";
+import { MissionLegend } from "@/lib/ui";
 import { SpaceShell } from "../shell";
 import { SiteCard } from "../parts";
 
@@ -31,10 +32,13 @@ export default async function Sites() {
       }
     >
       {sites.length ? (
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {sites.map((s) => (
-            <SiteCard key={s.key} site={s} />
-          ))}
+        <div className="space-y-3">
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {sites.map((s) => (
+              <SiteCard key={s.key} site={s} />
+            ))}
+          </div>
+          <MissionLegend className="px-1" />
         </div>
       ) : (
         <div className="tile text-center">

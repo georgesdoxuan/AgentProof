@@ -71,8 +71,8 @@ export async function SiteCard({ site }: { site: SiteView }) {
       {s && <MissionBar ok={s.ok} done={s.done} total={s.total} size="sm" />}
       <dl className="type-small mt-auto grid gap-1.5 text-ink-2">
         <div className="flex justify-between gap-3">
-          <dt>{t("À corriger", "To fix")}</dt>
-          <dd className="flex min-w-0 items-center gap-1.5 font-semibold text-ink">
+          <dt className="shrink-0 whitespace-nowrap">{t("À corriger", "To fix")}</dt>
+          <dd className="flex min-w-0 items-center gap-1.5 font-semibold text-ink" title={open.length ? blockerLabel(open[0].type, lang) : undefined}>
             {open.length ? (
               <>
                 <BlockerIcon type={open[0].type} className="h-4 w-4" />
@@ -82,8 +82,8 @@ export async function SiteCard({ site }: { site: SiteView }) {
           </dd>
         </div>
         <div className="flex justify-between gap-3">
-          <dt>{t("Classement", "Ranking")}</dt>
-          <dd className="text-ink">{rankText(site.rank, lang)}</dd>
+          <dt className="shrink-0 whitespace-nowrap">{t("Classement", "Ranking")}</dt>
+          <dd className="text-right text-ink">{rankText(site.rank, lang)}</dd>
         </div>
       </dl>
     </Link>
@@ -120,7 +120,8 @@ export async function BlockerItem({ site, b, canEdit, compact = false }: { site:
           <BlockerIcon type={b.type} className="mt-[0.15em] h-[0.9em] w-[0.9em]" />
           {blockerLabel(b.type, lang)}
         </h3>
-        {b.run?.blocker_detail && <p className={`mt-2 text-ink-2 ${compact ? "type-small line-clamp-3" : ""}`}>{b.run.blocker_detail}</p>}
+        {/* The agent's raw note is in whatever language it wrote and gets cut mid-word on a card: the summary cards keep the label and the fix, the site page keeps the note. */}
+        {!compact && b.run?.blocker_detail && <p className="mt-2 text-ink-2">{t("Note de l’agent", "Agent’s note")} : « {b.run.blocker_detail} »</p>}
         <p className={`mt-4 flex gap-2 ${compact ? "type-small" : ""}`}>
           <Chevron className="mt-[0.45em] h-3 w-3 shrink-0 text-link" />
           <span>{FIX_HINT[b.type] ?? FIX_HINT.other}</span>

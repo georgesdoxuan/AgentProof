@@ -5,28 +5,27 @@ import { currentUser } from "@/lib/auth";
 import { AgentCursor, BrowserFrame, Field, MissionBar, StatusGlyph, Verdict, blockerLabel, scoreTone } from "@/lib/ui";
 import { tr, type Lang, type T } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
+import { byRank } from "../classement/board";
 
 // Report opened by "Voir un exemple de rapport": real counted blockers, captures, replays and a plan. Env var to swap it without code.
 const EXAMPLE_AUDIT = process.env.EXAMPLE_AUDIT_ID ?? "8c843d3f-3d95-4834-aace-21880a85f499"; // Promod, 78 %
+// The "Preuves" tile shows one chosen blocked mission, not the latest failure: a new audit must never swap in an unreadable capture.
+const PROOF_RUN = Number(process.env.PROOF_RUN_ID ?? 228); // Promod, product page with no size selector
 
 export default async function Home() {
   await connection();
   const lang = await getLang();
   const t = tr(lang);
-  const [user, { data: top }, { data: proof }] = await Promise.all([
+  const [user, { data: scores }, { data: proof }] = await Promise.all([
     currentUser(),
-    db.from("site_scores").select("*").eq("device", "desktop").order("score", { ascending: false, nullsFirst: false }).limit(5),
+    db.from("site_scores").select("*").eq("device", "desktop"),
     // A real blocked mission for the "Preuves" tile: evidence over illustration.
-    db
-      .from("runs")
-      .select("screenshot_url, final_url, blocker_type")
-      .eq("success", false)
-      .not("screenshot_url", "is", null)
-      .not("blocker_type", "in", "(captcha_or_bot_block,out_of_stock,mission_not_applicable,agent_out_of_steps,agent_tool_error,other)")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
+    db.from("runs").select("screenshot_url, final_url, blocker_type").eq("id", PROOF_RUN).maybeSingle(),
   ]);
+
+  // Same order as /classement, so the two never disagree.
+  const ranked = (scores ?? []).filter((s) => s.score != null).sort(byRank);
+  const top = ranked.slice(0, 5);
 
   // The report e-mail goes through n8n: only announce it when that hook is configured.
   const mails = !!process.env.N8N_NOTIFY_URL;
@@ -211,9 +210,9 @@ export default async function Home() {
                 {[
                   ...(user
                     ? []
-                    : [t("Tu te connectes avec le lien reçu par e-mail, sans mot de passe. Tu retrouves ce formulaire rempli et tu cliques à nouveau pour lancer.", "You sign in with the link sent by e-mail, no password. You get this form back, filled in, and click again to run it.")]),
-                  t("Si ton équipe a audité ce site sur le même appareil ces 7 derniers jours, tu arrives sur ce rapport, sans nouvel audit.", "If your team audited this site on the same device in the last 7 days, you land on that report, with no new audit."),
-                  t("Sinon, l’agent démarre les cinq missions et le rapport s’ouvre tout de suite : il se remplit mission par mission, en 10 à 20 minutes.", "Otherwise the agent starts the five missions and the report opens right away: it fills in mission by mission, in 10 to 20 minutes."),
+                    : [t("Tu reçois un lien de connexion par e-mail, sans mot de passe, et tu relances depuis ce formulaire, déjà rempli.", "You get a sign-in link by e-mail, no password, and run it again from this form, already filled in.")]),
+                  t("Site déjà audité par ton équipe sur cet appareil ces 7 derniers jours : tu arrives sur ce rapport.", "Site already audited by your team on this device in the last 7 days: you land on that report."),
+                  t("Sinon, le rapport s’ouvre tout de suite et se remplit mission par mission, en 10 à 20 minutes.", "Otherwise the report opens right away and fills in mission by mission, in 10 to 20 minutes."),
                   mails
                     ? t("À la fin, le rapport t’est aussi envoyé par e-mail. Il reste dans ton espace d’équipe.", "At the end, the report is also sent to you by e-mail. It stays in your team space.")
                     : t("À la fin, le rapport reste dans ton espace d’équipe.", "At the end, the report stays in your team space."),
@@ -343,6 +342,7 @@ function FixesVisual({ t }: { t: T }) {
   ];
   return (
     <div className="mt-8 space-y-3" aria-hidden>
+      <p className="type-caption text-ink-2">{t("Exemple", "Example")}</p>
       {rows.map(([name, n, fix]) => (
         <div key={name} className="rounded-[18px] bg-bg-2 p-5 dark:bg-[#2c2c2e]">
           <div className="flex items-baseline justify-between gap-3">

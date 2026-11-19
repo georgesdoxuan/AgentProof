@@ -5,7 +5,7 @@ import { canLaunch, teamContext } from "@/lib/auth";
 import { dict, tr, type Lang, type T } from "@/lib/i18n";
 import { getDict, getLang } from "@/lib/lang";
 import { loadSpace, priorities, shortDate, type SiteView } from "@/lib/space";
-import { Chevron, DeviceTag, Field, Group, MissionBar, Row, Spinner, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
+import { Chevron, DeviceTag, Field, Group, MissionBar, MissionLegend, Row, Spinner, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
 import { AutoRefresh } from "../audit/[id]/refresh";
 import { SpaceShell } from "./shell";
 import { BlockerItem, Delta, sitePath } from "./parts";
@@ -148,6 +148,7 @@ export default async function Accueil() {
               );
             })}
           </div>
+          <MissionLegend className="mt-3 px-1" />
         </section>
       )}
 
