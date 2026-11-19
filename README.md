@@ -45,7 +45,7 @@ Navigateur ──> Next.js (Vercel) ──lit/écrit──> Supabase (Postgres +
 
 ### Pourquoi un tick et pas des webhooks
 
-Les clés H du plan Free sont limitées à 5 requêtes par minute et 3 sessions en parallèle. Un seul point d'entrée (`/api/tick`, appelé chaque minute par n8n) dépense ce budget : 1 requête pour vérifier une session (ses derniers événements contiennent la réponse, les tokens, le coût et la dernière capture), 1 pour télécharger la capture, 1 pour lancer une session. Les replays sont créés à la demande (1 requête par run, une seule fois) : la trajectoire partagée et ses captures sont ensuite publiques, sans clé ni limite.
+Les clés H du plan Free sont limitées à 3 sessions en parallèle. La page des clés annonçait aussi 5 requêtes par minute, mais l'API répond `x-ratelimit-limit: 40000` et aucune rafale n'a reçu de 429 (mesuré le 18 nov). Un seul point d'entrée (`/api/tick`, appelé chaque minute par n8n) parle à H : pendant 45 s, il fait une passe toutes les 10 s, récupère les sessions finies (1 requête pour les événements, 1 pour la capture, le juge de chaque session en parallèle) et remplit aussitôt les places libres (1 requête par lancement). Un audit lance sa première passe dès sa création, sans attendre le cron. Une mission échouée est rejouée dès son échec, pendant que les autres tournent. Les replays sont créés à la demande (1 requête par run, une seule fois) : la trajectoire partagée et ses captures sont ensuite publiques, sans clé ni limite.
 
 ## Comment tester
 

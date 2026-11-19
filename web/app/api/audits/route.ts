@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
-import { COMPARE_MODEL, DEFAULT_MODEL, attachEmail, auditsFromIp, createAudit, createPaymentTest, db, normalizeUrl, recentAudit } from "@/lib/engine";
+import { after } from "next/server";
+import { COMPARE_MODEL, DEFAULT_MODEL, attachEmail, auditsFromIp, createAudit, createPaymentTest, db, normalizeUrl, recentAudit, tick } from "@/lib/engine";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { cardSecret } from "@/lib/cards";
 import { msg } from "@/lib/lang";
@@ -7,6 +8,8 @@ import { msg } from "@/lib/lang";
 const FORM_MISSIONS = Number(process.env.FORM_MISSIONS ?? 5); // 3 on demo day: one mission per free H slot
 const MAX_PENDING = 20; // refuse new audits when the queue is this long
 const MAX_AUDITS_PER_HOUR = 6; // per IP, competitor audits included
+
+export const maxDuration = 60;
 
 const fail = (msg: string, status = 400) => new Response(msg, { status, headers: { "Content-Type": "text/plain; charset=utf-8" } });
 
@@ -75,6 +78,8 @@ export async function POST(req: Request) {
         : undefined;
     const paymentTest = payment ? await createPaymentTest(url, team) : undefined;
     const id = await createAudit(url, { device, missions: paymentOnly ? 0 : FORM_MISSIONS, compareTo, paymentTest, model: models ? DEFAULT_MODEL : model, email: email || undefined, ipHash, ...team });
+    // Launch the first missions now instead of waiting up to a minute for the cron.
+    after(() => tick(0).catch(() => {}));
     return Response.redirect(new URL(`/audit/${id}`, req.url), 303);
   } catch (e) {
     return fail(`${await msg("Erreur", "Error")} : ${(e as Error).message}`);
