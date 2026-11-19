@@ -273,15 +273,19 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const audit = await loadAudit(id);
   if (!audit) notFound();
+  // Everything else the report needs, read in parallel (one round trip instead of four).
+  const [ctx, payAudit, competitor, { data: brand }] = await Promise.all([
+    audit.kind === "payment" || audit.payment_test ? teamContext() : null,
+    audit.payment_test ? loadAudit(audit.payment_test) : null,
+    audit.compare_to ? loadAudit(audit.compare_to) : null,
+    // Agency white label: their name and logo replace AgentProof's on this report.
+    audit.team_id ? db.from("teams").select("brand_name, brand_logo").eq("id", audit.team_id).maybeSingle() : { data: null },
+  ]);
   // Real payment tests: only the team that ran them, or AgentProof staff.
-  const ctx = audit.kind === "payment" || audit.payment_test ? await teamContext() : null;
   const inTeam = !!audit.team_id && !!ctx?.teams.some((t) => t.id === audit.team_id);
   if (audit.kind === "payment" && !inTeam && !(await staffUser()).isStaff) notFound();
   // One run without account, plus one signed in when the team saved a test account for the site.
-  const pays: any[] = inTeam && audit.payment_test ? [...((await loadAudit(audit.payment_test))?.runs ?? [])].sort((a: any, b: any) => +a.with_login - +b.with_login) : [];
-  const competitor = audit.compare_to ? await loadAudit(audit.compare_to) : null;
-  // Agency white label: their name and logo replace AgentProof's on this report.
-  const { data: brand } = audit.team_id ? await db.from("teams").select("brand_name, brand_logo").eq("id", audit.team_id).maybeSingle() : { data: null };
+  const pays: any[] = inTeam && payAudit ? [...(payAudit.runs ?? [])].sort((a: any, b: any) => +a.with_login - +b.with_login) : [];
   const branded = !!brand?.brand_name;
   const h = await headers();
   const base = process.env.PUBLIC_URL || `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
@@ -857,7 +861,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                   <a href={r.screenshot_url} target="_blank" rel="noreferrer" className="block rounded-[12px]" aria-label={`${t("Ouvrir la capture", "Open the screenshot")} : ${missionTitle(r.missions.title, lang)}`}>
                     <BrowserFrame url={r.final_url}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={r.screenshot_url} alt={`${t("Dernier écran vu par l'agent", "Last screen the agent saw")} : ${missionTitle(r.missions.title, lang)}`} className="block w-full" />
+                      <img src={r.screenshot_url} alt={`${t("Dernier écran vu par l'agent", "Last screen the agent saw")} : ${missionTitle(r.missions.title, lang)}`} className="block w-full" loading="lazy" decoding="async" />
                       {r.status === "done" && r.success !== null && (
                         <Verdict success={!!r.success} label={r.success ? undefined : missionBlocker(r, lang)} className="no-print absolute bottom-3 left-3" />
                       )}
