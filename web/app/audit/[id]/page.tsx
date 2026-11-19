@@ -146,7 +146,7 @@ function PrintCover(p: {
 
       <div>
         <h1 className="flex items-center gap-[5mm] text-[40pt] font-semibold leading-[1.05] tracking-[-0.02em] [text-wrap:balance]">
-          <SiteLogo domain={p.site.domain} name={p.site.name} size="lg" eager />
+          <SiteLogo domain={p.site.domain} name={p.site.name} size="lg" />
           {p.site.name}
         </h1>
         <p className="mt-2 text-[13pt] text-link">{p.site.domain}</p>
@@ -343,7 +343,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
           <p className="type-eyebrow text-ink-2">{paymentOnly ? t("Test de paiement", "Payment test") : t("Rapport d\u2019audit", "Audit report")} · <DeviceTag device={audit.device} lang={lang} />
           </p>
           <h1 className="type-h1 mt-3 flex items-center gap-4 break-words">
-            <SiteLogo domain={audit.sites.domain} name={audit.sites.name} size="lg" eager />
+            <SiteLogo domain={audit.sites.domain} name={audit.sites.name} size="lg" />
             <span className="min-w-0">{audit.title || audit.sites.name}</span>
           </h1>
           <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-ink-2">
