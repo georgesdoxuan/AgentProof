@@ -2,7 +2,7 @@ import { canLaunch, staffUser, teamContext } from "@/lib/auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { DEFAULT_MODEL, EXCLUDED, PAY_REACHED_BANK, db, payShown, paymentStages, paymentVerdicts, scoreOf } from "@/lib/engine";
+import { DEFAULT_MODEL, EXCLUDED, PAY_REACHED_BANK, db, payShown, scoreOf } from "@/lib/engine";
 import { byRank } from "@/app/classement/board";
 import { rankText } from "@/app/espace/parts";
 import { reportSuffix } from "@/lib/space";
@@ -14,6 +14,7 @@ import { headers } from "next/headers";
 import { CopyField } from "@/app/espace/controls";
 import { Mark, Wordmark, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
 import { AutoRefresh, HashLanding, MarkSeen, PrintButton } from "./refresh";
+import { PaymentResult } from "./payment-result";
 import type { AgentAccess } from "@/lib/automations";
 
 // One line per AI assistant, from the static check's per-agent reading (lib/automations.ts agentAccess).
@@ -273,9 +274,6 @@ async function trendOf(audit: any) {
   return { rank: pos >= 0 ? { pos: pos + 1, of: ranked.length } : null, prev };
 }
 
-// The agent writes "unknown" in English when it could not tell: show "?" in both languages.
-const known = (v?: string | null) => (v && !/^unknown$/i.test(v.trim()) ? v : "?");
-
 async function loadAudit(id: string) {
   const { data } = await db.from("audits").select(`*, sites(domain, name, url), runs(${RUN_FIELDS})`).eq("id", id).maybeSingle();
   return data;
@@ -291,8 +289,6 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   await connection();
   const lang = await getLang();
   const t = tr(lang);
-  const PAYMENT_VERDICTS = paymentVerdicts(lang);
-  const PAYMENT_STAGES = paymentStages(lang);
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const audit = await loadAudit(id);
@@ -750,53 +746,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             </div>
             {pay.status === "done" ? (
               <>
-                <p className={`type-h3 mt-3 ${PAY_REACHED_BANK.includes(pay.payment_verdict) ? "text-pass" : pay.payment_verdict === "inconclusive" ? "text-warn" : "text-fail"}`}>
-                  {PAYMENT_VERDICTS[pay.payment_verdict] ?? pay.payment_verdict ?? t("Pas de résultat", "No result")}
-                </p>
-                {PAY_REACHED_BANK.includes(pay.payment_verdict) && pay.payment_verdict !== "payment_accepted" && (
-                  // The merchant's tunnel works up to the bank; the order itself is not placed, so the audit is never "100 %" alone.
-                  <p className="mt-2">
-                    {t("Tunnel de paiement validé jusqu’à la banque. ", "Payment tunnel validated up to the bank. ")}
-                    <span className="font-semibold">{t("Commande non confirmée", "Order not confirmed")}</span>
-                    {pay.payment_verdict === "three_ds_timeout"
-                      ? t(" : l’autorisation 3D Secure revient au porteur de la carte, un agent ne peut pas la valider seul.", ": 3D Secure approval belongs to the cardholder, an agent cannot give it alone.")
-                      : t(" : la banque a refusé la carte (sans fonds).", ": the bank declined the card (no funds).")}
-                  </p>
-                )}
-                {pay.agent_answer?.site_message && <p className="mt-2 text-ink-2">{t("Message du site", "Site message")} : « {pay.agent_answer.site_message} »</p>}
-                {pay.agent_answer?.furthest_stage && (
-                  <p className="mt-2">
-                    {t("Étape la plus loin atteinte", "Furthest step reached")} : <span className="font-semibold">{PAYMENT_STAGES[pay.agent_answer.furthest_stage] ?? pay.agent_answer.furthest_stage}</span>
-                  </p>
-                )}
-                <Chips className="mt-3">
-                  <Chip icon="lock">3D Secure · {pay.agent_answer?.three_ds_seen ? t("demandé", "requested") : t("non", "no")}</Chip>
-                  <Chip icon="shield">{t("Prestataire", "Provider")} · {known(pay.agent_answer?.payment_provider)}</Chip>
-                  <Chip icon="payment" className="max-w-full whitespace-normal!">{known(pay.agent_answer?.payment_methods)}</Chip>
-                </Chips>
-                {pay.payment_verdict === "three_ds_timeout" && pay.judge?.earlier_screenshot ? (
-                  <p className="type-small mt-2 text-ink-2">
-                    {t("Juge visuel : page 3D Secure vue sur une capture précédente, la dernière montre le retour au formulaire de carte.", "Visual judge: 3D Secure page seen on an earlier screenshot, the last one shows the card form again.")}
-                  </p>
-                ) : pay.payment_verdict === "three_ds_timeout" && pay.judge?.result && pay.judge.result !== pay.payment_verdict ? (
-                  // Judged before 19/11 on the last screenshot only, taken once the 3D Secure page had expired.
-                  <p className="type-small mt-2 text-ink-2">
-                    {t("Juge visuel : il n’a vu que la dernière capture, prise après l’expiration du 3D Secure", "Visual judge: it only saw the last screenshot, taken after 3D Secure expired")} ({pay.judge.reason})
-                  </p>
-                ) : pay.judge?.result && pay.judge.result !== pay.payment_verdict && (
-                  <p className="type-small mt-2 text-warn">
-                    {t("Juge visuel en désaccord", "Visual judge disagrees")} : {PAYMENT_VERDICTS[pay.judge.result] ?? pay.judge.result}. {pay.judge.reason}
-                  </p>
-                )}
-                {pay.agent_answer?.steps_summary && (
-                  <details className="type-small group relative z-10 mt-4 text-ink-2">
-                    <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 text-link [&::-webkit-details-marker]:hidden">
-                      <Chevron className="h-2.5 w-2.5 transition-transform duration-200 group-open:rotate-90" />
-                      {t("Compte rendu de l’agent", "The agent's report")}
-                    </summary>
-                    <p className="mt-2">{pay.agent_answer.steps_summary}</p>
-                  </details>
-                )}
+                <PaymentResult pay={pay} lang={lang} />
                 <div className="mt-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
                   <dl className="flex gap-6 tnum">
                     {(
