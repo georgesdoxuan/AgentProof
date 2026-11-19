@@ -161,7 +161,6 @@ export function PaymentPicker({ cards, accounts = [], lang, tip, max }: { cards:
   const addHref = `/espace/reglages/comptes${domain ? `?site=${encodeURIComponent(domain)}` : ""}`;
   const accountName = (a: PayAccount) => a.label || a.hint;
   const accountSide = (a: PayAccount) => (a.label ? a.hint : "");
-  const accountFull = (a: PayAccount) => (a.label ? `${a.label} · ${a.hint}` : a.hint);
 
   return (
     <div ref={box} className="grid gap-3">
@@ -259,8 +258,8 @@ export function PaymentPicker({ cards, accounts = [], lang, tip, max }: { cards:
                 onPick={(id) => pickAccount(id)}
                 placeholder={t("Choisir un compte", "Choose an account")}
                 glyph={<KeyGlyph />}
-                main={accountFull}
-                side={(a) => a.domain}
+                main={(a) => (a.label ? `${a.domain} · ${a.label}` : a.domain)}
+                side={(a) => a.hint}
                 label={t("Choisir un compte de test : il renseigne l’adresse du site", "Choose a test account: it fills in the site’s address")}
                 listLabel={t("Comptes de test de l’équipe", "Team test accounts")}
                 manage={{ href: addHref, text: t("Gérer les comptes de test", "Manage test accounts") }}
