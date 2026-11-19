@@ -184,7 +184,7 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
     view === "trash" || !scoped.length ? undefined : (
       <Chips>
         <Chip icon={view === "favorites" ? "star" : "doc"}>{r.countOnly(scoped.length)}</Chip>
-        {running.length > 0 && <Chip icon="live" tone="blue">{r.running(running.length)}</Chip>}
+        {running.length > 0 && <Chip icon="live" tone="live">{r.running(running.length)}</Chip>}
       </Chips>
     );
   const title = view === "all" ? r.title : `${r.title} · ${r.sections[view]}`;
@@ -231,7 +231,7 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
                 <span className="font-semibold">{a.s.score} %</span>
               </>
             ) : (
-              <span className="type-small flex items-center gap-2 text-ink-2">
+              <span className="type-small flex items-center gap-2 font-semibold text-live">
                 <Spinner className="h-3.5 w-3.5" />
                 {r.progress(a.s.finished, a.s.total)}
               </span>
@@ -339,7 +339,7 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
                   aria-current={status === v ? "true" : undefined}
                   className="rounded-full focus-visible:outline-2 focus-visible:outline-blue"
                 >
-                  <Chip icon={icon} tone={status === v ? "blue" : "plain"}>{l}</Chip>
+                  <Chip icon={icon} tone={status !== v ? "plain" : v === "en-cours" ? "live" : "pass"}>{l}</Chip>
                 </Link>
               ))}
             </nav>
@@ -347,7 +347,9 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
           {view !== "trash" && scoped.length > 0 && (
             <nav aria-label={r.filtersLabel} className="inline-flex rounded-[10px] bg-fill p-[3px] max-lg:hidden">
               {([["tous", r.filters.all], ["en-cours", r.filters.running], ["termines", r.filters.done]] as const).map(([v, l]) => (
-                <Link key={v} href={v === "tous" ? PATH[view] : `${PATH[view]}?vue=${v}`} scroll={false} aria-current={status === v ? "true" : undefined} className={tab}>
+                <Link key={v} href={v === "tous" ? PATH[view] : `${PATH[view]}?vue=${v}`} scroll={false} aria-current={status === v ? "true" : undefined} className={`${tab} gap-2`}>
+                  {/* Same colors as the rows and the sidebar: yellow = running, green = finished. */}
+                  {v !== "tous" && <span className={`h-2 w-2 rounded-full ${v === "en-cours" ? "bg-live-fill" : "bg-pass"}`} aria-hidden />}
                   {l}
                 </Link>
               ))}
@@ -395,6 +397,12 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
                           {r.countOnly(list.length)} · <DeviceTag device={list[0].device} lang={lang} />
                         </span>
                       </span>
+                      {list.some((a) => a.status !== "done") && (
+                        <span className="type-small flex items-center gap-1.5 whitespace-nowrap font-semibold text-live">
+                          <Spinner className="h-3.5 w-3.5" />
+                          <span className="max-md:sr-only">{r.filters.running}</span>
+                        </span>
+                      )}
                       {last && (
                         <span className="flex items-center gap-2 whitespace-nowrap tnum">
                           {last.s.score == null ? (
