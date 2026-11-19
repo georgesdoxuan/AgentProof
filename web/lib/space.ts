@@ -60,6 +60,17 @@ export type SiteView = {
   rank: { pos: number; of: number } | null; // public leaderboard
 };
 
+// A site in the trash: every report of that site and device is in the trash. Restoring it brings back the reports trashed with it.
+export type TrashedSite = {
+  key: string;
+  domain: string;
+  site_id: number;
+  device: string;
+  deleted_at: string; // latest move to the trash
+  audits: SpaceAudit[]; // its reports in the trash, newest first
+  running: boolean; // an audit still playing missions: no permanent delete yet
+};
+
 export const siteKey = (domain: string, device: string) => (device === "mobile" ? `${domain}/mobile` : domain);
 export const deviceLabel = (d: string, lang: Lang = "fr") => (d === "mobile" ? "Mobile" : lang === "en" ? "Desktop" : "Ordinateur");
 export const shortDate = (d: string, lang: Lang = "fr") =>
@@ -148,7 +159,20 @@ export async function loadSpace(teamId: string) {
     v.verified = siteFixes.filter((f) => Date.parse(f.fixed_at) < latestAt && !present.has(f.blocker_type)).map((f) => f.blocker_type);
   }
 
-  return { audits, trash, sites: [...sites.values()] };
+  // Sites with nothing left outside the trash show in Sites › Corbeille.
+  const trashedSites = new Map<string, TrashedSite>();
+  for (const a of trash) {
+    if (!a.sites) continue;
+    const key = siteKey(a.sites.domain, a.device);
+    if (sites.has(key)) continue;
+    let v = trashedSites.get(key);
+    if (!v) trashedSites.set(key, (v = { key, domain: a.sites.domain, site_id: a.site_id, device: a.device, deleted_at: a.deleted_at!, audits: [], running: false }));
+    v.audits.push(a);
+    if (a.status !== "done") v.running = true;
+  }
+  for (const v of trashedSites.values()) v.audits.sort((x, y) => Date.parse(y.created_at) - Date.parse(x.created_at));
+
+  return { audits, trash, sites: [...sites.values()], trashedSites: [...trashedSites.values()] };
 }
 
 // What to fix first across every site: blockers still open, the ones costing the most missions first.
