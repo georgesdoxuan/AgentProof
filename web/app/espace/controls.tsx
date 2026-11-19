@@ -26,6 +26,7 @@ const ICON = {
   sidebar: "M4.5 4h15a1.5 1.5 0 0 1 1.5 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5v-13A1.5 1.5 0 0 1 4.5 4zM9.5 4v16",
   star: "M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z",
   trash: "M4 6.5h16M9.5 6.5V4.5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2M6 6.5l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M10 10.5v6M14 10.5v6",
+  wrench: "M14.5 5.5a4.5 4.5 0 0 0-5.8 5.8L3.5 16.5a2.1 2.1 0 0 0 3 3l5.2-5.2a4.5 4.5 0 0 0 5.8-5.8l-2.7 2.7-2.6-.4-.4-2.6z",
 };
 
 // Sub-sections shown under their parent in the sidebar (Rapports › Favoris). On narrow screens the page shows them as tabs.
@@ -50,7 +51,7 @@ const itemCls = (current: boolean) =>
 // The daily sections (Automations included: page watch, automatic audits, alerts), then Réglages: every other setting
 // (team, plan, payment, test accounts, trash, account) is a tab of that one page.
 const NAV = [
-  [["/espace", ICON.home], ["/espace/sites", ICON.globe], ["/espace/rapports", ICON.doc], ["/espace/automations", GLYPH.bolt]],
+  [["/espace", ICON.home], ["/espace/sites", ICON.globe], ["/espace/rapports", ICON.doc], ["/espace/corrections", ICON.wrench], ["/espace/automations", GLYPH.bolt]],
   [["/espace/reglages", ICON.sliders]],
 ] as const;
 type Section = keyof Dict["space"]["sections"];
@@ -237,13 +238,13 @@ export function SectionIcon() {
   );
 }
 
-// Narrow screens: the five sections as one segmented control.
+// Narrow screens: the six sections as one segmented control.
 function MobileNav({ t }: { t: Dict["space"] }) {
   const path = usePathname();
   return (
     <nav aria-label={t.label} className="min-w-0 flex-1">
       <div className="flex w-full gap-1 rounded-[10px] bg-fill p-[3px]">
-        {/* Five sections do not fit as words at 390 px: on phones the open one shows its name, the others their icon. */}
+        {/* Six sections do not fit as words at 390 px: on phones the open one shows its name, the others their icon. */}
         {NAV.flat().map(([href, icon]) => {
           const on = isOn(path, href);
           return (

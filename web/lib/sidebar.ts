@@ -2,6 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { db } from "./engine";
 import { loadSpace } from "./space";
+import { payIssues } from "./corrections";
 import { creditsLeft } from "./credits";
 import { SEEN_COOKIE, parseSeen } from "./seen";
 
@@ -9,7 +10,7 @@ import { SEEN_COOKIE, parseSeen } from "./seen";
 // Read by the layout (first paint) and by /api/sidebar (after each navigation, and every few seconds while an audit runs).
 // Plain data only: it crosses to the client.
 export type SideData = {
-  open: number; // blockers still open across the sites (same count as the home page's chip)
+  open: number; // corrections still to do across the sites (same count as Corrections › À faire)
   running: { id: string; label: string; domain: string; done: number; total: number }[];
   finished: { id: string; label: string; score: number | null; exPay: boolean }[]; // closed in the last half hour and not opened yet: the card turns green before it goes
   more: string[]; // finished and unopened beyond the cards shown: one « +N » line instead of a stack
@@ -33,7 +34,8 @@ export async function loadSidebar(teamId: string): Promise<SideData> {
     cookies(),
   ]);
   const seen = parseSeen(jar.get(SEEN_COOKIE)?.value);
-  const open = sites.reduce((n, s) => n + s.blockers.filter((b) => b.state !== "check").length, 0);
+  // Same count as Corrections › À faire: open blockers, plus the payment verdicts that never reached the bank.
+  const open = sites.reduce((n, s) => n + s.blockers.filter((b) => b.state !== "check").length + payIssues(s).length, 0);
   const running = audits
     .filter((a) => a.status !== "done")
     .slice(0, CARDS)
