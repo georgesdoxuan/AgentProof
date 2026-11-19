@@ -31,9 +31,9 @@ Adresse de l'application : https://agentproof-iota-tawny.vercel.app
 
 ## 1. À quoi sert AgentProof
 
-Demain, une partie des achats en ligne sera faite par des agents IA : « Trouve-moi un pull noir en taille M à moins de 60 € et commande-le. »
+Demain, une partie des achats en ligne sera faite par des agents IA : « Trouve-moi un pull noir en taille M à moins de 60 € et commande-le », ou « commande-moi cette lampe en blanc ».
 
-Sur beaucoup de sites, l'agent bloque : un bandeau cookies qui cache « Ajouter au panier », une pop-up, un sélecteur de taille qu'il ne sait pas cliquer, un captcha. Il abandonne et achète ailleurs. Le marchand, lui, ne le voit jamais.
+Sur beaucoup de sites, l'agent bloque : un bandeau cookies qui cache « Ajouter au panier », une pop-up, un sélecteur de taille ou de couleur qu'il ne sait pas cliquer, un captcha. Il abandonne et achète ailleurs. Le marchand, lui, ne le voit jamais.
 
 AgentProof envoie un vrai agent IA sur votre site. Cet agent regarde l'écran et clique comme un client. Il joue des missions d'achat réalistes jusqu'à la première page du checkout. Vous obtenez :
 
@@ -63,16 +63,16 @@ L'agent ne paie jamais, ne crée pas de compte et ne saisit aucune donnée perso
 | Responsable e-commerce | Suit un score, récupère des preuves et une liste de corrections, vérifie qu'une correction a marché. |
 | Agence e-commerce ou SEO | Revend l'audit à ses clients, sous sa propre marque, depuis un seul espace. |
 
-AgentProof commence par la **mode** : les missions sont pensées pour des boutiques de vêtements, ce qui permet de comparer les sites entre eux.
+AgentProof fonctionne pour **tout site e-commerce qui vend des produits physiques** : mode, maison, beauté, high-tech, sport… Les missions sont les mêmes pour tous, ce qui permet de comparer les sites entre eux. Quand un produit propose des options (taille, couleur, contenance, modèle), l'agent en choisit une ; sinon il passe à l'étape suivante, sans que cela compte comme un échec. Le classement public a commencé par 10 marques mode françaises.
 
 ## 3. Les mots à connaître
 
 | Mot | Sens |
 |---|---|
-| **Mission** | Une consigne d'achat donnée à l'agent, par exemple « cherche un article, choisis la taille M, ajoute-le au panier et va jusqu'au checkout ». |
+| **Mission** | Une consigne d'achat donnée à l'agent, par exemple « cherche un article, choisis une taille ou une couleur s'il en propose, ajoute-le au panier et va jusqu'au checkout ». |
 | **Audit** | Un ensemble de missions jouées sur un site (cinq par défaut). Il produit un rapport. |
 | **Succès** | L'agent atteint la première page du checkout (page qui demande connexion, e-mail, adresse ou paiement) **et** un juge visuel le confirme sur la capture. Le panier seul ne compte pas. |
-| **Blocage** | La raison de l'échec : bandeau cookies, pop-up, recherche ou filtre qui échoue, sélecteur de taille, bouton qui ne réagit pas, compte obligatoire, erreur de page, etc. |
+| **Blocage** | La raison de l'échec : bandeau cookies, pop-up, recherche ou filtre qui échoue, sélecteur de variante (taille, couleur…), bouton qui ne réagit pas, compte obligatoire, erreur de page, etc. |
 | **Score** | Missions réussies ÷ missions comptées. |
 | **Hors score** | Une mission sans lien avec l'interface du site : rupture de stock, anti-bot ou captcha, article absent du catalogue, erreur de l'agent, ou résultat que le juge n'a pas pu vérifier. Elle est affichée à part et ne compte ni pour ni contre le site. |
 | **Crédit** | L'unité de consommation : une mission jouée sur un site = un crédit. |
@@ -112,10 +112,10 @@ Deux portes d'entrée :
 
 Par défaut, l'agent joue cinq missions d'achat réalistes, par exemple :
 
-- recherche d'un article puis choix d'une taille ;
-- navigation par le menu puis filtre de taille ;
-- filtre de prix (moins de 60 €) ;
-- choix d'une autre couleur sur un produit ;
+- recherche d'un article puis choix d'une option (taille, couleur…) s'il en propose ;
+- navigation par le menu puis filtre ;
+- filtre de prix (moins de 30 €) ;
+- choix d'une autre variante sur un produit (couleur, taille, contenance…) : sur un site dont aucun produit n'a de variante, la mission est « impossible sur ce catalogue » et sort du score ;
 - achat d'un article en promotion.
 
 Les missions restent neutres sur le type de produit : l'agent ne demande jamais un article que le site ne vend pas.
@@ -124,7 +124,7 @@ Depuis votre espace, vous pouvez aussi :
 
 - **cocher ou décocher** les missions à jouer ;
 - **modifier une mission**, pour cet audit seulement ou pour toute l'équipe, puis revenir à la version par défaut si besoin ;
-- **ajouter vos propres missions** en langage courant. Des idées sont proposées : produit précis, code promo, guide des tailles, retours et échanges, retirer un article du panier, quantité, livraison, commande en invité, taille épuisée, prix cohérent entre la fiche et le panier.
+- **ajouter vos propres missions** en langage courant. Des idées sont proposées : produit précis, code promo, caractéristiques du produit, retours et échanges, retirer un article du panier, quantité, livraison, commande en invité, option épuisée, prix cohérent entre la fiche et le panier.
 
 Quelle que soit la consigne, l'agent s'arrête toujours à la première page du checkout.
 
@@ -172,7 +172,7 @@ Si vous avez ajouté un concurrent, son score s'affiche à côté (**Face au con
 
 ### À corriger en premier
 
-Les blocages sont **classés par impact** : celui qui arrête le plus de missions passe en premier. Pour chacun : ce qui s'est passé, la capture et la correction proposée. Exemples de corrections : « le bouton Tout accepter doit rester visible sans défiler », « les tailles doivent être des boutons, pas des images ».
+Les blocages sont **classés par impact** : celui qui arrête le plus de missions passe en premier. Pour chacun : ce qui s'est passé, la capture et la correction proposée. Exemples de corrections : « le bouton Tout accepter doit rester visible sans défiler », « les tailles et couleurs doivent être des boutons, pas des images ».
 
 Le plan de corrections est rédigé par une IA open source (Hugging Face). Ce sont des **hypothèses à vérifier avant d'agir** ; les constats, eux, viennent des missions jouées.
 
@@ -344,7 +344,7 @@ La page **Abonnement et crédits** montre les crédits utilisés ce mois-ci, par
 
 ## 14. Le classement public
 
-Le **Classement**, accessible sans compte, compare des sites mode français : la part des missions où l'agent atteint le checkout, vérifiée par un juge visuel.
+Le **Classement**, accessible sans compte, compare des sites, à commencer par un premier benchmark de 10 marques mode françaises : la part des missions où l'agent atteint le checkout, vérifiée par un juge visuel.
 
 - Le score d'un site est la **moyenne des deux derniers audits** sur le même appareil, car un agent IA n'agit pas toujours exactement pareil.
 - Le lien d'un site ouvre son dernier rapport.

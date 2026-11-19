@@ -274,9 +274,9 @@ export function priorities(sites: SiteView[], n = 3) {
 export const FIX_HINT: Record<string, string> = {
   cookie_banner: "Garder le bandeau cookies hors du bouton « Ajouter au panier » et mettre « Tout refuser » au même niveau que « Accepter ».",
   popup: "Retarder la pop-up newsletter après l'ajout au panier, avec une croix de fermeture visible et cliquable.",
-  search_failed: "Rendre la recherche accessible depuis toutes les pages et renvoyer des résultats sur des requêtes simples (« pull noir »).",
+  search_failed: "Rendre la recherche accessible depuis toutes les pages et renvoyer des résultats sur des requêtes simples (le nom d'un produit vendu, même avec une faute de frappe).",
   filter_failed: "Utiliser de vrais liens ou cases à cocher pour les filtres, et mettre à jour la liste sans rechargement ambigu.",
-  size_selector: "Utiliser des boutons ou un menu natif pour la taille, avec un libellé lisible et l'état « indisponible » explicite.",
+  size_selector: "Utiliser des boutons ou un menu natif pour les options (taille, couleur, contenance…), avec un libellé lisible et l'état « indisponible » explicite.",
   button_unresponsive: "Vérifier que le bouton réagit au premier clic, sans script bloquant ni élément transparent posé dessus.",
   captcha_or_bot_block: "Laisser passer les agents d'achat identifiés, ou réserver le captcha aux comportements vraiment suspects.",
   login_required: "Proposer la commande en invité avant toute création de compte.",
@@ -289,9 +289,9 @@ export const FIX_HINT: Record<string, string> = {
 const FIX_HINT_EN: Record<string, string> = {
   cookie_banner: "Keep the cookie banner away from the “Add to cart” button and put “Reject all” on the same level as “Accept”.",
   popup: "Delay the newsletter pop-up until after add-to-cart, with a visible, clickable close button.",
-  search_failed: "Make search reachable from every page and return results for simple queries (“black sweater”).",
+  search_failed: "Make search reachable from every page and return results for simple queries (the name of a product sold, even with a typo).",
   filter_failed: "Use real links or checkboxes for filters, and update the list without an ambiguous reload.",
-  size_selector: "Use buttons or a native menu for size, with a readable label and an explicit “unavailable” state.",
+  size_selector: "Use buttons or a native menu for options (size, colour, capacity…), with a readable label and an explicit “unavailable” state.",
   button_unresponsive: "Check that the button reacts to the first click, with no blocking script or transparent element on top.",
   captcha_or_bot_block: "Let identified shopping agents through, or keep the captcha for truly suspicious behaviour.",
   login_required: "Offer guest checkout before any account creation.",

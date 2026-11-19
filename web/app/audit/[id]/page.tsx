@@ -610,7 +610,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                   )}
                   {trend.rank && (
                     <Link href={audit.device === "mobile" ? "/classement?appareil=mobile" : "/classement"} className="hover:underline">
-                      <span className="font-semibold text-ink">{rankText(trend.rank, lang)}</span> {t("des sites mode", "of fashion sites")}
+                      <span className="font-semibold text-ink">{rankText(trend.rank, lang)}</span> {t("des sites classés", "of ranked sites")}
                     </Link>
                   )}
                 </p>

@@ -430,6 +430,14 @@ body {
   .no-print {
     display: none !important;
   }
+  /* A report printed from the space: no sidebar, the page takes the whole sheet. */
+  [data-app-shell] {
+    display: block !important;
+    min-height: 0 !important;
+  }
+  [data-app-shell] > aside {
+    display: none !important;
+  }
   .tile,
   article,
   li {
