@@ -115,11 +115,11 @@ Pourquoi un ordonnanceur plutôt que des webhooks : les clés Free sont limitée
 **Avec l'espace de démonstration du jury (10 minutes)**
 
 > **Accès : [agentproof-iota-tawny.vercel.app/demo](https://agentproof-iota-tawny.vercel.app/demo)**, bouton « Entrer dans la démo ». Aucun e-mail ni mot de passe : chaque clic ouvre un compte juge dans l'équipe « Démo jury ».
-> Cette équipe est séparée de l'espace de travail d'AgentProof : elle contient des copies de rapports réels, et rien de ce que fait le jury n'atteint nos audits. Carte de paiement, comptes de test, membres, automatisations et corbeille y sont désactivés ; 2 audits par juge.
+> Cette équipe est séparée de l'espace de travail d'AgentProof : elle contient une copie de tous nos rapports, et rien de ce que fait le jury n'atteint nos audits. Chaque juge a 2 audits et 1 test de paiement réel (carte de démo à solde nul : l'agent va jusqu'à la banque, qui refuse) ; il peut ajouter un compte de test. Membres, automatisations et corbeille y sont fermés.
 
-1. Ouvrir un rapport d'exemple dans Rapports : waterdrop.fr (5 missions sur 5), nike.com (arrêté par l'anti-bot), promod.fr (agent précis).
+1. Ouvrir un rapport dans Rapports : par exemple waterdrop.fr (5 missions sur 5, test de paiement jusqu'au 3D Secure), nike.com (arrêté par l'anti-bot), promod.fr (agent précis).
 2. Dans une mission, « Voir le replay » ; puis la page Corrections, qui liste ce qu'il faut réparer site par site.
-3. « Lancer un audit » sur la boutique de son choix, ordinateur : le rapport se met à jour tout seul en 5 à 10 minutes (missions en cours, puis score, blocages, captures, replays et plan de corrections).
+3. « Lancer un audit » sur la boutique de son choix, ordinateur, avec ou sans test de paiement réel : le rapport se met à jour tout seul en 5 à 10 minutes (missions en cours, puis score, blocages, captures, replays et plan de corrections).
 
 ## 9. Limites honnêtes
 

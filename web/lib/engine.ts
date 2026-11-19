@@ -300,9 +300,9 @@ export async function deleteSiteLogin(teamId: string, id: number) {
   await db.from("site_logins").delete().eq("id", id).eq("team_id", teamId);
 }
 
-export type SiteLogin = { id: number; label: string | null; login_hint: string; created_at: string; sites: { domain: string } };
+export type SiteLogin = { id: number; label: string | null; login_hint: string; created_at: string; created_by: string | null; sites: { domain: string } };
 export async function listSiteLogins(teamId: string) {
-  const { data } = await db.from("site_logins").select("id, label, login_hint, created_at, sites(domain)").eq("team_id", teamId).order("created_at", { ascending: false });
+  const { data } = await db.from("site_logins").select("id, label, login_hint, created_at, created_by, sites(domain)").eq("team_id", teamId).order("created_at", { ascending: false });
   return (data ?? []) as unknown as SiteLogin[];
 }
 
