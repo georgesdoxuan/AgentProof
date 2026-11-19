@@ -34,17 +34,12 @@ const TYPE_TONE: Record<AuditType, string> = {
   payment: "bg-blue/12 text-link",
   both: "bg-blue/12 text-link",
 };
-// The badge: icon(s) + label; phones keep the icons only (the label stays for screen readers and on hover).
-function TypeBadge({ type, t }: { type: AuditType; t: Dict["reports"]["types"] }) {
+// The badge: icon(s) + label, beside the name on wide screens, on its own line under the row on phones.
+function TypeBadge({ type, t, className = "" }: { type: AuditType; t: Dict["reports"]["types"]; className?: string }) {
   return (
-    <span title={t.tip[type]} className={`type-caption inline-flex h-[22px] shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2 font-semibold ${TYPE_TONE[type]}`}>
-      {TYPE_ICONS[type].map((i, n) => (
-        <span key={i} className="flex items-center gap-1">
-          {n > 0 && <span className="sm:hidden" aria-hidden>+</span>}
-          <Icon name={i} className="h-[13px] w-[13px]" />
-        </span>
-      ))}
-      <span className="max-sm:sr-only">{t[type]}</span>
+    <span title={t.tip[type]} className={`type-caption inline-flex h-[22px] shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2 font-semibold ${TYPE_TONE[type]} ${className}`}>
+      {TYPE_ICONS[type].map((i) => <Icon key={i} name={i} className="h-[13px] w-[13px]" />)}
+      {t[type]}
     </span>
   );
 }
@@ -54,7 +49,7 @@ const dateFmt = (lang: Lang) => (d: string) =>
 
 // One quiet line for the real payment tests linked to an audit: grey like the date line, green only when the
 // payment reached the bank. Identical verdicts (without account, then signed in) are merged: "captcha (no account, signed in)".
-function PayLine({ pays, lang }: { pays: { status: string; verdict: string | null; with_login: boolean }[]; lang: Lang }) {
+function PayLine({ pays, lang, className = "" }: { pays: { status: string; verdict: string | null; with_login: boolean }[]; lang: Lang; className?: string }) {
   const t = tr(lang);
   const PAYMENT_VERDICTS = paymentVerdicts(lang);
   const multi = pays.length > 1;
@@ -74,7 +69,7 @@ function PayLine({ pays, lang }: { pays: { status: string; verdict: string | nul
     groups.set(text, g);
   }
   return (
-    <span className="type-small mt-0.5 flex min-w-0 items-start gap-1.5 text-ink-2">
+    <span className={`type-small mt-0.5 flex min-w-0 items-start gap-1.5 text-ink-2 ${className}`}>
       <Icon name="payment" className="mt-[2px] h-[1.05em] w-[1.05em] shrink-0" />
       <span className="min-w-0">
         {t("Paiement", "Payment")} ·{" "}
@@ -237,7 +232,7 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
     view === "trash" && a.deleted_at ? r.trashedOn(date(a.deleted_at)) : date(a.created_at),
   ].filter(Boolean);
   return (
-    <div key={a.id} className={`flex items-center ${view === "trash" ? "max-sm:flex-wrap" : ""} border-b border-hairline first:rounded-t-[18px] last:rounded-b-[18px] last:border-0 hover:bg-bg-2/60`}>
+    <div key={a.id} className={`flex items-center max-md:flex-wrap border-b border-hairline first:rounded-t-[18px] last:rounded-b-[18px] last:border-0 hover:bg-bg-2/60`}>
       <Link href={`/audit/${a.id}`} className={`block min-w-0 flex-1 ${view === "trash" ? "max-sm:basis-full" : ""}`}>
         <div className={`grid min-h-[68px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 py-3 md:gap-x-5 pl-5 pr-2 ${view === "trash" ? "md:grid-cols-[minmax(0,1fr)_8rem_6.5rem_1rem]" : "md:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_8rem_6.5rem_1rem]"}`}>
           <span className="flex min-w-0 items-start gap-3">
@@ -248,12 +243,12 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
                 {name}
                 {a.devices ? <span className="font-normal text-ink-2"> · {r.vsDevices}</span> : a.compare_to && <span className="font-normal text-ink-2"> · {a.model ? r.vsModels : r.vsCompetitor}</span>}
               </span>
-              <TypeBadge type={auditType(a)} t={r.types} />
+              <TypeBadge type={auditType(a)} t={r.types} className="max-md:hidden" />
             </span>
             <span className="type-small block text-ink-2">
               {sub.join(" · ")} · <DeviceTag device={a.device} lang={lang} />
             </span>
-            {a.pay.length > 0 && <PayLine pays={a.pay} lang={lang} />}
+            {a.pay.length > 0 && <PayLine pays={a.pay} lang={lang} className="max-md:hidden" />}
           </span>
           </span>
           {view !== "trash" && <span className="type-small hidden truncate text-ink-2 md:block">{a.users?.email === user.email ? r.you : a.users?.email ?? "—"}</span>}
@@ -290,7 +285,7 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
       </Link>
       {manage ? (
         // Phones: in the trash, Restore and Delete go under the report so its name and date keep the width.
-        <div className={`shrink-0 pr-3 ${view === "trash" ? "max-sm:flex max-sm:basis-full max-sm:justify-end max-sm:pb-3" : ""}`}>
+        <div className={`shrink-0 pr-3 ${view === "trash" ? "max-sm:order-2 max-sm:flex max-sm:basis-full max-sm:justify-end max-sm:pb-3" : ""}`}>
           <RowActions a={a} view={view} back={back} t={r} />
         </div>
       ) : (
@@ -300,6 +295,16 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
           </span>
         )
       )}
+      {/* Phones: the type and the payment result take a full-width line under the row, so the name keeps its width
+          and the payment verdict stays on one or two lines. Aligned with the name (logo 32 px + 12 px gap). */}
+      <Link
+        href={`/audit/${a.id}`}
+        tabIndex={-1}
+        className={`-mt-1.5 flex basis-full flex-col items-start gap-1 pb-3 pr-5 md:hidden max-sm:order-1 ${logo ? "pl-16" : "pl-5"}`}
+      >
+        <TypeBadge type={auditType(a)} t={r.types} />
+        {a.pay.length > 0 && <PayLine pays={a.pay} lang={lang} />}
+      </Link>
     </div>
   );
   };
