@@ -231,10 +231,34 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
     a.title && a.sites?.domain,
     view === "trash" && a.deleted_at ? r.trashedOn(date(a.deleted_at)) : date(a.created_at),
   ].filter(Boolean);
+  // Score or progress: its own column on wide screens, on the line under the row on phones (the name keeps the width).
+  const score =
+    a.status === "done" && a.s.score == null ? (
+              // Nothing counted (anti-bot, stock, agent errors): say so instead of an unexplained "— %".
+              <span className="type-small flex items-center gap-1.5 font-semibold text-ink-2">
+                <StatusGlyph tone="unsure" className="h-4 w-4" />
+                <span>{lang === "en" ? "No score" : "Sans score"}</span>
+              </span>
+            ) : a.status === "done" ? (
+              // "hors paiement" goes under the score, never beside it: the column keeps its width and the
+              // score never runs over the mission bar.
+              <span className="flex flex-col items-end">
+                <span className="flex items-center gap-2">
+                  <StatusGlyph tone={scoreTone(a.s.score)} className="h-4 w-4" />
+                  <span className="font-semibold">{a.s.score} %</span>
+                </span>
+                {a.s.exPay && <ExPay lang={lang} className="type-small leading-tight" />}
+              </span>
+            ) : (
+              <span className="type-small flex items-center gap-2 font-semibold text-live">
+                <Spinner className="h-3.5 w-3.5" />
+                {r.progress(a.s.finished, a.s.total)}
+              </span>
+            );
   return (
     <div key={a.id} className={`flex items-center max-md:flex-wrap border-b border-hairline first:rounded-t-[18px] last:rounded-b-[18px] last:border-0 hover:bg-bg-2/60`}>
       <Link href={`/audit/${a.id}`} className={`block min-w-0 flex-1 ${view === "trash" ? "max-sm:basis-full" : ""}`}>
-        <div className={`grid min-h-[68px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 py-3 md:gap-x-5 pl-5 pr-2 ${view === "trash" ? "md:grid-cols-[minmax(0,1fr)_8rem_6.5rem_1rem]" : "md:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_8rem_6.5rem_1rem]"}`}>
+        <div className={`grid min-h-[68px] grid-cols-[minmax(0,1fr)] items-center gap-x-3 py-3 md:gap-x-5 pl-5 pr-2 ${view === "trash" ? "md:grid-cols-[minmax(0,1fr)_8rem_6.5rem_1rem]" : "md:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_8rem_6.5rem_1rem]"}`}>
           <span className="flex min-w-0 items-start gap-3">
           {logo && <SiteLogo domain={a.sites?.domain} name={a.sites?.domain} className="mt-0.5" />}
           <span className="min-w-0">
@@ -255,30 +279,8 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
           <span className="hidden md:block">
             <MissionBar ok={a.s.ok} done={a.s.done} total={a.s.total} size="sm" />
           </span>
-          <span className="flex items-center justify-end gap-2 whitespace-nowrap tnum">
-            {a.status === "done" && a.s.score == null ? (
-              // Nothing counted (anti-bot, stock, agent errors): say so instead of an unexplained "— %".
-              <span className="type-small flex items-center gap-1.5 font-semibold text-ink-2">
-                <StatusGlyph tone="unsure" className="h-4 w-4" />
-                <span className="max-md:sr-only">{lang === "en" ? "No score" : "Sans score"}</span>
-              </span>
-            ) : a.status === "done" ? (
-              // "hors paiement" goes under the score, never beside it: the column keeps its width and the
-              // score never runs over the mission bar.
-              <span className="flex flex-col items-end">
-                <span className="flex items-center gap-2">
-                  <StatusGlyph tone={scoreTone(a.s.score)} className="h-4 w-4" />
-                  <span className="font-semibold">{a.s.score} %</span>
-                  {a.s.exPay && <ExPay lang={lang} short className="md:hidden" />}
-                </span>
-                {a.s.exPay && <ExPay lang={lang} className="type-small leading-tight max-md:hidden" />}
-              </span>
-            ) : (
-              <span className="type-small flex items-center gap-2 font-semibold text-live">
-                <Spinner className="h-3.5 w-3.5" />
-                {r.progress(a.s.finished, a.s.total)}
-              </span>
-            )}
+          <span className="flex items-center justify-end gap-2 whitespace-nowrap tnum max-md:hidden">
+            {score}
           </span>
           <Chevron className="hidden h-3 w-3 text-ink-2 md:block" />
         </div>
@@ -300,9 +302,12 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
       <Link
         href={`/audit/${a.id}`}
         tabIndex={-1}
-        className={`-mt-1.5 flex basis-full flex-col items-start gap-1 pb-3 pr-5 md:hidden max-sm:order-1 ${logo ? "pl-16" : "pl-5"}`}
+        className={`-mt-1.5 grid basis-full gap-1 pb-3 pr-5 md:hidden max-sm:order-1 ${logo ? "pl-16" : "pl-5"}`}
       >
-        <TypeBadge type={auditType(a)} t={r.types} />
+        <span className="flex items-start justify-between gap-3">
+          <TypeBadge type={auditType(a)} t={r.types} />
+          <span className="flex items-center gap-2 whitespace-nowrap tnum">{score}</span>
+        </span>
         {a.pay.length > 0 && <PayLine pays={a.pay} lang={lang} />}
       </Link>
     </div>
