@@ -4,7 +4,7 @@ import { staffUser } from "@/lib/auth";
 import { db, paymentStages, paymentVerdicts } from "@/lib/engine";
 import { locale, tr } from "@/lib/i18n";
 import { getLang, getT } from "@/lib/lang";
-import { StatusBadge } from "@/lib/ui";
+import { Chip, Chips, StatusBadge } from "@/lib/ui";
 import { AutoRefresh } from "../audit/[id]/refresh";
 
 export async function generateMetadata() {
@@ -44,11 +44,14 @@ export default async function TestPaiement() {
           <p className="type-eyebrow text-ink-2">{t("R&D interne · Test de paiement réel", "Internal R&D · Real payment test")}</p>
           <h1 className="type-h1 mt-3">{t("Le paiement atteint‑il la banque ?", "Does the payment reach the bank?")}</h1>
           <p className="type-intro mt-5 text-ink-2">
-            {t(
-              "L’agent achète l’article le moins cher et paie avec la carte de test de l’équipe, sur un compte à 0 €. Un refus « fonds insuffisants » prouve que le paiement a atteint la banque. Une seule tentative par test. Garde ton téléphone à portée pour valider le 3D Secure.",
-              "The agent buys the cheapest item and pays with the team's test card, on a €0 account. An “insufficient funds” decline proves the payment reached the bank. One attempt per test. Keep your phone at hand to approve 3D Secure.",
-            )}
+            {t("Un refus « fonds insuffisants » prouve que le paiement a atteint la banque.", "An “insufficient funds” decline proves the payment reached the bank.")}
           </p>
+          <Chips className="mt-5">
+            <Chip icon="payment">{t("Carte de test · compte à 0 €", "Test card · €0 account")}</Chip>
+            <Chip icon="tag">{t("Article le moins cher", "Cheapest item")}</Chip>
+            <Chip icon="refresh">{t("1 tentative", "1 attempt")}</Chip>
+            <Chip icon="mobile">{t("3D Secure sur ton téléphone", "3D Secure on your phone")}</Chip>
+          </Chips>
         </header>
 
         <form action="/api/payment-tests" method="post" className="tile mt-12 grid gap-3 p-6! sm:grid-cols-[1fr_auto]">

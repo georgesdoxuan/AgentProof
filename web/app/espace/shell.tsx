@@ -23,7 +23,7 @@ export async function SpaceShell({
   team?: TeamRow; // left out by loading skeletons: the team block turns into placeholders
   teams?: TeamRow[];
   title: React.ReactNode;
-  /** Facts about the page (counts, status): always shown under the title. */
+  /** Facts about the page (counts, status): always shown under the title, as chips (lib/ui Chips) or one short line. */
   intro?: React.ReactNode;
   /** What the page is for: shown only on hover or focus of the title. */
   hint?: React.ReactNode;
@@ -86,7 +86,7 @@ export async function SpaceShell({
                   </Link>
                 )}
                 <h1 className="type-title">{hint ? <Hint tip={hint}>{title}</Hint> : title}</h1>
-                {intro && <p className="mt-2 max-w-[680px] text-ink-2">{intro}</p>}
+                {intro && <div className="mt-3 max-w-[680px] text-ink-2">{intro}</div>}
               </div>
               {actions}
             </header>

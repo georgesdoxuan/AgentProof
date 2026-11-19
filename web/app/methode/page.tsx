@@ -2,8 +2,8 @@ import Link from "next/link";
 import { LEGAL, LEGAL_EN } from "@/lib/legal";
 import { getLang } from "@/lib/lang";
 import { BLOCKERS, EXCLUDED, blockerNames } from "@/lib/engine";
-import { BlockerIcon, DeviceTag, MISSION_TYPES, MissionIcon, StatusGlyph } from "@/lib/ui";
-import { missionTitle } from "@/lib/i18n";
+import { BlockerIcon, Chip, Chips, DeviceTag, Icon, MISSION_TYPES, MissionIcon, StatusGlyph } from "@/lib/ui";
+import { missionTitle, tr } from "@/lib/i18n";
 
 export async function generateMetadata() {
   return { title: `${(await getLang()) === "en" ? "Method" : "Méthode"} · AgentProof` };
@@ -117,182 +117,143 @@ const FaqTeam = ({ lang }: { lang: "fr" | "en" }) => (
   </>
 );
 
+// A fact with its icon: the method reads like a product spec sheet, not an essay.
+const Fact = ({ icon, children }: { icon: string; children: React.ReactNode }) => (
+  <li className="flex items-start gap-3">
+    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[9px] bg-tile text-ink-2" aria-hidden>
+      <Icon name={icon} className="h-[18px] w-[18px]" />
+    </span>
+    <span className="pt-1">{children}</span>
+  </li>
+);
+
 export default async function Methode() {
   const lang = await getLang();
+  const t = tr(lang);
   return (
     <div className="bg-bg-2 pb-24 pt-16 max-[734px]:pt-10">
       <article className="wrap max-w-[760px]">
-        {lang === "en" ? (
-          <>
-        <p className="type-eyebrow text-ink-2">Method</p>
-        <h1 className="type-h1 mt-3">How we compute the score.</h1>
-        <p className="type-intro mt-5 text-ink-2">
-          An AI agent tries to buy on the site like a customer. The score is the share of missions where it reaches the first checkout page.
-        </p>
+        <p className="type-eyebrow text-ink-2">{t("Méthode", "Method")}</p>
+        <h1 className="type-h1 mt-3">{t("Comment on calcule le score.", "How we compute the score.")}</h1>
 
-        <Section title="The missions">
+        {/* The formula first, as a card: everything below explains its two terms. */}
+        <div className="tile mt-8 grid gap-5 p-7! sm:grid-cols-[auto_1fr] sm:items-center">
+          <p className="type-h3 whitespace-nowrap tnum">
+            Score = <span className="text-pass">{t("réussies", "passed")}</span> ÷ {t("vérifiées", "verified")}
+          </p>
+          <Chips className="sm:justify-end">
+            <Chip icon="audit">{t("5 missions", "5 missions")}</Chip>
+            <Chip icon="refresh">{t("Échec rejoué 1 fois", "Failure replayed once")}</Chip>
+            <Chip icon="ranking">{t("Classement : moyenne de 2", "Ranking: average of 2")}</Chip>
+          </Chips>
+        </div>
+
+        <Section title={t("Les missions", "The missions")}>
           <p>
-            Every audit plays the same realistic shopping missions: search and size, browsing through the menu, price filter, colour variant, item on sale. They stay neutral
-            on the product type, so they never ask for an item the site does not sell.
+            {t(
+              "Les mêmes missions d’achat à chaque audit, neutres sur le type de produit : jamais un article que le site ne vend pas.",
+              "The same shopping missions on every audit, neutral on the product type: never an item the site does not sell.",
+            )}
           </p>
           <p>
-            The agent is Holo, by H Company. It sees the screen, clicks and types like a human, in a cloud browser. It rejects cookies when it can, enters no personal data,
-            solves no captcha and never pays.
+            {t("Agent : Holo, de H Company. Il voit l’écran, clique et tape comme un humain, dans un navigateur cloud.", "Agent: Holo, by H Company. It sees the screen, clicks and types like a human, in a cloud browser.")}
+          </p>
+          <Chips>
+            <Chip icon="nopay">{t("Jamais de paiement", "Never pays")}</Chip>
+            <Chip icon="shield">{t("Aucune donnée perso", "No personal data")}</Chip>
+            <Chip icon="captcha_or_bot_block">{t("Aucun captcha", "No captcha")}</Chip>
+            <Chip icon="cookie_banner">{t("Refuse les cookies", "Rejects cookies")}</Chip>
+          </Chips>
+        </Section>
+
+        <Section title={t("Quand une mission est réussie", "When a mission passes")}>
+          <ul className="grid gap-3">
+            <Fact icon="none">
+              {t(
+                "L’agent atteint la première page du checkout : connexion, e-mail, adresse ou paiement. Le panier seul ne compte pas.",
+                "The agent reaches the first checkout page: sign-in, e-mail, address or payment. The cart alone does not count.",
+              )}
+            </Fact>
+            <Fact icon="eye">
+              {t(
+                "Un juge visuel indépendant (open source, Hugging Face) relit la dernière capture, sans l’avis de l’agent. Son verdict fait foi.",
+                "An independent visual judge (open source, Hugging Face) reviews the last screenshot, without the agent’s opinion. Its verdict counts.",
+              )}
+            </Fact>
+            <Fact icon="mission_not_applicable">
+              {t("S’il ne peut pas trancher : « non vérifiée », hors score.", "If it cannot decide: “unverified”, out of score.")}
+            </Fact>
+          </ul>
+        </Section>
+
+        <Section title={t("Le score", "The score")}>
+          <ul className="grid gap-3">
+            <Fact icon="out_of_stock">
+              {t("Rupture de stock et anti-bot : affichés à part, hors score.", "Out of stock and anti-bot: shown apart, out of score.")}
+            </Fact>
+            <Fact icon="refresh">
+              {t(
+                "Chaque échec est rejoué une fois ; le second essai fait foi. Sauf anti-bot, rupture, compte obligatoire ou mission impossible.",
+                "Every failure is replayed once; the second attempt counts. Except anti-bot, out of stock, account required or impossible mission.",
+              )}
+            </Fact>
+            <Fact icon="ranking">
+              {t("Classement : moyenne des deux derniers passages publics.", "Ranking: average of the last two public runs.")}
+            </Fact>
+          </ul>
+        </Section>
+
+        <Legend lang={lang} />
+
+        <Section title={t("Les limites", "The limits")}>
+          <ul className="grid gap-3">
+            <Fact icon="captcha_or_bot_block">
+              {t("Serveur de datacenter : certains anti-bot le bloquent, comme un vrai agent d’achat.", "Datacenter server: some anti-bots block it, as they would a real shopping agent.")}
+            </Fact>
+            <Fact icon="agent_tool_error">
+              {t("L’agent peut échouer de lui-même : capture et replay de chaque mission pour vérifier.", "The agent can fail on its own: screenshot and replay of every mission to check.")}
+            </Fact>
+            <Fact icon="mobile">{t("Mobile : taille d’écran de téléphone, sans navigateur mobile.", "Mobile: phone screen size, no mobile browser.")}</Fact>
+            <Fact icon="clock">{t("Un audit est une photo à un instant donné.", "An audit is a snapshot in time.")}</Fact>
+          </ul>
+        </Section>
+
+        <Section title={t("La suite : le paiement", "Next step: the payment")} id="paiement">
+          <p>
+            {t(
+              "Le score s’arrête volontairement à l’entrée du checkout. Savoir si un agent peut vraiment payer, on a commencé à le mesurer en interne.",
+              "The score stops at the checkout entrance on purpose. Whether an agent can actually pay, we have started to measure in the lab.",
+            )}
+          </p>
+          <div className="tile p-6!">
+            <p className="type-small font-semibold text-ink">
+              {t("17 nov. 2026 · carte virtuelle à 0 € · 5 sites", "17 Nov 2026 · €0 virtual card · 5 sites")}
+            </p>
+            <ul className="type-small mt-4 grid gap-2.5">
+              <li className="flex items-start gap-2.5">
+                <StatusGlyph tone="unsure" className="mt-[2px] h-4 w-4" />
+                <span>
+                  <b className="text-ink">{t("Jusqu’à la banque : 2", "Reached the bank: 2")}</b> · Asphalte, {t("une petite boutique", "a small shop")} ·{" "}
+                  {t("refusé faute de fonds, paiement réussi non démontré", "declined for lack of funds, successful payment not proven")}
+                </span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <StatusGlyph tone="fail" className="mt-[2px] h-4 w-4" />
+                <span>
+                  <b className="text-ink">{t("Arrêté avant : 3", "Stopped before: 3")}</b> · {t("anti-bot (Nike), compte obligatoire (Adidas), étape non atteinte (Jules)", "anti-bot (Nike), account required (Adidas), step not reached (Jules)")}
+                </span>
+              </li>
+            </ul>
+          </div>
+          <p>
+            {t(
+              "Prochaine étape : nos propres cartes, refusées en temps réel par notre serveur, pour une preuve bancaire automatique sans 3D Secure manuel.",
+              "Next: our own cards, declined in real time by our server, for automatic bank proof with no manual 3D Secure.",
+            )}
           </p>
         </Section>
 
-        <Section title="When a mission passes">
-          <p>
-            A mission passes when the agent reaches the first checkout page: the one after the cart that asks for a sign-in, an e-mail, an address or a payment. The cart
-            alone does not count.
-          </p>
-          <p>
-            An independent visual judge (open-source model on Hugging Face) looks at the last screenshot and the mission, without knowing the agent&apos;s opinion. Its verdict
-            is the one that counts. If it cannot decide, the mission is &ldquo;unverified&rdquo; and is left out of the score.
-          </p>
-        </Section>
-
-        <Section title="The score">
-          <p>Score = passed missions ÷ verified missions.</p>
-          <p>
-            An out-of-stock item or an anti-bot block does not count in the score: they are shown separately. In the ranking, a site&apos;s score is the average of its last two
-            public runs, to smooth out a mission failed by chance.
-          </p>
-          <p>
-            A failure only counts if it happens again: every failed mission is replayed once before the audit ends, and the second attempt is the one that counts. We do not
-            replay what a new attempt would not change: anti-bot, out of stock, account required, mission impossible on the catalogue.
-          </p>
-        </Section>
-
-        <Legend lang="en" />
-
-        <Section title="The limits">
-          <p>
-            The agent runs from a datacenter server: some anti-bot sites block it, as they would block a real shopping agent. The agent can also fail because of itself and
-            not the site; every mission has its screenshot and step-by-step replay so you can check.
-          </p>
-          <p>
-            Mobile mode uses a phone screen size, without a mobile browser. An audit is a snapshot at a given moment: a site that changes can change score.
-          </p>
-        </Section>
-
-        <Section title="Next step: the payment" id="paiement">
-          <p>
-            The score stops at the checkout entrance, on purpose: the agent never pays during an audit. Whether an agent can actually pay is the next question, and we have
-            started to measure it in the lab.
-          </p>
-          <p>
-            On 17 November 2026 the agent paid once, with a team virtual card on a €0 account, on 5 sites. On 2 of them (Asphalte and a small online shop) the payment reached
-            the bank, which declined it for insufficient funds: the attempt was sent to the bank, but a successful payment and an order confirmation are not proven. Elsewhere the agent was stopped before paying: anti-bot
-            (Nike), account required (Adidas), payment step not reached (Jules).
-          </p>
-          <p>
-            Next: cards we issue ourselves, declined in real time by our own server, so the proof from the bank is automatic and no 3D Secure has to be approved by hand.
-          </p>
-        </Section>
-
-        <Section title="Dispute a result">
-          <p>
-            You run a site in the{" "}
-            <Link href="/classement" className="text-link hover:underline">
-              ranking
-            </Link>{" "}
-            and a result looks wrong? Write to{" "}
-            <a href={`mailto:${LEGAL.contact}`} className="text-link hover:underline">
-              {LEGAL.contact}
-            </a>{" "}
-            with the report link. We check the screenshot and the replay by hand, then fix or rerun the mission.
-          </p>
-        </Section>
-        <FaqTeam lang="en" />
-          </>
-        ) : (
-          <>
-        <p className="type-eyebrow text-ink-2">Méthode</p>
-        <h1 className="type-h1 mt-3">Comment on calcule le score.</h1>
-        <p className="type-intro mt-5 text-ink-2">
-          Un agent IA essaie d&apos;acheter sur le site comme un client. Le score est la part des missions où il atteint la première page du checkout.
-        </p>
-
-        <Section title="Les missions">
-          <p>
-            Chaque audit joue les mêmes missions d&apos;achat réalistes : recherche et taille, navigation par le menu, filtre de prix, variante de couleur, article en promotion.
-            Elles restent neutres sur le type de produit, pour ne jamais demander un article que le site ne vend pas.
-          </p>
-          <p>
-            L&apos;agent est Holo, de H Company. Il voit l&apos;écran, clique et tape comme un humain, dans un navigateur cloud. Il refuse les cookies quand c&apos;est possible, ne
-            saisit aucune donnée personnelle, ne résout aucun captcha et ne paie jamais.
-          </p>
-        </Section>
-
-        <Section title="Quand une mission est réussie">
-          <p>
-            Une mission est réussie quand l&apos;agent atteint la première page du checkout : celle qui suit le panier et demande une connexion, un e-mail, une adresse ou un
-            paiement. Le panier seul ne compte pas.
-          </p>
-          <p>
-            Un juge visuel indépendant (modèle open source sur Hugging Face) regarde la dernière capture et la mission, sans connaître l&apos;avis de l&apos;agent. C&apos;est son
-            verdict qui compte. S&apos;il ne peut pas se prononcer, la mission est « non vérifiée » et sort du score.
-          </p>
-        </Section>
-
-        <Section title="Le score">
-          <p>Score = missions réussies ÷ missions vérifiées.</p>
-          <p>
-            Une rupture de stock ou un blocage anti-bot ne compte pas dans le score : ils sont affichés à part. Dans le classement, le score d&apos;un site est la moyenne de ses
-            deux derniers passages publics, pour lisser une mission ratée par hasard.
-          </p>
-          <p>
-            Un échec ne compte que s&apos;il se reproduit : chaque mission ratée est rejouée une fois avant la fin de l&apos;audit, et c&apos;est le second essai qui fait foi. On ne
-            rejoue pas ce qu&apos;un nouvel essai ne changerait pas : anti-bot, rupture de stock, compte obligatoire, mission impossible sur le catalogue.
-          </p>
-        </Section>
-
-        <Legend lang="fr" />
-
-        <Section title="Les limites">
-          <p>
-            L&apos;agent part d&apos;un serveur de datacenter : certains sites anti-bot le bloquent, comme ils bloqueraient un vrai agent d&apos;achat. L&apos;agent peut aussi
-            échouer à cause de lui-même et pas du site ; chaque mission a sa capture et son replay pas à pas pour le vérifier.
-          </p>
-          <p>
-            Le mode mobile utilise une taille d&apos;écran de téléphone, sans navigateur mobile. Un audit est une photo à un instant donné : un site qui change peut changer de
-            score.
-          </p>
-        </Section>
-
-        <Section title="La suite : le paiement" id="paiement">
-          <p>
-            Le score s&apos;arrête volontairement à l&apos;entrée du checkout : pendant un audit, l&apos;agent ne paie jamais. Savoir si un agent peut vraiment payer est la
-            question suivante, et on a commencé à la mesurer en interne.
-          </p>
-          <p>
-            Le 17 novembre 2026, l&apos;agent a payé une fois, avec une carte virtuelle de l&apos;équipe sur un compte à 0 €, sur 5 sites. Sur 2 d&apos;entre eux (Asphalte et une
-            petite boutique en ligne), le paiement est arrivé jusqu&apos;à la banque, qui l&apos;a refusé faute de fonds : la tentative a été transmise à la banque, mais la réussite du
-            paiement et la confirmation de commande ne sont pas démontrées. Ailleurs, l&apos;agent a été arrêté avant de payer : anti-bot (Nike), compte obligatoire (Adidas), étape de paiement non atteinte (Jules).
-          </p>
-          <p>
-            Prochaine étape : des cartes émises par nous, refusées en temps réel par notre serveur, pour que la preuve bancaire soit automatique et qu&apos;aucun 3D Secure ne
-            soit validé à la main.
-          </p>
-        </Section>
-
-        <Section title="Contester un résultat">
-          <p>
-            Tu gères un site du{" "}
-            <Link href="/classement" className="text-link hover:underline">
-              classement
-            </Link>{" "}
-            et un résultat te semble faux ? Écris à{" "}
-            <a href={`mailto:${LEGAL.contact}`} className="text-link hover:underline">
-              {LEGAL.contact}
-            </a>{" "}
-            avec le lien du rapport. On vérifie la capture et le replay à la main, puis on corrige ou on relance la mission.
-          </p>
-        </Section>
-        <FaqTeam lang="fr" />
-          </>
-        )}
+        <FaqTeam lang={lang} />
       </article>
     </div>
   );

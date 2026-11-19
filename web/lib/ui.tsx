@@ -220,7 +220,83 @@ const ICON: Record<string, string> = {
   monthly: "M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM4 10h16M8 3v4M16 3v4M9.5 15l2 2 3.5-3.5",
   agency: "M9 4a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM3 19.5a6 6 0 0 1 12 0M16 4.5a3 3 0 0 1 0 5.5M18 13.6a6 6 0 0 1 3 5.9",
   mobile: "M8 2.5h8a1.5 1.5 0 0 1 1.5 1.5v16a1.5 1.5 0 0 1-1.5 1.5H8A1.5 1.5 0 0 1 6.5 20V4A1.5 1.5 0 0 1 8 2.5zM11 18.5h2",
+  // Facts shown as chips instead of sentences (duration, rules, delivery, access).
+  clock: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7.5V12l3 2",
+  mail: "M4 5.5h16a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-11a1 1 0 0 1 1-1zM3.5 6.5 12 13l8.5-6.5",
+  lock: "M6 10.5h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1zM8 10.5V7.5a4 4 0 0 1 8 0v3",
+  nopay: "M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM3 10h18M4 4l16 16",
+  shield: "M12 3l7.5 3v5.5c0 4.5-3.1 8.2-7.5 9.5-4.4-1.3-7.5-5-7.5-9.5V6zM9 12l2 2 4-4",
+  eye: "M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12zM12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z",
+  live: "M12 10.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM8.2 8.2a5.4 5.4 0 0 0 0 7.6M15.8 8.2a5.4 5.4 0 0 1 0 7.6M5.3 5.3a9.5 9.5 0 0 0 0 13.4M18.7 5.3a9.5 9.5 0 0 1 0 13.4",
+  refresh: "M20 12a8 8 0 1 1-2.4-5.7M20 4v4.5h-4.5",
+  info: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 11v5.5M12 7.8v.1",
+  sparkle: "M12 3.5l1.8 5.2 5.2 1.8-5.2 1.8L12 17.5l-1.8-5.2L5 10.5l5.2-1.8zM18.5 16l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z",
+  layers: "M12 3.5 21 8l-9 4.5L3 8zM3 12.5l9 4.5 9-4.5M3 16.5l9 4.5 9-4.5",
+  trash: "M4 6.5h16M9.5 6.5V4.5h5v2M6.5 6.5l1 13.5h9l1-13.5M10 10.5v6M14 10.5v6",
+  star: "M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z",
+  pin: "M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11zM12 7.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z",
+  trend: "M3 17l6-6 4 4 8-8M15 7h6v6",
+  wrench: "M14.5 5.5a4.5 4.5 0 0 0-5.8 5.8L3.5 16.5a2.1 2.1 0 0 0 3 3l5.2-5.2a4.5 4.5 0 0 0 5.8-5.8l-2.7 2.7-2.6-.4-.4-2.6z",
+  doc: "M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM14 3v5h5M9 13h6M9 17h6",
+  tag: "M3.5 12.5v-8a1 1 0 0 1 1-1h8l8 8-9 9zM8 8h.01",
+  home: "M3.5 10.5 12 3.5l8.5 7V20a1 1 0 0 1-1 1H15v-6H9v6H4.5a1 1 0 0 1-1-1z",
+  play: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM10 8.5v7l5.5-3.5z",
 };
+
+// ---------- chips and notes ----------
+// What used to be a grey sentence ("5 missions, 10 to 20 minutes, the agent never pays") becomes a row of chips:
+// a line icon from the set above and two or three words, like the metadata pills in Linear, Vercel or Stripe.
+type ChipTone = "plain" | "blue" | "pass" | "warn" | "fail";
+const CHIP_TONE: Record<ChipTone, string> = {
+  plain: "bg-fill text-ink",
+  blue: "bg-blue/12 text-link",
+  pass: "bg-pass/12 text-pass",
+  // Light text darkened for 4.5:1 on the tinted pill, as the blocker state pills.
+  warn: "bg-warn/15 text-[#9c4600] dark:text-warn",
+  fail: "bg-fail/10 text-fail",
+};
+export function Chip({ icon, tone = "plain", children, className = "" }: { icon?: string; tone?: ChipTone; children: React.ReactNode; className?: string }) {
+  return (
+    <span className={`type-caption inline-flex min-h-[26px] items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 font-semibold ${CHIP_TONE[tone]} ${className}`}>
+      {icon && <Icon name={icon} className={`h-[14px] w-[14px] ${tone === "plain" ? "text-ink-2" : ""}`} />}
+      {children}
+    </span>
+  );
+}
+export function Chips({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`flex flex-wrap items-center gap-2 ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+// A small card for the one indication that must stay on the page (a rule, a limit, an access level):
+// icon in a tinted square, one short line, an optional link. Replaces the grey paragraph under a form.
+export function Note({ icon = "info", children, action, className = "" }: { icon?: string; children: React.ReactNode; action?: React.ReactNode; className?: string }) {
+  return (
+    <div className={`type-small flex items-center gap-3 rounded-[12px] bg-tile px-3.5 py-2.5 shadow-[inset_0_0_0_0.5px_var(--line)] ${className}`}>
+      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[8px] bg-fill text-ink-2">
+        <Icon name={icon} className="h-4 w-4" />
+      </span>
+      <span className="min-w-0 flex-1 text-ink-2">{children}</span>
+      {action && <span className="shrink-0">{action}</span>}
+    </div>
+  );
+}
+
+// Empty state, as in Linear or Vercel: an icon in a soft circle, one short title, an optional action. No paragraph.
+export function Empty({ icon, title, children, className = "" }: { icon: string; title: React.ReactNode; children?: React.ReactNode; className?: string }) {
+  return (
+    <div className={`tile flex flex-col items-center gap-3 py-12! text-center ${className}`}>
+      <span className="grid h-12 w-12 place-items-center rounded-full bg-fill text-ink-2" aria-hidden>
+        <Icon name={icon} className="h-6 w-6" />
+      </span>
+      <p className="type-headline">{title}</p>
+      {children && <div className="type-small text-ink-2">{children}</div>}
+    </div>
+  );
+}
 
 export function Icon({ name, className = "h-[1.1em] w-[1.1em]" }: { name: string; className?: string }) {
   return (

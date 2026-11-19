@@ -3,7 +3,7 @@ import { Hint } from "@/lib/hint";
 import { teamContext } from "@/lib/auth";
 import { LANGS, LANG_NAME } from "@/lib/i18n";
 import { getDict, getLang, getT } from "@/lib/lang";
-import { Avatar, Field, Group, Row } from "@/lib/ui";
+import { Avatar, Field, Group, Icon, Row } from "@/lib/ui";
 import { AutoSubmitSelect } from "../espace/controls";
 import { SpaceShell } from "../espace/shell";
 
@@ -105,12 +105,20 @@ export default async function Compte({ searchParams }: { searchParams: Promise<{
         <h2 className="type-headline mb-3 px-1">{tt("Supprimer mon compte", "Delete my account")}</h2>
         <form action="/api/account" method="post" className="grid gap-4 rounded-[18px] bg-tile p-5 sm:p-6">
           <input type="hidden" name="action" value="delete" />
-          <p className="type-small text-ink-2">
-            {tt(
-              "Ton compte est effacé tout de suite et définitivement. Les équipes dont tu es le seul membre sont supprimées avec leurs rapports, automatisations, carte et comptes de test. Les équipes partagées restent : un admin, sinon le plus ancien membre, en devient propriétaire.",
-              "Your account is erased at once and for good. Teams where you are the only member are deleted with their reports, automations, card and test accounts. Shared teams stay: an admin, otherwise the oldest member, becomes their owner.",
-            )}
-          </p>
+          <ul className="type-small grid gap-2 text-ink-2">
+            {(
+              [
+                ["trash", tt("Effacement immédiat et définitif", "Erased at once and for good")],
+                ["agency", tt("Équipes où tu es seul : supprimées avec leurs données", "Teams where you are alone: deleted with their data")],
+                ["refresh", tt("Équipes partagées : transmises à un admin ou au plus ancien membre", "Shared teams: handed to an admin or the oldest member")],
+              ] as const
+            ).map(([icon, line]) => (
+              <li key={icon} className="flex items-start gap-2.5">
+                <Icon name={icon} className="mt-[2px] h-4 w-4" />
+                {line}
+              </li>
+            ))}
+          </ul>
           <Field label={tt(`Tape ${user.email} pour confirmer`, `Type ${user.email} to confirm`)} name="confirm" type="email" required />
           {sp.erreur === "confirmation" && (
             <p role="alert" className="type-small text-fail">

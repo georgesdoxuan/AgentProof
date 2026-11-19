@@ -4,7 +4,7 @@ import { canLaunch, teamContext } from "@/lib/auth";
 import { deviceLabel, loadSpace, shortDate } from "@/lib/space";
 import { locale, tr } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
-import { BlockerIcon, Chevron, DeviceTag, Group, MissionBar, Recommendations, Spinner, StatusGlyph, ToneLabel, blockerLabel, scoreTone } from "@/lib/ui";
+import { BlockerIcon, Chevron, Chip, Chips, Empty, Group, Icon, MissionBar, Recommendations, Spinner, StatusGlyph, ToneLabel, blockerLabel, scoreTone } from "@/lib/ui";
 import { AutoRefresh } from "../../../audit/[id]/refresh";
 import { SpaceShell } from "../../shell";
 import { BlockerItem, Delta, RelaunchForm, rankText } from "../../parts";
@@ -44,18 +44,17 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
         </span>
       }
       intro={
-        <>
-          <DeviceTag device={site.device} lang={lang} /> · {rankText(site.rank, lang)}
+        <Chips>
+          <Chip icon={site.device === "mobile" ? "mobile" : "desktop"}>{deviceLabel(site.device, lang)}</Chip>
+          <Chip icon="ranking" tone={site.rank ? "blue" : "plain"}>{rankText(site.rank, lang)}</Chip>
           {other && (
-            <>
-              {" · "}
-              <Link href={`/espace/sites/${other.key}`} className="text-link hover:underline">
-                {t("Voir la version", "See the")} {deviceLabel(other.device, lang).toLowerCase()}
-                {t("", " version")}
-              </Link>
-            </>
+            <Link href={`/espace/sites/${other.key}`} className="rounded-full hover:opacity-80">
+              <Chip icon={other.device === "mobile" ? "mobile" : "desktop"} className="bg-transparent! shadow-[inset_0_0_0_1px_var(--line)] text-link!">
+                {deviceLabel(other.device, lang)} <Chevron className="h-2.5 w-2.5" />
+              </Chip>
+            </Link>
           )}
-        </>
+        </Chips>
       }
       actions={edit ? <RelaunchForm site={site} label={t("Relancer l'audit", "Rerun the audit")} /> : undefined}
     >
@@ -65,10 +64,10 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
           <Spinner className="h-4 w-4 text-ink-2" />
           <span className="flex-1">
             <span className="font-semibold">
-              {t(`Audit en cours · ${site.running.s.finished} missions sur ${site.running.s.total}.`, `Audit running · ${site.running.s.finished} of ${site.running.s.total} missions.`)}
-            </span>{" "}
-            <span className="text-ink-2">{t("Regarde l’agent en direct.", "Watch the agent live.")}</span>
+              {t(`Audit en cours · ${site.running.s.finished}/${site.running.s.total}`, `Audit running · ${site.running.s.finished}/${site.running.s.total}`)}
+            </span>
           </span>
+          <Chip icon="live" tone="blue">{t("Direct", "Live")}</Chip>
           <Chevron className="h-3 w-3 text-ink-2" />
         </Link>
       )}
@@ -115,12 +114,10 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
                 ))}
               </ol>
             ) : (
-              <p className="mt-2 text-ink-2">
-                {t(
-                  "L’évolution s’affiche dès le deuxième audit. Corrige un blocage, puis relance pour mesurer l’effet.",
-                  "The trend shows from the second audit. Fix a blocker, then rerun to measure the effect.",
-                )}
-              </p>
+              <div className="mt-6 flex flex-1 flex-col items-center justify-center gap-3 rounded-[12px] bg-bg-2 p-6 text-center text-ink-2 dark:bg-[#2c2c2e]">
+                <Icon name="trend" className="h-6 w-6" />
+                <span className="type-small">{t("Dès le 2ᵉ audit", "From the 2nd audit")}</span>
+              </div>
             )}
           </div>
         </section>
@@ -129,15 +126,13 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
       <section id="corrections" className="scroll-mt-24">
         <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 px-1">
           <h2 className="type-headline">{t("Corrections", "Fixes")}</h2>
-          <span className="type-small text-ink-2">
-            {site.latest
-              ? todo
-                ? t(`${todo} à faire · ${site.blockers.length - todo} à vérifier`, `${todo} to do · ${site.blockers.length - todo} to check`)
-                : site.blockers.length
-                  ? t("Tout est marqué corrigé", "Everything is marked fixed")
-                  : t("Aucun blocage au dernier audit", "No blocker in the last audit")
-              : ""}
-          </span>
+          {site.latest && (
+            <Chips>
+              {todo > 0 && <Chip icon="wrench" tone="warn">{t(`${todo} à faire`, `${todo} to do`)}</Chip>}
+              {site.blockers.length - todo > 0 && <Chip icon="refresh" tone="blue">{t(`${site.blockers.length - todo} à vérifier`, `${site.blockers.length - todo} to check`)}</Chip>}
+              {!site.blockers.length && <Chip icon="none" tone="pass">{t("Aucun blocage", "No blocker")}</Chip>}
+            </Chips>
+          )}
         </div>
         {site.blockers.length ? (
           <div className="space-y-5">
@@ -146,15 +141,13 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
             ))}
           </div>
         ) : (
-          <div className="tile">
-            <p className="type-headline">{site.latest ? t("L'agent n'a rencontré aucun blocage.", "The agent met no blocker.") : t("Les corrections arrivent avec le premier rapport.", "Fixes arrive with the first report.")}</p>
-          </div>
+          <Empty icon={site.latest ? "none" : "clock"} title={site.latest ? t("Aucun blocage", "No blocker") : t("Après le premier rapport", "After the first report")} />
         )}
         {site.blockers.some((b) => b.state === "check") && edit && (
           <div className="tile mt-5 flex flex-wrap items-center justify-between gap-4 p-7!">
-            <p className="max-w-[560px]">
-              <span className="font-semibold">{t("Tu as marqué des blocages comme corrigés.", "You marked blockers as fixed.")}</span>{" "}
-              <span className="text-ink-2">{t("Relance l’audit : l’agent repasse et confirme si la correction tient.", "Rerun the audit: the agent goes through again and confirms whether the fix holds.")}</span>
+            <p className="flex items-center gap-3 font-semibold">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-blue/12 text-link" aria-hidden><Icon name="refresh" className="h-5 w-5" /></span>
+              {t("Corrections à vérifier : relance l’audit.", "Fixes to check: rerun the audit.")}
             </p>
             <RelaunchForm site={site} />
           </div>
@@ -176,8 +169,8 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
         <details className="group">
           <summary className="type-headline mb-3 flex min-h-11 cursor-pointer list-none items-center gap-2 px-1 [&::-webkit-details-marker]:hidden">
             <Chevron className="h-3 w-3 text-ink-2 transition-transform duration-200 group-open:rotate-90" />
-            {t("Plan de corrections rédigé par l’IA", "Fix plan written by the AI")}
-            <span className="type-small font-normal text-ink-2">{t("· détail des corrections ci-dessus", "· detail of the fixes above")}</span>
+            {t("Plan de corrections", "Fix plan")}
+            <Chip icon="sparkle">IA</Chip>
           </summary>
           <Recommendations text={site.latest.recommendations} />
         </details>

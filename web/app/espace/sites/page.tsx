@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { loadSpace } from "@/lib/space";
 import { getT } from "@/lib/lang";
-import { MissionLegend } from "@/lib/ui";
+import { Empty, MissionLegend } from "@/lib/ui";
 import { SpaceShell } from "../shell";
 import { SiteCard, SitesTabs } from "../parts";
 
@@ -44,18 +44,15 @@ export default async function Sites() {
           <MissionLegend className="px-1" />
         </div>
       ) : (
-        <div className="tile text-center">
-          <p className="type-headline">{t("Aucun site pour l’instant.", "No site yet.")}</p>
-          <p className="mt-1 text-ink-2">
-            {trashedSites.length ? (
-              <Link href="/espace/sites/corbeille" className="text-link hover:underline">
-                {t(`Voir la corbeille (${trashedSites.length})`, `See the trash (${trashedSites.length})`)}
-              </Link>
-            ) : (
-              t("Un site apparaît ici dès son premier audit.", "A site shows up here after its first audit.")
-            )}
-          </p>
-        </div>
+        <Empty icon="layers" title={t("Aucun site", "No site yet")}>
+          {trashedSites.length ? (
+            <Link href="/espace/sites/corbeille" className="text-link hover:underline">
+              {t(`Corbeille (${trashedSites.length})`, `Trash (${trashedSites.length})`)}
+            </Link>
+          ) : (
+            t("Apparaît après le premier audit.", "Shows up after the first audit.")
+          )}
+        </Empty>
       )}
       </div>
     </SpaceShell>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { EXCLUDED, db } from "@/lib/engine";
-import { BlockerIcon, DeviceTag, MissionBar, StatusGlyph, ToneLabel, blockerLabel, hurdles, scoreTone } from "@/lib/ui";
+import { BlockerIcon, Chip, DeviceTag, Icon, MissionBar, StatusGlyph, ToneLabel, blockerLabel, hurdles, scoreTone } from "@/lib/ui";
 import { tr } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 import { SiteLogo } from "../site-logo";
@@ -52,7 +52,11 @@ export async function Leaderboard({ device = "desktop", base }: { device?: Devic
             </Link>
           ))}
         </nav>
-        {period && <p className="type-small mt-4 text-ink-2">{t("Derniers audits terminés", "Latest audits finished")} {period}.</p>}
+        {period && (
+          <p className="mt-4">
+            <Chip icon="clock">{t("Audits terminés", "Audits finished")} {period}</Chip>
+          </p>
+        )}
         {scores?.length ? (
           <div className={`${period ? "mt-4" : "mt-12"} overflow-hidden rounded-[18px] bg-tile`}>
             <div className={`type-caption hidden gap-4 border-b border-hairline px-6 py-3 text-ink-2 md:grid ${COLS}`} aria-hidden>
@@ -138,19 +142,22 @@ export async function Leaderboard({ device = "desktop", base }: { device?: Devic
           </div>
         )}
 
-        <dl className="type-small mt-12 grid gap-6 border-t border-line pt-8 text-ink-2 sm:grid-cols-3">
-          <div>
-            <dt className="font-semibold text-ink">{t("Succès", "Success")}</dt>
-            <dd className="mt-1">{t("L’agent atteint la première page du checkout. Il ne saisit rien et ne paie jamais.", "The agent reaches the first checkout page. It enters nothing and never pays.")}</dd>
-          </div>
-          <div>
-            <dt className="font-semibold text-ink">Score</dt>
-            <dd className="mt-1">{t("Missions réussies divisées par missions comptées. Restent hors score : rupture de stock, anti-bot, mission impossible sur le catalogue, et les échecs dus à l'agent (étapes épuisées, erreur d'outil).", "Passed missions divided by counted missions. Kept out of the score: out of stock, anti-bot, mission impossible on the catalogue, and failures caused by the agent (out of steps, tool error).")}</dd>
-          </div>
-          <div>
-            <dt className="font-semibold text-ink">{t("Juge visuel", "Visual judge")}</dt>
-            <dd className="mt-1">{t("Un modèle Hugging Face relit la capture finale de chaque mission pour confirmer le verdict.", "A Hugging Face model reviews the final screenshot of each mission to confirm the verdict.")}</dd>
-          </div>
+        <dl className="type-small mt-12 grid gap-4 text-ink-2 sm:grid-cols-3">
+          {(
+            [
+              ["none", t("Succès", "Success"), t("Première page du checkout atteinte. Rien saisi, rien payé.", "First checkout page reached. Nothing entered, nothing paid.")],
+              ["ranking", "Score", t("Réussies ÷ comptées. Stock, anti-bot, mission impossible et erreurs de l’agent hors score.", "Passed ÷ counted. Stock, anti-bot, impossible mission and agent errors out of score.")],
+              ["eye", t("Juge visuel", "Visual judge"), t("Un modèle Hugging Face relit la capture finale de chaque mission.", "A Hugging Face model reviews each mission's final screenshot.")],
+            ] as const
+          ).map(([icon, title, text]) => (
+            <div key={icon} className="flex gap-3 rounded-[14px] bg-tile p-5">
+              <Icon name={icon} className="mt-[1px] h-5 w-5 text-ink-2" />
+              <div>
+                <dt className="font-semibold text-ink">{title}</dt>
+                <dd className="mt-1">{text}</dd>
+              </div>
+            </div>
+          ))}
         </dl>
     </>
   );

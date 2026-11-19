@@ -6,7 +6,7 @@ import { ALERTS, type Kind, PLANS, RATES, loadCredits } from "@/lib/credits";
 import { db } from "@/lib/engine";
 import { locale, tr } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
-import { DeviceTag, Group, Row } from "@/lib/ui";
+import { Chip, DeviceTag, Group, Note, Row } from "@/lib/ui";
 import { SpaceShell } from "../shell";
 
 export async function generateMetadata() {
@@ -91,14 +91,13 @@ export default async function Abonnement() {
             </div>
           </dl>
           {level !== "ok" && (
-            <p role="status" className="type-small rounded-[12px] bg-bg-2 px-4 py-3 dark:bg-[#2c2c2e]">
-              {level === "fail"
-                ? t(
-                    "Tous les crédits du mois sont utilisés. Les audits restent possibles pendant l'essai : rien n'est bloqué ni facturé. Une offre plus grande arrive bientôt.",
-                    "All of this month's credits are used. Audits still run during the trial: nothing is blocked or charged. A bigger plan is coming soon.",
-                  )
-                : t(`Plus de ${ALERTS[0]} % des crédits du mois sont utilisés.`, `Over ${ALERTS[0]}% of this month's credits are used.`)}
-            </p>
+            <div role="status">
+              <Note icon={level === "fail" ? "info" : "trend"}>
+                {level === "fail"
+                  ? t("Crédits épuisés · audits toujours ouverts pendant l'essai, rien n'est facturé.", "Credits used up · audits still run during the trial, nothing is charged.")
+                  : t(`Plus de ${ALERTS[0]} % des crédits utilisés.`, `Over ${ALERTS[0]}% of credits used.`)}
+              </Note>
+            </div>
           )}
         </div>
       </Group>
@@ -112,7 +111,7 @@ export default async function Abonnement() {
               {plan.price ? t(` · ${plan.price} € par mois`, ` · €${plan.price} a month`) : ""}
             </span>
           </span>
-          <span className="type-caption rounded-full bg-fill px-2.5 py-1 font-semibold text-ink-2">{t("Actif", "Active")}</span>
+          <Chip icon="none" tone="pass">{t("Actif", "Active")}</Chip>
         </Row>
         <Row className="justify-between">
           <Link href="/#tarifs" className="more">
@@ -124,7 +123,7 @@ export default async function Abonnement() {
         </Row>
       </Group>
 
-      <Group title={t("Par type", "By type")} footer={t("Barème provisoire, susceptible d'évoluer avant l'ouverture du paiement.", "Provisional rates, may change before payment opens.")}>
+      <Group title={t("Par type", "By type")} footer={t("Barème provisoire, susceptible d'évoluer avant l'ouverture du paiement.", "Provisional rates, may change before payment opens.")} aside={<Chip icon="info">{t("Provisoire", "Provisional")}</Chip>}>
         {(Object.keys(RATES) as Kind[]).map((k) => {
           const used = c.byKind.find((b) => b.kind === k)?.credits ?? 0;
           return (
@@ -161,7 +160,7 @@ export default async function Abonnement() {
           ))
         ) : (
           <Row>
-            <span className="text-ink-2">{t("Aucun crédit utilisé ce mois-ci.", "No credits used this month.")}</span>
+            <span className="text-ink-2">{t("Aucun crédit utilisé", "No credits used")}</span>
           </Row>
         )}
       </Group>

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { db } from "@/lib/engine";
 import { currentUser } from "@/lib/auth";
-import { AgentCursor, BrowserFrame, Field, Icon, MissionBar, StatusGlyph, Verdict, blockerLabel, scoreTone } from "@/lib/ui";
+import { AgentCursor, BrowserFrame, Chip, Chips, Field, Icon, MissionBar, StatusGlyph, Verdict, blockerLabel, scoreTone } from "@/lib/ui";
 import { tr, type Lang, type T } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 import { byRank } from "../classement/board";
@@ -147,23 +147,23 @@ export default async function Home() {
 
           <h3 className="type-h2 mt-20 max-[734px]:mt-14">{t("Ce que ton équipe en fait.", "What your team does with it.")}</h3>
           <div className="mt-8 grid gap-5 md:grid-cols-3">
-            {BENEFITS[lang].map(([title, text]) => (
+            {BENEFITS[lang].map(([title, text], i) => (
               <article key={title} className="tile">
-                <h4 className="type-headline">{title}</h4>
+                <span className="grid h-10 w-10 place-items-center rounded-[11px] bg-blue/12 text-link" aria-hidden>
+                  <Icon name={["search_failed", "doc", "trend"][i]} className="h-5 w-5" />
+                </span>
+                <h4 className="type-headline mt-5">{title}</h4>
                 <p className="mt-2 text-ink-2">{text}</p>
               </article>
             ))}
           </div>
-          <p className="type-small mt-5 max-w-[760px] text-ink-2">
-            {t(
-              "Le test s’arrête à l’entrée du checkout : le paiement n’est pas testé. Le rapport sépare ce que l’agent a observé des causes supposées, à vérifier par ton équipe.",
-              "The test stops at the checkout entrance: payment is not tested. The report keeps what the agent observed apart from assumed causes, for your team to check.",
-            )}
-            {" "}
-            <Link href="/methode#paiement" className="text-link hover:underline">
+          <Chips className="mt-6">
+            <Chip icon="nopay">{t("Arrêt avant le paiement", "Stops before payment")}</Chip>
+            <Chip icon="eye">{t("Observé ≠ supposé", "Observed ≠ assumed")}</Chip>
+            <Link href="/methode#paiement" className="type-small ml-1 text-link hover:underline">
               {t("La suite : le paiement", "Next step: the payment")}
             </Link>
-          </p>
+          </Chips>
         </div>
       </section>
 
@@ -171,12 +171,11 @@ export default async function Home() {
       <section id="tester" className="section scroll-mt-[96px] lg:scroll-mt-[52px]">
         <div className="mx-auto w-[min(692px,87.5%)]">
           <h2 className="type-h1 text-center">{t("Teste ton site.", "Test your site.")}</h2>
-          <p className="type-intro mt-4 text-center text-ink-2">
-            {t(
-              "Cinq missions d’achat, 10 à 20 minutes. Le rapport s’ouvre tout de suite et se remplit pendant l’audit.",
-              "Five shopping missions, 10 to 20 minutes. The report opens right away and fills in during the audit.",
-            )}
-          </p>
+          <Chips className="mt-5 justify-center">
+            <Chip icon="audit">{t("5 missions", "5 missions")}</Chip>
+            <Chip icon="clock">10–20 min</Chip>
+            <Chip icon="live">{t("Rapport en direct", "Live report")}</Chip>
+          </Chips>
           <form action="/api/audits" method="post" className="mt-12 grid gap-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label={t("Adresse de ton site", "Your site's address")} name="url" required />
@@ -202,37 +201,38 @@ export default async function Home() {
                 ))}
               </div>
             </fieldset>
-            <p className="type-caption -mt-1 text-ink-2">{t("Mobile : format téléphone simulé (écran 390 × 844), pas un vrai smartphone.", "Mobile: simulated phone format (390 × 844 screen), not a real smartphone.")}</p>
+            <p className="type-caption -mt-1 flex items-center justify-end gap-1.5 text-ink-2">
+              <Icon name="mobile" className="h-3.5 w-3.5" />
+              {t("Mobile simulé · 390 × 844", "Simulated mobile · 390 × 844")}
+            </p>
             <button className="btn mt-4 min-h-[56px] w-full rounded-[12px]">{t("Lancer l’audit", "Run the audit")}</button>
-            <div className="type-small mt-2 rounded-[12px] bg-bg-2 p-5 text-ink-2 dark:bg-[#2c2c2e]">
-              <p className="font-semibold text-ink">{t("Après le clic", "After the click")}</p>
-              <ol className="mt-2 grid gap-2">
-                {[
-                  ...(user
-                    ? []
-                    : [t("Tu reçois un lien de connexion par e-mail, sans mot de passe, et tu relances depuis ce formulaire, déjà rempli.", "You get a sign-in link by e-mail, no password, and run it again from this form, already filled in.")]),
-                  t("Site déjà audité par ton équipe sur cet appareil ces 7 derniers jours : tu arrives sur ce rapport.", "Site already audited by your team on this device in the last 7 days: you land on that report."),
-                  t("Sinon, le rapport s’ouvre tout de suite et se remplit mission par mission, en 10 à 20 minutes.", "Otherwise the report opens right away and fills in mission by mission, in 10 to 20 minutes."),
-                  mails
-                    ? t("À la fin, le rapport t’est aussi envoyé par e-mail. Il reste dans ton espace d’équipe.", "At the end, the report is also sent to you by e-mail. It stays in your team space.")
-                    : t("À la fin, le rapport reste dans ton espace d’équipe.", "At the end, the report stays in your team space."),
-                ].map((step, i) => (
-                  <li key={i} className="flex gap-3">
-                    <span className="tnum font-semibold text-ink">{i + 1}.</span>
-                    <span>{step}</span>
-                  </li>
-                ))}
-              </ol>
-            </div>
-            <p className="type-small text-center text-ink-2">
-              {t(
-                "Pendant l’audit, l’agent ne paie jamais et ne saisit aucune donnée personnelle. Ton e-mail sert uniquement à t’envoyer le rapport :",
-                "During the audit, the agent never pays and enters no personal data. Your e-mail is only used to send you the report:",
-              )}{" "}
+            <ol className="type-small mt-2 grid gap-2 sm:grid-cols-2" aria-label={t("Après le clic", "After the click")}>
+              {(
+                [
+                  ...(user ? [] : [["mail", t("Lien de connexion par e-mail", "Sign-in link by e-mail")]]),
+                  ["refresh", t("Déjà audité < 7 j : rapport existant", "Audited < 7 days ago: existing report")],
+                  ["live", t("Rapport en direct, mission par mission", "Live report, mission by mission")],
+                  [mails ? "mail" : "layers", mails ? t("Rapport final par e-mail", "Final report by e-mail") : t("Rapport gardé dans ton espace", "Report kept in your space")],
+                ] as [string, string][]
+              ).map(([icon, step], i) => (
+                <li key={i} className="flex items-center gap-3 rounded-[12px] bg-bg-2 px-3.5 py-3 text-ink-2 dark:bg-[#2c2c2e]">
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[8px] bg-tile text-ink-2" aria-hidden>
+                    <Icon name={icon} className="h-4 w-4" />
+                  </span>
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ol>
+            <Chips className="justify-center">
+              <Chip icon="nopay">{t("Jamais de paiement", "Never pays")}</Chip>
+              <Chip icon="shield">{t("Aucune donnée perso", "No personal data")}</Chip>
+              <Chip icon="captcha_or_bot_block">{t("Aucun captcha", "No captcha")}</Chip>
+            </Chips>
+            <p className="type-caption text-center text-ink-2">
+              {t("Ton e-mail sert uniquement à t’envoyer le rapport ·", "Your e-mail is only used to send you the report ·")}{" "}
               <Link href="/confidentialite" className="text-link hover:underline">
                 {t("confidentialité", "privacy")}
               </Link>
-              .
             </p>
           </form>
         </div>
@@ -284,12 +284,10 @@ export default async function Home() {
             <span className="inline-flex items-center gap-1.5"><StatusGlyph tone="warn" /> {t("40 à 69 % : fragile", "40 to 69 %: fragile")}</span>
             <span className="inline-flex items-center gap-1.5"><StatusGlyph tone="fail" /> {t("Moins de 40 % : bloquant", "Below 40 %: blocking")}</span>
           </p>
-          <p className="type-small mt-2 text-ink-2">
-            {t(
-              "Chaque site est noté sur ses 2 derniers audits sur ordinateur, 5 missions chacun, hors missions sans lien avec le site.",
-              "Each site is scored on its last 2 desktop audits, 5 missions each, leaving out missions unrelated to the site.",
-            )}
-          </p>
+          <Chips className="mt-3">
+            <Chip icon="desktop">{t("2 derniers audits ordinateur", "Last 2 desktop audits")}</Chip>
+            <Chip icon="mission_not_applicable">{t("Hors missions sans lien", "Unrelated missions excluded")}</Chip>
+          </Chips>
         </div>
       </section>
 
@@ -461,9 +459,6 @@ function Pricing({ lang, t }: { lang: Lang; t: T }) {
     <section id="tarifs" className="section scroll-mt-[96px] lg:scroll-mt-[52px]">
       <div className="wrap-wide">
         <h2 className="type-h1">{t("Tarifs.", "Pricing.")}</h2>
-        <p className="type-intro mt-4 max-w-[640px] text-ink-2">
-          {t("Le classement attire, l’audit montre quoi corriger, le suivi vérifie que ça tient.", "The ranking gets you seen, the audit shows what to fix, tracking checks that it holds.")}
-        </p>
         <ul className="mt-12 grid gap-5 max-[734px]:mt-8 md:grid-cols-2 xl:grid-cols-4">
           {PLANS[lang].map((p) => (
             <li key={p.name} className={`relative flex flex-col rounded-[30px] bg-bg-2 p-10 dark:bg-tile max-[1068px]:rounded-[25px] max-[734px]:rounded-[20px] max-[734px]:px-6 max-[734px]:py-7 xl:px-8 ${p.featured ? "shadow-[inset_0_0_0_2px_var(--blue)]" : ""}`}>
@@ -499,12 +494,10 @@ function Pricing({ lang, t }: { lang: Lang; t: T }) {
             </li>
           ))}
         </ul>
-        <p className="type-small mt-5 max-w-[760px] text-ink-2">
-          {t(
-            "Prix hors taxes. Le paiement en ligne arrive bientôt : pour l’instant, lancer un audit depuis cette page ne coûte rien.",
-            "Prices exclude VAT. Online payment is coming soon: for now, running an audit from this page costs nothing.",
-          )}
-        </p>
+        <Chips className="mt-5">
+          <Chip icon="info">{t("Prix HT", "Excl. VAT")}</Chip>
+          <Chip icon="sparkle" tone="blue">{t("Gratuit pendant l’essai", "Free during the trial")}</Chip>
+        </Chips>
       </div>
     </section>
   );
@@ -513,13 +506,13 @@ function Pricing({ lang, t }: { lang: Lang; t: T }) {
 // What a team does with the report: each line maps to a feature that exists (report, replay, plan, re-audit, competitor).
 const BENEFITS: Record<Lang, [string, string][]> = {
   fr: [
-    ["Repérer les obstacles", "Mission par mission, tu vois où l'agent bloque sur les parcours testés, et ce qui fait baisser ton score."],
-    ["Transmettre des preuves", "Capture, replay pas à pas et plan de corrections : de quoi montrer le problème à tes développeurs, sans le reproduire à la main."],
-    ["Suivre les corrections", "Relance un audit après une correction : le nouveau rapport montre si la mission passe. Compare-toi à un concurrent sur les mêmes missions."],
+    ["Repérer les obstacles", "Mission par mission : où l'agent bloque, et ce qui fait baisser ton score."],
+    ["Transmettre des preuves", "Capture, replay pas à pas et plan de corrections, prêts pour tes développeurs."],
+    ["Suivre les corrections", "Relance après une correction pour voir si la mission passe. Compare-toi à un concurrent."],
   ],
   en: [
-    ["Spot the obstacles", "Mission by mission, you see where the agent gets stuck on the tested journeys, and what lowers your score."],
-    ["Hand over evidence", "Screenshot, step-by-step replay and fix plan: enough to show the problem to your developers without reproducing it by hand."],
-    ["Track the fixes", "Run a new audit after a fix: the new report shows whether the mission passes. Compare yourself with a competitor on the same missions."],
+    ["Spot the obstacles", "Mission by mission: where the agent gets stuck, and what lowers your score."],
+    ["Hand over evidence", "Screenshot, step-by-step replay and fix plan, ready for your developers."],
+    ["Track the fixes", "Rerun after a fix to see if the mission passes. Compare yourself with a competitor."],
   ],
 };

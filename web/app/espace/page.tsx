@@ -6,7 +6,7 @@ import { canLaunch, teamContext } from "@/lib/auth";
 import { dict, tr, type Lang, type T } from "@/lib/i18n";
 import { getDict, getLang } from "@/lib/lang";
 import { loadSpace, priorities, shortDate, type SiteView } from "@/lib/space";
-import { Chevron, DeviceTag, Field, Group, MissionBar, MissionLegend, Row, Spinner, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
+import { Chevron, Chip, Chips, DeviceTag, Field, Group, Icon, MissionBar, MissionLegend, Row, Note, Spinner, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
 import { AutoRefresh } from "../audit/[id]/refresh";
 import { SpaceShell } from "./shell";
 import { BlockerItem, Delta, sitePath } from "./parts";
@@ -50,20 +50,21 @@ export default async function Accueil() {
   const last = audits.find((a) => a.status === "done" && a.runs.length);
   const launch = canLaunch(team.role);
 
-  const status = !audits.length
-    ? t("Lance un premier audit pour voir si un agent IA peut acheter sur ton site.", "Run a first audit to see whether an AI agent can buy on your site.")
-    : [
-        plural(sites.length, "site") + t(sites.length > 1 ? " suivis" : " suivi", " tracked"),
-        running.length ? `${plural(running.length, "audit")} ${t("en cours", "running")}` : null,
-        open.length
-          ? t(`${plural(open.length, "blocage")} à corriger · ${plural(lost, "mission")} perdue${lost > 1 ? "s" : ""}`, `${plural(open.length, "blocker")} to fix · ${plural(lost, "mission")} lost`)
-          : sites.some((s) => s.latest)
-            ? t("aucun blocage ouvert", "no open blocker")
-            : null,
-        last ? `${t("dernier audit le", "last audit on")} ${shortDate(last.created_at, lang)}` : null,
-      ]
-        .filter(Boolean)
-        .join(" · ") + ".";
+  // Facts as chips, like a dashboard's header: count, live work, what is left to fix, freshness.
+  const status = audits.length ? (
+    <Chips>
+      <Chip icon="layers">{plural(sites.length, "site")}</Chip>
+      {running.length > 0 && <Chip icon="live" tone="blue">{running.length} {t("en cours", "running")}</Chip>}
+      {open.length > 0 ? (
+        <Chip icon="wrench" tone="warn">
+          {plural(open.length, t("blocage", "blocker"))} · {plural(lost, "mission")} {t(lost > 1 ? "perdues" : "perdue", "lost")}
+        </Chip>
+      ) : (
+        sites.some((s) => s.latest) && <Chip icon="none" tone="pass">{t("Aucun blocage", "No blocker")}</Chip>
+      )}
+      {last && <Chip icon="clock">{shortDate(last.created_at, lang)}</Chip>}
+    </Chips>
+  ) : undefined;
 
   return (
     <SpaceShell
@@ -84,28 +85,29 @@ export default async function Accueil() {
       {!audits.length && (
         <section className="tile p-0!">
           <ol className="grid md:grid-cols-3">
-            {t(
+            {(
               [
-                ["Indique ton site", "Son adresse, et un concurrent si tu veux te comparer."],
-                ["L'agent essaie d'acheter", "Cinq missions réelles, de la recherche au checkout, en 10 à 20 minutes."],
-                ["Corrige ce qui bloque", "Capture du blocage, correction proposée, puis relance pour vérifier."],
-              ],
-              [
-                ["Enter your site", "Its address, and a competitor if you want to compare."],
-                ["The agent tries to buy", "Five real missions, from search to checkout, in 10 to 20 minutes."],
-                ["Fix what blocks", "Screenshot of the blocker, a suggested fix, then a rerun to check."],
-              ],
-            ).map(([h, d], i) => (
+                ["pin", t("Indique ton site", "Enter your site"), t("Son adresse, et un concurrent si tu veux te comparer.", "Its address, and a competitor if you want to compare."), null],
+                ["audit", t("L'agent essaie d'acheter", "The agent tries to buy"), t("Cinq missions réelles, de la recherche au checkout.", "Five real missions, from search to checkout."), t("10–20 min", "10–20 min")],
+                ["wrench", t("Corrige ce qui bloque", "Fix what blocks"), t("Capture du blocage, correction proposée, puis relance pour vérifier.", "Screenshot of the blocker, a suggested fix, then a rerun to check."), null],
+              ] as const
+            ).map(([icon, h, d, chip], i) => (
               <li key={h} className="border-hairline p-8 max-md:border-b md:border-r md:last:border-0 max-md:last:border-0">
-                <span className="type-small grid h-7 w-7 place-items-center rounded-full bg-fill font-semibold tnum">{i + 1}</span>
+                <span className="flex items-center justify-between gap-3">
+                  <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-fill text-ink-2" aria-hidden>
+                    <Icon name={icon} className="h-5 w-5" />
+                  </span>
+                  <span className="type-caption tnum text-ink-2">{i + 1}/3</span>
+                </span>
                 <h2 className="type-headline mt-4">
                   <Hint tip={d}>{h}</Hint>
                 </h2>
+                {chip && <Chip icon="clock" className="mt-3">{chip}</Chip>}
               </li>
             ))}
           </ol>
           <div className="flex flex-wrap items-center justify-between gap-4 border-t border-hairline px-8 py-6">
-            {!launch && <p className="type-small text-ink-2">{t("Accès lecteur : un admin ou le propriétaire lance les audits.", "Viewer access: an admin or the owner runs audits.")}</p>}
+            {!launch && <Note icon="eye">{t("Lecture seule : un admin lance les audits.", "Read-only: an admin runs audits.")}</Note>}
             {launch && (
               <Hint focusable={false} align="end" side="top" className="ml-auto" tip={t(`Le rapport arrive aussi par e-mail à ${user.email}.`, `The report is also e-mailed to ${user.email}.`)}>
                 <Link href="/espace/nouveau" className="btn">
@@ -157,10 +159,7 @@ export default async function Accueil() {
       )}
 
       {running.length > 0 && (
-        <Group
-          title={t("En cours", "Running")}
-          footer={t("La page se met à jour toute seule. Ouvre un audit pour regarder l'agent en direct.", "The page updates by itself. Open an audit to watch the agent live.")}
-        >
+        <Group title={t("En cours", "Running")} aside={<Chip icon="live" tone="blue">{t("Direct", "Live")}</Chip>}>
           {running.map((a) => (
             <Link key={a.id} href={`/audit/${a.id}`} className="block border-b border-hairline last:border-0 hover:bg-bg-2/60">
               <div className="grid min-h-[68px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-5 px-5 py-3 sm:grid-cols-[minmax(0,1fr)_10rem_7rem_1rem]">
@@ -191,7 +190,7 @@ export default async function Accueil() {
         <section>
           <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-1">
             <h2 className="type-headline">{t("À corriger en priorité", "Fix first")}</h2>
-            <span className="type-small text-ink-2">{t("Classé par missions perdues", "Sorted by missions lost")}</span>
+            <Chip icon="trend">{t("Par missions perdues", "By missions lost")}</Chip>
           </div>
           <div className={`grid gap-5 ${todo.length > 1 ? "md:grid-cols-2 xl:grid-cols-3" : ""}`}>
             {todo.map(({ site, b }) => (
@@ -219,10 +218,9 @@ async function NoTeam({ email, lang }: { email: string; lang: Lang }) {
       <div className="mx-auto grid w-[min(560px,87.5%)] gap-10">
         <header className="text-center">
           <h1 className="type-h1">{t("Ton espace.", "Your space.")}</h1>
-          <p className="type-intro mt-3 text-ink-2">{t("Rejoins une équipe ou crée la tienne pour lancer des audits.", "Join a team or create your own to run audits.")}</p>
         </header>
         {!!invites?.length && (
-          <Group title={t("Invitations en attente", "Pending invitations")} footer={t("Ouvre le lien reçu par e-mail pour rejoindre l'équipe.", "Open the link you received by e-mail to join the team.")}>
+          <Group title={t("Invitations en attente", "Pending invitations")} aside={<Chip icon="mail">{t("Lien reçu par e-mail", "Link sent by e-mail")}</Chip>}>
             {invites.map((i: any) => (
               <Row key={i.id}>
                 <span className="flex-1 font-semibold">{i.teams?.name}</span>

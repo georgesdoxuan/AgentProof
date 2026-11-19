@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { cardView } from "@/lib/cards";
-import { Field, Group, Row } from "@/lib/ui";
+import { Chip, Empty, Field, Group, Note, Row } from "@/lib/ui";
 import { getT } from "@/lib/lang";
 import { ConfirmButton } from "../controls";
 import { SpaceShell } from "../shell";
@@ -33,6 +33,7 @@ export default async function Paiement() {
       {card ? (
         <Group
           title={t("Carte enregistrée", "Saved card")}
+          aside={<Chip icon="lock">{card.source === "env" ? t("Hors base", "Not in database") : t("Chiffrée", "Encrypted")}</Chip>}
           footer={
             card.source === "env"
               ? t("Carte de l'équipe AgentProof, gardée dans la configuration du serveur, jamais en base.", "The AgentProof team's card, kept in the server configuration, never in the database.")
@@ -81,13 +82,16 @@ export default async function Paiement() {
           )}
         </Group>
       ) : (
-        <p className="text-ink-2">{t("Aucune carte enregistrée : le test de paiement n’est pas proposé au lancement d’un audit.", "No saved card: the payment test is not offered when running an audit.")}</p>
+        <Empty icon="payment" title={t("Aucune carte", "No card")}>
+          {t("Sans carte, pas de test de paiement.", "No card, no payment test.")}
+        </Empty>
       )}
 
       {admin ? (
         <Group
           title={card ? t("Remplacer la carte", "Replace the card") : t("Ajouter une carte", "Add a card")}
           footer={t("L'agent saisit ces données sur le site testé. Elles transitent par H Company, qui fait tourner l'agent.", "The agent enters this data on the tested site. It goes through H Company, which runs the agent.")}
+          aside={<Chip icon="shield">{t("Via H Company", "Via H Company")}</Chip>}
         >
           <form action="/api/card" method="post" className="grid gap-4 p-6 sm:p-8">
             <Field label={t("Nom de la carte", "Card name")} name="label" type="text" />
@@ -112,7 +116,7 @@ export default async function Paiement() {
           </form>
         </Group>
       ) : (
-        <p className="type-small text-ink-2">{t("Seuls le propriétaire et les admins de l’équipe gèrent la carte.", "Only the team's owner and admins manage the card.")}</p>
+        <Note icon="eye">{t("Lecture seule : un admin gère la carte.", "Read-only: an admin manages the card.")}</Note>
       )}
     </SpaceShell>
   );
