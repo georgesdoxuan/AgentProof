@@ -1,72 +1,102 @@
 import { canLaunch, teamContext } from "@/lib/auth";
 import { db, normalizeUrl } from "@/lib/engine";
 import { INTERVALS, SCORE_DROPS, checkAutomation, postWebhook, webhookOk } from "@/lib/automations";
-import { msg } from "@/lib/lang";
 
-// Back to Automations, or to Abonnement et crédits when the form came from there (per-site cap).
-const go = (req: Request, back?: string) => Response.redirect(new URL(back === "abonnement" ? "/espace/reglages/abonnement" : "/espace/reglages/automations", req.url), 303);
-const fail = (msg: string, status = 400) => new Response(msg, { status, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+// Every answer goes back to the page with a short code: ?ok=… shows "Saved", ?err=… shows what to fix (no plain-text page).
+// The page itself reopens at the reader's scroll position (controls.tsx KeepScroll). back=abonnement for forms kept there.
+const PAGE = "/espace/reglages/automations";
+const go = (req: Request, q: string, back?: string) => Response.redirect(new URL(`${back === "abonnement" ? "/espace/reglages/abonnement" : PAGE}?${q}`, req.url), 303);
 const MAX_PER_TEAM = 20;
 export const maxDuration = 60;
 
 // Daily site watch of the current team. Owner or admin only.
-// state: "off" = paused, "notify" = alert only, "audit" = alert and launch a new audit.
+// state: "off" = paused, "on" = running (mode unchanged), "notify" = alert only, "audit" = alert and launch a new audit.
 export async function POST(req: Request) {
   const ctx = await teamContext();
-  if (!ctx) return Response.redirect(new URL("/connexion?next=/espace/reglages/automations", req.url), 303);
-  if (!ctx.team || !canLaunch(ctx.team.role)) return fail(await msg("Seuls le propriétaire et les admins de l'équipe gèrent les automations.", "Only the team's owner and admins manage automations."), 403);
-  const teamId = ctx.team.id;
+  if (!ctx) return Response.redirect(new URL(`/connexion?next=${PAGE}`, req.url), 303);
   const form = await req.formData();
+  const back = String(form.get("back") ?? "");
+  if (!ctx.team || !canLaunch(ctx.team.role)) return go(req, "err=role", back);
+  const teamId = ctx.team.id;
   const action = form.get("action");
   const id = Number(form.get("id"));
-  const state = String(form.get("state") ?? "notify");
-  const settings = state === "off" ? { enabled: false } : { enabled: true, mode: state === "audit" ? "audit" : "notify" };
+  const ok = (code: string) => go(req, `ok=${code}`, back);
+  const err = (code: string) => go(req, `err=${code}`, back);
   try {
     if (action === "add") {
-      const urls = String(form.get("urls") ?? "").split(/[\s,]+/).filter(Boolean).map((u) => normalizeUrl(u).url);
-      if (!urls.length) return fail(await msg("Indique au moins une URL.", "Enter at least one URL."));
+      let urls: string[];
+      try {
+        urls = [...new Set(String(form.get("urls") ?? "").split(/[\s,]+/).filter(Boolean).map((u) => normalizeUrl(u).url))];
+      } catch {
+        return err("url");
+      }
+      if (!urls.length) return err("url");
       const { count } = await db.from("automations").select("id", { count: "exact", head: true }).eq("team_id", teamId);
-      if ((count ?? 0) + urls.length > MAX_PER_TEAM) return fail(await msg(`${MAX_PER_TEAM} pages suivies au maximum par équipe.`, `${MAX_PER_TEAM} tracked pages at most per team.`));
+      if ((count ?? 0) + urls.length > MAX_PER_TEAM) return err("max");
       const { error } = await db
         .from("automations")
-        .upsert(urls.map((url) => ({ team_id: teamId, url, created_by: ctx.user.id, monthly: form.get("monthly") === "1", ...settings })), { onConflict: "team_id,url", ignoreDuplicates: true });
+        .upsert(urls.map((url) => ({ team_id: teamId, url, created_by: ctx.user.id, enabled: true, mode: "notify", monthly: false })), { onConflict: "team_id,url", ignoreDuplicates: true });
       if (error) throw error;
-    } else if (action === "state") {
-      await db.from("automations").update(settings).eq("id", id).eq("team_id", teamId);
-    } else if (action === "monthly") {
+      return ok("added");
+    }
+    if (action === "state") {
+      const state = String(form.get("state") ?? "");
+      const patch = state === "off" ? { enabled: false } : state === "on" ? { enabled: true } : state === "audit" || state === "notify" ? { mode: state } : null;
+      if (!patch) return err("value");
+      await db.from("automations").update(patch).eq("id", id).eq("team_id", teamId);
+      return ok(state === "off" ? "paused" : state === "on" ? "resumed" : "saved");
+    }
+    if (action === "monthly") {
       await db.from("automations").update({ monthly: form.get("monthly") === "1" }).eq("id", id).eq("team_id", teamId);
-    } else if (action === "interval") {
+      return ok("saved");
+    }
+    if (action === "interval") {
       const hours = Number(form.get("interval"));
-      if (INTERVALS.includes(hours)) await db.from("automations").update({ interval_hours: hours }).eq("id", id).eq("team_id", teamId);
-    } else if (action === "alerts") {
-      // Team alerts: webhook (Slack, Discord, n8n…) and the score drop that triggers an alert. Empty URL = no webhook.
+      if (!INTERVALS.includes(hours)) return err("value");
+      await db.from("automations").update({ interval_hours: hours }).eq("id", id).eq("team_id", teamId);
+      return ok("saved");
+    }
+    if (action === "alerts") {
+      // Team webhook (Slack, Discord, n8n…). Empty URL = no webhook. "test" sends a test message after saving.
       const url = String(form.get("webhook_url") ?? "").trim();
-      if (url && !webhookOk(url)) return fail(await msg("L'URL du webhook doit commencer par https:// et viser un nom de domaine.", "The webhook URL must start with https:// and point to a domain name."));
+      if (url && !webhookOk(url)) return err("webhook");
       const drop = Number(form.get("score_drop"));
       await db.from("teams").update({ webhook_url: url || null, ...(SCORE_DROPS.includes(drop) ? { score_drop: drop } : {}) }).eq("id", teamId);
       if (url && form.get("test") === "1") {
-        const ok = await postWebhook(url, { event: "test", domain: "agentproof", text: "message de test : les alertes arriveront ici.", link: "" }).catch(() => false);
-        if (!ok) return fail(await msg("Webhook enregistré, mais le message de test a été refusé. Vérifie l'URL.", "Webhook saved, but the test message was refused. Check the URL."));
+        const sent = await postWebhook(url, { event: "test", domain: "agentproof", text: "message de test : les alertes arriveront ici.", link: "" }).catch(() => false);
+        return sent ? ok("tested") : err("test");
       }
-    } else if (action === "site_cap") {
+      return ok(url ? "saved" : "webhook_off");
+    }
+    if (action === "score_drop") {
+      const drop = Number(form.get("score_drop"));
+      if (!SCORE_DROPS.includes(drop)) return err("value");
+      await db.from("teams").update({ score_drop: drop }).eq("id", teamId);
+      return ok("saved");
+    }
+    if (action === "site_cap") {
       // Monthly credit cap per site for automatic audits. Empty = no cap.
       const raw = String(form.get("site_credit_cap") ?? "").trim();
       const cap = raw === "" ? null : Number(raw);
-      if (cap !== null && (!Number.isInteger(cap) || cap < 1 || cap > 10000)) return fail(await msg("Le plafond est un nombre entier de crédits, de 1 à 10 000, ou vide pour aucun plafond.", "The cap is a whole number of credits, 1 to 10,000, or empty for no cap."));
+      if (cap !== null && (!Number.isInteger(cap) || cap < 1 || cap > 10000)) return err("cap");
       const { error } = await db.from("teams").update({ site_credit_cap: cap }).eq("id", teamId);
       if (error) throw error;
-      return go(req, "abonnement");
-    } else if (action === "delete") {
-      await db.from("automations").delete().eq("id", id).eq("team_id", teamId);
-    } else if (action === "check") {
-      const { data: a } = await db.from("automations").select("id, team_id, url, mode, signature, created_by, last_auto_audit_at, users:created_by(email)").eq("id", id).eq("team_id", teamId).single();
-      if (a) {
-        await db.from("automations").update({ last_checked_at: new Date().toISOString() }).eq("id", id);
-        await checkAutomation(a as any);
-      }
+      return ok("saved");
     }
+    if (action === "delete") {
+      await db.from("automations").delete().eq("id", id).eq("team_id", teamId);
+      return ok("removed");
+    }
+    if (action === "check") {
+      const { data: a } = await db.from("automations").select("id, team_id, url, mode, signature, created_by, last_auto_audit_at, users:created_by(email)").eq("id", id).eq("team_id", teamId).single();
+      if (!a) return err("value");
+      await db.from("automations").update({ last_checked_at: new Date().toISOString() }).eq("id", id);
+      const result = await checkAutomation(a as any);
+      return result === "error" ? err("check") : ok("checked");
+    }
+    return err("value");
   } catch (e) {
-    return fail(`${await msg("Erreur", "Error")} : ${(e as Error).message}`);
+    console.error("automations", action, e);
+    return err("server");
   }
-  return go(req);
 }

@@ -386,10 +386,10 @@ export const FAQ: Faq[] = [
     cat: "credits",
     q: { fr: "Puis-je limiter les crédits dépensés sur un site ?", en: "Can I limit the credits spent on one site?" },
     a: {
-      fr: "Oui : fixe un plafond de crédits par site et par mois dans Abonnement et crédits. Au-delà, les audits automatiques sur ce site s'arrêtent jusqu'au 1er du mois ; un audit lancé à la main passe toujours.",
-      en: "Yes: set a monthly credit cap per site in Plan and credits. Past it, automatic audits on that site stop until the 1st of the month; an audit launched by hand always goes through.",
+      fr: "Oui : fixe un plafond de crédits par site et par mois dans Réglages › Automations, carte Plafond de crédits. Au-delà, les audits automatiques sur ce site s'arrêtent jusqu'au 1er du mois ; un audit lancé à la main passe toujours.",
+      en: "Yes: set a monthly credit cap per site in Settings › Automations, Credit cap card. Past it, automatic audits on that site stop until the 1st of the month; an audit launched by hand always goes through.",
     },
-    link: { href: "/espace/reglages/abonnement", fr: "Abonnement et crédits", en: "Plan and credits" },
+    link: { href: "/espace/reglages/automations#plafond", fr: "Plafond de crédits", en: "Credit cap" },
     keys: "plafond limite budget maximum site credits depense automatique cap limit budget spending",
   },
   {
@@ -431,8 +431,8 @@ export const FAQ: Faq[] = [
     cat: "automations",
     q: { fr: "À quelle fréquence mes pages sont-elles vérifiées ?", en: "How often are my pages checked?" },
     a: {
-      fr: "Une fois par jour par défaut, réglable : toutes les heures, toutes les 6 h ou une fois par semaine. Les vérifications sont gratuites ; seul un audit relancé utilise des crédits, au plus un par page et par jour.",
-      en: "Once a day by default, adjustable: every hour, every 6 h or once a week. Checks are free; only a rerun audit uses credits, one per page and per day at most.",
+      fr: "Chaque jour par défaut, réglable page par page : toutes les heures, toutes les 6 h ou chaque semaine. Les vérifications sont gratuites ; seul un audit automatique utilise des crédits (5 par audit), au plus un par page et par jour.",
+      en: "Every day by default, adjustable per page: every hour, every 6 h or every week. Checks are free; only an automatic audit uses credits (5 per audit), one per page and per day at most.",
     },
     keys: "frequence heure jour semaine intervalle quotidien hebdomadaire frequency hourly daily weekly interval",
   },
@@ -441,8 +441,8 @@ export const FAQ: Faq[] = [
     cat: "automations",
     q: { fr: "Comment recevoir les alertes sur Slack ?", en: "How do I get alerts on Slack?" },
     a: {
-      fr: "Dans Automations, clique sur « Connecter Slack » et choisis le canal : un message de test part aussitôt. Discord, n8n, Make ou Zapier : colle une URL de webhook entrant.",
-      en: "In Automations, click “Connect Slack” and pick the channel: a test message goes out right away. Discord, n8n, Make or Zapier: paste an incoming webhook URL.",
+      fr: "Dans Réglages › Automations, carte Alertes, clique sur « Connecter » à côté de Slack et choisis le canal : un message de test part aussitôt. Discord, n8n, Make ou Zapier : colle une URL dans le champ Webhook, puis « Tester ».",
+      en: "In Settings › Automations, Alerts card, click “Connect” next to Slack and pick the channel: a test message goes out right away. Discord, n8n, Make or Zapier: paste a URL in the Webhook field, then “Test”.",
     },
     link: { href: "/espace/reglages/automations", fr: "Automations", en: "Automations" },
     keys: "slack discord teams webhook zapier make n8n notification canal message alertes channel notify",
@@ -463,8 +463,8 @@ export const FAQ: Faq[] = [
     cat: "automations",
     q: { fr: "Suis-je prévenu si mon score baisse ?", en: "Am I alerted if my score drops?" },
     a: {
-      fr: "Oui, avec le suivi mensuel : un audit complet tous les 30 jours, et une alerte par e-mail et sur Slack si le score baisse de plus de 5, 10 ou 20 points, selon ton réglage. L'alerte dit quelles missions ont lâché et quelles pages ont changé entre les deux audits.",
-      en: "Yes, with monthly tracking: a full audit every 30 days, and an e-mail and Slack alert if the score drops by more than 5, 10 or 20 points, as you set it. The alert says which missions broke and which pages changed between the two audits.",
+      fr: "Oui, avec l'audit tous les 30 jours (Automations › Audits automatiques) : un audit complet chaque mois, et une alerte par e-mail et sur Slack si le score baisse de plus de 5, 10 ou 20 points, selon ton réglage. L'alerte dit quelles missions ont lâché et quelles pages ont changé entre les deux audits.",
+      en: "Yes, with the 30-day audit (Automations › Automatic audits): a full audit every month, and an e-mail and Slack alert if the score drops by more than 5, 10 or 20 points, as you set it. The alert says which missions broke and which pages changed between the two audits.",
     },
     keys: "baisse chute regression score alerte seuil mensuel drop fall threshold monthly alert",
   },
