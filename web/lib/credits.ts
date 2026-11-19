@@ -125,3 +125,14 @@ export async function creditAlerts(log: string[] = []) {
     log.push(`credits ${t.id}: alert ${level}%`);
   }
 }
+
+// The month's credits alone, for the sidebar gauge: one light read, no per-site breakdown.
+export async function creditsLeft(teamId: string, now = new Date()) {
+  const { start, end } = period(now);
+  const [{ data: team }, { data }] = await Promise.all([
+    db.from("teams").select("plan").eq("id", teamId).single(),
+    db.from("credit_usage").select("kind").eq("team_id", teamId).gte("created_at", start.toISOString()).limit(5000),
+  ]);
+  const plan = planOf(team?.plan);
+  return { plan, included: PLANS[plan].credits, used: credits((data ?? []) as { kind: Kind }[]), renews: end.toISOString() };
+}

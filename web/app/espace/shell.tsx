@@ -1,10 +1,11 @@
-import { getDict } from "@/lib/lang";
+import { getDict, getLang } from "@/lib/lang";
+import { loadSidebar } from "@/lib/sidebar";
 import Link from "next/link";
 import { Chevron } from "@/lib/ui";
 import { Hint } from "@/lib/hint";
 import { cookies } from "next/headers";
 import { AutoSubmitSelect, Frame, SectionIcon, SettingsTabs } from "./controls";
-import { teamContext } from "@/lib/auth";
+import { canLaunch, teamContext } from "@/lib/auth";
 import { spaceColor } from "@/lib/avatar";
 
 // One frame for every page of the team space: a sidebar on the leading edge, the page beside it.
@@ -22,11 +23,19 @@ export async function SpaceFrame({ children }: { children: React.ReactNode }) {
   const { team, teams } = ctx;
   const t = await getDict();
   // Sidebar folded to icons: a cookie (set by the toggle in controls.tsx), so the first paint has the right width.
-  const collapsed = (await cookies()).get("ap_nav")?.value === "1";
+  const jar = await cookies();
+  const collapsed = jar.get("ap_nav")?.value === "1";
+  // Not awaited: the sidebar's counters, sites and credits stream in with the page (it reads the same space, cached).
+  const side = loadSidebar(team.id).catch(() => null);
+  const reserve = Math.min(3, Math.max(0, Number(jar.get("ap_ns")?.value ?? 1) || 0));
   return (
     <Frame
       t={t.space}
+      lang={await getLang()}
       collapsed={collapsed}
+      side={side}
+      reserve={reserve}
+      launch={canLaunch(team.role)}
       head={
         <div className="flex items-center gap-3 lg:pl-3 lg:group-data-collapsed/frame:pl-0">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[9px] text-[17px] font-semibold text-white lg:group-data-collapsed/frame:mx-1.5" style={{ background: spaceColor(team.id) }} title={team.name} aria-hidden>
