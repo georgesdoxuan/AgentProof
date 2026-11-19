@@ -88,7 +88,7 @@ export async function SpaceShell({
   hint?: React.ReactNode;
   actions?: React.ReactNode;
   narrow?: boolean;
-  /** Child pages only (a site, Favoris, Corbeille): the section they belong to, as a back link above the title. */
+  /** Child pages only (a site, Favoris): the section they belong to, as a back link above the title. */
   parent?: [href: string, label: string];
   children: React.ReactNode;
 }) {

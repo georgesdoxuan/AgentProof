@@ -48,7 +48,7 @@ export function SkSpace({
   intro?: "chips" | "line" | string[];
   /** A sentence-long title (the space's home): three lines on phones, like the real one. */
   long?: boolean;
-  /** Child pages (a site, Favoris, Corbeille): the back link above the title. */
+  /** Child pages (a site, Favoris): the back link above the title. */
   parent?: boolean;
   /** Site page: the site's 48px logo beside the title. */
   logo?: boolean;

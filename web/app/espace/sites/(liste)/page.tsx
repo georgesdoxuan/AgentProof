@@ -5,7 +5,7 @@ import { loadSpace } from "@/lib/space";
 import { getT } from "@/lib/lang";
 import { Empty, Icon, MissionLegend } from "@/lib/ui";
 import { SpaceShell } from "../../shell";
-import { SiteCard, SitesTabs } from "../../parts";
+import { SiteCard } from "../../parts";
 
 export const metadata = { title: "Sites · AgentProof" };
 
@@ -36,7 +36,6 @@ export default async function Sites() {
       }
     >
       <div>
-      <SitesTabs current="all" />
       {sites.length ? (
         <div className="space-y-3">
           {/* A card needs ~20rem for "À corriger" and the ranking line: three columns only when they fit (not at 1280 with the sidebar). */}
@@ -50,7 +49,7 @@ export default async function Sites() {
       ) : (
         <Empty icon="layers" title={t("Aucun site", "No site yet")}>
           {trashedSites.length ? (
-            <Link href="/espace/sites/corbeille" className="text-link hover:underline">
+            <Link href="/espace/reglages/corbeille/sites" className="text-link hover:underline">
               {t(`Corbeille (${trashedSites.length})`, `Trash (${trashedSites.length})`)}
             </Link>
           ) : (

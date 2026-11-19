@@ -10,11 +10,12 @@ import { loadSpace, siteKey, type SpaceAudit } from "@/lib/space";
 import { Chevron, Chip, Chips, DeviceTag, Icon, MissionBar, Spinner, StatusGlyph, scoreTone } from "@/lib/ui";
 import { CloseMenu, ConfirmButton, ReportsLayout } from "../controls";
 import { SpaceShell } from "../shell";
+import { TrashTabs } from "../parts";
 import { SiteLogo } from "../../site-logo";
 
-// Rapports › Tous / Favoris / Corbeille: one list, three scopes. Same rows, actions change with the scope.
+// Rapports › Tous / Favoris, and Réglages › Corbeille › Rapports: one list, three scopes. Same rows, actions change with the scope.
 export type View = "all" | "favorites" | "trash";
-const PATH: Record<View, string> = { all: "/espace/rapports", favorites: "/espace/rapports/favoris", trash: "/espace/rapports/corbeille" };
+const PATH: Record<View, string> = { all: "/espace/rapports", favorites: "/espace/rapports/favoris", trash: "/espace/reglages/corbeille/rapports" };
 const STATUS = ["tous", "en-cours", "termines"] as const;
 
 const dateFmt = (lang: Lang) => (d: string) =>
@@ -167,7 +168,7 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
   const [t, lang] = await Promise.all([getDict(), getLang()]);
   const r = t.reports;
   const date = dateFmt(lang);
-  const [{ audits, trash }, jar] = await Promise.all([loadSpace(team.id), cookies()]);
+  const [{ audits, trash, trashedSites }, jar] = await Promise.all([loadSpace(team.id), cookies()]);
   const bySite = jar.get("ap_rapports_vue")?.value === "site"; // set by ReportsLayout
   const manage = canLaunch(team.role);
 
@@ -197,9 +198,9 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
     view === "trash" && a.deleted_at ? r.trashedOn(date(a.deleted_at)) : date(a.created_at),
   ].filter(Boolean);
   return (
-    <div key={a.id} className="flex items-center border-b border-hairline first:rounded-t-[18px] last:rounded-b-[18px] last:border-0 hover:bg-bg-2/60">
-      <Link href={`/audit/${a.id}`} className="block min-w-0 flex-1">
-        <div className="grid min-h-[68px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 py-3 md:gap-x-5 pl-5 pr-2 md:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_8rem_5.5rem_1rem]">
+    <div key={a.id} className={`flex items-center ${view === "trash" ? "max-sm:flex-wrap" : ""} border-b border-hairline first:rounded-t-[18px] last:rounded-b-[18px] last:border-0 hover:bg-bg-2/60`}>
+      <Link href={`/audit/${a.id}`} className={`block min-w-0 flex-1 ${view === "trash" ? "max-sm:basis-full" : ""}`}>
+        <div className={`grid min-h-[68px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 py-3 md:gap-x-5 pl-5 pr-2 ${view === "trash" ? "md:grid-cols-[minmax(0,1fr)_8rem_5.5rem_1rem]" : "md:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_8rem_5.5rem_1rem]"}`}>
           <span className="flex min-w-0 items-start gap-3">
           {logo && <SiteLogo domain={a.sites?.domain} name={a.sites?.domain} className="mt-0.5" />}
           <span className="min-w-0">
@@ -213,7 +214,7 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
             {a.pay.length > 0 && <PayLine pays={a.pay} lang={lang} />}
           </span>
           </span>
-          <span className="type-small hidden truncate text-ink-2 md:block">{a.users?.email === user.email ? r.you : a.users?.email ?? "—"}</span>
+          {view !== "trash" && <span className="type-small hidden truncate text-ink-2 md:block">{a.users?.email === user.email ? r.you : a.users?.email ?? "—"}</span>}
           <span className="hidden md:block">
             <MissionBar ok={a.s.ok} done={a.s.done} total={a.s.total} size="sm" />
           </span>
@@ -240,7 +241,8 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
         </div>
       </Link>
       {manage ? (
-        <div className="shrink-0 pr-3">
+        // Phones: in the trash, Restore and Delete go under the report so its name and date keep the width.
+        <div className={`shrink-0 pr-3 ${view === "trash" ? "max-sm:flex max-sm:basis-full max-sm:justify-end max-sm:pb-3" : ""}`}>
           <RowActions a={a} view={view} back={back} t={r} />
         </div>
       ) : (
@@ -290,33 +292,41 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
 
   return (
     <SpaceShell
-      title={title}
-      parent={view === "all" ? undefined : [PATH.all, r.title]}
+      title={view === "trash" ? undefined : title}
+      settings={view === "trash"}
+      narrow={view === "trash"}
+      parent={view === "favorites" ? [PATH.all, r.title] : undefined}
       intro={intro}
       hint={view === "trash" ? r.trashIntro : undefined}
-      actions={
-        view === "trash" && manage && trash.some((a) => a.status === "done") ? (
-          <Act action="empty" back={back}>
-            <ConfirmButton message={r.emptyConfirm(trash.filter((a) => a.status === "done").length)} className="btn btn-secondary min-h-9 px-4 text-[14px] text-fail shadow-[inset_0_0_0_1px_currentColor] hover:bg-fail hover:text-white">
-              {r.empty}
-            </ConfirmButton>
-          </Act>
-        ) : undefined
-      }
     >
       <section>
+        {view === "trash" && (
+          <TrashTabs
+            current="rapports"
+            counts={{ sites: trashedSites.length, rapports: trash.length }}
+            action={
+              manage && trash.some((a) => a.status === "done") ? (
+                <Act action="empty" back={back}>
+                  <ConfirmButton message={r.emptyConfirm(trash.filter((a) => a.status === "done").length)} className="btn btn-secondary min-h-9 px-4 text-[14px] text-fail shadow-[inset_0_0_0_1px_currentColor] hover:bg-fail hover:text-white">
+                    {r.empty}
+                  </ConfirmButton>
+                </Act>
+              ) : undefined
+            }
+          />
+        )}
         <ReportsLayout
           initial={bySite}
           toolbar={<>
           <h2 className="sr-only">{r.history}</h2>
           {/* Sub-sections as tabs on narrow screens; the sidebar shows them on wide ones. */}
-          <nav aria-label={r.sectionsLabel} className="inline-flex rounded-[10px] bg-fill p-[3px] lg:hidden">
-            {(["all", "favorites", "trash"] as const).map((v) => (
+          {view !== "trash" && <nav aria-label={r.sectionsLabel} className="inline-flex rounded-[10px] bg-fill p-[3px] lg:hidden">
+            {(["all", "favorites"] as const).map((v) => (
               <Link key={v} href={PATH[v]} aria-current={view === v ? "true" : undefined} className={tab}>
                 {r.sections[v]}
               </Link>
             ))}
-          </nav>
+          </nav>}
           {view !== "trash" && scoped.length > 0 && (
             // Narrow screens: the same filters as two toggle chips beside the sub-section tabs (no second "Tous", which
             // would read as the same control). Tapping the active chip goes back to all.

@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   if (!ctx.team) return Response.redirect(new URL("/espace", req.url), 303);
   const form = await req.formData();
   const back = String(form.get("back") ?? "");
-  const next = new URL(/^\/espace\/sites(\/corbeille)?$/.test(back) ? back : "/espace/sites", req.url);
+  const next = new URL(/^\/espace\/(sites|reglages\/corbeille\/sites)$/.test(back) ? back : "/espace/sites", req.url);
   if (!canLaunch(ctx.team.role)) return fail(await msg("Ton rôle (lecteur) permet de consulter les sites, pas de les modifier.", "Your role (viewer) lets you read sites, not change them."), 403);
 
   const action = String(form.get("action") ?? "") as Action;
@@ -56,7 +56,7 @@ export async function POST(req: Request) {
   if (action === "trash") {
     if (active.length) await db.from("audits").update({ deleted_at: new Date().toISOString() }).in("id", active.map((a) => a.id));
   } else if (action === "restore") {
-    // The batch moved with the site (latest date); reports trashed one by one before stay in Rapports › Corbeille.
+    // The batch moved with the site (latest date); reports trashed one by one before stay in Réglages › Corbeille › Rapports.
     const latest = Math.max(...trashed.map((a) => Date.parse(a.deleted_at!)));
     const batch = trashed.filter((a) => Date.parse(a.deleted_at!) === latest);
     if (batch.length) await db.from("audits").update({ deleted_at: null }).in("id", batch.map((a) => a.id));
