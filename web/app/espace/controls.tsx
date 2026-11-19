@@ -455,3 +455,40 @@ export function KeepScroll() {
   }, []);
   return null;
 }
+
+// Accueil › the recap's period ("Novembre 2026", "7 derniers jours"…), picked from the section title itself.
+// Saved in a cookie (read in (accueil)/page.tsx, PERIOD_COOKIE in lib/month.ts); the server recounts, the tile dims meanwhile.
+const PERIOD_COOKIE = "ap_accueil_periode";
+export function PeriodSection({ id, value, label, options, icon, aside, children }: { id: string; value: string; label: string; options: [string, string][]; icon: React.ReactNode; aside?: React.ReactNode; children: React.ReactNode }) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  return (
+    <section aria-labelledby={id}>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-1">
+        <h2 id={id} className="type-headline flex min-w-0 items-center gap-2.5">
+          {icon}
+          <select
+            defaultValue={value}
+            aria-label={label}
+            className="-my-1 max-w-full cursor-pointer appearance-none truncate rounded-[8px] bg-transparent bg-[length:10px] bg-[right_8px_center] bg-no-repeat py-1 pl-2 -ml-2 pr-7 font-[inherit] text-[length:inherit] text-ink transition-colors hover:bg-fill focus-visible:outline-2 focus-visible:outline-blue"
+            style={popUpChevrons}
+            onChange={(e) => {
+              document.cookie = `${PERIOD_COOKIE}=${e.currentTarget.value}; path=/; max-age=31536000; samesite=lax`;
+              start(() => router.refresh());
+            }}
+          >
+            {options.map(([v, l]) => (
+              <option key={v} value={v}>
+                {l}
+              </option>
+            ))}
+          </select>
+        </h2>
+        {aside}
+      </div>
+      <div aria-busy={pending || undefined} className={`transition-opacity ${pending ? "opacity-60" : ""}`}>
+        {children}
+      </div>
+    </section>
+  );
+}

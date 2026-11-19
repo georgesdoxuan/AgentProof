@@ -88,7 +88,7 @@ export async function MissionLegend({ className = "" }: { className?: string }) 
     <p className={`type-caption flex flex-wrap gap-x-4 gap-y-1 text-ink-2 ${className}`}>
       <span className="inline-flex items-center gap-1.5"><span className={`${dot} bg-pass`} />{t("Mission réussie", "Mission passed")}</span>
       <span className="inline-flex items-center gap-1.5"><span className={`${dot} bg-fail`} />{t("Mission bloquée", "Mission blocked")}</span>
-      <span className="inline-flex items-center gap-1.5"><span className={`${dot} bg-fill`} />{t("Hors score (anti-bot, rupture de stock…) ou pas encore jouée", "Out of score (anti-bot, out of stock…) or not played yet")}</span>
+      <span className="inline-flex items-center gap-1.5"><span className={`${dot} bg-fill`} /><Icon name="shield" className="h-3.5 w-3.5 shrink-0" />{t("Hors score (anti-bot, rupture de stock…)", "Out of score (anti-bot, out of stock…)")}</span>
     </p>
   );
 }

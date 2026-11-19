@@ -6,11 +6,13 @@ import { canLaunch, teamContext } from "@/lib/auth";
 import { dict, tr, type Lang, type T } from "@/lib/i18n";
 import { getDict, getLang } from "@/lib/lang";
 import { loadSpace, priorities, shortDate, type SiteView } from "@/lib/space";
-import { monthRecap } from "@/lib/month";
+import { cookies } from "next/headers";
+import { PERIOD_COOKIE, periodRecap, periods } from "@/lib/month";
 import { loadPace, estimateMinutes, minutesLabel } from "@/lib/estimate";
 import { Chevron, Chip, Chips, DeviceTag, ExPay, Field, Group, Icon, MissionBar, MissionLegend, Row, Note, Spinner, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
 import { AutoRefresh } from "../../audit/[id]/refresh";
 import { SpaceShell } from "../shell";
+import { PeriodSection } from "../controls";
 import { Delta, PriorityCard, sitePath } from "../parts";
 import { SiteLogo } from "../../site-logo";
 
@@ -55,7 +57,21 @@ export default async function Accueil() {
   const lost = open.reduce((n, b) => n + b.missions, 0);
   const last = audits.find((a) => a.status === "done" && a.runs.length);
   const launch = canLaunch(team.role);
-  const month = audits.length ? await monthRecap(team.id, audits, sites) : null;
+  // The recap's period: the current month by default, or the one saved by the title's pop-up.
+  const choices = periods(audits);
+  const saved = (await cookies()).get(PERIOD_COOKIE)?.value;
+  const period = choices.find((p) => p.key === saved) ?? choices[0];
+  const month = audits.length ? await periodRecap(team.id, audits, sites, period.start, period.end) : null;
+  const locale = lang === "en" ? "en-GB" : "fr-FR";
+  const periodName = (p: (typeof choices)[number]) => {
+    if (p.key === "7d") return t("7 derniers jours", "Last 7 days");
+    if (p.key === "30d") return t("30 derniers jours", "Last 30 days");
+    if (p.key === "all") return t("Depuis le début", "All time");
+    const m = p.start.toLocaleDateString(locale, { month: "long", year: "numeric", timeZone: "UTC" });
+    return m.charAt(0).toUpperCase() + m.slice(1);
+  };
+  // "ce mois-ci" only reads right for the current month.
+  const when = period === choices[0] ? t("ce mois-ci", "this month") : t("sur la période", "over this period");
 
   // Facts as chips, like a dashboard's header: count, live work, what is left to fix, freshness.
   const status = audits.length ? (
@@ -164,15 +180,18 @@ export default async function Accueil() {
       )}
 
       {month && (
-        <section aria-labelledby="mois">
-          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-1">
-            <h2 id="mois" className="type-headline">
-              {t("Ce mois-ci", "This month")} · {month.start.toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR", { month: "long", year: "numeric", timeZone: "UTC" })}
-            </h2>
+        <PeriodSection
+          id="mois"
+          value={period.key}
+          label={t("Période", "Period")}
+          options={choices.map((p) => [p.key, periodName(p)])}
+          icon={<Icon name="monthly" className="h-5 w-5 shrink-0 text-ink-2" />}
+          aside={
             <Link href="/espace/automations" className="type-small text-link hover:underline">
               {t("Automations", "Automations")}
             </Link>
-          </div>
+          }
+        >
           <div className="tile p-0!">
             <dl className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6">
               {(
@@ -193,17 +212,17 @@ export default async function Accueil() {
             </dl>
             <p className="type-small px-5 py-4 text-ink-2">
               {month.checks + month.audits === 0
-                ? t("Aucune vérification ce mois-ci : active une automation pour que tes pages soient relues.", "No check this month: turn on an automation so your pages are reread.")
+                ? t(`Aucune vérification ${when} : active une automation pour que tes pages soient relues.`, `No check ${when}: turn on an automation so your pages are reread.`)
                 : month.changes + month.drops === 0
                 ? t(
-                    `Aucune alerte ce mois-ci : aucune page n'a changé, aucun score n'a baissé${month.checks ? ` (${month.checks} vérifications)` : ""}.`,
-                    `No alert this month: no page changed, no score dropped${month.checks ? ` (${month.checks} checks)` : ""}.`,
+                    `Aucune alerte ${when} : aucune page n'a changé, aucun score n'a baissé${month.checks ? ` (${month.checks} vérifications)` : ""}.`,
+                    `No alert ${when}: no page changed, no score dropped${month.checks ? ` (${month.checks} checks)` : ""}.`,
                   )
-                : t(`${month.changes + month.drops} alerte${month.changes + month.drops > 1 ? "s" : ""} ce mois-ci, détail dans Automations et dans les rapports.`, `${month.changes + month.drops} alert${month.changes + month.drops > 1 ? "s" : ""} this month, details in Automations and the reports.`)}
+                : t(`${month.changes + month.drops} alerte${month.changes + month.drops > 1 ? "s" : ""} ${when}, détail dans Automations et dans les rapports.`, `${month.changes + month.drops} alert${month.changes + month.drops > 1 ? "s" : ""} ${when}, details in Automations and the reports.`)}
               {month.open > 0 && t(` ${month.open} blocage${month.open > 1 ? "s" : ""} encore ouvert${month.open > 1 ? "s" : ""}.`, ` ${month.open} blocker${month.open > 1 ? "s" : ""} still open.`)}
             </p>
           </div>
-        </section>
+        </PeriodSection>
       )}
 
       {running.length > 0 && (
@@ -237,7 +256,10 @@ export default async function Accueil() {
       {todo.length > 0 && (
         <section>
           <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-1">
-            <h2 className="type-headline">{t("À corriger en priorité", "Fix first")}</h2>
+            <h2 className="type-headline flex min-w-0 items-center gap-2.5">
+              <Icon name="wrench" className="h-5 w-5 shrink-0 text-ink-2" />
+              {t("À corriger", "To fix")}
+            </h2>
             <Chip icon="trend" className="max-sm:hidden">{t("Par missions perdues", "By missions lost")}</Chip>
           </div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
