@@ -295,7 +295,7 @@ export async function runMonthlyReports(log: string[]) {
     ].join("\n");
     const { data: members } = await db.from("memberships").select("role, users(email)").eq("team_id", team.id).in("role", ["owner", "admin"]);
     let sent = 0;
-    for (const m of (members ?? []) as any[]) if (m.users?.email && (await sendAlert(m.users.email, `AgentProof : ton bilan de ${month}`, text, link).catch(() => false))) sent++;
+    for (const m of (members ?? []) as any[]) if (m.users?.email && (await sendAlert(m.users.email, `AgentProof : ton bilan de ${month}`, text, link, "digest").catch(() => false))) sent++;
     await notifyTeam(team.id, { event: "monthly_report", domain: team.name, text: `bilan de ${month} : ${r.audits} audits, ${r.checks} vérifications, ${alerts} alertes, ${r.proven} corrections prouvées.`, link }).catch(() => false);
     log.push(`monthly report ${team.id}: ${sent} e-mails`);
   }

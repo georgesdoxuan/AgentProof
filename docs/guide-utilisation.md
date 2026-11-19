@@ -145,7 +145,7 @@ Si le site a déjà été audité il y a moins de 7 jours, AgentProof vous ouvre
 - Le bouton **« Suivre l'agent »** permet de regarder l'agent en direct.
 - Avec un concurrent ou en Ordinateur + Mobile, comptez environ le double du temps.
 - Chaque mission ratée est **rejouée une fois** avant la fin de l'audit, pour écarter un échec dû au hasard. C'est le second essai qui compte.
-- Quand l'audit est terminé, **un e-mail part** avec le lien du rapport.
+- Quand l'audit est terminé, **un e-mail part** avec le lien du rapport (sauf si vous avez coupé « Rapport prêt » dans Automations).
 - Vous pouvez **annuler l'audit** depuis le rapport (lien « Annuler l'audit » sous la progression, propriétaire, admins et éditeurs). Les missions pas encore lancées sont retirées et leurs crédits rendus ; celles que l'agent joue déjà se terminent et restent dans le rapport.
 
 ## 7. Lire le rapport
@@ -248,7 +248,7 @@ Pour chaque page, deux interrupteurs :
 
 ### Alertes
 
-- **E-mail** : toujours actif. Chaque e-mail d'alerte contient un lien de désinscription en un clic.
+- **Mes e-mails** : chacun choisit les siens. Un interrupteur par type (**Alertes** : page modifiée, baisse de score, crédits ; **Rapport prêt** : fin d'un audit ; **Bilan mensuel**), et un interrupteur général pour tout couper. Chaque e-mail d'alerte contient aussi un lien de désinscription en un clic. Les **liens de connexion et les invitations partent toujours**. Couper un e-mail n'arrête ni les audits ni les notifications dans l'app, Slack ou le webhook.
 - **Slack** : cliquez sur « Connecter », choisissez le canal, un message de test part aussitôt.
 - **Webhook** (Discord, n8n, Make, Zapier) : collez l'URL, puis **Enregistrer** ou **Tester**.
 - **Alerte si le score baisse de** 5, 10 ou 20 points par rapport à l'audit précédent. L'alerte, et le rapport, disent **pourquoi** : les missions qui passaient et bloquent maintenant, avec leur blocage, et les changements de page vus par les automations entre les deux audits.
@@ -401,8 +401,8 @@ En lançant un audit, vous confirmez gérer le site ou être autorisé à le tes
 **Que se passe-t-il quand je n'ai plus de crédits ?**
 Pendant l'essai, rien n'est bloqué ni facturé. Les crédits repartent le 1er du mois.
 
-**Comment ne plus recevoir les e-mails d'alerte ?**
-Cliquez sur le lien de désinscription en bas de l'e-mail. Les liens de connexion et les rapports demandés continuent d'arriver.
+**Comment ne plus recevoir les e-mails ?**
+Dans **Automations**, carte **Alertes**, coupez le type voulu (alertes, rapport prêt, bilan mensuel) ou tout d'un coup. Le lien de désinscription en bas d'un e-mail d'alerte marche aussi. Les liens de connexion et les invitations partent toujours.
 
 **Où trouver de l'aide ?**
 La page **Aide et questions fréquentes** (menu du haut) a une recherche qui comprend les fautes de frappe, en français et en anglais. Pour une question sur un rapport, écrivez à l'équipe en joignant son lien.

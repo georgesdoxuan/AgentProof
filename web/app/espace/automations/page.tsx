@@ -5,6 +5,7 @@ import { canLaunch, teamContext } from "@/lib/auth";
 import { AUTO_AUDIT_MISSIONS, listAutomations } from "@/lib/automations";
 import { RATES } from "@/lib/credits";
 import { db } from "@/lib/engine";
+import { mailPrefs } from "@/lib/optout";
 import { Chip, Chips, Empty, Icon, Note, Row, StatusGlyph, type Tone } from "@/lib/ui";
 import { AutoSubmitSelect, ConfirmButton, CopyField, Flash, KeepScroll } from "../controls";
 import { SpaceShell } from "../shell";
@@ -116,11 +117,12 @@ export default async function Automations({ searchParams }: { searchParams: Prom
   if (!ctx) redirect("/connexion?next=/espace/automations");
   if (!ctx.team) redirect("/espace");
   const { team } = ctx;
-  const [items, { data: settings }, lang, sp] = await Promise.all([
+  const [items, { data: settings }, lang, sp, mail] = await Promise.all([
     listAutomations(team.id),
     db.from("teams").select("webhook_url, hook_token, score_drop, site_credit_cap").eq("id", team.id).single(),
     getLang(),
     searchParams,
+    mailPrefs(ctx.user.email).catch(() => ({ all: true, alerts: true, report: true, digest: true })),
   ]);
   const admin = canLaunch(team.role);
   const t = tr(lang);
@@ -179,7 +181,10 @@ export default async function Automations({ searchParams }: { searchParams: Prom
                 ? t(`${active} page${active > 1 ? "s" : ""} surveillée${active > 1 ? "s" : ""} sur ${items.length}`, `${active} of ${items.length} page${items.length > 1 ? "s" : ""} monitored`)
                 : t("Aucune page surveillée", "No page monitored")}
             </Chip>
-            <Chip icon="mail">{onSlack ? t("Alertes : e-mail et Slack", "Alerts: e-mail and Slack") : settings?.webhook_url ? t("Alertes : e-mail et webhook", "Alerts: e-mail and webhook") : t("Alertes : e-mail", "Alerts: e-mail")}</Chip>
+            <Chip icon="mail">
+              {t("Alertes : ", "Alerts: ")}
+              {[mail.all && mail.alerts && "e-mail", onSlack ? "Slack" : settings?.webhook_url ? "webhook" : null].filter(Boolean).join(t(" et ", " and ")) || t("dans l'app", "in the app")}
+            </Chip>
             <Chip icon="credit">{t("Vérifications gratuites", "Checks are free")}</Chip>
           </Chips>
         </div>
@@ -390,15 +395,46 @@ export default async function Automations({ searchParams }: { searchParams: Prom
 
       {/* ---------- 3. Alerts ---------- */}
       <Card id="alertes" icon="mail" title={t("Alertes", "Alerts")}>
+        {/* Own e-mails: each member turns their own off. Sign-in and invitation e-mails are not listed: they always go out. */}
         <Row>
           <span className="flex min-w-0 flex-1 items-center gap-3">
             <Icon name="mail" className="h-5 w-5 text-ink-2" />
             <span className="grid min-w-0">
-              <span>{t("E-mail", "E-mail")}</span>
-              <span className="type-small text-ink-2">{t("Page modifiée, baisse de score, crédits", "Page changed, score drop, credits")}</span>
+              <span>{t("Mes e-mails", "My e-mails")}</span>
+              <span className="type-small text-ink-2">{ctx.user.email}</span>
             </span>
           </span>
-          <Chip tone="pass">{t("Toujours actif", "Always on")}</Chip>
+          <Chip tone={mail.all ? "pass" : "plain"} className="max-sm:hidden">{mail.all ? t("Activés", "On") : t("Tout désactivé", "All off")}</Chip>
+          <Switch
+            on={mail.all}
+            label={mail.all ? t("Tout désactiver", "Turn all off") : t("Tout réactiver", "Turn all back on")}
+            fields={{ action: "mail", kind: "all", on: mail.all ? "0" : "1" }}
+          />
+        </Row>
+        {(
+          [
+            ["alerts", t("Alertes", "Alerts"), t("Page modifiée, baisse de score, crédits", "Page changed, score drop, credits")],
+            ["report", t("Rapport prêt", "Report ready"), t("À la fin de chaque audit", "When each audit finishes")],
+            ["digest", t("Bilan mensuel", "Monthly summary"), t("Le 1er du mois, propriétaire et admins", "On the 1st, owner and admins")],
+          ] as const
+        ).map(([kind, name, sub]) => (
+          <Row key={kind} className="sm:pl-[52px]">
+            <span className="grid min-w-0 flex-1">
+              <span>{name}</span>
+              <span className="type-small text-ink-2">{sub}</span>
+            </span>
+            <Switch
+              on={mail.all && mail[kind]}
+              disabled={!mail.all}
+              label={t(`E-mails : ${name}`, `E-mails: ${name}`)}
+              fields={{ action: "mail", kind, on: mail[kind] ? "0" : "1" }}
+            />
+          </Row>
+        ))}
+        <Row className="min-h-0 py-3">
+          <Note icon="key" className="w-full">
+            {t("Liens de connexion et invitations : toujours envoyés.", "Sign-in links and invitations: always sent.")}
+          </Note>
         </Row>
         {process.env.SLACK_CLIENT_ID && (
           <Row>

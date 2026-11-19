@@ -1,5 +1,6 @@
 import "server-only";
 import { db, deleteSiteLogin } from "./engine";
+import { mailKeys } from "./optout";
 
 // RGPD art. 15, 17 and 20: a signed-in user downloads or erases their own data, from the Account page.
 
@@ -53,7 +54,7 @@ export async function deleteAccount(user: { id: string; email: string }) {
   await db.from("invitations").delete().eq("email", user.email);
   await db.from("login_tokens").delete().eq("email", user.email);
   await db.from("audits").update({ email: null }).eq("email", user.email);
-  await db.from("email_optouts").delete().eq("email", user.email).then(() => null, () => null);
+  await db.from("email_optouts").delete().in("email", mailKeys(user.email)).then(() => null, () => null);
   // memberships cascade; audits.created_by, automations.created_by and fixes.fixed_by become null.
   const { error } = await db.from("users").delete().eq("id", user.id);
   if (error) throw new Error(error.message);
