@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Dict, Lang } from "@/lib/i18n";
 import type { SideData } from "@/lib/sidebar";
 import { LaunchButton, NavBadge, RecentSites, SideFooter, SideProvider } from "./side";
@@ -353,5 +353,37 @@ export function SitesByExt({ initial, chips, cards }: { initial: string; chips: 
         ))}
       </div>
     </>
+  );
+}
+
+// Result of a settings form, after the server redirect (?ok=… or ?err=…): a toast at the bottom of the window,
+// so nothing in the page moves. "Saved" fades after 4 s; an error stays until closed. The code leaves the URL
+// at once, so a reload does not show it again.
+export function Flash({ tone, text, close }: { tone: "ok" | "err"; text: string; close: string }) {
+  const [open, setOpen] = useState(true);
+  useEffect(() => {
+    const u = new URL(window.location.href);
+    u.searchParams.delete("ok");
+    u.searchParams.delete("err");
+    u.searchParams.delete("slack");
+    window.history.replaceState(window.history.state, "", u.pathname + u.search + u.hash);
+    if (tone === "ok") {
+      const t = setTimeout(() => setOpen(false), 4000);
+      return () => clearTimeout(t);
+    }
+  }, [tone]);
+  if (!open) return null;
+  return (
+    <div className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex justify-center px-4" role={tone === "err" ? "alert" : "status"}>
+      <div className="ap-toast pointer-events-auto flex max-w-[520px] items-center gap-3 rounded-[14px] bg-[#1d1d1f] py-2.5 pl-4 pr-2 text-[15px] text-white shadow-[0_8px_30px_rgb(0_0_0/0.25)] dark:bg-[#3a3a3c]">
+        <svg viewBox="0 0 24 24" className={`h-5 w-5 shrink-0 ${tone === "ok" ? "text-[#30d158]" : "text-[#ff6961]"}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          {tone === "ok" ? <path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM8 12.5l2.8 2.8L16 10" /> : <path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7.5v5.5M12 16.3v.1" />}
+        </svg>
+        <span className="min-w-0 flex-1">{text}</span>
+        <button type="button" onClick={() => setOpen(false)} aria-label={close} className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-white/70 hover:bg-white/10 hover:text-white">
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="M6 6l12 12M18 6 6 18" /></svg>
+        </button>
+      </div>
+    </div>
   );
 }

@@ -17,6 +17,7 @@ export const INTERVALS = [1, 6, 24, 168]; // hours between two checks of a page
 export const SCORE_DROPS = [5, 10, 20]; // score drop (points) that triggers an alert
 const CHECK_ROOM = 40_000; // one page check: rendered read (≤ 25 s) + static check (≤ 12 s)
 const MISSIONS = Number(process.env.FORM_MISSIONS ?? 5);
+export const AUTO_AUDIT_MISSIONS = MISSIONS; // missions (= credits at RATES.automation) of one automatic audit
 
 const ENTITIES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", eacute: "é", egrave: "è", agrave: "à", ccedil: "ç", ecirc: "ê", times: "×" };
 const decode = (s: string) =>
@@ -549,7 +550,7 @@ export async function runStaticChecks(log: string[]) {
 export async function listAutomations(teamId: string) {
   const { data } = await db
     .from("automations")
-    .select("id, url, enabled, mode, monthly, interval_hours, last_audit_at, last_checked_at, automation_checks(id, checked_at, status, detail, audit_id)")
+    .select("id, url, enabled, mode, monthly, interval_hours, last_audit_at, last_auto_audit_at, last_checked_at, automation_checks(id, checked_at, status, detail, audit_id)")
     .eq("team_id", teamId)
     .order("created_at")
     .order("checked_at", { referencedTable: "automation_checks", ascending: false })
