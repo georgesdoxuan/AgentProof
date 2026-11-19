@@ -1,6 +1,7 @@
 import { PAY_REACHED_BANK, paymentVerdicts } from "@/lib/engine";
 import { tr, type Lang } from "@/lib/i18n";
 import { Chevron, Chip, Chips, StatusGlyph } from "@/lib/ui";
+import { ClampText } from "@/lib/clamp";
 
 // The result of a real payment test, readable at a glance: one verdict, one line on what it means for the merchant,
 // the tunnel as a row of steps (cart → delivery → card → bank → order), then the technical details folded away.
@@ -180,7 +181,9 @@ export function PaymentResult({ pay, lang }: { pay: any; lang: Lang }) {
             {a.steps_summary && (
               <div>
                 <dt className="font-semibold text-ink">{t("Compte rendu de l’agent", "The agent's report")}</dt>
-                <dd className="mt-0.5">{a.steps_summary}</dd>
+                <dd className="mt-0.5">
+                  <ClampText lang={lang} lines={6}>{a.steps_summary}</ClampText>
+                </dd>
               </div>
             )}
           </dl>

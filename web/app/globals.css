@@ -605,3 +605,42 @@ form:has(input[name="mode"][value="payment"]:checked) .ap-not-pay { display: non
   .ap-tip { display: none; }
 }
 }
+
+/* ClampText (lib/clamp.tsx): the agent's text stops at the height of the screenshot beside it, « Voir plus » unfolds it. */
+.ap-clamp {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.ap-clamp[data-clamp="closed"] > .ap-clamp-text {
+  max-height: calc(var(--clamp-lines) * 1lh);
+  overflow: hidden;
+}
+.ap-clamp-text[data-cut] {
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 2.5lh), transparent);
+}
+@media (min-width: 48rem) {
+  /* The card takes the screenshot's height (grid row) instead of its own: the text fills what its header leaves. */
+  .ap-clamp-bound:has(.ap-clamp-fill[data-clamp="closed"]) {
+    contain: size;
+    align-self: stretch;
+  }
+  .ap-clamp-fill {
+    flex: 1 1 0;
+  }
+  .ap-clamp-fill[data-clamp="closed"] > .ap-clamp-text {
+    max-height: none;
+    flex: 0 1 auto;
+    min-height: 0;
+  }
+}
+@media print {
+  .ap-clamp[data-clamp] > .ap-clamp-text {
+    max-height: none;
+    overflow: visible;
+    mask-image: none;
+  }
+  .ap-clamp > button {
+    display: none;
+  }
+}

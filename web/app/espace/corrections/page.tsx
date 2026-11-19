@@ -8,6 +8,7 @@ import { getLang } from "@/lib/lang";
 import { deviceLabel, shortDate } from "@/lib/space";
 import { BlockerIcon, BrowserFrame, Chevron, Chip, Chips, DeviceTag, Empty, Icon } from "@/lib/ui";
 import { CopyButton } from "../controls";
+import { ClampText } from "@/lib/clamp";
 import { SpaceShell } from "../shell";
 import { sitePath } from "../parts";
 import { SiteLogo } from "../../site-logo";
@@ -270,7 +271,9 @@ function Item({ m, t, lang, edit, base }: { m: Correction; t: T; lang: "fr" | "e
           {m.run?.detail && (
             <div>
               <h4 className="type-caption font-semibold uppercase tracking-wide text-ink-2">{t("Constat de l’agent", "The agent's finding")}</h4>
-              <p className="type-small mt-1.5 text-ink-2">« {m.run.detail} »</p>
+              <ClampText lang={lang} lines={5} className="type-small mt-1.5 text-ink-2">
+                <p>« {m.run.detail} »</p>
+              </ClampText>
             </div>
           )}
 
