@@ -45,6 +45,16 @@ export default async function Connexion({ searchParams }: { searchParams: Promis
               {t("Lien envoyé à", "Link sent to")} <span className="text-ink">{sp.envoye}</span>
             </p>
             <Chip icon="clock">{t("Valable 15 min", "Valid for 15 min")}</Chip>
+            {/* Not received: the usual causes, then a new link to the same address, same destination. */}
+            <p className="type-small mt-4 max-w-[400px] text-ink-2">
+              {t(
+                "Pas reçu au bout de deux minutes ? Regarde dans les spams ou l’onglet Promotions, puis vérifie l’adresse.",
+                "Nothing after two minutes? Check spam or the Promotions tab, then check the address.",
+              )}
+            </p>
+            <Link href={`/connexion?${new URLSearchParams({ email: sp.envoye, next })}`} className="type-small text-link hover:underline">
+              {t("Demander un nouveau lien", "Ask for a new link")}
+            </Link>
           </div>
         ) : (
           <form action="/api/auth" method="post" className="mt-10 grid gap-4">

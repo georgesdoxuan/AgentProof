@@ -18,4 +18,4 @@ Les identités et rôles sont exacts et validés. Les marques du classement ne s
 2026-11-19 — Proposition validée par Mehdi après comparaison des pages publiques Apple et AgentProof. Reprendre des principes de clarté du parcours, pas copier le site Apple. Effort estimé : une à deux heures pour la présentation de l’équipe ; collecte de témoignages hors délai garanti. Aucune prise de contact ni publication de données personnelles supplémentaires n’est autorisée par ce retour. Utiliser les informations déjà destinées à être publiques.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait en partie. Section « Qui fait AgentProof » sur l'accueil : projet né au hackathon H Company × Hugging Face d'Eugenia School (novembre 2026), équipe de cinq étudiants et les domaines qu'elle couvre, responsable de la publication et contact (déjà publics dans les mentions légales). Écrit noir sur blanc : pas encore de client ni de partenaire, les marques du classement sont des sites audités sur leurs pages publiques. Prénoms et rôles non publiés : il faut l'accord de chacun (Thomas, Alexandre, Mehdi, Adonaï). Aucun témoignage : aucun pilote validé. PR #68.

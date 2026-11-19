@@ -2,25 +2,71 @@
 import Link from "next/link";
 import { accountColor } from "@/lib/avatar";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { LANG_NAME, type Dict, type Lang } from "@/lib/i18n";
+import { useEffect, useRef, useState } from "react";
+import { LANGS, LANG_NAME, type Dict, type Lang } from "@/lib/i18n";
 
 const link =
   "inline-flex h-11 items-center whitespace-nowrap px-2 max-[360px]:px-1 text-ink/80 transition-colors hover:text-ink aria-[current=page]:text-ink-2";
 const item = "flex min-h-9 w-full items-center rounded-[8px] px-3 text-left type-small text-ink transition-colors hover:bg-fill";
 
-// Footer language switch, on every page: a visitor of the public pages has no account page to change it from.
-export function LangSwitch({ lang }: { lang: Lang }) {
+const GLOBE = "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3.5 9h17M3.5 15h17M12 3c-2.4 2.5-3.6 5.5-3.6 9s1.2 6.5 3.6 9c2.4-2.5 3.6-5.5 3.6-9S14.4 5.5 12 3z";
+
+// Header language picker for visitors (signed in, the account page has it): a globe and the current code, opening a
+// two-line menu. Fixed width, so switching never shifts the header. Each language names itself.
+export function LangMenu({ lang, label }: { lang: Lang; label: string }) {
   const path = usePathname();
-  const other: Lang = lang === "fr" ? "en" : "fr";
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const out = (e: PointerEvent) => !ref.current?.contains(e.target as Node) && setOpen(false);
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("pointerdown", out);
+    document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("pointerdown", out); document.removeEventListener("keydown", esc); };
+  }, [open]);
   return (
-    <form action="/api/lang" method="post" className="inline">
-      <input type="hidden" name="lang" value={other} />
-      <input type="hidden" name="next" value={path} />
-      <button lang={other} className="hover:text-ink hover:underline">
-        {LANG_NAME[other]}
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-haspopup="true"
+        aria-label={`${label} : ${LANG_NAME[lang]}`}
+        title={label}
+        onClick={() => setOpen((o) => !o)}
+        className="inline-flex h-11 items-center gap-1 px-1.5 max-[400px]:px-1 text-ink/80 transition-colors hover:text-ink aria-expanded:text-ink"
+      >
+        <svg viewBox="0 0 24 24" className="h-[19px] w-[19px]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d={GLOBE} />
+        </svg>
+        <span className="w-[2.1ch] text-left uppercase tabular-nums max-[400px]:hidden" aria-hidden>{lang}</span>
       </button>
-    </form>
+      {open && (
+        <form action="/api/lang" method="post" className="absolute right-0 top-[46px] z-50 w-44 rounded-[12px] bg-tile p-1.5 text-ink shadow-[0_12px_40px_-12px_rgb(0_0_0/0.35)] ring-1 ring-hairline">
+          <input type="hidden" name="next" value={path} />
+          {LANGS.map((l) => (
+            <button key={l} name="lang" value={l} lang={l} aria-current={l === lang ? "true" : undefined} className={`${item} justify-between`}>
+              {LANG_NAME[l]}
+              {l === lang && (
+                <svg viewBox="0 0 20 20" className="h-4 w-4 text-blue" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M5 10.5l3.2 3.2L15 7" />
+                </svg>
+              )}
+            </button>
+          ))}
+        </form>
+      )}
+    </div>
+  );
+}
+
+// Home page only: the source of the "63 %" figure (note 1), in the footer's fine print rather than a band of its own.
+export function FooterNote({ text }: { text: string }) {
+  if (usePathname() !== "/") return null;
+  return (
+    <p id="note-1" className="scroll-mt-20">
+      <span className="tabular-nums">1.</span> {text}
+    </p>
   );
 }
 
@@ -91,7 +137,7 @@ function Help({ label, path }: { label: string; path: string }) {
 
 // apple.com local nav. Signed out: the public pages and one blue pill. Signed in: the space and an account menu,
 // so the app keeps a single primary action ("Lancer un audit") and Classement lives in the space's sidebar.
-export function Nav({ email, t }: { email: string | null; t: Dict["nav"] }) {
+export function Nav({ email, t, lang, langLabel }: { email: string | null; t: Dict["nav"]; lang: Lang; langLabel: string }) {
   const path = usePathname();
   if (!email)
     return (
@@ -100,7 +146,9 @@ export function Nav({ email, t }: { email: string | null; t: Dict["nav"] }) {
         {path !== "/" && <Link href="/classement" aria-current={path === "/classement" ? "page" : undefined} className={link}>
           {t.ranking}
         </Link>}
-        <Help label={t.help} path={path} />
+        <LangMenu lang={lang} label={langLabel} />
+        {/* Phones: no room for the "?" beside the globe on one line; Aide stays in the footer. */}
+        <span className="contents max-[480px]:hidden"><Help label={t.help} path={path} /></span>
         <Link href="/connexion" className={link}>
           {t.signIn}
         </Link>

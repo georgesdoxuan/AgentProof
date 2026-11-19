@@ -521,6 +521,38 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
               </form>
             </details>
           )}
+          {/* Waiting is normal (agents are shared): say why, and that the page can be closed. */}
+          {running && !paymentOnly && runs.some((r: any) => r.status === "todo") && (
+            <p className="type-small mt-3 max-w-[560px] text-ink-2">
+              {t(
+                `${runs.filter((r: any) => r.status === "todo").length} mission(s) en file d’attente : elles démarrent dès qu’un agent se libère. Tu peux fermer cette page, l’audit continue et le rapport reste dans ton espace.`,
+                `${runs.filter((r: any) => r.status === "todo").length} mission(s) queued: they start as soon as an agent is free. You can close this page, the audit carries on and the report stays in your space.`,
+              )}
+            </p>
+          )}
+          {/* Partial result: missions not played because of an error on our side. Never the site's fault: out of the score,
+              and a fresh full pass one click away (force=1 skips the 7-day reuse that would hand this report back). */}
+          {!running && !paymentOnly && s.errors > 0 && audit.kind === "checkout" && !audit.proof_of && (
+            <div role="status" className="mt-6 max-w-[560px]">
+              <Note
+                icon="info"
+                action={
+                  audit.team_id ? (
+                    <Link href={`/espace/nouveau?${new URLSearchParams({ url: audit.sites.domain, device: audit.device, force: "1" })}`} className="text-link hover:underline">
+                      {t("Relancer", "Run again")}
+                    </Link>
+                  ) : undefined
+                }
+              >
+                <span className="font-semibold text-ink">{t("Résultat partiel", "Partial result")}</span>
+                {" · "}
+                {t(
+                  `${s.errors} mission(s) non jouée(s) à cause d’une erreur de notre côté, hors score. Ce n’est pas un défaut de ton site.`,
+                  `${s.errors} mission(s) not played because of an error on our side, out of the score. It is not a flaw of your site.`,
+                )}
+              </Note>
+            </div>
+          )}
         </header>
 
         {/* 1. Verdict: the score, then either the comparison or every mission at a glance. */}

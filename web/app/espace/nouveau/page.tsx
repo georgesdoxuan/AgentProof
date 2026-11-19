@@ -7,6 +7,7 @@ import { COMPARE_MODEL, DEFAULT_MODEL, PAY_MAX_EUR } from "@/lib/engine";
 import { Field, Group, Note, Segmented } from "@/lib/ui";
 import { Hint } from "@/lib/hint";
 import { getLang, getT } from "@/lib/lang";
+import { LEGAL } from "@/lib/legal";
 import { MAX_PER_AUDIT, pickItems, teamMissions } from "@/lib/missions";
 import { loadPace } from "@/lib/estimate";
 import { MissionPicker } from "./missions";
@@ -18,13 +19,27 @@ export async function generateMetadata() {
   return { title: `${t("Lancer un audit", "Run an audit")} · AgentProof` };
 }
 
-export default async function Nouveau({ searchParams }: { searchParams: Promise<{ url?: string; competitor?: string; device?: string }> }) {
+// Why /api/audits sent the form back, and what to do. Codes only: a crafted link cannot put its own text here.
+const REFUSED: Record<string, [string, string]> = {
+  url: ["Cette adresse n'est pas celle d'un site public. Indique le domaine de la boutique, par exemple maboutique.fr.", "This address is not a public site. Enter the store's domain, for example mystore.com."],
+  email: ["L'e-mail du rapport n'est pas valide. Corrige-le, ou laisse le champ vide pour recevoir le rapport à ton adresse de connexion.", "The report e-mail is not valid. Fix it, or leave it empty to get the report at your sign-in address."],
+  combo: ["Ordinateur + Mobile, concurrent et comparaison des agents ne se combinent pas : garde une seule de ces options.", "Desktop + Mobile, competitor and agent comparison do not combine: keep only one of these options."],
+  carte: ["Aucune carte utilisable pour le test de paiement. Ajoute-la dans Paiement, ou lance un audit complet sans paiement.", "No usable card for the payment test. Add one in Payment method, or run a full audit without payment."],
+  confirmation: ["Le test de paiement demande ta confirmation : coche la case « Je confirme un paiement réel » sous la carte, puis relance.", "The payment test needs your confirmation: tick “I confirm a real payment” under the card, then run again."],
+  heure: ["Trop d'audits lancés depuis ta connexion en une heure. Réessaie dans une heure : tes rapports en cours continuent.", "Too many audits started from your connection in one hour. Try again in an hour: your running reports carry on."],
+  file: ["Beaucoup d'audits sont en cours en ce moment. Réessaie dans quelques minutes : rien n'a été lancé ni décompté.", "Many audits are running right now. Try again in a few minutes: nothing was started or counted."],
+  missions: ["La sélection de missions n'est plus valable (une mission a pu être modifiée). Vérifie-la puis relance.", "The mission selection is no longer valid (a mission may have changed). Check it, then run again."],
+  technique: ["L'audit n'a pas pu être créé, à cause d'une erreur de notre côté. Réessaie dans un instant ; si ça recommence, écris-nous.", "The audit could not be created because of an error on our side. Try again in a moment; if it happens again, write to us."],
+};
+
+export default async function Nouveau({ searchParams }: { searchParams: Promise<{ url?: string; competitor?: string; device?: string; email?: string; force?: string; erreur?: string }> }) {
   const ctx = await teamContext();
   if (!ctx) redirect("/connexion?next=/espace/nouveau");
   if (!ctx.team || !canLaunch(ctx.team.role)) redirect("/espace");
   const { user, team } = ctx;
   // Filled in from the home form when the visitor had to sign in first (see /api/audits).
-  const { url, competitor, device } = await searchParams;
+  const { url, competitor, device, email, force, erreur } = await searchParams;
+  const refused = erreur ? REFUSED[erreur] : undefined;
   const [card, credits, missions, lang, pace] = await Promise.all([cardView(team.id), loadCredits(team.id), teamMissions(team.id), getLang(), loadPace()]);
   // Same default as /api/audits: the first FORM_MISSIONS missions (5, or 3 on demo day) come ticked.
   const items = pickItems(missions, lang, Number(process.env.FORM_MISSIONS ?? 5));
@@ -55,10 +70,37 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
           </Note>
         </div>
       )}
+      {refused && (
+        <div role="alert">
+          <Note
+            icon="info"
+            action={
+              erreur === "carte" ? (
+                <Link href="/espace/reglages/paiement" className="text-link hover:underline">{t("Paiement", "Payment method")}</Link>
+              ) : erreur === "technique" ? (
+                <a href={`mailto:${LEGAL.contact}`} className="text-link hover:underline">{t("Nous écrire", "Write to us")}</a>
+              ) : undefined
+            }
+          >
+            <span className="font-semibold text-fail">{t("Audit non lancé", "Audit not started")}</span>
+            {" · "}
+            {t(...refused)}
+          </Note>
+        </div>
+      )}
+      {force === "1" && !refused && (
+        <Note icon="refresh">{t("Nouveau passage complet : le rapport précédent reste dans ton espace.", "New full pass: the previous report stays in your space.")}</Note>
+      )}
       <Group>
         <form action="/api/audits" method="post" className="grid gap-5 p-6 sm:p-8">
+          {/* Kept from "Relancer" on a report: a fresh pass, not the 7-day reuse. */}
+          {force === "1" && <input type="hidden" name="force" value="1" />}
           <Field label={t("Adresse de ton site", "Your site's address")} name="url" required defaultValue={url} />
           <Field label={t("Un concurrent (facultatif)", "A competitor (optional)")} name="competitor" defaultValue={competitor} />
+          {/* A report address carried over from the home form stays editable: a refused one must be fixable here. */}
+          {(email || erreur === "email") && (
+            <Field label={t("E-mail du rapport (vide : ton adresse de connexion)", "Report e-mail (empty: your sign-in address)")} name="email" type="email" defaultValue={email} />
+          )}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Hint tip={t("Mobile : format téléphone simulé (écran 390 × 844), pas un vrai smartphone. Ordinateur + Mobile : les mêmes missions sur les deux, côte à côte dans le rapport, deux fois plus de crédits.", "Mobile: simulated phone format (390 × 844 screen), not a real smartphone. Desktop + Mobile: the same missions on both, side by side in the report, twice the credits.")}>
               <span className="text-ink-2">{t("Appareil", "Device")}</span>

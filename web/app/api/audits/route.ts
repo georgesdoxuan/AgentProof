@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { after } from "next/server";
-import { COMPARE_MODEL, DEFAULT_MODEL, PAY_MAX_EUR, attachEmail, auditsFromIp, createAudit, createPaymentTest, db, normalizeUrl, recentAudit, tick } from "@/lib/engine";
+import { COMPARE_MODEL, DEFAULT_MODEL, attachEmail, auditsFromIp, createAudit, createPaymentTest, db, normalizeUrl, recentAudit, tick } from "@/lib/engine";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { cardSecret } from "@/lib/cards";
 import { refreshLogo } from "@/lib/logo";
@@ -14,6 +14,18 @@ const MAX_AUDITS_PER_HOUR = 6; // per IP, competitor audits included
 export const maxDuration = 60;
 
 const fail = (msg: string, status = 400) => new Response(msg, { status, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+// A refused launch goes back to the launch form, filled in, with the reason and what to do: never a bare text page
+// that loses what was typed. The reason is a code (texts in espace/nouveau), so a crafted link cannot show any text.
+const retry = (req: Request, form: FormData, code: string) => {
+  const keep = new URLSearchParams();
+  for (const k of ["url", "competitor", "device", "email"]) {
+    const v = String(form.get(k) ?? "").trim().slice(0, 300);
+    if (v) keep.set(k, v);
+  }
+  if (form.get("force") === "1") keep.set("force", "1");
+  keep.set("erreur", code);
+  return Response.redirect(new URL(`/espace/nouveau?${keep}`, req.url), 303);
+};
 
 export async function POST(req: Request) {
   // Audits belong to a team: signed in, and owner or admin of the current team.
@@ -42,10 +54,10 @@ export async function POST(req: Request) {
   const models = form.get("models") === "1" && form.get("mode") !== "payment";
   // Precise audit: the most capable Holo model for the whole audit (competitor included), about 40 % dearer per mission.
   const model = !models && form.get("model") === "precise" ? COMPARE_MODEL : undefined;
-  if (models && competitor) return fail(await msg("Choisis entre un concurrent et la comparaison de modèles : les deux à la fois doubleraient encore le coût.", "Choose between a competitor and the model comparison: both at once would double the cost again."));
-  if (both && (competitor || models)) return fail(await msg("Ordinateur + Mobile se lance sans concurrent ni comparaison de modèles : les deux à la fois doubleraient encore le coût.", "Desktop + Mobile runs without a competitor or model comparison: both at once would double the cost again."));
+  if (models && competitor) return retry(req, form, "combo");
+  if (both && (competitor || models)) return retry(req, form, "combo");
   const email = String(form.get("email") ?? "").trim().toLowerCase() || ctx.user.email;
-  if (email && (email.length > 200 || !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(email))) return fail(await msg("Adresse e-mail invalide.", "Invalid e-mail address."));
+  if (email && (email.length > 200 || !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(email))) return retry(req, form, "email");
 
   try {
     const domains = [url, competitor].filter(Boolean).map((u) => normalizeUrl(u).domain);
@@ -61,8 +73,8 @@ export async function POST(req: Request) {
     const paymentOnly = form.get("mode") === "payment";
     const payment = paymentOnly || form.get("payment") === "1";
     // A real payment needs the team's explicit yes, every time: the form's confirmation box, never a default.
-    if (payment && form.get("pay_confirm") !== "1") return fail(await msg(`Confirme le paiement réel (au plus ${PAY_MAX_EUR} €) avant de lancer le test.`, `Confirm the real payment (at most €${PAY_MAX_EUR}) before running the test.`));
-    if (payment && !(await cardSecret(ctx.team.id))) return fail(await msg("Aucune carte utilisable pour l'équipe : ajoute-la dans Espace › Paiement.", "No usable card for the team: add one in Space › Payment method."));
+    if (payment && form.get("pay_confirm") !== "1") return retry(req, form, "confirmation");
+    if (payment && !(await cardSecret(ctx.team.id))) return retry(req, form, "carte");
 
     // The missions picked on the launch form (JSON). Absent (no JavaScript, home form): the first default missions.
     // A pick other than the plain defaults is a new question: never answered with last week's report.
@@ -78,15 +90,15 @@ export async function POST(req: Request) {
 
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
     const ipHash = createHash("sha256").update(`${process.env.TICK_SECRET}:${ip}`).digest("hex");
-    if ((await auditsFromIp(ipHash)) >= MAX_AUDITS_PER_HOUR) return fail(await msg("Trop d'audits lancés depuis ta connexion, réessaie dans une heure.", "Too many audits started from your connection, try again in an hour."), 429);
+    if ((await auditsFromIp(ipHash)) >= MAX_AUDITS_PER_HOUR) return retry(req, form, "heure");
 
     const { count } = await db.from("runs").select("id", { count: "exact", head: true }).in("status", ["todo", "launched"]);
-    if ((count ?? 0) > MAX_PENDING) return fail(await msg("File d'attente pleine, réessaie dans un moment.", "Queue full, try again in a moment."), 503);
+    if ((count ?? 0) > MAX_PENDING) return retry(req, form, "file");
 
     let missionIds: number[] | undefined;
     if (pick && !plain) {
       const r = await resolvePick(ctx.team.id, ctx.user.id, pick, await getLang());
-      if (!Array.isArray(r)) return fail(r.error);
+      if (!Array.isArray(r)) return retry(req, form, "missions");
       missionIds = r;
     }
 
@@ -106,6 +118,7 @@ export async function POST(req: Request) {
     after(() => Promise.all(domains.map((d) => refreshLogo(d).catch(() => null))));
     return Response.redirect(new URL(`/audit/${id}`, req.url), 303);
   } catch (e) {
-    return fail(`${await msg("Erreur", "Error")} : ${(e as Error).message}`);
+    // The only expected failure is an address that is not a public site; anything else is ours, said as such.
+    return retry(req, form, String((e as Error).message).startsWith("URL invalide") ? "url" : "technique");
   }
 }

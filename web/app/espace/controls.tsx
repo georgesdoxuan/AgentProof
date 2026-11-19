@@ -2,7 +2,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import type { Dict } from "@/lib/i18n";
+import type { Dict, Lang } from "@/lib/i18n";
+import type { SideData } from "@/lib/sidebar";
+import { LaunchButton, NavBadge, RecentSites, SideFooter, SideProvider } from "./side";
 
 // lib/ui pulls in the server engine, so client controls keep their own styles.
 // Pop-up button look for native <select>: keeps the system menu, drops the default chrome.
@@ -56,7 +58,28 @@ const isOn = (path: string, href: string) =>
 const NAV_COOKIE = "ap_nav"; // read in shell.tsx
 
 // The space's frame: sidebar on wide screens (collapsible to icons), tabs on narrow ones. `head` is the team switcher.
-export function Frame({ t, collapsed: initial, head, children }: { t: Dict["space"]; collapsed: boolean; head: React.ReactNode; children: React.ReactNode }) {
+export function Frame({
+  t,
+  lang,
+  collapsed: initial,
+  head,
+  side,
+  reserve,
+  launch,
+  children,
+}: {
+  t: Dict["space"];
+  lang: Lang;
+  collapsed: boolean;
+  head: React.ReactNode;
+  /** The sidebar's live data, read by the layout and streamed with the page. */
+  side: Promise<SideData | null>;
+  /** Recent-site rows to reserve while that data loads (as many as last time). */
+  reserve: number;
+  /** Owner or admin: the « Lancer un audit » button. */
+  launch: boolean;
+  children: React.ReactNode;
+}) {
   const [collapsed, setCollapsed] = useState(initial);
   const toggle = () => {
     setCollapsed(!collapsed);
@@ -64,12 +87,13 @@ export function Frame({ t, collapsed: initial, head, children }: { t: Dict["spac
   };
   const label = collapsed ? t.expand : t.collapse;
   return (
+    <SideProvider initial={side}>
     <div
       data-app-shell
       data-collapsed={collapsed ? "" : undefined}
       className={`group/frame min-h-[70vh] bg-bg-2 lg:grid ${collapsed ? "lg:grid-cols-[72px_minmax(0,1fr)]" : "lg:grid-cols-[256px_minmax(0,1fr)]"}`}
     >
-      <aside className="min-w-0 space-y-5 px-6 pt-6 sm:px-8 lg:sticky lg:top-[53px] lg:h-[calc(100dvh-53px)] lg:space-y-7 lg:self-start lg:overflow-y-auto lg:overflow-x-hidden lg:border-r lg:border-hairline lg:px-3 lg:py-6">
+      <aside className="min-w-0 space-y-5 px-6 pt-6 sm:px-8 lg:sticky lg:flex lg:flex-col lg:top-[53px] lg:h-[calc(100dvh-53px)] lg:space-y-7 lg:self-start lg:overflow-y-auto lg:overflow-x-hidden lg:border-r lg:border-hairline lg:px-3 lg:py-6">
         {/* Team switcher, then the fold button: beside it when open, under the team's initial when folded. */}
         <div className="flex items-center gap-1 lg:group-data-collapsed/frame:flex-col lg:group-data-collapsed/frame:items-start lg:group-data-collapsed/frame:gap-4">
           <div className="min-w-0 flex-1">{head}</div>
@@ -84,15 +108,18 @@ export function Frame({ t, collapsed: initial, head, children }: { t: Dict["spac
             {glyph(ICON.sidebar, "h-[18px] w-[18px]")}
           </button>
         </div>
+        {launch && <LaunchButton t={t.side} collapsed={collapsed} />}
         <MobileNav t={t} />
-        <SideNav t={t} collapsed={collapsed} />
+        <SideNav t={t} collapsed={collapsed} reserve={reserve} />
+        <SideFooter t={t.side} lang={lang} collapsed={collapsed} />
       </aside>
       <div className="min-w-0">{children}</div>
     </div>
+    </SideProvider>
   );
 }
 
-function SideNav({ t, collapsed }: { t: Dict["space"]; collapsed: boolean }) {
+function SideNav({ t, collapsed, reserve }: { t: Dict["space"]; collapsed: boolean; reserve: number }) {
   const path = usePathname();
   return (
     <nav aria-label={t.label} className="space-y-6 max-lg:hidden">
@@ -107,12 +134,14 @@ function SideNav({ t, collapsed }: { t: Dict["space"]; collapsed: boolean }) {
             return (
               <li key={href}>
                 {/* Collapsed: the icon alone, its name in the native tooltip and for screen readers. */}
-                <Link href={href} aria-current={current ? "page" : undefined} aria-label={collapsed ? label : undefined} title={collapsed ? label : undefined} className={itemCls(current || (collapsed && inChild))}>
+                <Link href={href} aria-current={current ? "page" : undefined} aria-label={collapsed ? label : undefined} title={collapsed ? label : undefined} className={`relative ${itemCls(current || (collapsed && inChild))}`}>
                   {glyph(icon, `h-[18px] w-[18px] shrink-0 ${current || (collapsed && inChild) ? "text-blue" : ""}`)}
                   {!collapsed && label}
+                  <NavBadge href={href} t={t.side} collapsed={collapsed} />
                 </Link>
                 {children.length > 0 && !collapsed && (
                   <ul className="mt-0.5 flex flex-col gap-0.5 pl-7">
+                    {href === "/espace/sites" && <RecentSites reserve={reserve} />}
                     {children.map(([c, cIcon]) => {
                       const on = path === c || path.startsWith(`${c}/`);
                       return (
@@ -268,3 +297,27 @@ export function CopyButton({ value, label, done }: { value: string; label: strin
 }
 
 // Back / forward, like a browser toolbar. Uses the Navigation API when available to grey out a dead end.
+
+// Rapports › "Liste" or "Par site". The server renders both views and the toggle; this only hides one. The choice lives
+// in a cookie (read in rapports/list.tsx), like the sidebar, so the server renders the right view: no jump on load.
+const REPORTS_LAYOUT_COOKIE = "ap_rapports_vue"; // read in rapports/list.tsx
+export function ReportsLayout({ initial, toolbar, list, bySite }: { initial: boolean; toolbar: React.ReactNode; list: React.ReactNode; bySite: React.ReactNode }) {
+  const [bySiteOn, setBySite] = useState(initial);
+  return (
+    <>
+      <div
+        className="mb-3 flex flex-wrap items-center justify-between gap-3 px-1"
+        onChange={(e) => {
+          const input = e.target as HTMLInputElement;
+          if (input.name !== REPORTS_LAYOUT_COOKIE) return;
+          setBySite(input.value === "site");
+          document.cookie = `${REPORTS_LAYOUT_COOKIE}=${input.value}; path=/; max-age=31536000; samesite=lax`;
+        }}
+      >
+        {toolbar}
+      </div>
+      <div hidden={bySiteOn}>{list}</div>
+      <div hidden={!bySiteOn}>{bySite}</div>
+    </>
+  );
+}

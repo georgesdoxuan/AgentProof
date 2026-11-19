@@ -200,6 +200,38 @@ export const FAQ: Faq[] = [
     },
     keys: "exclu exclue gris non verifiee rupture stock anti bot captcha excluded grey unverified",
   },
+  // The three answers also shown under the home form (FORM_FAQ): one text, two places.
+  {
+    id: "audit-verifie",
+    cat: "audits",
+    q: { fr: "Que vérifie l'audit ?", en: "What does the audit check?" },
+    a: {
+      fr: "Qu'un agent IA peut acheter chez toi comme un client : sur chaque mission (recherche et taille, menu, filtre de prix, variante, promotion), il doit atteindre la première page du checkout. Il ne paie pas, ne crée pas de compte et ne saisit aucune donnée personnelle. L'audit ne mesure ni la vitesse ni le référencement, et le paiement se teste à part, seulement si ton équipe le lance.",
+      en: "That an AI agent can buy from you like a customer: on each mission (search and size, menu, price filter, variant, sale item), it must reach the first checkout page. It does not pay, creates no account and enters no personal data. The audit does not measure speed or SEO, and payment is tested separately, only if your team runs it.",
+    },
+    link: { href: "/methode", fr: "Méthode", en: "Method" },
+    keys: "verifie teste controle mesure perimetre portee checks tests measures scope covers",
+  },
+  {
+    id: "qui-voit-le-rapport",
+    cat: "score",
+    q: { fr: "Qui peut voir mon rapport ?", en: "Who can see my report?" },
+    a: {
+      fr: "Ton équipe le retrouve dans son espace. Le lien du rapport n'est publié nulle part, mais il suffit pour l'ouvrir sans connexion : ne l'envoie qu'aux personnes concernées. Les audits lancés depuis ton espace n'entrent pas dans le classement public. Le test de paiement, lui, n'est visible que par ton équipe.",
+      en: "Your team finds it in its space. The report link is not published anywhere, but it is enough to open it without signing in: only send it to the people concerned. Audits run from your space do not enter the public ranking. The payment test is only visible to your team.",
+    },
+    keys: "prive public visible voir acces confidentiel lien rapport partage private public visible access confidential link report",
+  },
+  {
+    id: "echec",
+    cat: "score",
+    q: { fr: "Que veut dire une mission bloquée ?", en: "What does a blocked mission mean?" },
+    a: {
+      fr: "L'agent n'a pas atteint la première page du checkout, et le juge visuel a relu la dernière capture. Le rapport montre où et pourquoi, avec la capture et le replay. Ce n'est pas la preuve qu'un client humain bloquerait aussi. Ce qui ne dépend pas de ton site (rupture de stock, anti-bot, erreur de notre côté) est mis à part, hors score.",
+      en: "The agent did not reach the first checkout page, and the visual judge reviewed the last screenshot. The report shows where and why, with the screenshot and the replay. It does not prove a human customer would get stuck too. What does not depend on your site (out of stock, anti-bot, an error on our side) is set apart, out of the score.",
+    },
+    keys: "bloque bloquee echec rate signifie veut dire erreur faute blocked failed failure mean meaning",
+  },
   {
     id: "rejoue",
     cat: "score",
@@ -745,3 +777,7 @@ export const POPULAR = ["tester-mon-site", "prix-audit", "calcul-score"];
 
 // The bar under which a hit is only "close", not an answer.
 export const RELEVANT = 1.6;
+
+// Under the home form: who sees the report, what the audit checks, what a failure means.
+export const FORM_FAQ = ["qui-voit-le-rapport", "audit-verifie", "echec"].map((id) => FAQ.find((f) => f.id === id)!);
+
