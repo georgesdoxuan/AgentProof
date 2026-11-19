@@ -1,4 +1,7 @@
-import { Bone, Line, SkHead, SkSpace } from "../skeleton";
+import { Bone, Line, SkHead, SkSpace } from "../../skeleton";
+
+// In a route group (no URL segment) so this skeleton wraps only the home page: at /espace it would also stand in
+// for every child page (sites, rapports…) during a full load, at the wrong height.
 
 // Space home: site tiles, then the blockers to fix first.
 export default function Loading() {

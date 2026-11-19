@@ -8,10 +8,10 @@ import { getDict, getLang } from "@/lib/lang";
 import { loadSpace, priorities, shortDate, type SiteView } from "@/lib/space";
 import { monthRecap } from "@/lib/month";
 import { Chevron, Chip, Chips, DeviceTag, Field, Group, Icon, MissionBar, MissionLegend, Row, Note, Spinner, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
-import { AutoRefresh } from "../audit/[id]/refresh";
-import { SpaceShell } from "./shell";
-import { BlockerItem, Delta, sitePath } from "./parts";
-import { SiteLogo } from "../site-logo";
+import { AutoRefresh } from "../../audit/[id]/refresh";
+import { SpaceShell } from "../shell";
+import { BlockerItem, Delta, sitePath } from "../parts";
+import { SiteLogo } from "../../site-logo";
 
 export async function generateMetadata() {
   return { title: `${(await getDict()).space.sections["/espace"]} · AgentProof` };
