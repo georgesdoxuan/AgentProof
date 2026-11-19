@@ -3,7 +3,7 @@ import { Hint } from "@/lib/hint";
 import { teamContext } from "@/lib/auth";
 import { LANGS, LANG_NAME } from "@/lib/i18n";
 import { getDict, getLang, getT } from "@/lib/lang";
-import { Avatar, Field, Group, Icon, Row } from "@/lib/ui";
+import { Avatar, Columns, Field, Group, Icon, Row } from "@/lib/ui";
 import { spaceColor } from "@/lib/avatar";
 import { AutoSubmitSelect } from "../../controls";
 import { SpaceShell } from "../../shell";
@@ -26,7 +26,9 @@ export default async function Compte({ searchParams }: { searchParams: Promise<{
   const roles = t.roles;
 
   return (
-    <SpaceShell narrow settings>
+    <SpaceShell settings>
+      <Columns
+        main={<>
       <Group>
         <Row className="min-h-[76px]">
           <Avatar email={user.email} className="h-11 w-11" />
@@ -41,7 +43,7 @@ export default async function Compte({ searchParams }: { searchParams: Promise<{
         </Row>
       </Group>
 
-      <Group title={a.myTeams}>
+      <Group icon="team" title={a.myTeams}>
         {teams.map((t) => (
           <Row key={t.id}>
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[9px] type-small font-semibold text-white" style={{ background: spaceColor(t.id) }} aria-hidden>
@@ -64,7 +66,7 @@ export default async function Compte({ searchParams }: { searchParams: Promise<{
         ))}
       </Group>
 
-      <Group title={a.createTitle} footer={a.createNote}>
+      <Group icon="plus" title={a.createTitle} footer={a.createNote}>
         <form action="/api/team" method="post" className="flex flex-wrap items-center gap-3 p-5 sm:p-6">
           <input type="hidden" name="action" value="create" />
           <div className="min-w-[220px] flex-1">
@@ -74,7 +76,9 @@ export default async function Compte({ searchParams }: { searchParams: Promise<{
         </form>
       </Group>
 
-      <Group title={a.language} footer={a.languageNote}>
+        </>}
+        side={<>
+      <Group icon="globe" title={a.language} footer={a.languageNote}>
         <Row>
           <span className="min-w-0 flex-1 font-semibold">{a.language}</span>
           <form action="/api/lang" method="post">
@@ -85,6 +89,7 @@ export default async function Compte({ searchParams }: { searchParams: Promise<{
       </Group>
 
       <Group
+        icon="download"
         title={tt("Tes données", "Your data")}
         footer={
           <>
@@ -103,7 +108,10 @@ export default async function Compte({ searchParams }: { searchParams: Promise<{
 
       {/* RGPD art. 17. Retyping the e-mail stands in for a confirmation dialog, and works without JavaScript. */}
       <section id="supprimer" className="scroll-mt-24">
-        <h2 className="type-headline mb-3 px-1">{tt("Supprimer mon compte", "Delete my account")}</h2>
+        <h2 className="type-headline mb-3 flex min-h-7 items-center gap-2.5 px-1">
+          <Icon name="trash" className="h-5 w-5 text-ink-2" />
+          {tt("Supprimer mon compte", "Delete my account")}
+        </h2>
         <form action="/api/account" method="post" className="grid gap-4 rounded-[18px] bg-tile p-5 sm:p-6">
           <input type="hidden" name="action" value="delete" />
           <ul className="type-small grid gap-2 text-ink-2">
@@ -133,9 +141,14 @@ export default async function Compte({ searchParams }: { searchParams: Promise<{
       <Group>
         <form action="/api/auth" method="post">
           <input type="hidden" name="action" value="logout" />
-          <button className="flex min-h-[60px] w-full items-center px-5 text-left text-link hover:bg-bg-2/60">{a.signOut}</button>
+          <button className="flex min-h-[60px] w-full items-center gap-2.5 px-5 text-left text-link hover:bg-bg-2/60">
+            <Icon name="signout" className="h-5 w-5" />
+            {a.signOut}
+          </button>
         </form>
       </Group>
+        </>}
+      />
     </SpaceShell>
   );
 }

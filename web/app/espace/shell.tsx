@@ -10,7 +10,8 @@ import { spaceColor } from "@/lib/avatar";
 
 // One frame for every page of the team space: a sidebar on the leading edge, the page beside it.
 // Wide screens: the sidebar sits against the window edge and the page is centred
-// in the space left, capped at 1200px (forms and settings keep to its first 760px so lines stay readable).
+// in the space left, capped at 1200px (forms keep to its first 760px so lines stay readable; Réglages uses the
+// whole width, in two columns when there is room).
 // Narrow screens: team and section tabs stack above the page, on the same 24/32px gutter as the header.
 //
 // SpaceFrame is rendered by the layouts (espace), not by the pages: a layout stays mounted when
@@ -96,8 +97,10 @@ export async function SpaceShell({
   if (space) title = space.sections["/espace/reglages"];
   return (
     <div className="min-w-0 px-6 pb-24 pt-8 sm:px-8 lg:px-12 lg:pt-10 xl:px-16">
-      <div className="mx-auto w-full max-w-[1200px]">
-        <div className={`space-y-10 max-[734px]:space-y-8 ${narrow ? "max-w-[760px]" : ""}`}>
+      {/* A container: Réglages' two columns (lib/ui Columns) follow the page's width, not the window's. */}
+      <div className="@container mx-auto w-full max-w-[1200px]">
+        {/* Réglages tabs ignore `narrow`: tabs and content span the whole frame, so no tab leaves an empty band on the right. */}
+        <div className={`space-y-10 max-[734px]:space-y-8 ${narrow && !settings ? "max-w-[760px]" : ""}`}>
           <header className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
             {/* At least as tall as the main action (48px): the title sits at the same height with or without a button. */}
             <div className="min-h-12 min-w-0 flex-1 basis-[min(100%,520px)]">

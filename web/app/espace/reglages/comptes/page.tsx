@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { listSiteLogins } from "@/lib/engine";
-import { Chip, Empty, Field, Group, Note, Row } from "@/lib/ui";
+import { Chip, Columns, Empty, Field, Group, Note, Row } from "@/lib/ui";
 import { getT } from "@/lib/lang";
 import { ConfirmButton } from "../../controls";
 import { SpaceShell } from "../../shell";
@@ -22,15 +22,18 @@ export default async function Comptes() {
   const t = await getT();
 
   return (
-    <SpaceShell narrow
+    <SpaceShell
       settings
       hint={t(
         "Pour les sites qui exigent un compte avant de payer. Avec un compte enregistré, le test de paiement tourne deux fois : sans compte, puis connecté.",
         "For sites that require an account before paying. With a saved account, the payment test runs twice: without an account, then signed in.",
       )}
     >
+      <Columns
+        main={<>
       {logins.length ? (
         <Group
+          icon="key"
           title={t("Comptes enregistrés", "Saved accounts")}
           aside={<Chip icon="lock">{t("Coffre H Company", "H Company vault")}</Chip>}
           footer={t(
@@ -63,8 +66,11 @@ export default async function Comptes() {
         </Empty>
       )}
 
+        </>}
+        side={<>
       {admin ? (
         <Group
+          icon="plus"
           title={t("Ajouter un compte", "Add an account")}
           aside={<Chip icon="refresh">{t("1 par site", "1 per site")}</Chip>}
           footer={t(
@@ -72,7 +78,7 @@ export default async function Comptes() {
             "First create the account yourself on the site, with a test address. One account per site: adding a new one replaces the old one.",
           )}
         >
-          <form action="/api/logins" method="post" className="grid gap-4 p-6 sm:p-8">
+          <form action="/api/logins" method="post" className="grid gap-4 p-5 sm:p-6">
             <Field label={t("Site (ex. adidas.fr)", "Site (e.g. adidas.fr)")} name="site" type="text" required />
             <Field label={t("E-mail ou identifiant du compte", "Account e-mail or username")} name="login" type="text" required />
             <Field label={t("Mot de passe", "Password")} name="password" type="password" required />
@@ -91,6 +97,8 @@ export default async function Comptes() {
       ) : (
         <Note icon="eye">{t("Lecture seule : un admin gère les comptes.", "Read-only: an admin manages the accounts.")}</Note>
       )}
+        </>}
+      />
     </SpaceShell>
   );
 }
