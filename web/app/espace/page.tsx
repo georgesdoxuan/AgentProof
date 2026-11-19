@@ -4,8 +4,8 @@ import { db } from "@/lib/engine";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { dict, tr, type Lang, type T } from "@/lib/i18n";
 import { getDict, getLang } from "@/lib/lang";
-import { loadSpace, priorities, shortDate, deviceLabel, type SiteView } from "@/lib/space";
-import { Chevron, Field, Group, MissionBar, Row, Spinner, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
+import { loadSpace, priorities, shortDate, type SiteView } from "@/lib/space";
+import { Chevron, DeviceTag, Field, Group, MissionBar, Row, Spinner, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
 import { AutoRefresh } from "../audit/[id]/refresh";
 import { SpaceShell } from "./shell";
 import { BlockerItem, Delta, sitePath } from "./parts";
@@ -133,7 +133,7 @@ export default async function Accueil() {
                   <span className="flex items-baseline justify-between gap-3">
                     <span className="min-w-0">
                       <span className="block truncate font-semibold">{s.domain}</span>
-                      <span className="type-caption text-ink-2">{deviceLabel(s.device, lang)}</span>
+                      <span className="type-caption block text-ink-2"><DeviceTag device={s.device} lang={lang} /></span>
                     </span>
                     <Delta site={s} />
                   </span>
@@ -162,7 +162,7 @@ export default async function Accueil() {
                 <span className="min-w-0">
                   <span className="block truncate font-semibold">{a.sites?.domain}</span>
                   <span className="type-small text-ink-2">
-                    {deviceLabel(a.device, lang)} · {t("lancé", "started")} {shortDate(a.created_at, lang)}
+                    <DeviceTag device={a.device} lang={lang} /> · {t("lancé", "started")} {shortDate(a.created_at, lang)}
                   </span>
                 </span>
                 <span className="hidden sm:block">

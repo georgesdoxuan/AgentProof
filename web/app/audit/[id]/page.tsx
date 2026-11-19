@@ -5,7 +5,7 @@ import { connection } from "next/server";
 import { DEFAULT_MODEL, EXCLUDED, db, paymentStages, paymentVerdicts } from "@/lib/engine";
 import { locale, missionTitle, staticText, tr, type Lang, type T } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
-import { BrowserFrame, Chevron, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, hurdles, summarize } from "@/lib/ui";
+import { BlockerIcon, BrowserFrame, Chevron, DeviceTag, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, hurdles, summarize } from "@/lib/ui";
 import { headers } from "next/headers";
 import { CopyField } from "@/app/espace/controls";
 import { Mark, Wordmark, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
@@ -266,7 +266,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
               <span>{t("Rapport préparé par", "Report prepared by")} {brand!.brand_name}</span>
             </p>
           )}
-          <p className="type-eyebrow text-ink-2">{paymentOnly ? t("Test de paiement", "Payment test") : t("Rapport d\u2019audit", "Audit report")} · {audit.device === "mobile" ? "Mobile" : t("Ordinateur", "Desktop")}
+          <p className="type-eyebrow text-ink-2">{paymentOnly ? t("Test de paiement", "Payment test") : t("Rapport d\u2019audit", "Audit report")} · <DeviceTag device={audit.device} lang={lang} />
             {audit.model && ` · ${t("Modèle", "Model")} ${audit.model}`}
           </p>
           <h1 className="type-h1 mt-3 break-words">{audit.title || audit.sites.name}</h1>
@@ -460,9 +460,12 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                 const out = EXCLUDED.includes(b);
                 return (
                   <li key={b} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-2.5 border-b border-hairline px-6 py-4 last:border-0 md:grid-cols-[minmax(0,18rem)_minmax(0,1fr)_7.5rem]">
-                    <span className="min-w-0">
-                      <span className="font-semibold">{blockerLabel(b, lang)}</span>
-                      {out && <span className="type-small ml-2 whitespace-nowrap text-ink-2">{t("Hors score", "Outside the score")}</span>}
+                    <span className="flex min-w-0 items-center gap-3">
+                      <BlockerIcon type={b} />
+                      <span className="min-w-0">
+                        <span className="font-semibold">{blockerLabel(b, lang)}</span>
+                        {out && <span className="type-small ml-2 whitespace-nowrap text-ink-2">{t("Hors score", "Outside the score")}</span>}
+                      </span>
                     </span>
                     <span className="col-span-2 row-start-2 block h-1.5 overflow-hidden rounded-full bg-fill md:col-span-1 md:row-start-auto" aria-hidden>
                       <span className={`block h-full rounded-full ${out ? "bg-ink-2/50" : "bg-fail"}`} style={{ width: `${(100 * n) / maxBlock}%` }} />
@@ -486,9 +489,12 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                 `Across the ${got.passed} passed missions, the obstacles the agent got past. A hurried shopper or a less persistent agent may stop there. Read from the agent's own report, outside the score.`,
               )} />
             <ul className="overflow-hidden rounded-[18px] bg-tile">
-              {got.items.map(([label, n]) => (
+              {got.items.map(([label, n, icon]) => (
                 <li key={label} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-2.5 border-b border-hairline px-6 py-4 last:border-0 md:grid-cols-[minmax(0,18rem)_minmax(0,1fr)_7.5rem]">
-                  <span className="min-w-0 font-semibold">{label}</span>
+                  <span className="flex min-w-0 items-center gap-3 font-semibold">
+                    <BlockerIcon type={icon} muted />
+                    {label}
+                  </span>
                   <span className="col-span-2 row-start-2 block h-1.5 overflow-hidden rounded-full bg-fill md:col-span-1 md:row-start-auto" aria-hidden>
                     <span className="block h-full rounded-full bg-ink-2/50" style={{ width: `${(100 * n) / got.passed}%` }} />
                   </span>
@@ -536,7 +542,12 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                   <h3 className="type-h3 mt-2">{missionTitle(r.missions.title, lang)}</h3>
                   {r.status === "done" && (
                     <div className="mt-4">
-                      {!r.success && r.success !== null && <p className="font-semibold">{blockerLabel(r.blocker_type, lang)}</p>}
+                      {!r.success && r.success !== null && (
+                        <p className="mb-2 flex items-center gap-2.5 font-semibold">
+                          <BlockerIcon type={r.blocker_type} className="h-7 w-7 rounded-[8px]" />
+                          {blockerLabel(r.blocker_type, lang)}
+                        </p>
+                      )}
                       <p className="text-ink-2">{conclusion(r, t)}</p>
                     </div>
                   )}
