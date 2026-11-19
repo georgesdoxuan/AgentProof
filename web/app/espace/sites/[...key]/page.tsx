@@ -39,7 +39,7 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
       parent={["/espace/sites", "Sites"]}
       title={
         <span className="flex min-w-0 items-center gap-4">
-          <SiteLogo domain={site.domain} name={site.domain} size="lg" eager />
+          <SiteLogo domain={site.domain} name={site.domain} size="lg" />
           <span className="min-w-0 break-words">{site.domain}</span>
         </span>
       }

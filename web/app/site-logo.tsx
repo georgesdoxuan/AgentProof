@@ -5,9 +5,10 @@ import { useState } from "react";
 // dark logos stay readable, skeleton while it loads, brand initial when no reliable logo exists (/api/logo answers 404).
 // Decorative (alt=""): the site's name is always written next to it, a screen reader would otherwise read it twice.
 // Logos belong to their owners; nominative use only.
+// Loaded eagerly, no fade: a few KB each from the CDN, so they show with the page.
 const PX = { sm: 24, md: 32, lg: 48 } as const;
 
-export function SiteLogo({ domain, name, size = "md", eager, className = "" }: { domain?: string | null; name?: string | null; size?: keyof typeof PX; eager?: boolean; className?: string }) {
+export function SiteLogo({ domain, name, size = "md", className = "" }: { domain?: string | null; name?: string | null; size?: keyof typeof PX; className?: string }) {
   const [state, setState] = useState<"load" | "ok" | "none">(domain ? "load" : "none");
   const px = PX[size];
   const initial = ((name || domain || "?").replace(/^(https?:\/\/)?(www\.)?/, "").match(/[\p{L}\p{N}]/u)?.[0] ?? "?").toUpperCase();
@@ -31,11 +32,9 @@ export function SiteLogo({ domain, name, size = "md", eager, className = "" }: {
           alt=""
           width={px}
           height={px}
-          loading={eager ? "eager" : "lazy"}
-          decoding="async"
           onLoad={() => setState("ok")}
           onError={() => setState("none")}
-          className={`h-full w-full object-contain transition-opacity duration-200 ${state === "ok" ? "opacity-100" : "opacity-0"}`}
+          className={`h-full w-full object-contain ${state === "ok" ? "" : "opacity-0"}`}
         />
       )}
     </span>

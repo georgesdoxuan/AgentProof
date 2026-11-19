@@ -136,7 +136,7 @@ export async function vetImage(url: string, minPx = 64): Promise<Buffer | null> 
     return await img
       .resize(inner, inner, { fit: "contain", background: bg })
       .extend({ top: Math.floor(pad), bottom: Math.ceil(pad), left: Math.floor(pad), right: Math.ceil(pad), background: bg })
-      .png()
+      .png({ palette: true, quality: 90, effort: 10 }) // a few KB instead of ~20
       .toBuffer();
   } catch {
     return null; // formats sharp cannot read
