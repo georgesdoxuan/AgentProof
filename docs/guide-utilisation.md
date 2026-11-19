@@ -228,33 +228,38 @@ Le rangement se fait dans **Rapports**, qui a deux rubriques : **Tous** et **Fav
 
 ## 10. Suivre son site : automations, Slack, suivi mensuel
 
-Un site change souvent : nouveau thème, nouveau bandeau cookies, nouveau widget de chat. Les **automations** surveillent ces changements.
+Un site change souvent : nouveau thème, nouveau bandeau cookies, nouveau widget de chat. Les **automations** surveillent ces changements. Elles se trouvent dans **Réglages › Automations**, en cinq cartes. Chaque réglage s'enregistre aussitôt et un message « Enregistré » le confirme en bas de l'écran.
 
-### Suivre des pages
+### Surveillance des pages (gratuit)
 
-1. Ouvrez **Automations** et indiquez les pages à suivre, une adresse par ligne (accueil, fiche produit, panier…).
-2. Choisissez la **fréquence** : toutes les heures, toutes les 6 h, une fois par jour (par défaut) ou une fois par semaine.
-3. Choisissez ce qui se passe **quand une page change** :
-   - **Prévenir** : vous recevez une alerte ;
-   - **Prévenir et auditer** : vous recevez une alerte et un audit repart tout seul.
+1. Collez l'adresse d'une page (accueil, fiche produit, panier…) en bas de la carte et cliquez sur **Ajouter**. La première vérification part dans la minute et enregistre la page de référence.
+2. Pour chaque page, choisissez la **fréquence** : toutes les heures, toutes les 6 h, chaque jour (par défaut) ou chaque semaine.
+3. L'**interrupteur** met la page en pause (gris) ou la réactive (vert). Chaque ligne indique le dernier résultat, la dernière et la prochaine vérification.
+4. **Historique** montre les dernières vérifications, avec **Vérifier maintenant** et **Retirer la page**.
 
-AgentProof relit ce qui compte pour un agent d'achat : bandeau cookies, captcha, boutons, formulaires, robots.txt. **Les prix et les produits ne comptent pas** : une nouvelle promo ne déclenche pas d'alerte. La première vérification enregistre la page de référence.
+AgentProof relit ce qui compte pour un agent d'achat : bandeau cookies, captcha, boutons, formulaires, robots.txt. **Les prix et les produits ne comptent pas** : une nouvelle promo ne déclenche pas d'alerte.
 
-Les vérifications de pages sont **gratuites**. Seul un audit relancé utilise des crédits, au plus un par page et par jour.
+### Audits automatiques (5 crédits par audit)
 
-### Vérifier après chaque mise en ligne
+Pour chaque page, deux interrupteurs :
 
-Automations vous donne une **adresse secrète** à appeler après un déploiement (Vercel, Shopify ou GitHub). Toutes les pages suivies sont alors vérifiées dans la minute.
+- **Quand la page change** : un audit complet repart tout seul, au plus un par page et par jour ;
+- **Tous les 30 jours** : un audit complet chaque mois, et une alerte si le score baisse (voir plus bas). Si vous avez comparé le site à un concurrent, celui-ci est audité aussi.
 
-### Recevoir les alertes
+### Alertes
 
-- **Par e-mail**, toujours. Chaque e-mail d'alerte contient un lien de désinscription en un clic.
-- **Sur Slack** : cliquez sur « Brancher Slack », choisissez le canal, un message de test part aussitôt.
-- **Ailleurs** (Discord, n8n, Make, Zapier) : collez une URL de webhook entrant.
+- **E-mail** : toujours actif. Chaque e-mail d'alerte contient un lien de désinscription en un clic.
+- **Slack** : cliquez sur « Connecter », choisissez le canal, un message de test part aussitôt.
+- **Webhook** (Discord, n8n, Make, Zapier) : collez l'URL, puis **Enregistrer** ou **Tester**.
+- **Alerte si le score baisse de** 5, 10 ou 20 points par rapport à l'audit précédent. L'alerte, et le rapport, disent **pourquoi** : les missions qui passaient et bloquent maintenant, avec leur blocage, et les changements de page vus par les automations entre les deux audits.
 
-### Suivi mensuel
+### Après une mise en ligne
 
-Avec le suivi mensuel, un **audit complet repart tous les 30 jours**, et vous êtes alerté si le score baisse de plus de **5, 10 ou 20 points**, selon votre réglage. L'alerte, et le rapport, disent **pourquoi** : les missions qui passaient et bloquent maintenant, avec leur blocage, et les changements de page vus par les automations entre les deux audits.
+La carte donne une **adresse secrète** à appeler après un déploiement (Vercel, Shopify ou GitHub, l'endroit où la coller est indiqué). Toutes les pages surveillées sont alors vérifiées dans la minute.
+
+### Plafond de crédits
+
+Un nombre maximal de crédits par site et par mois pour les audits automatiques. Au-delà, ils attendent le 1er du mois ; un audit lancé à la main passe toujours. Vide : aucun plafond.
 
 Une même modification de page n'est signalée qu'**une fois par 24 h** : une page qui change puis revient ne vous envoie pas d'alertes en boucle.
 
@@ -324,7 +329,7 @@ Dans **Équipe**, indiquez le nom et le logo à afficher : ils **remplacent Agen
 
 La page **Abonnement et crédits** montre les crédits utilisés ce mois-ci, par type et par site, et une projection de fin de mois. Vous êtes prévenu à **80 %** et à **100 %** du forfait, par e-mail et sur Slack si vous l'avez branché. Les crédits repartent le **1er de chaque mois**.
 
-**Plafond par site** : dans Abonnement et crédits, l'équipe peut fixer un nombre maximum de crédits par site et par mois (tous appareils). Une fois ce plafond atteint, les audits automatiques sur ce site (page modifiée, mise en ligne, audit mensuel) ne partent plus jusqu'au 1er du mois (un audit mensuel retenu attend le mois suivant), et l'automation note pourquoi. Un audit lancé à la main passe toujours. Laissez le champ vide pour ne fixer aucun plafond.
+**Plafond par site** : dans Réglages › Automations (carte Plafond de crédits), l'équipe peut fixer un nombre maximum de crédits par site et par mois (tous appareils). Une fois ce plafond atteint, les audits automatiques sur ce site (page modifiée, mise en ligne, audit mensuel) ne partent plus jusqu'au 1er du mois (un audit mensuel retenu attend le mois suivant), et l'automation note pourquoi. Un audit lancé à la main passe toujours. Laissez le champ vide pour ne fixer aucun plafond.
 
 ### Les offres
 
