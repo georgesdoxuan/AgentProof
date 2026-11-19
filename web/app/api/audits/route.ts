@@ -35,12 +35,15 @@ export async function POST(req: Request) {
   const team = { teamId: ctx.team.id, createdBy: ctx.user.id };
   const url = String(form.get("url") ?? "");
   const competitor = String(form.get("competitor") ?? "").trim();
+  // "both": the same missions on desktop and on mobile, two audits linked like a model comparison (desktop report first).
+  const both = form.get("device") === "both" && form.get("mode") !== "payment";
   const device = form.get("device") === "mobile" ? "mobile" : "desktop";
   // Compare models: same site, same missions, one audit per Holo model, linked like a competitor audit.
   const models = form.get("models") === "1" && form.get("mode") !== "payment";
   // Precise audit: the most capable Holo model for the whole audit (competitor included), about 40 % dearer per mission.
   const model = !models && form.get("model") === "precise" ? COMPARE_MODEL : undefined;
   if (models && competitor) return fail(await msg("Choisis entre un concurrent et la comparaison de modèles : les deux à la fois doubleraient encore le coût.", "Choose between a competitor and the model comparison: both at once would double the cost again."));
+  if (both && (competitor || models)) return fail(await msg("Ordinateur + Mobile se lance sans concurrent ni comparaison de modèles : les deux à la fois doubleraient encore le coût.", "Desktop + Mobile runs without a competitor or model comparison: both at once would double the cost again."));
   const email = String(form.get("email") ?? "").trim().toLowerCase() || ctx.user.email;
   if (email && (email.length > 200 || !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(email))) return fail(await msg("Adresse e-mail invalide.", "Invalid e-mail address."));
 
@@ -65,7 +68,7 @@ export async function POST(req: Request) {
     const defaultIds = pick ? (await teamMissions(ctx.team.id)).defaults.filter((d) => !d.base_id).slice(0, FORM_MISSIONS).map((d) => d.id) : [];
     const plain = !pick || pick === JSON.stringify(defaultIds.map((id) => ({ id })));
 
-    if (plain && !payment && !competitor && !models && !model && form.get("force") !== "1") {
+    if (plain && !payment && !competitor && !models && !both && !model && form.get("force") !== "1") {
       const existing = await recentAudit(url, device, ctx.team.id);
       if (existing && email) await attachEmail(existing, email);
       if (existing) return Response.redirect(new URL(`/audit/${existing}`, req.url), 303);
@@ -88,6 +91,8 @@ export async function POST(req: Request) {
     // Payment only: no missions, no competitor, just the real payment test.
     const compareTo = models
       ? await createAudit(url, { device, missions: FORM_MISSIONS, missionIds, model: COMPARE_MODEL, ipHash, ...team })
+      : both
+        ? await createAudit(url, { device: "mobile", missions: FORM_MISSIONS, missionIds, model, email: email || undefined, ipHash, ...team })
       : competitor && !paymentOnly
         ? await createAudit(competitor, { device, missions: FORM_MISSIONS, missionIds, model, ipHash, ...team })
         : undefined;

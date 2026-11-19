@@ -32,9 +32,18 @@ export type SpaceAudit = {
   payment_test: string | null;
   proof_of: string | null; // proof audit: replays only the missions this blocker stopped
   pay: { status: string; verdict: string | null; with_login: boolean }[]; // real payment test runs linked to this audit
+  devices: boolean; // half of a Desktop + Mobile launch: the other device's report is linked to this one
   s: ReturnType<typeof summarize>;
   label: string; // name shown everywhere: title or domain, plus " (1)", " (2)"… when another report has the same name
 };
+
+// A linked audit (compare_to) on the same device belongs to the audit that links it: competitor or model comparison,
+// shown inside that report only. On the other device it is the second half of a Desktop + Mobile launch, a report
+// of its own (it feeds its mobile site, the lists, the checklist).
+export function hiddenLinked(rows: { id: string; compare_to: string | null; device: string }[]) {
+  const device = new Map(rows.map((a) => [a.id, a.device]));
+  return new Set(rows.filter((a) => a.compare_to && device.get(a.compare_to) === a.device).map((a) => a.compare_to!));
+}
 
 export type Fix = { site_id: number; device: string; blocker_type: string; fixed_at: string };
 
@@ -103,13 +112,13 @@ export async function reportSuffix(audit: { id: string; team_id: string | null; 
   if (!audit.team_id || audit.kind !== "checkout" || !reportName(audit)) return "";
   const { data } = await db
     .from("audits")
-    .select("id, created_at, title, compare_to, sites(domain)")
+    .select("id, created_at, title, compare_to, device, sites(domain)")
     .eq("team_id", audit.team_id)
     .eq("kind", "checkout")
     .order("created_at", { ascending: false })
     .limit(200);
-  const rows = (data ?? []) as unknown as { id: string; created_at: string; title: string | null; compare_to: string | null; sites: { domain: string } | null }[];
-  const competitors = new Set(rows.map((a) => a.compare_to).filter(Boolean));
+  const rows = (data ?? []) as unknown as { id: string; created_at: string; title: string | null; compare_to: string | null; device: string; sites: { domain: string } | null }[];
+  const competitors = hiddenLinked(rows);
   const mine = rows.filter((a) => !competitors.has(a.id));
   const row = mine.find((a) => a.id === audit.id);
   if (!row) return "";
@@ -139,10 +148,14 @@ export async function loadSpace(teamId: string) {
     : { data: [] as { audit_id: string; status: string; payment_verdict: string | null; with_login: boolean }[] };
   const payBy = new Map<string, SpaceAudit["pay"]>();
   for (const r of payRuns ?? []) payBy.set(r.audit_id, [...(payBy.get(r.audit_id) ?? []), { status: r.status, verdict: r.payment_verdict, with_login: r.with_login }]);
-  const all = ((data ?? []) as unknown as Omit<SpaceAudit, "s" | "pay" | "label">[]).map((a) => ({ ...a, pay: a.payment_test ? payBy.get(a.payment_test) ?? [] : [], s: summarize(a.runs), label: "" }));
+  const all = ((data ?? []) as unknown as Omit<SpaceAudit, "s" | "pay" | "label" | "devices">[]).map((a) => ({ ...a, pay: a.payment_test ? payBy.get(a.payment_test) ?? [] : [], s: summarize(a.runs), label: "", devices: false }));
   const byId = new Map(all.map((a) => [a.id, a]));
   // Competitor audits show inside the main site, not as sites of their own.
-  const competitorIds = new Set(all.map((a) => a.compare_to).filter(Boolean));
+  const competitorIds = hiddenLinked(all);
+  for (const a of all) {
+    const other = a.compare_to ? byId.get(a.compare_to) : undefined;
+    if (other && other.device !== a.device) a.devices = other.devices = true;
+  }
   // Reports in the trash leave every view (sites, checklist, home) until restored; the trash page lists them.
   const trash = all.filter((a) => !competitorIds.has(a.id) && a.deleted_at).sort((x, y) => Date.parse(y.deleted_at!) - Date.parse(x.deleted_at!));
   const audits = all.filter((a) => !competitorIds.has(a.id) && !a.deleted_at);

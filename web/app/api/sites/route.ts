@@ -2,6 +2,7 @@ import { db } from "@/lib/engine";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { msg } from "@/lib/lang";
 import { purgeAudit } from "@/lib/purge";
+import { hiddenLinked } from "@/lib/space";
 
 // Site management in the team space: trash a whole site (one device), restore it, delete it for good. Owner and admin only.
 // A site is its reports grouped by domain and device: trashing it moves all of them to the trash at once,
@@ -29,8 +30,10 @@ export async function POST(req: Request) {
   const reports = async (siteId?: number, device?: string) => {
     let q = db.from("audits").select("id, status, deleted_at, compare_to, payment_test, site_id, device").eq("team_id", teamId).eq("kind", "checkout");
     if (siteId != null) q = q.eq("site_id", siteId).eq("device", device!);
-    const [{ data }, { data: linked }] = await Promise.all([q, db.from("audits").select("compare_to").eq("team_id", teamId).not("compare_to", "is", null)]);
-    const competitors = new Set((linked ?? []).map((l) => l.compare_to));
+    const [{ data }, { data: linked }] = await Promise.all([q, db.from("audits").select("id, compare_to, device").eq("team_id", teamId).not("compare_to", "is", null)]);
+    // Same device only: the mobile half of a Desktop + Mobile launch is a report of the mobile site.
+    const { data: targets } = linked?.length ? await db.from("audits").select("id, compare_to, device").in("id", linked.map((l) => l.compare_to!)) : { data: [] };
+    const competitors = hiddenLinked([...(linked ?? []), ...(targets ?? [])]);
     return ((data ?? []) as (Row & { site_id: number; device: string })[]).filter((a) => !competitors.has(a.id));
   };
 

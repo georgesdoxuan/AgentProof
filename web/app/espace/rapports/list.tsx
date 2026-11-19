@@ -255,7 +255,7 @@ export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
                       <span className="min-w-0">
                         <span className="block truncate font-semibold">
                           {name}
-                          {a.compare_to && <span className="font-normal text-ink-2"> · {a.model ? r.vsModels : r.vsCompetitor}</span>}
+                          {a.devices ? <span className="font-normal text-ink-2"> · {r.vsDevices}</span> : a.compare_to && <span className="font-normal text-ink-2"> · {a.model ? r.vsModels : r.vsCompetitor}</span>}
                         </span>
                         <span className="type-small block text-ink-2">
                           {sub.join(" · ")} · <DeviceTag device={a.device} lang={lang} />
