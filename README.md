@@ -2,61 +2,94 @@
 
 **On envoie un client mystère IA sur ton site e-commerce.**
 
-Un agent IA computer-use (H Company, Holo) essaie d'acheter sur ton site comme un vrai client : il cherche, filtre, choisit une variante (taille, couleur…) si le produit en propose et va jusqu'à la première page du checkout, sans payer. Tu reçois un score, la capture du moment exact où l'agent bloque, le replay de chaque session, la comparaison avec un concurrent et un plan de corrections.
+Un agent IA computer-use (Holo, de H Company) essaie d'acheter sur ton site comme un vrai client : il cherche, filtre, choisit une variante (taille, couleur…) et va jusqu'à la première page du checkout, sans payer. Tu reçois un score, la capture du moment exact où l'agent bloque, le replay de chaque session, la comparaison avec un concurrent et un plan de corrections.
 
-- **Prototype en ligne : https://agentproof-iota-tawny.vercel.app**
-- Classement public : https://agentproof-iota-tawny.vercel.app/classement
-- Dataset : https://huggingface.co/datasets/georgesdoxuan/agentproof-runs
+| | |
+|---|---|
+| **Prototype en ligne** | https://agentproof-iota-tawny.vercel.app |
+| Classement public (sans compte) | https://agentproof-iota-tawny.vercel.app/classement |
+| Méthode | https://agentproof-iota-tawny.vercel.app/methode |
+| Dataset des runs | https://huggingface.co/datasets/georgesdoxuan/agentproof-runs |
+| **Fiche projet complète** (FR + résumé EN) | [docs/fiche-projet.md](docs/fiche-projet.md) |
+| Guide d'utilisation | [docs/guide-utilisation.md](docs/guide-utilisation.md) |
 
-Hackathon H Company × Hugging Face 2026 · Équipe 6 : Thomas (CEO), Georges (CPO / CTO), Alexandre (CAIO), Mehdi (CAO), Adonaï (CDO).
+Hackathon H Company × Hugging Face 2026 (Eugenia, 16–20 nov), track Creative Entrepreneur · Équipe 6, cinq personnes : CEO, CPO / CTO, CAIO, CAO, CDO.
 Contexte complet : [CONTEXT.md](CONTEXT.md) · Plan d'action : [PLAN.md](PLAN.md)
+
+## Comment tester
+
+**Sans compte (1 minute)**
+
+1. Ouvrir le [classement](https://agentproof-iota-tawny.vercel.app/classement) et cliquer sur un site : score, blocages, capture du blocage, comparaison.
+2. Dans une mission, cliquer « Voir le replay » : chaque étape de l'agent avec l'écran, l'action, le point cliqué et son raisonnement.
+3. Lire la [méthode](https://agentproof-iota-tawny.vercel.app/methode) : missions, juge visuel, score.
+
+**Avec l'espace de démonstration du jury (10 minutes)**
+
+> **À COMPLÉTER** : lien de connexion et identifiants de l'équipe « Démo juges ».
+> Cette équipe est séparée de l'espace de travail d'AgentProof : les audits lancés par le jury n'y touchent pas.
+
+1. Se connecter avec l'accès ci-dessus, puis « Lancer un audit » : saisir un site e-commerce (et un concurrent si on veut), 3 missions, ordinateur.
+2. Le rapport se met à jour tout seul en 5 à 10 minutes : missions en cours, puis score, blocages, captures, replays et plan de corrections (le double en Ordinateur + Mobile ou avec un concurrent, plus la file d'attente si d'autres audits tournent).
+3. Explorer l'espace : Sites (courbe de score), Corrections, Automations, Réglages › Équipe (rôles).
 
 ## Problème
 
-63 % des responsables e-commerce disent que leur tunnel d'achat ne peut pas être finalisé par un agent IA (Blend Commerce, 2026). Les outils existants lisent le code du site. Personne ne teste en vrai.
+Les agents IA commencent à faire les courses à notre place. Sur beaucoup de sites, l'agent bloque (bandeau cookies, pop-up, sélecteur de taille, captcha, compte obligatoire), abandonne et achète ailleurs, sans que le marchand le voie. 63 % des responsables e-commerce disent que leur tunnel d'achat ne peut pas être finalisé par un agent IA (Blend Commerce, 2026). Les outils existants lisent le code du site. Personne ne teste en vrai.
 
 ## Solution
 
-1. **Missions** : 10 parcours d'achat réalistes (recherche, menu, filtre prix, variante, promo, panier…).
+1. **Missions** : parcours d'achat réalistes (recherche, menu, filtre prix, variante, promo, panier…), jusqu'à la première page du checkout.
 2. **Score** : part des missions où l'agent atteint le checkout.
 3. **Preuves** : dernière capture de l'agent + replay étape par étape (écran, action, point cliqué, raisonnement).
 4. **Juge visuel à l'aveugle** : un modèle de vision Hugging Face regarde la dernière capture et la mission, sans connaître l'avis de l'agent. Si le juge ne répond pas, le run est « non vérifié » et sort du score.
-5. **Corrections** : blocages classés par impact et plan de corrections écrit par un LLM.
+5. **Corrections** : blocages classés par impact, plan de corrections écrit par un LLM, page Corrections et « Prouver la correction » qui rejoue les missions bloquées.
+
+Autour de l'audit : classement public, test de paiement réel facultatif avec garde-fous, automations (veille des pages, alertes, audit mensuel), équipes avec rôles, marque blanche. Public visé : tout e-commerce de produits physiques, à commencer par la mode française (benchmark de 10 marques). Détails : [fiche projet](docs/fiche-projet.md).
+
+## Stack
+
+| Brique | Outil |
+|---|---|
+| App (front + API) | Next.js 16, React 19, Tailwind 4, sur **Vercel** (fonctions à Paris) |
+| Base, captures | **Supabase** Postgres + Storage (Paris) |
+| Agent | **H Company Agents API** : agent `agentproof-shopper` (`holo4-35b-a3b` rapide, `holo4-27b` précis), navigateur cloud, coffre-fort H pour les comptes de test |
+| Juge visuel + plan de corrections | **Hugging Face** Inference Providers (`Qwen/Qwen3.5-9B`) |
+| Dataset ouvert | **Hugging Face Hub** (`georgesdoxuan/agentproof-runs`) |
+| Ordonnanceur, e-mails, notifications | **n8n** (appel de `/api/tick` chaque minute) |
 
 ## Architecture
 
-```
-Navigateur ──> Next.js (Vercel) ──lit/écrit──> Supabase (Postgres + Storage captures)
-                   ▲    │
-   n8n (VPS) ──────┘    │  /api/tick chaque minute : lance et récupère les sessions (≤ 5 requêtes H/min)
-   └─ Telegram          ├──> H Company Agents API : agent « agentproof-shopper » (holo4-35b-a3b, navigateur cloud)
-      (audit terminé)   └──> Hugging Face Inference Providers : juge visuel + plan de corrections (Qwen3.5-9B)
+```mermaid
+flowchart LR
+  U["Navigateur<br/>marchand, agence, jury"] --> W["Next.js sur Vercel<br/>pages + API"]
+  N["n8n<br/>chaque minute"] -- "/api/tick" --> W
+  W <--> S[("Supabase Paris<br/>Postgres + captures")]
+  W -- "sessions, événements,<br/>captures, replay" --> H["H Company Agents API<br/>agent Holo, navigateur cloud"]
+  H -- "visite comme un client" --> E["Site e-commerce audité"]
+  W -- "dernière capture" --> J["Hugging Face Inference<br/>juge visuel + corrections"]
+  W -- "export des runs" --> D["Hugging Face Hub<br/>dataset public"]
+  W -- "alertes" --> A["E-mail, Slack, webhook"]
 ```
 
 | Brique | Fichier |
 |---|---|
 | Config de l'agent H (consignes, règles, schéma de réponse) | [agent/agent.json](agent/agent.json) |
 | Moteur : création d'audit, tick, juge, corrections, replay | [web/lib/engine.ts](web/lib/engine.ts) |
-| Routes API (audits, tick) | [web/app/api](web/app/api) |
+| Routes API (audits, tick, hooks) | [web/app/api](web/app/api) |
 | Replay étape par étape | [web/app/replay/[run]/page.tsx](web/app/replay/[run]/page.tsx) |
-| Pages (accueil, classement, rapport) | [web/app](web/app) |
+| Pages publiques et espace d'équipe | [web/app](web/app) |
+| Schéma de la base (migrations) | [supabase](supabase) |
 | Export du dataset Hugging Face | [scripts/export-hf.sh](scripts/export-hf.sh) |
-| Workflow n8n « AgentProof — moteur et notifications » | sur l'instance n8n de l'équipe |
 
 ### Pourquoi un tick et pas des webhooks
 
 Les clés H du plan Free sont limitées à 3 sessions en parallèle. La page des clés annonçait aussi 5 requêtes par minute, mais l'API répond `x-ratelimit-limit: 40000` et aucune rafale n'a reçu de 429 (mesuré le 18 nov). Un seul point d'entrée (`/api/tick`, appelé chaque minute par n8n) parle à H : pendant 45 s, il fait une passe toutes les 10 s, récupère les sessions finies (1 requête pour les événements, 1 pour la capture, le juge de chaque session en parallèle) et remplit aussitôt les places libres (1 requête par lancement). Un audit lance sa première passe dès sa création, sans attendre le cron. Une mission échouée est rejouée dès son échec, pendant que les autres tournent. Les replays sont créés à la demande (1 requête par run, une seule fois) : la trajectoire partagée et ses captures sont ensuite publiques, sans clé ni limite.
 
-## Comment tester
-
-1. Ouvrir https://agentproof-iota-tawny.vercel.app, saisir un site e-commerce (et un concurrent si on veut), lancer l'audit.
-2. La page du rapport se met à jour toute seule : missions en cours, puis score, blocages, captures, replays et plan de corrections (compter environ 5 minutes pour 5 missions sur ordinateur, un peu plus sur mobile, le double en Ordinateur + Mobile ou avec un concurrent, plus la file d'attente si d'autres audits tournent).
-3. Le classement compare les sites mode déjà audités.
-
-En local :
+### En local
 
 ```bash
-cd web && cp ../.env.example .env.local   # puis remplir les clés
+cd web && cp ../.env.example .env.local   # puis remplir les clés (jamais commitées)
 npm install && npm run dev
 curl localhost:3000/api/tick -H "x-tick-secret: $TICK_SECRET"   # fait avancer les audits
 ```
@@ -94,18 +127,18 @@ Détail mission par mission, captures et replays : classement en ligne et datase
 
 Les sites « prêts pour les agents » sur ordinateur bloquent bien plus sur mobile. À vérifier à la main : les blocages « compte obligatoire » de Celio et Sézane, qui ne sortent pas sur ordinateur.
 
-## Test de paiement réel (équipe)
+## Test de paiement réel (facultatif)
 
-R&D interne, hors produit : page `/test-paiement`, réservée aux comptes de l'équipe AgentProof (`STAFF_EMAILS`). L'agent achète l'article le moins cher et paie **une seule fois** avec une carte virtuelle Revolut de l'équipe, sur un compte à 0 €. Un refus « fonds insuffisants » prouve que le paiement a atteint la banque (il serait passé avec des fonds). Le 3D Secure est validé par un humain sur son téléphone. Verdicts : paiement transmis à la banque, bloqué au 3D Secure, formulaire de carte inutilisable, paiement jamais atteint, compte obligatoire, anti-bot, erreur.
+Test à part de l'audit : l'agent prend le premier article disponible et **paie une seule fois** avec la carte de l'équipe, en 3 à 10 minutes. Un refus « fonds insuffisants » ou une demande de **3D Secure** prouve que le paiement a atteint la banque ; un agent ne valide pas le 3D Secure seul, donc la commande n'est pas confirmée et le rapport affiche « 100 % hors paiement ».
 
-- La carte est saisie par l'équipe dans les variables Vercel (`TEST_CARD_*`, `TEST_EMAIL`), jamais dans le repo.
-- Les captures de ces runs ne sont jamais stockées ni partagées (elles peuvent montrer la carte) ; le juge visuel les lit en mémoire.
-- Règle : 1 à 2 tentatives par site au maximum, jamais de faux numéro de carte.
-- Prochaine étape : cartes émises par nous (Stripe Issuing, Adyen, Swan) avec autorisation refusée en temps réel, pour automatiser la preuve bancaire.
+- **Garde-fous** : case de confirmation à chaque test, plafond de 150 € livraison comprise, une seule tentative, jamais sur un concurrent, jamais de faux numéro de carte.
+- **Données** : carte chiffrée et jamais réaffichée ; numéro, date et cryptogramme masqués dans le texte du replay ; captures floutées dès la saisie de la carte, replay privé à l'équipe, captures effacées 4 h après le test.
+- **Comptes de test** du marchand rangés dans un coffre-fort H Company : l'agent ne voit jamais le mot de passe.
+- **Point ouvert** : stocker le cryptogramme, même chiffré, n'est pas conforme PCI DSS. Acceptable pour une carte virtuelle de test à 0 €, pas en production : coffre-fort de cartes (Stripe, VGS) ou cartes émises par nous (Stripe Issuing, Adyen, Swan) avec refus en temps réel.
 
 ## Fiabilité et sobriété
 
-- **Accord juge / agent** : sur 140 runs vérifiés à l'aveugle (capture + URL de la page, jamais l'avis de l'agent), le juge donne le même verdict que l'agent dans 114 cas (81 %). Les écarts sont surtout des pages panier que l'agent croyait être le checkout. Accord juge / humain : vérification manuelle à faire.
+- **Accord juge / agent** : sur 140 runs vérifiés à l'aveugle (capture + URL de la page, jamais l'avis de l'agent), le juge donne le même verdict que l'agent dans 114 cas (81 %). Les écarts sont surtout des pages panier que l'agent croyait être le checkout. **Accord juge / humain : À COMPLÉTER** (vérification manuelle en cours).
 - **Score honnête** : seuls les runs vérifiés comptent. Rupture de stock, blocage anti-bot (IP de datacenter), mission impossible sur le catalogue (ex. un site de porte-clés) et agent à court d'étapes sont affichés à part, hors score.
 - **Répétabilité** : 10 sites joués deux fois, même verdict pour 30 missions sur 37 comparables (81 %). Le classement public fait donc la moyenne des 2 derniers passages de chaque site.
 - **Échec confirmé** : chaque mission ratée est rejouée une fois avant la clôture de l'audit ; le second essai fait foi (sauf anti-bot, rupture, compte obligatoire, mission impossible, qu'un nouvel essai ne changerait pas). Le premier essai reste visible dans le rapport, et le coût affiché inclut les deux.
@@ -135,12 +168,13 @@ Depuis le 19 novembre :
 - **Marque blanche** : Équipe › Marque blanche, le nom et le logo de l'agence remplacent AgentProof sur les rapports de l'équipe (page et PDF). Les pages de replay restent aux couleurs d'AgentProof.
 - **Replay du premier essai** : quand une mission a été rejouée, les deux tentatives restent visibles.
 
-## Limites et suite
+## Limites et roadmap
 
-- Une seule mission échoue parfois à cause de l'agent et pas du site : le juge visuel limite les faux succès, pas les faux échecs. Vérification manuelle d'un échantillon à faire.
-- Navigateur cloud depuis une IP de datacenter : certains sites anti-bot bloquent, comme ils bloqueraient un vrai agent.
+- Une mission échoue parfois à cause de l'agent et pas du site : le juge visuel limite les faux succès, pas les faux échecs. Accord juge / humain en cours de mesure.
+- Navigateur cloud depuis une IP de datacenter : certains sites anti-bot bloquent, comme ils bloqueraient un vrai agent (hors score).
 - Mobile = taille d'écran mobile, sans user-agent mobile.
-- À venir : e-mail du rapport, suivi mensuel avec alerte, plusieurs agents (ChatGPT agent…), comptes de test fournis par le marchand.
+- Un seul agent mesuré (Holo). Paiement en ligne pas encore ouvert : rien n'est facturé pendant l'essai.
+- À venir : cartes de test émises par nous et coffre-fort de cartes, plusieurs agents (ChatGPT agent…), vrai user-agent mobile, comptes de test et préproduction fournis par le marchand, d'autres secteurs que la mode.
 
 ## Retours sur l'Agent API de H
 
