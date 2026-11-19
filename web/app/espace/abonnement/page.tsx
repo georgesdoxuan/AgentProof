@@ -102,7 +102,13 @@ export default async function Abonnement() {
         </div>
       </Group>
 
-      <Group title={t("Offre", "Plan")} footer={t("Le paiement en ligne n'est pas encore ouvert : l'offre se change bientôt ici.", "Online payment is not open yet: you will soon change plan here.")}>
+      <Group
+        title={t("Offre", "Plan")}
+        footer={t(
+          "Le paiement en ligne n'est pas encore ouvert : rien n'est facturé et l'offre se change bientôt ici. Un audit utilise 5 crédits. Le suivi mensuel (149 €) ajoute un audit automatique chaque mois et 150 crédits ; la relecture quotidienne des pages ne coûte aucun crédit.",
+          "Online payment is not open yet: nothing is charged and you will soon change plan here. An audit uses 5 credits. Monthly tracking (€149) adds an automatic audit every month and 150 credits; daily page reads cost no credits.",
+        )}
+      >
         <Row>
           <span className="min-w-0 flex-1">
             <span className="block font-semibold">{plan[lang]}</span>

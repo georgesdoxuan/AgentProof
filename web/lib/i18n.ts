@@ -13,7 +13,7 @@ const fr = {
   skip: "Aller au contenu",
   navLabel: "Navigation principale",
   home: "AgentProof, accueil",
-  sections: { label: "Sections de la page", pourquoi: "Pourquoi", "ce-que-tu-recois": "Ce que tu reçois", tester: "Tester", classement: "Classement", tarifs: "Tarifs" },
+  sections: { label: "Sections de la page", pourquoi: "Pourquoi", "ce-que-tu-recois": "Ce que tu reçois", tester: "Tester", classement: "Classement", tarifs: "Tarifs", methode: "Méthode" },
   nav: { ranking: "Classement", mySpace: "Mon espace", space: "Espace", signIn: "Connexion", test: "Tester", testMySite: "mon site", team: "Équipe", account: "Compte", signOut: "Se déconnecter", help: "Aide et questions fréquentes" },
   footer: {
     rules: "Audit : arrêt à la première page du checkout, sans paiement, sans donnée personnelle, sans captcha. Test de paiement à part, facultatif, avec la carte de ton équipe uniquement.",
@@ -23,6 +23,7 @@ const fr = {
     privacy: "Confidentialité et mentions légales",
     legal: "Informations légales",
     cookies: "Ce site n’utilise que des cookies nécessaires à son fonctionnement (session, équipe, langue) : aucun traceur, aucune publicité.",
+    cookiesShort: "Cookies nécessaires uniquement, aucun traceur.",
     cookiesMore: "En savoir plus",
     cookiesOk: "OK",
   },
@@ -114,7 +115,7 @@ const en: Dict = {
   skip: "Skip to content",
   navLabel: "Main navigation",
   home: "AgentProof, home",
-  sections: { label: "Page sections", pourquoi: "Why", "ce-que-tu-recois": "What you get", tester: "Test", classement: "Ranking", tarifs: "Pricing" },
+  sections: { label: "Page sections", pourquoi: "Why", "ce-que-tu-recois": "What you get", tester: "Test", classement: "Ranking", tarifs: "Pricing", methode: "Method" },
   nav: { ranking: "Ranking", mySpace: "My space", space: "Space", signIn: "Sign in", test: "Try", testMySite: "my site", team: "Team", account: "Account", signOut: "Sign out", help: "Help and FAQ" },
   footer: {
     rules: "Audit: stops at the first checkout page, no payment, no personal data, no captcha. Payment test is separate, optional, and only uses your team's card.",
@@ -124,6 +125,7 @@ const en: Dict = {
     privacy: "Privacy and legal notice",
     legal: "Legal information",
     cookies: "This site only uses cookies it needs to work (session, team, language): no tracker, no advertising.",
+    cookiesShort: "Necessary cookies only, no tracker.",
     cookiesMore: "Learn more",
     cookiesOk: "OK",
   },

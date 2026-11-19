@@ -15,8 +15,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: en ? "AgentProof · The AI mystery shopper for your e-commerce site" : "AgentProof · Le client mystère IA de ton site e-commerce",
     description: en
-      ? "A real AI agent tries to buy on your site. Score, proof, comparison and fixes."
-      : "Un vrai agent IA essaie d'acheter sur ton site. Score, preuves, comparaison et corrections.",
+      ? "Check that an AI agent can buy from your store: where it gets stuck, with screenshots, and what to fix."
+      : "Vérifie qu'un agent IA peut acheter sur ta boutique : où il bloque, captures à l'appui, et quoi corriger.",
   };
 }
 
@@ -81,7 +81,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             </nav>
           </div>
         </footer>
-        <CookieNotice text={t.footer.cookies} more={t.footer.cookiesMore} ok={t.footer.cookiesOk} />
+        <CookieNotice text={t.footer.cookies} short={t.footer.cookiesShort} more={t.footer.cookiesMore} ok={t.footer.cookiesOk} />
       </body>
     </html>
   );

@@ -20,14 +20,21 @@ export default async function Home() {
   const t = tr(lang);
   const [user, { data: scores }, { data: proof }] = await Promise.all([
     currentUser(),
-    db.from("site_scores").select("*").eq("device", "desktop"),
+    db.from("site_scores").select("*"),
     // A real blocked mission for the "Preuves" tile: evidence over illustration.
     db.from("runs").select("screenshot_url, final_url, blocker_type").eq("id", PROOF_RUN).maybeSingle(),
   ]);
 
   // Same order as /classement, so the two never disagree.
-  const ranked = (scores ?? []).filter((s) => s.score != null).sort(byRank);
+  const desktop = (scores ?? []).filter((s) => s.device === "desktop");
+  const ranked = desktop.filter((s) => s.score != null).sort(byRank);
   const top = ranked.slice(0, 5);
+  // Under the top 5 (often all at 100 %): how many sites are ranked, and the desktop/mobile gap on the sites audited
+  // on both, so a visitor sees that not everyone passes. Plain means of the stored scores; nothing recomputed.
+  const mobile = new Map((scores ?? []).filter((s) => s.device === "mobile" && s.score != null).map((s) => [s.domain, s.score as number]));
+  const both = ranked.filter((s) => mobile.has(s.domain));
+  const mean = (xs: number[]) => Math.round(xs.reduce((a, b) => a + b, 0) / xs.length);
+  const gap = both.length >= 3 ? { n: both.length, desktop: mean(both.map((s) => s.score as number)), mobile: mean(both.map((s) => mobile.get(s.domain)!)) } : null;
 
   // The report e-mail goes through n8n: only announce it when that hook is configured.
   const mails = !!process.env.N8N_NOTIFY_URL;
@@ -37,9 +44,12 @@ export default async function Home() {
       {/* Hero */}
       <section className="overflow-hidden pt-[88px] text-center max-[734px]:pt-14">
         <div className="wrap">
-          <h1 className="type-hero ap-fade">{t("Un agent IA essaie d’acheter sur ton site.", "An AI agent tries to buy on your site.")}</h1>
+          <h1 className="type-hero ap-fade">{t("Vérifie qu’un agent IA peut acheter sur ta boutique.", "Check that an AI agent can buy from your store.")}</h1>
           <p className="type-subhead ap-fade mx-auto mt-5 max-w-[640px] text-ink-2 [animation-delay:0.2s]">
-            {t("AgentProof te montre où il bloque. Preuves à l’appui.", "AgentProof shows you where it gets stuck. With proof.")}
+            {t(
+              "Cookies, pop-up, sélecteur de taille : on te montre où il bloque, captures à l’appui, et quoi corriger. Gratuit, aucun achat réel.",
+              "Cookies, pop-ups, size selector: we show you where it gets stuck, with screenshots, and what to fix. Free, no real purchase.",
+            )}
           </p>
           <div className="ap-fade mt-8 flex flex-wrap items-center justify-center gap-x-[17px] gap-y-2 [animation-delay:0.4s]">
             <a href="#tester" className="btn">
@@ -52,6 +62,19 @@ export default async function Home() {
               {t("Voir le classement", "See the ranking")}
             </Link>
           </div>
+          {/* What the click costs and asks for, then what the agent never does: both were only under the form.
+              "Gratuit" holds while online payment is closed (see Tarifs); the guarantees are CONTEXT.md § 7, enforced by the engine. */}
+          <p className="type-small ap-fade mt-4 text-ink-2 [animation-delay:0.5s]">
+            {t("Gratuit · ton URL et ton e-mail · rapport en 10 à 20 min", "Free · your URL and your e-mail · report in 10 to 20 min")}
+          </p>
+          <Chips className="ap-fade mt-3 justify-center [animation-delay:0.5s]">
+            <Chip icon="nopay">{t("Aucun paiement", "No payment")}</Chip>
+            <Chip icon="shield">{t("Aucune donnée personnelle saisie", "No personal data entered")}</Chip>
+            <Chip icon="lock">{t("Arrêt à l’entrée du checkout", "Stops at the checkout entrance")}</Chip>
+            <Link href="/methode" className="type-small ml-1 text-link hover:underline">
+              {t("La méthode", "The method")}
+            </Link>
+          </Chips>
         </div>
         <figure className="mx-auto mt-16 w-[min(1080px,92%)] max-[734px]:mt-12">
           <BrowserFrame url={t("https://maison-exemple.fr/pull-col-rond-noir", "https://maison-example.com/black-crew-neck-sweater")}>
@@ -258,9 +281,15 @@ export default async function Home() {
                     <span className="hidden sm:block">
                       <MissionBar ok={s.runs_success ?? 0} done={s.runs_scored ?? 0} total={s.runs_scored ?? 0} size="sm" />
                     </span>
-                    <span className="flex items-center justify-end gap-2 type-headline tnum">
-                      <StatusGlyph tone={scoreTone(s.score)} className="h-4 w-4" />
-                      {s.score ?? "—"} %
+                    <span className="flex flex-col items-end">
+                      <span className="flex items-center justify-end gap-2 type-headline tnum">
+                        <StatusGlyph tone={scoreTone(s.score)} className="h-4 w-4" />
+                        {s.score ?? "—"} %
+                      </span>
+                      {/* The mission bar is hidden on phones: keep the coverage, so 100 % on 3 missions never reads like 100 % on 10. */}
+                      <span className="type-caption whitespace-nowrap text-ink-2 tnum sm:hidden">
+                        {t(`${s.runs_success ?? 0}/${s.runs_scored ?? 0} missions`, `${s.runs_success ?? 0}/${s.runs_scored ?? 0} missions`)}
+                      </span>
                     </span>
                   </Link>
                 </li>
@@ -274,7 +303,21 @@ export default async function Home() {
               </a>
             </div>
           )}
-          <p className="type-small mt-5 flex flex-wrap gap-x-5 gap-y-1 text-ink-2">
+          {ranked.length > 0 && (
+            <p className="type-small mt-5 text-ink-2">
+              {t(`${ranked.length} sites classés sur ordinateur.`, `${ranked.length} sites ranked on desktop.`)}
+              {gap && (
+                <>
+                  {" "}
+                  {t(
+                    `Sur les ${gap.n} sites audités aussi sur mobile, le score moyen passe de ${gap.desktop} % sur ordinateur à ${gap.mobile} % sur mobile.`,
+                    `On the ${gap.n} sites also audited on mobile, the average score drops from ${gap.desktop} % on desktop to ${gap.mobile} % on mobile.`,
+                  )}
+                </>
+              )}
+            </p>
+          )}
+          <p className="type-small mt-3 flex flex-wrap gap-x-5 gap-y-1 text-ink-2">
             <span className="inline-flex items-center gap-1.5"><StatusGlyph tone="pass" /> {t("70 % et plus : prêt pour les agents", "70 % and above: ready for agents")}</span>
             <span className="inline-flex items-center gap-1.5"><StatusGlyph tone="warn" /> {t("40 à 69 % : fragile", "40 to 69 %: fragile")}</span>
             <span className="inline-flex items-center gap-1.5"><StatusGlyph tone="fail" /> {t("Moins de 40 % : bloquant", "Below 40 %: blocking")}</span>
@@ -436,15 +479,15 @@ function ProductMock({ t }: { t: T }) {
 type Plan = { icon: string; name: string; price: string; per?: string; pitch: string; items: string[]; cta: [string, string]; featured?: boolean };
 const PLANS: Record<Lang, Plan[]> = {
   fr: [
-    { icon: "ranking", name: "Classement", price: "Gratuit", pitch: "Ton site dans le classement public des sites mode.", items: ["Score sur ordinateur", "Captures et replays des missions", "Mis à jour après chaque audit"], cta: ["Voir le classement", "/classement"] },
+    { icon: "ranking", name: "Classement", price: "Gratuit", pitch: "Ton site dans le classement public des sites mode.", items: ["Score sur ordinateur", "Captures et replays des missions", "Mis à jour après chaque audit", "Pendant l’essai : 15 crédits par mois, soit 3 audits complets offerts"], cta: ["Voir le classement", "/classement"] },
     { icon: "audit", name: "Audit complet", price: "490 €", per: "par site", pitch: "Le rapport pour savoir où l’agent bloque et quoi corriger.", items: ["Cinq missions d’achat, ordinateur ou mobile", "Preuves : capture et replay de chaque mission", "Comparaison avec un concurrent", "Plan de corrections classé par impact, en PDF"], cta: ["Lancer un audit", "#tester"] },
-    { icon: "monthly", name: "Suivi mensuel", price: "149 €", per: "par mois", pitch: "La preuve, chaque mois, que les agents achètent encore chez toi.", items: ["Un audit complet chaque mois, et ton rang face aux autres sites", "Pages relues chaque jour et après chaque mise en ligne", "Suivi de robots.txt, de l’anti-bot et des protocoles UCP, ACP, WebMCP", "Alerte Slack et e-mail quand une page change ou que le score baisse", "Le bilan du mois : vérifications, alertes, corrections prouvées"], cta: ["Lancer un audit", "#tester"], featured: true },
+    { icon: "monthly", name: "Suivi mensuel", price: "149 €", per: "par mois", pitch: "La preuve, chaque mois, que les agents achètent encore chez toi.", items: ["Un audit complet automatique chaque mois, et ton rang face aux autres sites", "150 crédits par mois pour relancer des audits quand tu veux (5 crédits par audit, l’audit automatique compris)", "Pages relues chaque jour et après chaque mise en ligne, sans agent ni crédit", "Suivi de robots.txt, de l’anti-bot et des protocoles UCP, ACP, WebMCP", "Alerte Slack et e-mail quand une page change ou que le score baisse", "Le bilan du mois : vérifications, alertes, corrections prouvées"], cta: ["Lancer un audit", "#tester"], featured: true },
     { icon: "agency", name: "Agences", price: "30 %", per: "de commission", pitch: "Revends l’audit à tes clients, sous ta marque.", items: ["Rapports et PDF en marque blanche", "Un espace d’équipe pour tous tes clients", "30 % de commission sur chaque audit revendu"], cta: ["Nous contacter", `mailto:${LEGAL.contact}?subject=AgentProof%20%E2%80%93%20agence`] },
   ],
   en: [
-    { icon: "ranking", name: "Ranking", price: "Free", pitch: "Your site in the public ranking of fashion sites.", items: ["Desktop score", "Mission screenshots and replays", "Updated after every audit"], cta: ["See the ranking", "/classement"] },
+    { icon: "ranking", name: "Ranking", price: "Free", pitch: "Your site in the public ranking of fashion sites.", items: ["Desktop score", "Mission screenshots and replays", "Updated after every audit", "During the trial: 15 credits a month, that is 3 full audits free"], cta: ["See the ranking", "/classement"] },
     { icon: "audit", name: "Full audit", price: "€490", per: "per site", pitch: "The report that shows where the agent gets stuck and what to fix.", items: ["Five shopping missions, desktop or mobile", "Proof: screenshot and replay of every mission", "Comparison with a competitor", "Fix plan ranked by impact, as a PDF"], cta: ["Run an audit", "#tester"] },
-    { icon: "monthly", name: "Monthly tracking", price: "€149", per: "per month", pitch: "Proof, every month, that agents can still buy from you.", items: ["A full audit every month, and your rank against other sites", "Pages read daily and after every release", "Tracking of robots.txt, anti-bot and the UCP, ACP, WebMCP protocols", "Slack and e-mail alert when a page changes or the score drops", "The month in review: checks, alerts, proven fixes"], cta: ["Run an audit", "#tester"], featured: true },
+    { icon: "monthly", name: "Monthly tracking", price: "€149", per: "per month", pitch: "Proof, every month, that agents can still buy from you.", items: ["An automatic full audit every month, and your rank against other sites", "150 credits a month to rerun audits whenever you want (5 credits per audit, the automatic one included)", "Pages read daily and after every release, without the agent and without credits", "Tracking of robots.txt, anti-bot and the UCP, ACP, WebMCP protocols", "Slack and e-mail alert when a page changes or the score drops", "The month in review: checks, alerts, proven fixes"], cta: ["Run an audit", "#tester"], featured: true },
     { icon: "agency", name: "Agencies", price: "30 %", per: "commission", pitch: "Resell the audit to your clients, under your brand.", items: ["White-label reports and PDFs", "One team space for all your clients", "30 % commission on every audit you resell"], cta: ["Contact us", `mailto:${LEGAL.contact}?subject=AgentProof%20%E2%80%93%20agency`] },
   ],
 };
@@ -491,12 +534,41 @@ function Pricing({ lang, t }: { lang: Lang; t: T }) {
         </ul>
         <Chips className="mt-5">
           <Chip icon="info">{t("Prix HT", "Excl. VAT")}</Chip>
-          <Chip icon="sparkle">{t("Gratuit pendant l’essai", "Free during the trial")}</Chip>
         </Chips>
+        {/* Trial, one-off audit, monthly plan: the same rules as the FAQ (lib/faq.ts › offres, essai-ou-audit) and the
+            plan screen (espace/abonnement), from lib/credits.ts. Nothing promised that the product does not do. */}
+        <dl className="type-small mt-8 grid gap-x-8 gap-y-5 border-t border-hairline pt-6 text-ink-2 md:grid-cols-3">
+          {OFFER_RULES[lang].map(([title, text]) => (
+            <div key={title}>
+              <dt className="font-semibold text-ink">{title}</dt>
+              <dd className="mt-1">{text}</dd>
+            </div>
+          ))}
+        </dl>
+        <p className="type-small mt-5">
+          <Link href="/faq#offres" className="text-link hover:underline">
+            {t("Toutes les questions sur les offres et les crédits", "All questions about plans and credits")}
+          </Link>
+        </p>
       </div>
     </section>
   );
 }
+
+// What separates the free trial, the €490 audit and the €149 plan. Today the audit is the same report for everyone:
+// the trial gives it for free, it is not a lighter version.
+const OFFER_RULES: Record<Lang, [string, string][]> = {
+  fr: [
+    ["Pendant l’essai", "Le paiement en ligne n’est pas encore ouvert. L’audit lancé ici est le même que l’audit complet à 490 € (cinq missions, preuves, comparaison, plan de corrections en PDF), et il est offert : 15 crédits par mois, soit 3 audits. Au-delà, rien n’est bloqué ni facturé."],
+    ["Audit complet, 490 €", "Un rapport ponctuel sur un site, ordinateur ou mobile. Tu le relances toi-même si tu veux vérifier une correction."],
+    ["Suivi mensuel, 149 €", "L’audit revient tout seul chaque mois et tes pages sont relues chaque jour. Les 150 crédits du mois servent aux audits, automatiques ou relancés à la main."],
+  ],
+  en: [
+    ["During the trial", "Online payment is not open yet. The audit you run here is the same as the €490 full audit (five missions, proof, comparison, fix plan as a PDF), and it is free: 15 credits a month, that is 3 audits. Beyond that, nothing is blocked or charged."],
+    ["Full audit, €490", "A one-off report on one site, desktop or mobile. You rerun it yourself if you want to check a fix."],
+    ["Monthly tracking, €149", "The audit comes back on its own every month and your pages are read every day. The month's 150 credits pay for audits, automatic or run by hand."],
+  ],
+};
 
 // What a team does with the report: each line maps to a feature that exists (report, replay, plan, re-audit, competitor).
 const BENEFITS: Record<Lang, [string, string][]> = {
