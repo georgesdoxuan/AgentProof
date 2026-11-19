@@ -641,18 +641,24 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
 
         {audit.recommendations && (
           <section id="plan" className="scroll-mt-24">
-            <SectionHead title={t("Plan de corrections.", "Fix plan.")} />
+            <SectionHead
+              title={t("Plan de corrections.", "Fix plan.")}
+              intro={
+                <Hint
+                  tip={t(
+                    "Constats : verdicts des missions ci-dessous. Hypothèses et corrections : IA open source (Hugging Face).",
+                    "Findings: verdicts of the missions below. Hypotheses and fixes: open-source AI (Hugging Face), written in French.",
+                  )}
+                >
+                  <Chip icon="sparkle">{t("Hypothèses IA · à vérifier avant d’agir", "AI hypotheses · check before acting")}</Chip>
+                </Hint>
+              }
+            />
             <Recommendations
               text={audit.recommendations}
               missions={runs.map((r: any, i: number) => ({ n: i + 1, title: r.missions.title, shot: r.screenshot_url, replay: `${base}/replay/${r.id}?a=${audit.id}` }))}
               ticket={{ report: `${base}/audit/${audit.id}`, site: audit.sites.domain, device: audit.device === "mobile" ? t("mobile (format téléphone simulé)", "mobile (simulated phone format)") : t("ordinateur", "desktop"), date: longDate(audit.created_at, lang) }}
             />
-            <Note icon="sparkle" className="mt-4 max-w-[680px]">
-              {t(
-                "Constats : verdicts des missions. Hypothèses et corrections : IA open source (Hugging Face), à vérifier avant d’agir.",
-                "Findings: mission verdicts. Hypotheses and fixes: open-source AI (Hugging Face), in French, to check before acting.",
-              )}
-            </Note>
           </section>
         )}
 
@@ -665,9 +671,9 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             title="Missions."
             intro={
               <Chips>
-                <Chip icon="home">{t("Départ : accueil", "Start: home page")}</Chip>
-                <Chip icon="nopay">{t("Arrêt : entrée du checkout", "Stop: checkout entrance")}</Chip>
-                <Chip icon="eye">{t("Capture : dernier écran", "Screenshot: last screen")}</Chip>
+                <Hint tip={t("La capture montre le dernier écran vu par l’agent.", "The screenshot shows the last screen the agent saw.")}>
+                  <Chip icon="home">{t("Accueil → entrée du checkout", "Home → checkout entrance")}</Chip>
+                </Hint>
               </Chips>
             }
             aside={cost > 0 && <Chip icon="payment">{t("Coût agent", "Agent cost")} · {usd(cost, 2, lang)}</Chip>}
@@ -822,7 +828,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
               <div className="overflow-hidden rounded-[18px] bg-tile">
               <ul className="-mb-px grid lg:grid-cols-2">
                 {statik.items.map((it) => (
-                  <li key={it.key} className="flex items-start gap-3 border-b border-hairline px-6 py-4 lg:odd:border-r">
+                  <li key={it.key} className="flex items-start gap-3 border-b border-hairline px-6 py-4 lg:odd:border-r lg:odd:last:col-span-2 lg:odd:last:border-r-0">
                     <StatusGlyph tone={it.tone} className="mt-0.5 h-5 w-5" />
                     <span className="min-w-0">
                       <span className="font-semibold">{staticText(it.label, lang)}</span>

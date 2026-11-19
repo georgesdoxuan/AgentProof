@@ -149,9 +149,7 @@ export default async function Home() {
           <div className="mt-8 grid gap-5 md:grid-cols-3">
             {BENEFITS[lang].map(([title, text], i) => (
               <article key={title} className="tile">
-                <span className="grid h-10 w-10 place-items-center rounded-[11px] bg-blue/12 text-link" aria-hidden>
-                  <Icon name={["search_failed", "doc", "trend"][i]} className="h-5 w-5" />
-                </span>
+                <Icon name={["search_failed", "doc", "trend"][i]} className="h-7 w-7 text-blue" />
                 <h4 className="type-headline mt-5">{title}</h4>
                 <p className="mt-2 text-ink-2">{text}</p>
               </article>
@@ -174,7 +172,6 @@ export default async function Home() {
           <Chips className="mt-5 justify-center">
             <Chip icon="audit">{t("5 missions", "5 missions")}</Chip>
             <Chip icon="clock">10–20 min</Chip>
-            <Chip icon="live">{t("Rapport en direct", "Live report")}</Chip>
           </Chips>
           <form action="/api/audits" method="post" className="mt-12 grid gap-4">
             <div className="grid gap-4 sm:grid-cols-2">
@@ -206,7 +203,7 @@ export default async function Home() {
               {t("Mobile simulé · 390 × 844", "Simulated mobile · 390 × 844")}
             </p>
             <button className="btn mt-4 min-h-[56px] w-full rounded-[12px]">{t("Lancer l’audit", "Run the audit")}</button>
-            <ol className="type-small mt-2 grid gap-2 sm:grid-cols-2" aria-label={t("Après le clic", "After the click")}>
+            <ol className="type-small mt-2 grid gap-2.5 px-1 text-ink-2" aria-label={t("Après le clic", "After the click")}>
               {(
                 [
                   ...(user ? [] : [["mail", t("Lien de connexion par e-mail", "Sign-in link by e-mail")]]),
@@ -215,10 +212,8 @@ export default async function Home() {
                   [mails ? "mail" : "layers", mails ? t("Rapport final par e-mail", "Final report by e-mail") : t("Rapport gardé dans ton espace", "Report kept in your space")],
                 ] as [string, string][]
               ).map(([icon, step], i) => (
-                <li key={i} className="flex items-center gap-3 rounded-[12px] bg-bg-2 px-3.5 py-3 text-ink-2 dark:bg-[#2c2c2e]">
-                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[8px] bg-tile text-ink-2" aria-hidden>
-                    <Icon name={icon} className="h-4 w-4" />
-                  </span>
+                <li key={i} className="flex items-center gap-3">
+                  <Icon name={icon} className="h-[18px] w-[18px]" />
                   <span>{step}</span>
                 </li>
               ))}
@@ -496,7 +491,7 @@ function Pricing({ lang, t }: { lang: Lang; t: T }) {
         </ul>
         <Chips className="mt-5">
           <Chip icon="info">{t("Prix HT", "Excl. VAT")}</Chip>
-          <Chip icon="sparkle" tone="blue">{t("Gratuit pendant l’essai", "Free during the trial")}</Chip>
+          <Chip icon="sparkle">{t("Gratuit pendant l’essai", "Free during the trial")}</Chip>
         </Chips>
       </div>
     </section>

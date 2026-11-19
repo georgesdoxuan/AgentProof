@@ -27,7 +27,7 @@ function headline(sites: SiteView[], t: T) {
   if (n === 1)
     return ready
       ? t("Les agents achètent sur ton site.", "Agents can buy on your site.")
-      : t(`Les agents réussissent ${scored[0].latest!.s.score} % des achats sur ton site.`, `Agents complete ${scored[0].latest!.s.score} % of purchases on your site.`);
+      : t(`Les agents réussissent ${scored[0].latest!.s.score}\u00a0% des achats sur ton site.`, `Agents complete ${scored[0].latest!.s.score}\u00a0% of purchases on your site.`);
   if (ready === n) return t(`Les agents achètent sur tes ${n} sites.`, `Agents can buy on all ${n} of your sites.`);
   if (!ready) return t(`Aucun de tes ${n} sites n'est prêt pour les agents.`, `None of your ${n} sites is ready for agents.`);
   return t(`Les agents achètent sur ${ready} site${ready > 1 ? "s" : ""} sur ${n}.`, `Agents can buy on ${ready} of your ${n} sites.`);
@@ -94,9 +94,7 @@ export default async function Accueil() {
             ).map(([icon, h, d, chip], i) => (
               <li key={h} className="border-hairline p-8 max-md:border-b md:border-r md:last:border-0 max-md:last:border-0">
                 <span className="flex items-center justify-between gap-3">
-                  <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-fill text-ink-2" aria-hidden>
-                    <Icon name={icon} className="h-5 w-5" />
-                  </span>
+                  <Icon name={icon} className="h-6 w-6 text-blue" />
                   <span className="type-caption tnum text-ink-2">{i + 1}/3</span>
                 </span>
                 <h2 className="type-headline mt-4">

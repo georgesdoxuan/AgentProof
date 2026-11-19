@@ -272,13 +272,11 @@ export function Chips({ children, className = "" }: { children: React.ReactNode;
 }
 
 // A small card for the one indication that must stay on the page (a rule, a limit, an access level):
-// icon in a tinted square, one short line, an optional link. Replaces the grey paragraph under a form.
+// a bare line icon (as in the sidebar), one short line, an optional link. Replaces the grey paragraph under a form.
 export function Note({ icon = "info", children, action, className = "" }: { icon?: string; children: React.ReactNode; action?: React.ReactNode; className?: string }) {
   return (
     <div className={`type-small flex items-center gap-3 rounded-[12px] bg-tile px-3.5 py-2.5 shadow-[inset_0_0_0_0.5px_var(--line)] ${className}`}>
-      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[8px] bg-fill text-ink-2">
-        <Icon name={icon} className="h-4 w-4" />
-      </span>
+      <Icon name={icon} className="h-[18px] w-[18px] text-ink-2" />
       <span className="min-w-0 flex-1 text-ink-2">{children}</span>
       {action && <span className="shrink-0">{action}</span>}
     </div>

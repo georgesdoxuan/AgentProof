@@ -40,7 +40,8 @@ export async function Leaderboard({ device = "desktop", base }: { device?: Devic
 
   return (
     <>
-        <nav aria-label={t("Appareil", "Device")} className="mt-8 inline-grid grid-cols-2 rounded-[10px] bg-fill p-[3px]">
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+        <nav aria-label={t("Appareil", "Device")} className="inline-grid grid-cols-2 rounded-[10px] bg-fill p-[3px]">
           {(["desktop", "mobile"] as const).map((d) => (
             <Link
               key={d}
@@ -52,13 +53,10 @@ export async function Leaderboard({ device = "desktop", base }: { device?: Devic
             </Link>
           ))}
         </nav>
-        {period && (
-          <p className="mt-4">
-            <Chip icon="clock">{t("Audits terminés", "Audits finished")} {period}</Chip>
-          </p>
-        )}
+        {period && <Chip icon="clock">{t("Audits terminés", "Audits finished")} {period}</Chip>}
+        </div>
         {scores?.length ? (
-          <div className={`${period ? "mt-4" : "mt-12"} overflow-hidden rounded-[18px] bg-tile`}>
+          <div className={`mt-6 overflow-hidden rounded-[18px] bg-tile`}>
             <div className={`type-caption hidden gap-4 border-b border-hairline px-6 py-3 text-ink-2 md:grid ${COLS}`} aria-hidden>
               <span>{t("Rang", "Rank")}</span>
               <span>Site</span>

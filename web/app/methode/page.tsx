@@ -120,10 +120,8 @@ const FaqTeam = ({ lang }: { lang: "fr" | "en" }) => (
 // A fact with its icon: the method reads like a product spec sheet, not an essay.
 const Fact = ({ icon, children }: { icon: string; children: React.ReactNode }) => (
   <li className="flex items-start gap-3">
-    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[9px] bg-tile text-ink-2" aria-hidden>
-      <Icon name={icon} className="h-[18px] w-[18px]" />
-    </span>
-    <span className="pt-1">{children}</span>
+    <Icon name={icon} className="mt-[3px] h-5 w-5 text-ink-2" />
+    <span>{children}</span>
   </li>
 );
 
@@ -137,11 +135,11 @@ export default async function Methode() {
         <h1 className="type-h1 mt-3">{t("Comment on calcule le score.", "How we compute the score.")}</h1>
 
         {/* The formula first, as a card: everything below explains its two terms. */}
-        <div className="tile mt-8 grid gap-5 p-7! sm:grid-cols-[auto_1fr] sm:items-center">
+        <div className="tile mt-8 grid gap-5 p-7!">
           <p className="type-h3 whitespace-nowrap tnum">
             Score = <span className="text-pass">{t("réussies", "passed")}</span> ÷ {t("vérifiées", "verified")}
           </p>
-          <Chips className="sm:justify-end">
+          <Chips>
             <Chip icon="audit">{t("5 missions", "5 missions")}</Chip>
             <Chip icon="refresh">{t("Échec rejoué 1 fois", "Failure replayed once")}</Chip>
             <Chip icon="ranking">{t("Classement : moyenne de 2", "Ranking: average of 2")}</Chip>
