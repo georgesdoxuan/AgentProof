@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Hint } from "@/lib/hint";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/engine";
+import { payIssues } from "@/lib/corrections";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { dict, tr, type Lang, type T } from "@/lib/i18n";
 import { getDict, getLang } from "@/lib/lang";
@@ -15,6 +16,7 @@ import { SpaceShell } from "../shell";
 import { PeriodSection } from "../controls";
 import { Delta, PriorityCard, sitePath } from "../parts";
 import { SiteLogo } from "../../site-logo";
+import { TypeBadge, auditType } from "../rapports/list";
 
 export async function generateMetadata() {
   return { title: `${(await getDict()).space.sections["/espace"]} · AgentProof` };
@@ -54,7 +56,9 @@ export default async function Accueil() {
   const running = audits.filter((a) => a.status !== "done");
   const todo = priorities(sites);
   const open = sites.flatMap((s) => s.blockers.filter((b) => b.state !== "check"));
-  const lost = open.reduce((n, b) => n + b.missions, 0);
+  // Same count as Corrections › À faire and the sidebar's badge: open blockers plus the payment tests that never reached
+  // the bank. No « missions perdues » beside it: the cards below give each blocker's own count (some are out of score).
+  const toFix = open.length + sites.reduce((n, s) => n + payIssues(s).length, 0);
   const last = audits.find((a) => a.status === "done" && a.runs.length);
   const launch = canLaunch(team.role);
   // The recap's period: the current month by default, or the one saved by the title's pop-up.
@@ -74,18 +78,34 @@ export default async function Accueil() {
   const when = period === choices[0] ? t("ce mois-ci", "this month") : t("sur la période", "over this period");
 
   // Facts as chips, like a dashboard's header: count, live work, what is left to fix, freshness.
+  // Large chips (36px) in the 40px row the button already sets: the sections below stay where they were. With no button
+  // (read-only), a -5px margin keeps the row at the old 26px.
+  // Each chip opens the page it sums up: Sites, Rapports (running), Corrections, the latest report.
+  const go = "flex rounded-full transition-opacity hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue";
   const status = audits.length ? (
-    <Chips>
-      <Chip icon="layers">{plural(sites.length, "site")}</Chip>
-      {running.length > 0 && <Chip icon="live" tone="live">{running.length} {t("en cours", "running")}</Chip>}
-      {open.length > 0 ? (
-        <Chip icon="wrench" tone="warn">
-          {plural(open.length, t("blocage", "blocker"))} · {plural(lost, "mission")} {t(lost > 1 ? "perdues" : "perdue", "lost")}
-        </Chip>
-      ) : (
-        sites.some((s) => s.latest) && <Chip icon="none" tone="pass">{t("Aucun blocage", "No blocker")}</Chip>
+    <Chips className={launch ? "" : "min-[735px]:-my-[5px]"}>
+      <Link href="/espace/sites" className={go}>
+        <Chip size="lg" icon="globe">{plural(sites.length, "site")}</Chip>
+      </Link>
+      {running.length > 0 && (
+        <Link href="/espace/rapports?vue=en-cours" className={go}>
+          <Chip size="lg" icon="live" tone="live">{running.length} {t("en cours", "running")}</Chip>
+        </Link>
       )}
-      {last && <Chip icon="clock">{shortDate(last.created_at, lang)}</Chip>}
+      {toFix > 0 ? (
+        <Link href="/espace/corrections" className={go}>
+          <Chip size="lg" icon="wrench" tone="warn">
+            {toFix > 1 ? t(`${toFix} corrections à faire`, `${toFix} fixes to do`) : t("1 correction à faire", "1 fix to do")}
+          </Chip>
+        </Link>
+      ) : (
+        sites.some((s) => s.latest) && <Chip size="lg" icon="none" tone="pass">{t("Rien à corriger", "Nothing to fix")}</Chip>
+      )}
+      {last && (
+        <Link href={`/audit/${last.id}`} className={go} title={t("Dernier rapport", "Latest report")}>
+          <Chip size="lg" icon="clock">{shortDate(last.created_at, lang)}</Chip>
+        </Link>
+      )}
     </Chips>
   ) : undefined;
 
@@ -142,7 +162,10 @@ export default async function Accueil() {
       {sites.length > 0 && (
         <section>
           <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-1">
-            <h2 className="type-headline">Sites</h2>
+            <h2 className="type-headline flex min-w-0 items-center gap-2.5">
+              <Icon name="globe" className="h-5 w-5 shrink-0 text-ink-2" />
+              Sites
+            </h2>
             <Link href="/espace/sites" className="type-small text-link hover:underline">
               {t("Tout voir", "See all")}
             </Link>
@@ -152,18 +175,22 @@ export default async function Accueil() {
               const score = s.latest?.s.score ?? null;
               const tone = scoreTone(score);
               return (
-                <Link key={s.key} href={sitePath(s)} className="tile flex flex-col gap-3 rounded-[20px]! p-5! transition-colors duration-200 hover:bg-tile/80">
+                <Link key={s.key} href={sitePath(s)} className="tile flex flex-col gap-3 rounded-[20px]! p-5! transition-colors duration-200 hover:bg-tile/80 max-[734px]:p-4!">
                   <span className="flex items-baseline justify-between gap-3">
-                    <span className="flex min-w-0 items-center gap-3">
+                    {/* Phones: tighter padding, gap and name so a domain like « waterdrop.fr » shows whole in a half-width tile. */}
+                    <span className="flex min-w-0 items-center gap-3 max-[734px]:gap-2">
                       <SiteLogo domain={s.domain} name={s.domain} />
                       <span className="min-w-0">
-                        <span className="block truncate font-semibold">{s.label}</span>
+                        <span className="block truncate font-semibold max-[734px]:text-[15px]">{s.label}</span>
                         <span className="type-caption block text-ink-2"><DeviceTag device={s.device} lang={lang} /></span>
                       </span>
                     </span>
-                    <Delta site={s} />
+                    {/* Phones: two tiles per row leave no room for the trend; the name keeps the width. */}
+                    <span className="max-[734px]:hidden">
+                      <Delta site={s} />
+                    </span>
                   </span>
-                  <span className="flex items-center gap-2 text-[32px] font-semibold leading-none tnum">
+                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[32px] font-semibold leading-none tnum">
                     <span className="sr-only">{toneWords(lang)[tone]} :</span>
                     <StatusGlyph tone={tone} className="h-5 w-5" />
                     {score ?? "—"}
@@ -219,14 +246,14 @@ export default async function Accueil() {
                     `No alert ${when}: no page changed, no score dropped${month.checks ? ` (${month.checks} checks)` : ""}.`,
                   )
                 : t(`${month.changes + month.drops} alerte${month.changes + month.drops > 1 ? "s" : ""} ${when}, détail dans Automations et dans les rapports.`, `${month.changes + month.drops} alert${month.changes + month.drops > 1 ? "s" : ""} ${when}, details in Automations and the reports.`)}
-              {month.open > 0 && t(` ${month.open} blocage${month.open > 1 ? "s" : ""} encore ouvert${month.open > 1 ? "s" : ""}.`, ` ${month.open} blocker${month.open > 1 ? "s" : ""} still open.`)}
+              {toFix > 0 && t(` ${toFix} correction${toFix > 1 ? "s" : ""} encore à faire.`, ` ${toFix} fix${toFix > 1 ? "es" : ""} still to do.`)}
             </p>
           </div>
         </PeriodSection>
       )}
 
       {running.length > 0 && (
-        <Group title={t("En cours", "Running")} aside={<Chip icon="live" tone="live">{t("Direct", "Live")}</Chip>}>
+        <Group title={t("En cours", "Running")} icon="live" aside={<Chip icon="live" tone="live">{t("Direct", "Live")}</Chip>}>
           {running.map((a) => (
             <Link key={a.id} href={`/audit/${a.id}`} className="block border-b border-hairline last:border-0 hover:bg-bg-2/60">
               <div className="grid min-h-[68px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-5 px-5 py-3 sm:grid-cols-[minmax(0,1fr)_10rem_7rem_1rem]">
@@ -234,8 +261,11 @@ export default async function Accueil() {
                   <SiteLogo domain={a.sites?.domain} name={a.sites?.domain} />
                   <span className="min-w-0">
                     <span className="block truncate font-semibold">{a.label}</span>
-                    <span className="type-small text-ink-2">
-                      <DeviceTag device={a.device} lang={lang} /> · {t("lancé", "started")} {shortDate(a.created_at, lang)}
+                    <span className="type-small flex flex-wrap items-center gap-x-2 gap-y-1 text-ink-2">
+                      <TypeBadge type={auditType(a)} t={dict(lang).reports.types} />
+                      <span>
+                        <DeviceTag device={a.device} lang={lang} /> · {t("lancé", "started")} {shortDate(a.created_at, lang)}
+                      </span>
                     </span>
                   </span>
                 </span>

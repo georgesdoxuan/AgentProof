@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BlockerIcon, BrowserFrame, Chevron, Chip, DeviceTag, ExPay, MissionBar, StatusGlyph, blockerLabel, scoreTone } from "@/lib/ui";
+import { EXCLUDED } from "@/lib/engine";
 import { deviceLabel, fixHints, shortDate, type Blocker, type SiteView } from "@/lib/space";
 import { tr, type Lang } from "@/lib/i18n";
 import { getLang, getT } from "@/lib/lang";
@@ -247,6 +248,8 @@ export async function PriorityCard({ site, b }: { site: SiteView; b: Blocker }) 
           <Chip tone="fail">
             {b.missions} mission{b.missions > 1 ? "s" : ""} {t(`perdue${b.missions > 1 ? "s" : ""}`, "lost")}
           </Chip>
+          {/* Anti-bot, stock: the missions are lost but left out of the score (grey icon, as in the report). */}
+          {EXCLUDED.includes(b.type) && <Chip icon="shield">{t("Hors score", "Out of score")}</Chip>}
           {state && <span className={`type-caption inline-flex min-h-[26px] items-center rounded-full px-2.5 font-semibold ${state[2]}`}>{t(state[0], state[1])}</span>}
         </div>
       </div>

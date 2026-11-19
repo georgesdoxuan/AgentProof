@@ -7,7 +7,7 @@ import { PAY_REACHED_BANK, paymentVerdicts } from "@/lib/engine";
 import { locale, tr, type Dict, type Lang } from "@/lib/i18n";
 import { getDict, getLang } from "@/lib/lang";
 import { loadSpace, siteKey, type SpaceAudit } from "@/lib/space";
-import { Chevron, Chip, Chips, DeviceTag, ExPay, Icon, MissionBar, Spinner, StatusGlyph, scoreTone } from "@/lib/ui";
+import { Chevron, Chip, DeviceTag, ExPay, Icon, MissionBar, Spinner, StatusGlyph, scoreTone } from "@/lib/ui";
 import { CloseMenu, ConfirmButton, ReportsLayout } from "../controls";
 import { SpaceShell } from "../shell";
 import { TrashTabs } from "../parts";
@@ -35,7 +35,7 @@ const TYPE_TONE: Record<AuditType, string> = {
   both: "bg-blue/12 text-link",
 };
 // The badge: icon(s) + label, beside the name on wide screens, on its own line under the row on phones.
-function TypeBadge({ type, t, className = "" }: { type: AuditType; t: Dict["reports"]["types"]; className?: string }) {
+export function TypeBadge({ type, t, className = "" }: { type: AuditType; t: Dict["reports"]["types"]; className?: string }) {
   return (
     <span title={t.tip[type]} className={`type-caption inline-flex h-[22px] shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2 font-semibold ${TYPE_TONE[type]} ${className}`}>
       {TYPE_ICONS[type].map((i) => <Icon key={i} name={i} className="h-[13px] w-[13px]" />)}
@@ -214,13 +214,8 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
   const shown = type === "all" ? searched : searched.filter((a) => auditType(a) === type);
   const back = status === "tous" ? PATH[view] : `${PATH[view]}?vue=${status}`;
 
-  const intro =
-    view === "trash" || !scoped.length ? undefined : (
-      <Chips>
-        <Chip icon={view === "favorites" ? "star" : "doc"}>{r.countOnly(scoped.length)}</Chip>
-        {running.length > 0 && <Chip icon="live" tone="live">{r.running(running.length)}</Chip>}
-      </Chips>
-    );
+  // No count chip above the list: each status tab carries its own count, so the list starts at the top.
+  const counts = { tous: scoped.length, "en-cours": running.length, termines: scoped.length - running.length };
   const title = view === "all" ? r.title : `${r.title} · ${r.sections[view]}`;
   const tab = "type-small flex h-8 items-center rounded-[8px] px-3.5 font-semibold text-ink-2 transition-colors aria-[current=true]:bg-tile aria-[current=true]:text-ink aria-[current=true]:shadow-[0_1px_3px_rgb(0_0_0/0.12)] dark:aria-[current=true]:bg-[#636366]";
 
@@ -354,7 +349,6 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
       settings={view === "trash"}
       narrow={view === "trash"}
       bare
-      intro={intro}
       hint={view === "trash" ? r.trashIntro : undefined}
     >
       <section>
@@ -397,7 +391,10 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
                   aria-current={status === v ? "true" : undefined}
                   className="rounded-full focus-visible:outline-2 focus-visible:outline-blue"
                 >
-                  <Chip icon={icon} tone={status !== v ? "plain" : v === "en-cours" ? "live" : "pass"}>{l}</Chip>
+                  <Chip icon={icon} tone={status !== v ? "plain" : v === "en-cours" ? "live" : "pass"}>
+                    {l}
+                    {counts[v] > 0 && <span className="tnum font-normal opacity-70">{counts[v]}</span>}
+                  </Chip>
                 </Link>
               ))}
             </nav>
@@ -409,6 +406,7 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
                   {/* Same colors as the rows and the sidebar: yellow = running, green = finished. */}
                   {v !== "tous" && <span className={`h-2 w-2 rounded-full ${v === "en-cours" ? "bg-live-fill" : "bg-pass"}`} aria-hidden />}
                   {l}
+                  {counts[v] > 0 && <span className="tnum font-normal opacity-70">{counts[v]}</span>}
                 </Link>
               ))}
             </nav>

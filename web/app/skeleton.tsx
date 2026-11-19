@@ -37,6 +37,7 @@ export function SkSpace({
   narrow,
   action,
   intro,
+  bigChips,
   parent,
   logo,
   long,
@@ -53,6 +54,8 @@ export function SkSpace({
   action?: boolean;
   /** "chips": a row of Chips (26px), or the widths of each chip; "line": one line of text. Left out when the page has no intro. */
   intro?: "chips" | "line" | string[];
+  /** The space home's large chips (36px). */
+  bigChips?: boolean;
   /** A sentence-long title (the space's home): three lines on phones, like the real one. */
   long?: boolean;
   /** Child pages (a site, Favoris): the back link above the title. */
@@ -89,7 +92,7 @@ export function SkSpace({
             <Line w="min(24rem, 85%)" />
           )
         }
-        intro={Array.isArray(intro) ? <SkChips w={intro} /> : intro === "chips" ? <SkChips /> : intro === "line" ? <Line w="min(36rem, 100%)" /> : undefined}
+        intro={Array.isArray(intro) ? <SkChips w={intro} big={bigChips} /> : intro === "chips" ? <SkChips big={bigChips} /> : intro === "line" ? <Line w="min(36rem, 100%)" /> : undefined}
         actions={action ? <Bone className={`rounded-full ${compact || bare ? "h-10 w-40" : "h-12 w-44"}`} /> : undefined}
       >
         {children}
@@ -98,12 +101,12 @@ export function SkSpace({
   );
 }
 
-// Same height as lib/ui Chips (26px pills).
-function SkChips({ w = ["5.5rem", "7rem", "6rem"] }: { w?: string[] }) {
+// Same height as lib/ui Chips (26px pills, 36px with size "lg").
+function SkChips({ w = ["5.5rem", "7rem", "6rem"], big }: { w?: string[]; big?: boolean }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       {w.map((w, i) => (
-        <Bone key={i} className="h-[26px] rounded-full" w={w} />
+        <Bone key={i} className={`h-[26px] ${big ? "min-[735px]:h-9" : ""} rounded-full`} w={w} />
       ))}
     </div>
   );
