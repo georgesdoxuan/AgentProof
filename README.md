@@ -26,12 +26,12 @@ Contexte complet : [CONTEXT.md](CONTEXT.md) · Plan d'action : [PLAN.md](PLAN.md
 
 **Avec l'espace de démonstration du jury (10 minutes)**
 
-> **À COMPLÉTER** : lien de connexion et identifiants de l'équipe « Démo juges ».
-> Cette équipe est séparée de l'espace de travail d'AgentProof : les audits lancés par le jury n'y touchent pas.
+> **Accès : [agentproof-iota-tawny.vercel.app/demo](https://agentproof-iota-tawny.vercel.app/demo)**, bouton « Entrer dans la démo ». Aucun e-mail ni mot de passe : chaque clic ouvre un compte juge dans l'équipe « Démo jury ».
+> Cette équipe est séparée de l'espace de travail d'AgentProof : elle contient des copies de rapports réels, et rien de ce que fait le jury n'atteint nos audits. Carte de paiement, comptes de test, membres, automatisations et corbeille y sont désactivés ; 2 audits par juge.
 
-1. Se connecter avec l'accès ci-dessus, puis « Lancer un audit » : saisir un site e-commerce (et un concurrent si on veut), 3 missions, ordinateur.
-2. Le rapport se met à jour tout seul en 5 à 10 minutes : missions en cours, puis score, blocages, captures, replays et plan de corrections (le double en Ordinateur + Mobile ou avec un concurrent, plus la file d'attente si d'autres audits tournent).
-3. Explorer l'espace : Sites (courbe de score), Corrections, Automations, Réglages › Équipe (rôles).
+1. Ouvrir un rapport d'exemple dans Rapports : waterdrop.fr (5 missions sur 5), nike.com (arrêté par l'anti-bot), promod.fr (agent précis).
+2. Dans une mission, « Voir le replay » ; puis la page Corrections, qui liste ce qu'il faut réparer site par site.
+3. « Lancer un audit » sur la boutique de son choix, ordinateur : le rapport se met à jour tout seul en 5 à 10 minutes (missions en cours, puis score, blocages, captures, replays et plan de corrections).
 
 ## Problème
 

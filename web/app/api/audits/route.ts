@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
 import { after } from "next/server";
-import { COMPARE_MODEL, DEFAULT_MODEL, LOGIN_REFUSED, attachEmail, auditsFromIp, createAudit, createPaymentTest, db, normalizeUrl, recentAudit, tick } from "@/lib/engine";
+import { COMPARE_MODEL, DEFAULT_MODEL, JURY_FULL, LOGIN_REFUSED, attachEmail, auditsFromIp, createAudit, createPaymentTest, db, normalizeUrl, recentAudit, tick } from "@/lib/engine";
 import { canLaunch, teamContext } from "@/lib/auth";
+import { isJury, juryAuditsLeft } from "@/lib/jury";
 import { cardSecret } from "@/lib/cards";
 import { refreshLogo } from "@/lib/logo";
 import { getLang, msg } from "@/lib/lang";
@@ -57,6 +58,9 @@ export async function POST(req: Request) {
   const model = !models && form.get("model") === "precise" ? COMPARE_MODEL : undefined;
   if (models && competitor) return retry(req, form, "combo");
   if (both && (competitor || models)) return retry(req, form, "combo");
+  // Jury demo: never a real payment, at most JURY_AUDITS audits per judge (a competitor or Desktop + Mobile counts two).
+  const jury = isJury(ctx.user.email);
+  if (jury && (form.get("mode") === "payment" || form.get("payment") === "1")) return retry(req, form, "jury");
   const email = String(form.get("email") ?? "").trim().toLowerCase() || ctx.user.email;
   if (email && (email.length > 200 || !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(email))) return retry(req, form, "email");
 
@@ -93,6 +97,8 @@ export async function POST(req: Request) {
       if (existing) return Response.redirect(new URL(`/audit/${existing}`, req.url), 303);
     }
 
+    if (jury && (await juryAuditsLeft(ctx.user.id, ctx.team.id)) < (competitor || models || both ? 2 : 1)) return retry(req, form, "jury");
+
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
     const ipHash = createHash("sha256").update(`${process.env.TICK_SECRET}:${ip}`).digest("hex");
     if ((await auditsFromIp(ipHash)) >= MAX_AUDITS_PER_HOUR) return retry(req, form, "heure");
@@ -125,6 +131,6 @@ export async function POST(req: Request) {
   } catch (e) {
     // The only expected failure is an address that is not a public site; anything else is ours, said as such.
     const m = String((e as Error).message);
-    return retry(req, form, m.startsWith("URL invalide") ? "url" : m === LOGIN_REFUSED ? "compte" : "technique");
+    return retry(req, form, m.startsWith("URL invalide") ? "url" : m === LOGIN_REFUSED ? "compte" : m === JURY_FULL ? "jury" : "technique");
   }
 }

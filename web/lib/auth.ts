@@ -95,7 +95,8 @@ export async function createTeam(name: string, ownerId: string) {
 // E-mails go through n8n (webhook "agentproof-mail", answers after its Send Email node).
 // True only when the SMTP node really sent it (its output carries a messageId), so a disabled node never looks like success.
 export async function sendMail(to: string, subject: string, text: string, link: string) {
-  if (!process.env.N8N_MAIL_URL) return false;
+  // Reserved .test addresses (jury demo accounts, claude@agentproof.test) have no inbox: never sent.
+  if (!process.env.N8N_MAIL_URL || /\.test$/i.test(to.trim())) return false;
   const res = await fetch(process.env.N8N_MAIL_URL, {
     signal: AbortSignal.timeout(15_000),
     method: "POST",

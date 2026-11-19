@@ -1,6 +1,7 @@
 import { after } from "next/server";
-import { BLOCKERS, createAudit, db, tick } from "@/lib/engine";
+import { BLOCKERS, JURY_FULL, createAudit, db, tick } from "@/lib/engine";
 import { canLaunch, teamContext } from "@/lib/auth";
+import { isJury, juryAuditsLeft } from "@/lib/jury";
 import { msg } from "@/lib/lang";
 
 // Checklist on a site page: mark a blocker as fixed (or undo), or prove the fix. Owner and admin only.
@@ -43,9 +44,15 @@ export async function POST(req: Request) {
     // One proof at a time per blocker: a second click opens the one already running.
     const { data: running } = await db.from("audits").select("id").eq("team_id", ctx.team.id).eq("site_id", siteId).eq("device", device).eq("proof_of", blocker).neq("status", "done").limit(1);
     if (running?.length) return Response.redirect(new URL(`/audit/${running[0].id}`, req.url), 303);
+    // Jury demo: a proof is an audit too, counted in the judge's quota.
+    if (isJury(ctx.user.email) && !(await juryAuditsLeft(ctx.user.id, ctx.team.id))) return Response.redirect(new URL("/espace/nouveau?erreur=jury", req.url), 303);
     // The proof counts for a fix dated before it: re-marked now, also when the blocker came back after an older fix.
     await db.from("fixes").upsert({ ...key, fixed_at: new Date().toISOString(), fixed_by: ctx.user.id });
-    const id = await createAudit((full as any).sites.url, { device, missionIds, proofOf: blocker, teamId: ctx.team.id, createdBy: ctx.user.id, email: ctx.user.email });
+    const id = await createAudit((full as any).sites.url, { device, missionIds, proofOf: blocker, teamId: ctx.team.id, createdBy: ctx.user.id, email: ctx.user.email }).catch((e: Error) => {
+      if (e.message === JURY_FULL) return null;
+      throw e;
+    });
+    if (!id) return Response.redirect(new URL("/espace/nouveau?erreur=jury", req.url), 303);
     after(() => tick(0).catch(() => {}));
     return Response.redirect(new URL(`/audit/${id}`, req.url), 303);
   }

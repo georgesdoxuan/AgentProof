@@ -1,3 +1,5 @@
+import { isJury } from "@/lib/jury";
+import { JuryLockedPage } from "../../jury-locked";
 import { redirect } from "next/navigation";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { listSiteLogins } from "@/lib/engine";
@@ -16,6 +18,7 @@ export default async function Comptes({ searchParams }: { searchParams: Promise<
   const ctx = await teamContext();
   if (!ctx) redirect("/connexion?next=/espace/reglages/comptes");
   if (!ctx.team) redirect("/espace");
+  if (isJury(ctx.user.email)) return <JuryLockedPage />;
   const { team } = ctx;
   const logins = await listSiteLogins(team.id);
   // From the launch form's "Add an account": the site being audited, already filled in.

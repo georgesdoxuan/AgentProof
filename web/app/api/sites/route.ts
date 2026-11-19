@@ -1,3 +1,4 @@
+import { isJury, juryLocked } from "@/lib/jury";
 import { db } from "@/lib/engine";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { msg } from "@/lib/lang";
@@ -16,6 +17,7 @@ type Row = { id: string; status: string; deleted_at: string | null; compare_to: 
 export async function POST(req: Request) {
   const ctx = await teamContext();
   if (!ctx) return Response.redirect(new URL("/connexion?next=/espace/sites", req.url), 303);
+  if (isJury(ctx.user.email)) return juryLocked();
   if (!ctx.team) return Response.redirect(new URL("/espace", req.url), 303);
   const form = await req.formData();
   const back = String(form.get("back") ?? "");

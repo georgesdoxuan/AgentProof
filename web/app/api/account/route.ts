@@ -1,3 +1,4 @@
+import { isJury, juryLocked } from "@/lib/jury";
 import { currentUser, endSession } from "@/lib/auth";
 import { deleteAccount, exportAccount } from "@/lib/account";
 import { msg } from "@/lib/lang";
@@ -23,6 +24,7 @@ export async function POST(req: Request) {
   const user = await currentUser();
   if (!user) return go(req, "/connexion?next=/espace/reglages/compte");
   const form = await req.formData();
+  if (isJury(user.email)) return juryLocked();
   if (form.get("action") !== "delete") return fail(await msg("Action inconnue.", "Unknown action."));
   if (String(form.get("confirm") ?? "").trim().toLowerCase() !== user.email.toLowerCase())
     return go(req, "/espace/reglages/compte?erreur=confirmation#supprimer");
