@@ -26,7 +26,9 @@ function useLaunchShape(ref: RefObject<HTMLElement | null>) {
       const linked = String(f.get("competitor") ?? "").trim() !== "" || f.get("models") === "1";
       // A real payment test costs 2 credits on top (lib/credits.ts RATES.payment).
       const pay = f.get("mode") === "payment" || f.get("payment") === "1" ? 2 : 0;
-      setShape({ device, times: f.get("mode") === "payment" ? 0 : (device === "both" ? 2 : 1) * (linked ? 2 : 1), pay });
+      const next = { device, times: f.get("mode") === "payment" ? 0 : (device === "both" ? 2 : 1) * (linked ? 2 : 1), pay };
+      // Same shape, same state: a fresh object on every keystroke re-renders before React's onChange and undoes the typing.
+      setShape((s) => (s.device === next.device && s.times === next.times && s.pay === next.pay ? s : next));
     };
     sync();
     form.addEventListener("input", sync);
@@ -39,9 +41,34 @@ function useLaunchShape(ref: RefObject<HTMLElement | null>) {
   return shape;
 }
 
-export function MissionPicker({ items: initial, lang, max, pace }: { items: PickItem[]; lang: Lang; max: number; pace: Pace }) {
+// A team's saved mission list: { key } for a listed mission, { title, text, base_id? } for one written for the list.
+export type ListEntry = { key: string } | { title: string; text: string; base_id?: number };
+export type SavedList = { id: number; name: string; items: ListEntry[] };
+
+// Pop-up button look for the native <select>, as in espace/controls.tsx.
+const popUp =
+  "h-9 min-w-0 max-w-full cursor-pointer appearance-none truncate rounded-[8px] bg-fill bg-[length:10px] bg-[right_10px_center] bg-no-repeat pl-3 pr-8 type-small font-semibold text-ink transition-colors hover:bg-line/60 focus-visible:outline-2 focus-visible:outline-blue";
+const popUpChevrons = {
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M2 5l3-3 3 3M2 9l3 3 3-3' fill='none' stroke='%2386868b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
+};
+
+// What a list keeps of the current pick, in pick order.
+const toEntries = (picked: PickItem[]): ListEntry[] =>
+  picked.map((m) => (m.id && !m.once ? { key: m.key } : { title: m.title, text: m.instruction, ...(m.default ? { base_id: m.base_id ?? m.id! } : {}) }));
+const sameEntries = (a: ListEntry[], b: ListEntry[]) => {
+  const norm = (l: ListEntry[]) => l.map((e) => JSON.stringify("key" in e ? [e.key] : [e.title, e.text, e.base_id ?? null])).sort().join("|");
+  return norm(a) === norm(b);
+};
+
+export function MissionPicker({ items: initial, lists: initialLists, lang, max, pace }: { items: PickItem[]; lists: SavedList[]; lang: Lang; max: number; pace: Pace }) {
   const t = (fr: string, en: string) => (lang === "en" ? en : fr);
   const [items, setItems] = useState(initial);
+  // The team's saved missions as listed (no one-off change), to rebuild the pick when a list is applied.
+  const [catalog, setCatalog] = useState(() => initial.map((m) => ({ ...m, checked: false })));
+  const defaultKeys = useMemo(() => new Set(initial.filter((m) => m.checked).map((m) => m.key)), [initial]);
+  const [lists, setLists] = useState(initialLists);
+  const [active, setActive] = useState<number | null>(null); // applied list, null: the default pick
+  const [missing, setMissing] = useState(0); // missions of the applied list that no longer exist
   const [editing, setEditing] = useState<number | null>(null); // index in items
   const [error, setError] = useState("");
   const boxRef = useRef<HTMLDetailsElement>(null);
@@ -80,7 +107,8 @@ export function MissionPicker({ items: initial, lang, max, pace }: { items: Pick
     setItems((all) => all.map((m, k) => (k === i ? { ...m, checked: !m.checked } : m)));
   };
   // Fresh list after a save: keep this form's ticks and one-off changes; the mission just saved comes back ticked.
-  const merge = (fresh: PickItem[], savedId?: number) =>
+  const merge = (fresh: PickItem[], savedId?: number) => {
+    setCatalog(fresh.map((m) => ({ ...m, checked: false })));
     setItems((cur) => {
       const old = new Map(cur.map((m) => [m.key, m]));
       return [
@@ -92,10 +120,38 @@ export function MissionPicker({ items: initial, lang, max, pace }: { items: Pick
         ...cur.filter((m) => m.id === null),
       ];
     });
+  };
+
+  // Apply a saved list (or the default pick): its missions come ticked, the others unticked; one-offs come back.
+  const apply = (id: number | null) => {
+    setError("");
+    setEditing(null);
+    setActive(id);
+    const list = lists.find((l) => l.id === id);
+    if (!list) {
+      setMissing(0);
+      setItems(catalog.map((m) => ({ ...m, checked: defaultKeys.has(m.key) })));
+      return;
+    }
+    const keys = new Set(list.items.flatMap((e) => ("key" in e ? [e.key] : [])));
+    let next = catalog.map((m) => ({ ...m, checked: keys.has(m.key) }));
+    let lost = [...keys].filter((k) => !catalog.some((m) => m.key === k)).length;
+    list.items.forEach((e, i) => {
+      if ("key" in e) return;
+      const at = e.base_id ? next.findIndex((m) => m.key === `d${e.base_id}`) : -1;
+      if (e.base_id && at < 0) return void lost++;
+      const once = { title: e.title, label: e.title, instruction: e.text, once: true, checked: true };
+      if (at >= 0) next = next.map((m, k) => (k === at ? { ...m, ...once } : m));
+      else next = [...next, { key: `n${list.id}-${i}`, id: null, base_id: null, default: null, icon: EDIT_ICON, team: true, ...once }];
+    });
+    setMissing(lost);
+    setItems(next);
+  };
 
   const add = () => {
-    setItems((all) => [...all, { key: `n${Date.now()}`, id: null, base_id: null, title: "", label: "", instruction: "", default: null, icon: EDIT_ICON, team: true, once: true, checked: true }]);
-    setEditing(items.length);
+    // On top, right under the button: the editor opens where the click was.
+    setItems((all) => [{ key: `n${Date.now()}`, id: null, base_id: null, title: "", label: "", instruction: "", default: null, icon: EDIT_ICON, team: true, once: true, checked: true }, ...all]);
+    setEditing(0);
     if (boxRef.current) boxRef.current.open = true;
   };
 
@@ -137,7 +193,37 @@ export function MissionPicker({ items: initial, lang, max, pace }: { items: Pick
       </summary>
       <input type="hidden" name="missions" value={value} />
       <div className="grid gap-3 px-2 pb-3 sm:px-3">
+        <Lists
+          lang={lang}
+          lists={lists}
+          active={active}
+          current={toEntries(picked)}
+          busy={editing !== null}
+          onApply={apply}
+          onChange={(fresh, id) => {
+            setLists(fresh);
+            if (id === undefined) apply(null);
+            else setActive(id);
+          }}
+        />
+        {missing > 0 && (
+          <p role="status" className="type-small px-2 text-ink-2">
+            {t(
+              `${missing} mission${missing > 1 ? "s" : ""} de cette liste n’existe${missing > 1 ? "nt" : ""} plus dans l’espace.`,
+              `${missing} mission${missing > 1 ? "s" : ""} of this list ${missing > 1 ? "are" : "is"} no longer in the space.`,
+            )}
+          </p>
+        )}
         <ul className="overflow-hidden rounded-[12px] bg-tile">
+          {/* First row of the list: the new mission's editor opens right under it. */}
+          <li className="border-b border-hairline px-1 py-1 sm:px-2">
+            <button type="button" onClick={add} disabled={editing !== null} className="type-small inline-flex min-h-10 items-center gap-2 rounded-[8px] px-2 font-semibold text-link hover:bg-fill disabled:opacity-40">
+              <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              {t("Ajouter une mission", "Add a mission")}
+            </button>
+          </li>
           {items.map((m, i) => (
             <li key={m.key} className="border-b border-hairline last:border-0">
               {editing === i ? (
@@ -169,14 +255,151 @@ export function MissionPicker({ items: initial, lang, max, pace }: { items: Pick
             {error}
           </p>
         )}
-        <button type="button" onClick={add} disabled={editing !== null} className="type-small inline-flex min-h-11 items-center gap-2 justify-self-start rounded-[10px] px-3 font-semibold text-link hover:bg-tile disabled:opacity-40">
-          <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          {t("Ajouter une mission", "Add a mission")}
-        </button>
       </div>
     </details>
+  );
+}
+
+// "My lists": pick a saved list, save the current pick as a new list, update, rename or delete the applied one.
+function Lists({
+  lang,
+  lists,
+  active,
+  current,
+  busy: editing,
+  onApply,
+  onChange,
+}: {
+  lang: Lang;
+  lists: SavedList[];
+  active: number | null;
+  current: ListEntry[];
+  busy: boolean;
+  onApply: (id: number | null) => void;
+  onChange: (lists: SavedList[], id?: number) => void;
+}) {
+  const t = (fr: string, en: string) => (lang === "en" ? en : fr);
+  const [mode, setMode] = useState<null | "new" | "rename" | "delete">(null);
+  const [name, setName] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const nameId = useId();
+  const list = lists.find((l) => l.id === active);
+  const dirty = !!list && !sameEntries(list.items, current);
+  const call = async (body: object) => {
+    setBusy(true);
+    setError("");
+    try {
+      const res = await fetch("/api/mission-lists", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      onChange(data.lists, data.id);
+      setMode(null);
+    } catch (e) {
+      setError((e as Error).message || t("Enregistrement impossible.", "Could not save."));
+    } finally {
+      setBusy(false);
+    }
+  };
+  const open = (m: "new" | "rename" | "delete") => {
+    setError("");
+    setName(m === "rename" && list ? list.name : "");
+    setMode(m);
+  };
+  const link = "type-small inline-flex min-h-9 items-center rounded-[8px] px-2 font-semibold text-link hover:bg-tile disabled:opacity-40";
+  const btn = "btn min-h-9 px-4 text-[15px] disabled:opacity-40";
+
+  return (
+    <div className="grid gap-2">
+      <div className="flex flex-wrap items-center gap-x-1 gap-y-1">
+        <div className="contents">
+          <select
+            aria-label={t("Liste de missions", "Mission list")}
+            value={active ?? ""}
+            disabled={editing || busy}
+            onChange={(e) => {
+              setMode(null);
+              onApply(e.target.value ? Number(e.target.value) : null);
+            }}
+            className={`${popUp} disabled:opacity-40`}
+            style={popUpChevrons}
+          >
+            <option value="">{t("Sélection par défaut", "Default selection")}</option>
+            {lists.length > 0 && (
+              <optgroup label={t("Mes listes", "My lists")}>
+                {lists.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+          </select>
+          {dirty && (
+            <button type="button" disabled={busy || editing || !current.length} onClick={() => call({ action: "save", id: list!.id, items: current })} className={link}>
+              {busy && mode === null ? t("Enregistrement…", "Saving…") : t("Mettre à jour", "Update")}
+            </button>
+          )}
+          <button type="button" disabled={busy || editing || !current.length} onClick={() => open("new")} className={link} aria-expanded={mode === "new"}>
+            {t("Enregistrer comme liste", "Save as list")}
+          </button>
+          {list && (
+            <>
+              <button type="button" disabled={busy || editing} onClick={() => open("rename")} className={link} aria-expanded={mode === "rename"}>
+                {t("Renommer", "Rename")}
+              </button>
+              <button type="button" disabled={busy || editing} onClick={() => open("delete")} className={`${link} !text-fail`} aria-expanded={mode === "delete"}>
+                {t("Supprimer", "Delete")}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+      {(mode === "new" || mode === "rename") && (
+        <div className="flex flex-wrap items-end gap-2 rounded-[12px] bg-tile px-3 py-3 motion-safe:animate-[ap-fade_0.2s_ease-out] sm:px-4">
+          <label htmlFor={nameId} className="grid min-w-[12rem] flex-1 gap-1.5">
+            <span className="type-caption font-semibold text-ink-2">{mode === "new" ? t("Nom de la liste", "List name") : t("Nouveau nom", "New name")}</span>
+            <input
+              id={nameId}
+              autoFocus
+              value={name}
+              maxLength={60}
+              placeholder={t("Ex. : Parcours mobile", "E.g. Mobile journey")}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  if (name.trim()) call(mode === "new" ? { action: "create", name, items: current } : { action: "rename", id: list!.id, name });
+                } else if (e.key === "Escape") setMode(null);
+              }}
+              className="h-10 rounded-[10px] bg-bg-2 px-3 outline-none ring-blue focus-visible:ring-2 dark:bg-[#2c2c2e]"
+            />
+          </label>
+          <button type="button" disabled={busy || !name.trim()} onClick={() => call(mode === "new" ? { action: "create", name, items: current } : { action: "rename", id: list!.id, name })} className={btn}>
+            {busy ? t("Enregistrement…", "Saving…") : t("Enregistrer", "Save")}
+          </button>
+          <button type="button" onClick={() => setMode(null)} className="type-small min-h-9 rounded-[10px] px-3 text-link hover:bg-fill">
+            {t("Annuler", "Cancel")}
+          </button>
+        </div>
+      )}
+      {mode === "delete" && list && (
+        <div className="flex flex-wrap items-center gap-2 rounded-[12px] bg-tile px-3 py-3 motion-safe:animate-[ap-fade_0.2s_ease-out] sm:px-4">
+          <span className="type-small flex-1">{t(`Supprimer la liste « ${list.name} » pour toute l’équipe ?`, `Delete the list “${list.name}” for the whole team?`)}</span>
+          <button type="button" disabled={busy} onClick={() => call({ action: "delete", id: list.id })} className={`${btn} !bg-fail`}>
+            {busy ? t("Suppression…", "Deleting…") : t("Supprimer", "Delete")}
+          </button>
+          <button type="button" onClick={() => setMode(null)} className="type-small min-h-9 rounded-[10px] px-3 text-link hover:bg-fill">
+            {t("Annuler", "Cancel")}
+          </button>
+        </div>
+      )}
+      {error && (
+        <p role="alert" className="type-small px-2 font-semibold text-fail">
+          {error}
+        </p>
+      )}
+    </div>
   );
 }
 

@@ -9,6 +9,7 @@ import { Hint } from "@/lib/hint";
 import { getLang, getT } from "@/lib/lang";
 import { LEGAL } from "@/lib/legal";
 import { MAX_PER_AUDIT, pickItems, teamMissions } from "@/lib/missions";
+import { teamLists } from "@/lib/mission-lists";
 import { loadPace } from "@/lib/estimate";
 import { MissionPicker } from "./missions";
 import { PaymentPicker } from "./payment";
@@ -40,7 +41,7 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
   // Filled in from the home form when the visitor had to sign in first (see /api/audits).
   const { url, competitor, device, email, force, erreur } = await searchParams;
   const refused = erreur ? REFUSED[erreur] : undefined;
-  const [card, credits, missions, lang, pace] = await Promise.all([cardView(team.id), loadCredits(team.id), teamMissions(team.id), getLang(), loadPace()]);
+  const [card, credits, missions, lang, pace, lists] = await Promise.all([cardView(team.id), loadCredits(team.id), teamMissions(team.id), getLang(), loadPace(), teamLists(team.id)]);
   // Same default as /api/audits: the first FORM_MISSIONS missions (5, or 3 on demo day) come ticked.
   const items = pickItems(missions, lang, Number(process.env.FORM_MISSIONS ?? 5));
   const t = await getT();
@@ -124,7 +125,7 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
             />
           </div>
 
-          <MissionPicker items={items} lang={lang} max={MAX_PER_AUDIT} pace={pace} />
+          <MissionPicker items={items} lists={lists} lang={lang} max={MAX_PER_AUDIT} pace={pace} />
 
           {/* Engine choices and the paid test, always in view. Their explanations show on hover of each label. */}
           <section className="grid gap-4 rounded-[12px] bg-bg-2 px-4 pb-4 pt-3 dark:bg-[#2c2c2e]" aria-labelledby="avancees">
