@@ -8,6 +8,7 @@ import { Field, Group, Note, Segmented } from "@/lib/ui";
 import { Hint } from "@/lib/hint";
 import { getLang, getT } from "@/lib/lang";
 import { MAX_PER_AUDIT, pickItems, teamMissions } from "@/lib/missions";
+import { loadPace } from "@/lib/estimate";
 import { MissionPicker } from "./missions";
 import { PaymentPicker } from "./payment";
 import { SpaceShell } from "../shell";
@@ -24,7 +25,7 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
   const { user, teams, team } = ctx;
   // Filled in from the home form when the visitor had to sign in first (see /api/audits).
   const { url, competitor, device } = await searchParams;
-  const [card, credits, missions, lang] = await Promise.all([cardView(team.id), loadCredits(team.id), teamMissions(team.id), getLang()]);
+  const [card, credits, missions, lang, pace] = await Promise.all([cardView(team.id), loadCredits(team.id), teamMissions(team.id), getLang(), loadPace()]);
   // Same default as /api/audits: the first FORM_MISSIONS missions (5, or 3 on demo day) come ticked.
   const items = pickItems(missions, lang, Number(process.env.FORM_MISSIONS ?? 5));
   const t = await getT();
@@ -43,7 +44,7 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
       {credits.used >= credits.included && (
         <div role="status">
           <Note
-            icon="info"
+            icon="credit"
             action={
               <Link href="/espace/abonnement" className="text-link hover:underline">
                 {t("Abonnement", "Plan")}
@@ -61,21 +62,29 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
           <Field label={t("Adresse de ton site", "Your site's address")} name="url" required defaultValue={url} />
           <Field label={t("Un concurrent (facultatif)", "A competitor (optional)")} name="competitor" defaultValue={competitor} />
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <Hint tip={t("Mobile : format téléphone simulé (écran 390 × 844), pas un vrai smartphone.", "Mobile: simulated phone format (390 × 844 screen), not a real smartphone.")}>
+            <Hint tip={t("Mobile : format téléphone simulé (écran 390 × 844), pas un vrai smartphone. Ordinateur + Mobile : les mêmes missions sur les deux, côte à côte dans le rapport, deux fois plus de crédits.", "Mobile: simulated phone format (390 × 844 screen), not a real smartphone. Desktop + Mobile: the same missions on both, side by side in the report, twice the credits.")}>
               <span className="text-ink-2">{t("Appareil", "Device")}</span>
             </Hint>
             <Segmented
               name="device"
               label={t("Appareil", "Device")}
-              value={device === "mobile" ? "mobile" : "desktop"}
+              value={device === "mobile" || device === "both" ? device : "desktop"}
               options={[
-                ["desktop", t("Ordinateur", "Desktop")],
-                ["mobile", "Mobile"],
+                ["desktop", t("Ordinateur", "Desktop"), "desktop"],
+                ["mobile", "Mobile", "mobile"],
+                [
+                  "both",
+                  <>
+                    <span className="max-sm:hidden">{t("Ordinateur + Mobile", "Desktop + Mobile")}</span>
+                    <span className="sm:hidden">{t("Les deux", "Both")}</span>
+                  </>,
+                  "both",
+                ],
               ]}
             />
           </div>
 
-          <MissionPicker items={items} lang={lang} max={MAX_PER_AUDIT} />
+          <MissionPicker items={items} lang={lang} max={MAX_PER_AUDIT} pace={pace} />
 
           {/* Engine choices and the paid test, always in view. Their explanations show on hover of each label. */}
           <section className="grid gap-4 rounded-[12px] bg-bg-2 px-4 pb-4 pt-3 dark:bg-[#2c2c2e]" aria-labelledby="avancees">

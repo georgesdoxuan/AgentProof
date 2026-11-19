@@ -1,17 +1,43 @@
 "use client";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { type RefObject, useEffect, useId, useMemo, useRef, useState } from "react";
 import type { Lang } from "@/lib/i18n";
 import type { PickItem } from "@/lib/missions";
 import { Hint } from "@/lib/hint";
+import { GLYPH, Glyph } from "@/lib/glyphs";
+import { estimateMinutes, minutesLabel, type PaceRange } from "@/lib/estimate-shared";
 
 // Mission picker of the launch form: tick defaults, edit one for this audit or for the team, add the team's own.
 // Sends the pick as JSON in a hidden "missions" field; /api/audits checks every id and every text again.
 const TITLE = [3, 60];
 const TEXT = [20, 600];
-const PER_BATCH = 3; // missions H runs at once on our plan
 const EDIT_ICON = "M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4";
 
-export function MissionPicker({ items: initial, lang, max }: { items: PickItem[]; lang: Lang; max: number }) {
+type Pace = { desktop: PaceRange; mobile: PaceRange; queued: number };
+
+// What the rest of the form multiplies: both devices, a competitor or the model comparison each play the missions twice.
+function useLaunchShape(ref: RefObject<HTMLElement | null>) {
+  const [shape, setShape] = useState({ device: "desktop", times: 1 });
+  useEffect(() => {
+    const form = ref.current?.closest("form");
+    if (!form) return;
+    const sync = () => {
+      const f = new FormData(form);
+      const device = String(f.get("device") ?? "desktop");
+      const linked = String(f.get("competitor") ?? "").trim() !== "" || f.get("models") === "1";
+      setShape({ device, times: (device === "both" ? 2 : 1) * (linked ? 2 : 1) });
+    };
+    sync();
+    form.addEventListener("input", sync);
+    form.addEventListener("change", sync);
+    return () => {
+      form.removeEventListener("input", sync);
+      form.removeEventListener("change", sync);
+    };
+  }, [ref]);
+  return shape;
+}
+
+export function MissionPicker({ items: initial, lang, max, pace }: { items: PickItem[]; lang: Lang; max: number; pace: Pace }) {
   const t = (fr: string, en: string) => (lang === "en" ? en : fr);
   const [items, setItems] = useState(initial);
   const [editing, setEditing] = useState<number | null>(null); // index in items
@@ -19,7 +45,10 @@ export function MissionPicker({ items: initial, lang, max }: { items: PickItem[]
   const boxRef = useRef<HTMLDetailsElement>(null);
   const picked = items.filter((m) => m.checked);
   const n = picked.length;
-  const batches = Math.ceil(n / PER_BATCH);
+  const shape = useLaunchShape(boxRef);
+  const runs = n * shape.times;
+  // The slower device sets the pace when both play.
+  const minutes = estimateMinutes(runs, shape.device === "desktop" ? pace.desktop : pace.mobile, pace.queued);
 
   // At least one mission: checked when the form is sent, so ticking and unticking never nags.
   useEffect(() => {
@@ -73,18 +102,28 @@ export function MissionPicker({ items: initial, lang, max }: { items: PickItem[]
         <Hint
           focusable={false}
           tip={t(
-            `Coche les missions à jouer (${max} au plus). Le score se calcule sur les missions choisies. Un concurrent rejoue les mêmes missions, ce qui double les crédits.`,
-            `Tick the missions to run (${max} at most). The score is computed on the chosen missions. A competitor replays the same missions, which doubles the credits.`,
+            `Coche les missions à jouer (${max} au plus). Le score se calcule sur les missions choisies. Un concurrent ou Ordinateur + Mobile rejoue les mêmes missions, ce qui double les crédits.`,
+            `Tick the missions to run (${max} at most). The score is computed on the chosen missions. A competitor or Desktop + Mobile replays the same missions, which doubles the credits.`,
           )}
         >
           <span className="type-small font-semibold">{t("Missions", "Missions")}</span>
         </Hint>
         <span className="type-small flex items-center gap-2 text-ink-2" aria-live="polite">
-          <span className={n ? "" : "font-semibold text-fail"}>
-            {n
-              ? t(`${n} mission${n > 1 ? "s" : ""} · ${batches * 5} à ${batches * 10} min · ${n} crédit${n > 1 ? "s" : ""}`, `${n} mission${n > 1 ? "s" : ""} · ${batches * 5}–${batches * 10} min · ${n} credit${n > 1 ? "s" : ""}`)
-              : t("Aucune mission", "No mission")}
-          </span>
+          {n ? (
+            <span className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 tabular-nums">
+              <span>{t(`${n} mission${n > 1 ? "s" : ""}`, `${n} mission${n > 1 ? "s" : ""}`)}</span>
+              <span className="inline-flex items-center gap-1" title={t("Durée estimée, d’après les derniers audits", "Estimated time, from the latest audits")}>
+                <Glyph d={GLYPH.clock} className="h-[15px] w-[15px]" />
+                {minutesLabel(minutes)}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <Glyph d={GLYPH.credit} className="h-[15px] w-[15px]" />
+                {t(`${runs} crédit${runs > 1 ? "s" : ""}`, `${runs} credit${runs > 1 ? "s" : ""}`)}
+              </span>
+            </span>
+          ) : (
+            <span className="font-semibold text-fail">{t("Aucune mission", "No mission")}</span>
+          )}
           <svg viewBox="0 0 12 12" className="h-3 w-3 shrink-0 transition-transform duration-200 group-open/m:rotate-180 motion-reduce:transition-none" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M1.5 4L6 8.5 10.5 4" />
           </svg>

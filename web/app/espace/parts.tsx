@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BlockerIcon, BrowserFrame, Chevron, DeviceTag, MissionBar, StatusGlyph, blockerLabel, scoreTone } from "@/lib/ui";
+import { BlockerIcon, BrowserFrame, Chevron, Chip, DeviceTag, MissionBar, StatusGlyph, blockerLabel, scoreTone } from "@/lib/ui";
 import { deviceLabel, fixHints, shortDate, type Blocker, type SiteView } from "@/lib/space";
 import { tr, type Lang } from "@/lib/i18n";
 import { getLang, getT } from "@/lib/lang";
@@ -142,13 +142,13 @@ const STATE: Record<Blocker["state"], [string, string, string] | null> = {
 };
 
 // The checklist line: what stops the agent, the proof, the fix, and the team's progress on it.
-export async function BlockerItem({ site, b, canEdit, compact = false }: { site: SiteView; b: Blocker; canEdit: boolean; compact?: boolean }) {
+export async function BlockerItem({ site, b, canEdit }: { site: SiteView; b: Blocker; canEdit: boolean }) {
   const lang = await getLang();
   const t = tr(lang);
   const FIX_HINT = fixHints(lang);
   const state = STATE[b.state];
   return (
-    <article className={`tile grid min-w-0 gap-7 p-7! ${compact ? "" : "md:grid-cols-[1fr_minmax(0,360px)]"}`}>
+    <article className="tile grid min-w-0 gap-7 p-7! md:grid-cols-[1fr_minmax(0,360px)]">
       <div className="flex flex-col">
         <div className="type-small flex flex-wrap items-center gap-x-3 gap-y-1.5">
           {state && <span className={`rounded-full px-2.5 py-0.5 font-semibold ${state[2]}`}>{t(state[0], state[1])}</span>}
@@ -156,16 +156,14 @@ export async function BlockerItem({ site, b, canEdit, compact = false }: { site:
             <span className="font-semibold text-ink">
               {b.missions} mission{b.missions > 1 ? "s" : ""} {t(`perdue${b.missions > 1 ? "s" : ""}`, "lost")}
             </span>
-            {compact && ` · ${site.label}`}
           </span>
         </div>
-        <h3 className={`mt-3 flex items-start gap-2.5 ${compact ? "type-eyebrow" : "type-h3"}`}>
+        <h3 className="type-h3 mt-3 flex items-start gap-2.5">
           <BlockerIcon type={b.type} className="mt-[0.15em] h-[0.9em] w-[0.9em]" />
           {blockerLabel(b.type, lang)}
         </h3>
-        {/* The agent's raw note is in whatever language it wrote and gets cut mid-word on a card: the summary cards keep the label and the fix, the site page keeps the note. */}
         {/* The agent writes in whatever language it likes: its raw note stays folded, as on the report. */}
-        {!compact && b.run?.blocker_detail && (
+        {b.run?.blocker_detail && (
           <details className="type-small group mt-3 text-ink-2">
             <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 text-link [&::-webkit-details-marker]:hidden">
               <Chevron className="h-2.5 w-2.5 transition-transform duration-200 group-open:rotate-90" />
@@ -174,17 +172,12 @@ export async function BlockerItem({ site, b, canEdit, compact = false }: { site:
             <p className="mt-2">« {b.run.blocker_detail} »</p>
           </details>
         )}
-        <p className={`mt-4 flex gap-2 ${compact ? "type-small" : ""}`}>
+        <p className="mt-4 flex gap-2">
           <Chevron className="mt-[0.45em] h-3 w-3 shrink-0 text-link" />
           <span>{FIX_HINT[b.type] ?? FIX_HINT.other}</span>
         </p>
         <div className="mt-auto flex flex-wrap items-center gap-x-5 gap-y-3 pt-6">
-          {compact ? (
-            <Link href={`${sitePath(site)}#corrections`} className="more">
-              {t("Voir sur la page du site", "See on the site page")}
-            </Link>
-          ) : (
-            canEdit && (
+          {canEdit && (
               <form action="/api/fixes" method="post">
                 <input type="hidden" name="site" value={site.site_id} />
                 <input type="hidden" name="device" value={site.device} />
@@ -204,7 +197,6 @@ export async function BlockerItem({ site, b, canEdit, compact = false }: { site:
                   <button className="btn btn-dark min-h-[40px] px-[18px] text-[15px]">{t("Marquer comme corrigé", "Mark as fixed")}</button>
                 )}
               </form>
-            )
           )}
           {b.run && (
             <Link href={`/replay/${b.run.id}?a=${site.latest?.id}`} className="type-small text-link hover:underline">
@@ -213,8 +205,7 @@ export async function BlockerItem({ site, b, canEdit, compact = false }: { site:
           )}
         </div>
       </div>
-      {!compact &&
-        (b.run?.screenshot_url ? (
+      {b.run?.screenshot_url ? (
           <a href={b.run.screenshot_url} target="_blank" rel="noreferrer" className="block self-start rounded-[12px]" aria-label={`${t("Ouvrir la capture", "Open the screenshot")} : ${blockerLabel(b.type, lang)}`}>
             <BrowserFrame url={b.run.final_url}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -223,7 +214,56 @@ export async function BlockerItem({ site, b, canEdit, compact = false }: { site:
           </a>
         ) : (
           <div className="type-small grid aspect-[16/10] place-items-center rounded-[12px] bg-bg-2 text-ink-2 dark:bg-[#2c2c2e]">{t("Pas de capture", "No screenshot")}</div>
-        ))}
+        )}
+    </article>
+  );
+}
+
+// Home's "Fix first" card: the whole card opens the latest report of that site, on this blocker's row
+// (#blocage-<type>, which lists the missions it stopped). The replay stays a small secondary action above the link.
+export async function PriorityCard({ site, b }: { site: SiteView; b: Blocker }) {
+  const lang = await getLang();
+  const t = tr(lang);
+  const state = STATE[b.state];
+  const label = blockerLabel(b.type, lang);
+  const report = site.latest ? `/audit/${site.latest.id}#blocage-${b.type}` : `${sitePath(site)}#corrections`;
+  return (
+    <article className="tile group relative flex h-full min-w-0 flex-col gap-4 p-6! transition-colors duration-200 hover:bg-tile/80 has-[h3_a:focus-visible]:outline-2 has-[h3_a:focus-visible]:outline-blue">
+      <div className="type-small flex min-w-0 items-center gap-2.5 text-ink-2">
+        <SiteLogo domain={site.domain} name={site.domain} size="sm" />
+        <span className="truncate font-semibold text-ink">{site.label}</span>
+        <span aria-hidden>·</span>
+        <DeviceTag device={site.device} lang={lang} />
+      </div>
+      <div>
+        <h3 className="type-headline flex items-start gap-2.5">
+          <BlockerIcon type={b.type} className="mt-[0.2em] h-[1em] w-[1em]" />
+          <Link href={report} className="after:absolute after:inset-0 after:rounded-[inherit] after:content-[''] focus-visible:outline-none">
+            {label}
+          </Link>
+        </h3>
+        <div className="mt-2.5 flex flex-wrap gap-2">
+          <Chip tone="fail">
+            {b.missions} mission{b.missions > 1 ? "s" : ""} {t(`perdue${b.missions > 1 ? "s" : ""}`, "lost")}
+          </Chip>
+          {state && <span className={`type-caption inline-flex min-h-[26px] items-center rounded-full px-2.5 font-semibold ${state[2]}`}>{t(state[0], state[1])}</span>}
+        </div>
+      </div>
+      <p className="type-small text-ink-2">{fixHints(lang)[b.type] ?? fixHints(lang).other}</p>
+      <div className="type-small mt-auto flex items-center justify-between gap-4 border-t border-hairline pt-4">
+        <span className="inline-flex items-center gap-1.5 font-semibold text-link group-hover:underline" aria-hidden>
+          {t("Voir dans le rapport", "See in the report")}
+          <Chevron className="h-2.5 w-2.5" />
+        </span>
+        {b.run && (
+          <Link href={`/replay/${b.run.id}?a=${site.latest?.id}`} className="relative z-10 inline-flex items-center gap-1.5 text-ink-2 hover:text-link" aria-label={`${t("Voir le replay", "Watch the replay")} : ${label}`}>
+            <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="currentColor" aria-hidden>
+              <path d="M2.5 1.3v9.4L10.6 6z" />
+            </svg>
+            Replay
+          </Link>
+        )}
+      </div>
     </article>
   );
 }

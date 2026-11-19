@@ -337,9 +337,17 @@ body {
 @utility ap-ring { animation: ap-ring 1.8s var(--ease-apple) infinite; }
 @utility ap-spin { animation: ap-spin 0.9s linear infinite; }
 
+/* Landing on #blocage-… or #mission-… from another page: the target glows blue once, then settles. */
+@keyframes ap-flash {
+  0%, 40% { box-shadow: inset 0 0 0 2px var(--blue), inset 0 0 0 999px color-mix(in srgb, var(--blue) 8%, transparent); }
+  100% { box-shadow: inset 0 0 0 2px transparent, inset 0 0 0 999px transparent; }
+}
+.target-flash:target { animation: ap-flash 2.6s var(--ease-apple) both; }
+
 @media (prefers-reduced-motion: reduce) {
   .ap-fade, .ap-travel, .ap-tap, .ap-banner, .ap-verdict { animation-duration: 1ms; animation-delay: 0s !important; }
   .ap-ring, .ap-spin { animation: none; }
+  .target-flash:target { animation: none; box-shadow: inset 0 0 0 2px var(--blue); }
 }
 
 /* ---------- Loading: grey placeholders in the page's own layout, one soft light sweeping across all of them ---------- */

@@ -7,6 +7,7 @@ import { tr, type Lang, type T } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 import { byRank } from "../classement/board";
 import { LEGAL } from "@/lib/legal";
+import { loadPace, estimateMinutes, minutesLabel } from "@/lib/estimate";
 import { SiteLogo } from "../site-logo";
 
 // Report opened by "Voir un exemple de rapport": real counted blockers, captures, replays and a plan. Env var to swap it without code.
@@ -18,11 +19,13 @@ export default async function Home() {
   await connection();
   const lang = await getLang();
   const t = tr(lang);
-  const [user, { data: scores }, { data: proof }] = await Promise.all([
+  const [user, { data: scores }, { data: proof }, pace] = await Promise.all([
     currentUser(),
     db.from("site_scores").select("*"),
     // A real blocked mission for the "Preuves" tile: evidence over illustration.
     db.from("runs").select("screenshot_url, final_url, blocker_type").eq("id", PROOF_RUN).maybeSingle(),
+    // Time of a 5-mission audit, measured on the latest audits (queue left out: it changes by the minute).
+    loadPace(),
   ]);
 
   // Same order as /classement, so the two never disagree.
@@ -198,7 +201,7 @@ export default async function Home() {
           <h2 className="type-h1 text-center">{t("Teste ton site.", "Test your site.")}</h2>
           <Chips className="mt-5 justify-center">
             <Chip icon="audit">{t("5 missions", "5 missions")}</Chip>
-            <Chip icon="clock">10–20 min</Chip>
+            <Chip icon="clock">{minutesLabel(estimateMinutes(5, pace.desktop))}</Chip>
           </Chips>
           <form action="/api/audits" method="post" className="mt-12 grid gap-4">
             <div className="grid gap-4 sm:grid-cols-2">
@@ -211,14 +214,16 @@ export default async function Home() {
               <span className="text-ink-2" aria-hidden>
                 {t("Appareil", "Device")}
               </span>
-              <div className="inline-grid grid-cols-2 rounded-[10px] bg-fill p-[3px]">
+              <div className="inline-grid auto-cols-fr grid-flow-col rounded-[10px] bg-fill p-[3px]">
                 {[
                   ["desktop", t("Ordinateur", "Desktop")],
                   ["mobile", "Mobile"],
+                  ["both", t("Ordinateur + Mobile", "Desktop + Mobile")],
                 ].map(([v, l]) => (
                   <label key={v} className="relative cursor-pointer">
                     <input type="radio" name="device" value={v} defaultChecked={v === "desktop"} className="peer sr-only" />
-                    <span className="type-small flex h-9 min-w-[120px] items-center justify-center rounded-[8px] px-4 font-semibold text-ink-2 transition-colors duration-200 peer-checked:bg-tile peer-checked:text-ink peer-checked:shadow-[0_1px_3px_rgb(0_0_0/0.12)] peer-focus-visible:outline-2 peer-focus-visible:outline-blue dark:peer-checked:bg-[#636366]">
+                    <span className="type-small flex h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-[8px] px-4 font-semibold text-ink-2 transition-colors duration-200 peer-checked:bg-tile peer-checked:text-ink peer-checked:shadow-[0_1px_3px_rgb(0_0_0/0.12)] peer-focus-visible:outline-2 peer-focus-visible:outline-blue dark:peer-checked:bg-[#636366]">
+                      <Icon name={v} className="h-[17px] w-[17px]" />
                       {l}
                     </span>
                   </label>
