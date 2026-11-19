@@ -2,10 +2,11 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { db } from "@/lib/engine";
 import { currentUser } from "@/lib/auth";
-import { AgentCursor, BrowserFrame, Field, MissionBar, StatusGlyph, Verdict, blockerLabel, scoreTone } from "@/lib/ui";
+import { AgentCursor, BrowserFrame, Field, Icon, MissionBar, StatusGlyph, Verdict, blockerLabel, scoreTone } from "@/lib/ui";
 import { tr, type Lang, type T } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 import { byRank } from "../classement/board";
+import { LEGAL } from "@/lib/legal";
 
 // Report opened by "Voir un exemple de rapport": real counted blockers, captures, replays and a plan. Env var to swap it without code.
 const EXAMPLE_AUDIT = process.env.EXAMPLE_AUDIT_ID ?? "8c843d3f-3d95-4834-aace-21880a85f499"; // Promod, 78 %
@@ -290,7 +291,9 @@ export default async function Home() {
         </div>
       </section>
 
-      <div className="bg-bg-2">
+      <Pricing lang={lang} t={t} />
+
+      <div>
         <ol className="wrap-wide type-caption pb-6 text-ink-2">
           <li id="note-1" className="scroll-mt-20">
             1.{" "}
@@ -434,6 +437,77 @@ function ProductMock({ t }: { t: T }) {
   );
 }
 
+// Offers from CONTEXT.md › Offres (prices still "à valider"). Payment is not wired: buttons go to the form or to e-mail.
+type Plan = { icon: string; name: string; price: string; per?: string; pitch: string; items: string[]; cta: [string, string]; featured?: boolean };
+const PLANS: Record<Lang, Plan[]> = {
+  fr: [
+    { icon: "ranking", name: "Classement", price: "Gratuit", pitch: "Ton site dans le classement public des sites mode.", items: ["Score sur ordinateur", "Captures et replays des missions", "Mis à jour après chaque audit"], cta: ["Voir le classement", "/classement"] },
+    { icon: "audit", name: "Audit complet", price: "490 €", per: "par site", pitch: "Le rapport pour savoir où l’agent bloque et quoi corriger.", items: ["Cinq missions d’achat, ordinateur ou mobile", "Preuves : capture et replay de chaque mission", "Comparaison avec un concurrent", "Plan de corrections classé par impact, en PDF"], cta: ["Lancer un audit", "#tester"] },
+    { icon: "monthly", name: "Suivi mensuel", price: "149 €", per: "par mois", pitch: "Tes tests relancés après chaque mise à jour du site.", items: ["Un audit complet chaque mois", "Pages relues chaque jour : cookies, captcha, boutons, formulaires", "Alerte par e-mail si le score baisse de 10 points"], cta: ["Lancer un audit", "#tester"], featured: true },
+    { icon: "agency", name: "Agences", price: "30 %", per: "de commission", pitch: "Revends l’audit à tes clients, sous ta marque.", items: ["Rapports et PDF en marque blanche", "Un espace d’équipe pour tous tes clients", "30 % de commission sur chaque audit revendu"], cta: ["Nous contacter", `mailto:${LEGAL.contact}?subject=AgentProof%20%E2%80%93%20agence`] },
+  ],
+  en: [
+    { icon: "ranking", name: "Ranking", price: "Free", pitch: "Your site in the public ranking of fashion sites.", items: ["Desktop score", "Mission screenshots and replays", "Updated after every audit"], cta: ["See the ranking", "/classement"] },
+    { icon: "audit", name: "Full audit", price: "€490", per: "per site", pitch: "The report that shows where the agent gets stuck and what to fix.", items: ["Five shopping missions, desktop or mobile", "Proof: screenshot and replay of every mission", "Comparison with a competitor", "Fix plan ranked by impact, as a PDF"], cta: ["Run an audit", "#tester"] },
+    { icon: "monthly", name: "Monthly tracking", price: "€149", per: "per month", pitch: "Your tests run again after every site update.", items: ["A full audit every month", "Pages read daily: cookies, captcha, buttons, forms", "E-mail alert if the score drops 10 points"], cta: ["Run an audit", "#tester"], featured: true },
+    { icon: "agency", name: "Agencies", price: "30 %", per: "commission", pitch: "Resell the audit to your clients, under your brand.", items: ["White-label reports and PDFs", "One team space for all your clients", "30 % commission on every audit you resell"], cta: ["Contact us", `mailto:${LEGAL.contact}?subject=AgentProof%20%E2%80%93%20agency`] },
+  ],
+};
+
+function Pricing({ lang, t }: { lang: Lang; t: T }) {
+  return (
+    <section id="tarifs" className="section scroll-mt-[96px]">
+      <div className="wrap-wide">
+        <h2 className="type-h1">{t("Tarifs.", "Pricing.")}</h2>
+        <p className="type-intro mt-4 max-w-[640px] text-ink-2">
+          {t("Le classement attire, l’audit montre quoi corriger, le suivi vérifie que ça tient.", "The ranking gets you seen, the audit shows what to fix, tracking checks that it holds.")}
+        </p>
+        <ul className="mt-12 grid gap-5 max-[734px]:mt-8 md:grid-cols-2 xl:grid-cols-4">
+          {PLANS[lang].map((p) => (
+            <li key={p.name} className={`relative flex flex-col rounded-[30px] bg-bg-2 p-10 dark:bg-tile max-[1068px]:rounded-[25px] max-[734px]:rounded-[20px] max-[734px]:px-6 max-[734px]:py-7 xl:px-8 ${p.featured ? "shadow-[inset_0_0_0_2px_var(--blue)]" : ""}`}>
+              {p.featured && (
+                <span className="type-caption absolute -top-3 left-10 rounded-full bg-blue px-3 py-0.5 font-semibold text-white max-[734px]:left-6 xl:left-8">{t("Recommandé", "Recommended")}</span>
+              )}
+              <div className="flex items-center gap-3">
+                <span className="flex items-center gap-2 type-headline">
+                  <Icon name={p.icon} className={`h-5 w-5 ${p.featured ? "text-blue" : "text-ink-2"}`} />
+                  {p.name}
+                </span>
+              </div>
+              <p className="mt-6 flex items-baseline gap-2">
+                <span className="type-h2 tnum">{p.price}</span>
+                {p.per && <span className="type-small text-ink-2">{p.per}</span>}
+              </p>
+              <p className="mt-3 text-ink-2">{p.pitch}</p>
+              <ul className="type-small mt-6 grid gap-2.5 border-t border-hairline pt-5">
+                {p.items.map((it) => (
+                  <li key={it} className="flex gap-2.5">
+                    <Icon name="none" className="mt-[2px] h-4 w-4 text-ink-2" />
+                    <span>{it}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-auto pt-8">
+                {p.cta[1].startsWith("/") ? (
+                  <Link href={p.cta[1]} className="btn btn-secondary w-full">{p.cta[0]}</Link>
+                ) : (
+                  <a href={p.cta[1]} className={`btn w-full ${p.featured ? "" : "btn-secondary"}`}>{p.cta[0]}</a>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+        <p className="type-small mt-5 max-w-[760px] text-ink-2">
+          {t(
+            "Prix hors taxes. Le paiement en ligne arrive bientôt : pour l’instant, lancer un audit depuis cette page ne coûte rien.",
+            "Prices exclude VAT. Online payment is coming soon: for now, running an audit from this page costs nothing.",
+          )}
+        </p>
+      </div>
+    </section>
+  );
+}
+
 // What a team does with the report: each line maps to a feature that exists (report, replay, plan, re-audit, competitor).
 const BENEFITS: Record<Lang, [string, string][]> = {
   fr: [
@@ -454,12 +528,14 @@ const SECTIONS: Record<Lang, [string, string][]> = {
     ["ce-que-tu-recois", "Ce que tu reçois"],
     ["tester", "Tester"],
     ["classement", "Classement"],
+    ["tarifs", "Tarifs"],
   ],
   en: [
     ["pourquoi", "Why"],
     ["ce-que-tu-recois", "What you get"],
     ["tester", "Test"],
     ["classement", "Ranking"],
+    ["tarifs", "Pricing"],
   ],
 };
 
