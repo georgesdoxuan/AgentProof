@@ -52,7 +52,8 @@ export async function POST(req: Request) {
   const device = form.get("device") === "mobile" ? "mobile" : "desktop";
   // Compare models: same site, same missions, one audit per Holo model, linked like a competitor audit.
   const models = form.get("models") === "1" && form.get("mode") !== "payment";
-  // Precise audit: the most capable Holo model for the whole audit (competitor included), about 40 % dearer per mission.
+  // Precise audit: the most capable Holo model for the whole audit (competitor included), about 40 % dearer per mission for us,
+  // billed 1.5 credits per mission, the audit rounded up (lib/credits.ts reads audits.model for that).
   const model = !models && form.get("model") === "precise" ? COMPARE_MODEL : undefined;
   if (models && competitor) return retry(req, form, "combo");
   if (both && (competitor || models)) return retry(req, form, "combo");

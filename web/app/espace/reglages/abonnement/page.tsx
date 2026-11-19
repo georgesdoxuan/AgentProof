@@ -3,6 +3,7 @@ import { Hint } from "@/lib/hint";
 import { redirect } from "next/navigation";
 import { teamContext } from "@/lib/auth";
 import { ALERTS, type Kind, PLANS, RATES, loadCredits } from "@/lib/credits";
+import { PRECISE_FACTOR } from "@/lib/credits-shared";
 import { db } from "@/lib/engine";
 import { locale, tr } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
@@ -53,8 +54,8 @@ export default async function Abonnement() {
     <SpaceShell
       settings
       hint={t(
-        "Chaque mission qu'un agent fait sur un site utilise un crédit. Un audit complet, ce sont cinq missions, donc cinq crédits.",
-        "Every mission an agent runs on a site uses one credit. A full audit is five missions, so five credits.",
+        "Chaque mission que l'agent rapide fait sur un site utilise un crédit, 1,5 avec l'agent précis. Un audit complet, ce sont cinq missions, donc cinq crédits (huit en précis, arrondi au crédit supérieur).",
+        "Every mission the fast agent runs on a site uses one credit, 1.5 with the precise agent. A full audit is five missions, so five credits (eight with the precise agent, rounded up).",
       )}
     >
       <Columns
@@ -122,6 +123,7 @@ export default async function Abonnement() {
                 <span className="block">{KIND[k][0]}</span>
                 <span className="type-caption text-ink-2">
                   {KIND[k][1]} · {cr(RATES[k])}
+                  {(k === "manual" || k === "replay") && t(` (${String(RATES[k] * PRECISE_FACTOR).replace(".", ",")} avec l'agent précis)`, ` (${RATES[k] * PRECISE_FACTOR} with the precise agent)`)}
                 </span>
               </span>
               {crIcon(used, `tabular-nums ${used ? "font-semibold" : "text-ink-2"}`)}
