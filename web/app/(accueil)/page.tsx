@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { connection } from "next/server";
 import { db } from "@/lib/engine";
 import { currentUser } from "@/lib/auth";
@@ -38,6 +39,8 @@ export default async function Home() {
   ]);
   // Only when the run belongs to the example audit: capture, result and fix always come from the same audit.
   const demo = demoRun && demoAudit && demoRun.audit_id === demoAudit.id && demoRun.success === false && demoRun.screenshot_url ? { run: demoRun, audit: demoAudit } : null;
+
+  const proofMobile = (proof?.audits as { device?: string } | null)?.device === "mobile";
 
   // Same order as /classement, so the two never disagree.
   const desktop = (scores ?? []).filter((s) => s.device === "desktop");
@@ -169,10 +172,19 @@ export default async function Home() {
                 )}
               </p>
               <div className="mt-8 -mb-16 translate-x-6 max-[734px]:-mb-10 max-[734px]:translate-x-4">
-                <BrowserFrame url={proof?.final_url} className={(proof?.audits as { device?: string } | null)?.device === "mobile" ? "max-w-[390px]" : ""}>
+                <BrowserFrame url={proof?.final_url} className={proofMobile ? "max-w-[390px]" : ""}>
                   {proof?.screenshot_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={proof.screenshot_url} alt={`${t("Capture réelle d'une mission bloquée", "Real screenshot of a blocked mission")} : ${blockerLabel(proof.blocker_type, lang)}`} className="block w-full" loading="lazy" />
+                    // Through the image optimizer: WebP at the width the screen needs (Retina included), never above the
+                    // capture's own pixels. About 4 times lighter than the PNG.
+                    <Image
+                      src={proof.screenshot_url}
+                      alt={`${t("Capture réelle d'une mission bloquée", "Real screenshot of a blocked mission")} : ${blockerLabel(proof.blocker_type, lang)}`}
+                      width={proofMobile ? 390 : 1024}
+                      height={proofMobile ? 844 : 640}
+                      sizes={proofMobile ? "390px" : "(min-width: 1024px) 510px, calc(100vw - 64px)"}
+                      quality={85}
+                      className="block h-auto w-full"
+                    />
                   ) : (
                     <div className="aspect-[16/10] bg-bg-2" />
                   )}

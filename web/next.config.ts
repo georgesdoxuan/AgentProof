@@ -17,6 +17,11 @@ const nextConfig: NextConfig = {
       ...Object.entries(moved).map(([source, tab]) => ({ source, destination: `/espace/reglages/${tab}`, permanent: true })),
     ];
   },
+  // Agent screenshots (Supabase Storage, public bucket) go through next/image on the home page.
+  images: {
+    remotePatterns: [{ protocol: "https", hostname: "jlhmgsubvoqopvntzmvp.supabase.co", pathname: "/storage/v1/object/public/screenshots/**" }],
+    formats: ["image/webp"],
+  },
   experimental: {
     // Client cache for pages already visited: going back to a section within 30 s shows it at once, with no new
     // server round trip. Forms post to /api and reload the page, and AutoRefresh calls router.refresh(), so neither
