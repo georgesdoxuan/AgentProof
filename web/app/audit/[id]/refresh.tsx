@@ -20,3 +20,12 @@ export function AutoRefresh({ seconds = 20 }: { seconds?: number }) {
   }, [router, seconds]);
   return null;
 }
+
+// The report streams in after its loading skeleton, so a link to #blocage-… or #mission-… arrives before its target exists:
+// the browser neither scrolls nor matches :target. Once the report is on screen, go to the hash again (no reload).
+export function HashLanding() {
+  useEffect(() => {
+    if (location.hash.length > 1 && document.getElementById(decodeURIComponent(location.hash.slice(1)))) location.replace(location.href);
+  }, []);
+  return null;
+}

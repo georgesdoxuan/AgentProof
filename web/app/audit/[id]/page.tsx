@@ -13,7 +13,7 @@ import { Hint } from "@/lib/hint";
 import { headers } from "next/headers";
 import { CopyField } from "@/app/espace/controls";
 import { Mark, Wordmark, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
-import { AutoRefresh, PrintButton } from "./refresh";
+import { AutoRefresh, HashLanding, PrintButton } from "./refresh";
 import type { AgentAccess } from "@/lib/automations";
 
 // One line per AI assistant, from the static check's per-agent reading (lib/automations.ts agentAccess).
@@ -366,6 +366,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   return (
     <div className="bg-bg-2 pb-24 pt-16 max-[734px]:pt-10 print:bg-bg print:p-0">
       {running && <AutoRefresh />}
+      <HashLanding />
       {branded && <style>{"body > header, body > footer { display: none; }"}</style>}
       {!paymentOnly && (
         <>
@@ -700,10 +701,13 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
           <section>
             <SectionHead title={t("Ce qui arrête l’agent.", "What stops the agent.")} />
             <ol className="overflow-hidden rounded-[18px] bg-tile">
-              {s.blockers.slice(0, 3).map(([b, n]) => {
+              {/* Every blocker, not only the top 3: the team space's "Fix first" cards land on #blocage-<type>. */}
+              {s.blockers.map(([b, n]) => {
                 const out = EXCLUDED.includes(b);
+                // The missions it stopped, numbered as in the Missions section below: each one jumps to its card.
+                const hit = runs.flatMap((r: any, i: number) => ((r.status === "done" || r.status === "error") && r.success === false && r.blocker_type === b ? [i + 1] : []));
                 return (
-                  <li key={b} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-2.5 border-b border-hairline px-6 py-4 last:border-0 md:grid-cols-[minmax(0,18rem)_minmax(0,1fr)_7.5rem]">
+                  <li key={b} id={`blocage-${b}`} className="target-flash grid scroll-mt-24 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-2.5 border-b border-hairline px-6 py-4 last:border-0 md:grid-cols-[minmax(0,18rem)_minmax(0,1fr)_7.5rem]">
                     <span className="flex min-w-0 items-center gap-3">
                       <BlockerIcon type={b} />
                       <span className="min-w-0">
@@ -712,6 +716,15 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                           <Hint tip={t("Ne compte ni pour ni contre le site.", "Counts neither for nor against the site.")} className="ml-2 align-middle">
                             <Chip icon="mission_not_applicable">{t("Hors score", "Outside the score")}</Chip>
                           </Hint>
+                        )}
+                        {hit.length > 0 && (
+                          <span className="type-small no-print mt-0.5 flex flex-wrap gap-x-3 text-ink-2">
+                            {hit.map((m: number) => (
+                              <a key={m} href={`#mission-${m}`} className="text-link hover:underline tnum">
+                                Mission {m}
+                              </a>
+                            ))}
+                          </span>
                         )}
                       </span>
                     </span>
@@ -800,7 +813,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
           />
           <div className="space-y-4">
             {runs.map((r: any, i: number) => (
-              <article key={r.id} id={`mission-${i + 1}`} className="tile grid scroll-mt-24 gap-x-10 gap-y-6 p-8! md:grid-cols-[minmax(0,1fr)_minmax(0,400px)] max-[734px]:p-6!">
+              <article key={r.id} id={`mission-${i + 1}`} className="target-flash tile grid scroll-mt-24 gap-x-10 gap-y-6 p-8! md:grid-cols-[minmax(0,1fr)_minmax(0,400px)] max-[734px]:p-6!">
                 <div className="flex min-w-0 flex-col">
                   <div className="type-small flex flex-wrap items-center gap-x-3 gap-y-1">
                     <span className="text-ink-2 tnum">Mission {i + 1}</span>

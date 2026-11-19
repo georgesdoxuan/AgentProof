@@ -11,7 +11,7 @@ import { loadPace, estimateMinutes, minutesLabel } from "@/lib/estimate";
 import { Chevron, Chip, Chips, DeviceTag, Field, Group, Icon, MissionBar, MissionLegend, Row, Note, Spinner, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
 import { AutoRefresh } from "../audit/[id]/refresh";
 import { SpaceShell } from "./shell";
-import { BlockerItem, Delta, sitePath } from "./parts";
+import { Delta, PriorityCard, sitePath } from "./parts";
 import { SiteLogo } from "../site-logo";
 
 export async function generateMetadata() {
@@ -238,9 +238,9 @@ export default async function Accueil() {
             <h2 className="type-headline">{t("À corriger en priorité", "Fix first")}</h2>
             <Chip icon="trend" className="max-sm:hidden">{t("Par missions perdues", "By missions lost")}</Chip>
           </div>
-          <div className={`grid gap-5 ${todo.length > 1 ? "md:grid-cols-2 xl:grid-cols-3" : ""}`}>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {todo.map(({ site, b }) => (
-              <BlockerItem key={`${site.key}:${b.type}`} site={site} b={b} canEdit={false} compact />
+              <PriorityCard key={`${site.key}:${b.type}`} site={site} b={b} />
             ))}
           </div>
         </section>
