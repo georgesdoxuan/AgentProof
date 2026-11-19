@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { LangSwitch, Nav } from "./nav";
+import { LangSwitch, Nav, Sections } from "./nav";
 import { NavProgress } from "./progress";
 import { currentUser } from "@/lib/auth";
 import { Mark, Wordmark } from "@/lib/ui";
@@ -41,11 +41,12 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           {t.skip}
         </a>
         <header className="sticky top-0 z-40 border-b border-hairline bg-[var(--nav)] backdrop-blur-[20px] backdrop-saturate-[180%]">
-          <nav className="wrap-wide flex h-[52px] items-center justify-between" aria-label={t.navLabel}>
+          <nav className="wrap-wide relative flex min-h-[52px] flex-wrap items-center justify-between" aria-label={t.navLabel}>
             <Link href="/" aria-label={t.home} className="-ml-1 flex items-center gap-2.5 rounded-md px-1 py-2">
               <Mark className="h-[32px] w-[32px] max-[734px]:h-[28px] max-[734px]:w-[28px]" />
               <Wordmark className="text-[21px] leading-none max-[734px]:text-[19px]" />
             </Link>
+            <Sections t={t.sections} />
             <Nav email={(await currentUser())?.email ?? null} t={t.nav} />
           </nav>
         </header>

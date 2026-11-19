@@ -33,8 +33,6 @@ export default async function Home() {
 
   return (
     <>
-      <SectionMenu lang={lang} />
-
       {/* Hero */}
       <section className="overflow-hidden pt-[88px] text-center max-[734px]:pt-14">
         <div className="wrap">
@@ -68,7 +66,7 @@ export default async function Home() {
       </section>
 
       {/* Statement */}
-      <section id="pourquoi" className="section scroll-mt-[96px]">
+      <section id="pourquoi" className="section scroll-mt-[96px] lg:scroll-mt-[52px]">
         <div className="wrap">
           <p className="type-h2 text-ink-2">
             {t(
@@ -93,7 +91,7 @@ export default async function Home() {
       </section>
 
       {/* What you get */}
-      <section id="ce-que-tu-recois" className="section scroll-mt-[96px] bg-bg-2">
+      <section id="ce-que-tu-recois" className="section scroll-mt-[96px] lg:scroll-mt-[52px] bg-bg-2">
         <div className="wrap-wide">
           <h2 className="type-h1 mb-12 max-[734px]:mb-8">{t("Ce que tu reçois.", "What you get.")}</h2>
           <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-2">
@@ -169,7 +167,7 @@ export default async function Home() {
       </section>
 
       {/* Form */}
-      <section id="tester" className="section scroll-mt-[96px]">
+      <section id="tester" className="section scroll-mt-[96px] lg:scroll-mt-[52px]">
         <div className="mx-auto w-[min(692px,87.5%)]">
           <h2 className="type-h1 text-center">{t("Teste ton site.", "Test your site.")}</h2>
           <p className="type-intro mt-4 text-center text-ink-2">
@@ -240,7 +238,7 @@ export default async function Home() {
       </section>
 
       {/* Leaderboard */}
-      <section id="classement" className="section scroll-mt-[96px] bg-bg-2">
+      <section id="classement" className="section scroll-mt-[96px] lg:scroll-mt-[52px] bg-bg-2">
         <div className="wrap">
           <div className="mb-10 flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
             <h2 className="type-h1">{t("Le classement mode.", "The fashion ranking.")}</h2>
@@ -456,7 +454,7 @@ const PLANS: Record<Lang, Plan[]> = {
 
 function Pricing({ lang, t }: { lang: Lang; t: T }) {
   return (
-    <section id="tarifs" className="section scroll-mt-[96px]">
+    <section id="tarifs" className="section scroll-mt-[96px] lg:scroll-mt-[52px]">
       <div className="wrap-wide">
         <h2 className="type-h1">{t("Tarifs.", "Pricing.")}</h2>
         <p className="type-intro mt-4 max-w-[640px] text-ink-2">
@@ -521,37 +519,3 @@ const BENEFITS: Record<Lang, [string, string][]> = {
     ["Track the fixes", "Run a new audit after a fix: the new report shows whether the mission passes. Compare yourself with a competitor on the same missions."],
   ],
 };
-
-const SECTIONS: Record<Lang, [string, string][]> = {
-  fr: [
-    ["pourquoi", "Pourquoi"],
-    ["ce-que-tu-recois", "Ce que tu reçois"],
-    ["tester", "Tester"],
-    ["classement", "Classement"],
-    ["tarifs", "Tarifs"],
-  ],
-  en: [
-    ["pourquoi", "Why"],
-    ["ce-que-tu-recois", "What you get"],
-    ["tester", "Test"],
-    ["classement", "Ranking"],
-    ["tarifs", "Pricing"],
-  ],
-};
-
-// Second sticky bar, under the site header: jumps to the sections of this page (native anchors, smooth scroll in CSS).
-function SectionMenu({ lang }: { lang: Lang }) {
-  return (
-    <nav aria-label={lang === "en" ? "Page sections" : "Sections de la page"} className="sticky top-[52px] z-30 border-b border-hairline bg-[var(--nav)] backdrop-blur-[20px] backdrop-saturate-[180%]">
-      <ul className="wrap-wide type-caption flex h-11 items-center justify-center gap-x-5 overflow-hidden max-[400px]:gap-x-3">
-        {SECTIONS[lang].map(([id, label]) => (
-          <li key={id}>
-            <a href={`#${id}`} className="inline-flex h-11 items-center whitespace-nowrap text-ink/80 transition-colors hover:text-ink">
-              {label}
-            </a>
-          </li>
-        ))}
-      </ul>
-    </nav>
-  );
-}
