@@ -35,6 +35,7 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
     <SpaceShell
       team={team}
       teams={teams}
+      parent={["/espace/sites", "Sites"]}
       title={site.domain}
       intro={
         <>
@@ -166,10 +167,14 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
       </section>
 
       {site.latest?.recommendations && (
-        <section>
-          <h2 className="type-headline mb-3 px-1">{t("Plan de corrections de l’IA", "The AI's fix plan")}</h2>
+        <details className="group">
+          <summary className="type-headline mb-3 flex min-h-11 cursor-pointer list-none items-center gap-2 px-1 [&::-webkit-details-marker]:hidden">
+            <Chevron className="h-3 w-3 text-ink-2 transition-transform duration-200 group-open:rotate-90" />
+            {t("Plan de corrections rédigé par l’IA", "Fix plan written by the AI")}
+            <span className="type-small font-normal text-ink-2">{t("· détail des corrections ci-dessus", "· detail of the fixes above")}</span>
+          </summary>
           <Recommendations text={site.latest.recommendations} />
-        </section>
+        </details>
       )}
 
       {c && s && (

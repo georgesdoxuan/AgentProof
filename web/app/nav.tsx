@@ -1,11 +1,26 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { Dict } from "@/lib/i18n";
+import { LANG_NAME, type Dict, type Lang } from "@/lib/i18n";
 
 const link =
   "inline-flex h-11 items-center whitespace-nowrap px-2 max-[400px]:px-1 text-ink/80 transition-colors hover:text-ink aria-[current=page]:text-ink-2";
 const item = "flex min-h-9 w-full items-center rounded-[8px] px-3 text-left type-small text-ink transition-colors hover:bg-fill";
+
+// Footer language switch, on every page: a visitor of the public pages has no account page to change it from.
+export function LangSwitch({ lang }: { lang: Lang }) {
+  const path = usePathname();
+  const other: Lang = lang === "fr" ? "en" : "fr";
+  return (
+    <form action="/api/lang" method="post" className="inline">
+      <input type="hidden" name="lang" value={other} />
+      <input type="hidden" name="next" value={path} />
+      <button lang={other} className="hover:text-ink hover:underline">
+        {LANG_NAME[other]}
+      </button>
+    </form>
+  );
+}
 
 // A client-side link leaves the layout (and this popover) mounted: close it by hand.
 const hide = (e: React.MouseEvent<HTMLElement>) => (e.currentTarget.closest("[popover]") as HTMLElement | null)?.hidePopover();

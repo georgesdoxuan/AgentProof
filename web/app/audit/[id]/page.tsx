@@ -27,6 +27,10 @@ function accessText(a: AgentAccess, t: T) {
     ? t("robots.txt l'autorise et le site lui répond.", "robots.txt allows it and the site answers it.")
     : t("Il navigue avec Chrome, comme l'agent AgentProof : le résultat des missions vaut aussi pour lui.", "It browses with Chrome, like the AgentProof agent: the missions' result applies to it too.");
 }
+import { fixHints } from "@/lib/space";
+
+// Agent cost in the reader's format: "0,061 $" in French, "$0.061" in English.
+const usd = (n: number, digits: number, lang: Lang) => (lang === "en" ? `$${n.toFixed(digits)}` : `${n.toFixed(digits).replace(".", ",")} $`);
 
 const RUN_FIELDS =
   "id, status, payment_verdict, with_login, session_id, success, reached_checkout, blocker_type, blocker_detail, screenshot_url, final_url, steps, duration_s, cost_usd, judge, agent_answer, attempts, first_attempt, missions(title, position)";
@@ -179,7 +183,7 @@ function PrintCover(p: {
             [
               [t("Premier blocage", "First blocker"), top ? `${blockerLabel(top[0], lang)} · ${top[1]} mission${top[1] > 1 ? "s" : ""}` : t("Aucun", "None")],
               [t("Parcours testé", "Journey tested"), `${p.device === "mobile" ? "Mobile" : t("Ordinateur", "Desktop")} · ${p.model ?? DEFAULT_MODEL}`],
-              [t("Coût de l'agent", "Agent cost"), `${p.cost.toFixed(2)} $ ${t("pour", "for")} ${s.total} missions`],
+              [t("Coût de l'agent", "Agent cost"), `${usd(p.cost, 2, lang)} ${t("pour", "for")} ${s.total} missions`],
             ] as const
           ).map(([k, v]) => (
             <div key={k} className="border-r border-line py-[4mm] pr-[4mm] last:border-0 [&:not(:first-child)]:pl-[4mm]">
@@ -264,6 +268,40 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   const paymentOnly = runs.length === 0 && pays.length > 0;
   // A linked audit of the same site is a model comparison, not a competitor.
   const modelCompare = !!competitor && competitor.site_id === audit.site_id;
+  // A competitor sits next to the score; a model comparison is for the technical reader and goes after the fix plan.
+  const compareCard = competitor && c ? (
+            <Link href={`/audit/${competitor.id}`} className="tile group flex flex-col transition-colors duration-200 hover:bg-tile/80">
+              <h2 className="type-headline">{modelCompare ? t("Deux modèles, mêmes missions", "Two models, same missions") : t("Face au concurrent", "Against the competitor")}</h2>
+              <div className="mt-8 space-y-6">
+                {(
+                  [
+                    [modelCompare ? audit.model ?? DEFAULT_MODEL : audit.sites.name, s, true, perMission(runs)],
+                    [modelCompare ? competitor.model ?? DEFAULT_MODEL : competitor.sites.name, c, false, perMission(competitor.runs)],
+                  ] as const
+                ).map(([name, x, self, pm]) => (
+                  <div key={name} className="space-y-2.5">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <span className={`truncate ${self ? "font-semibold" : "text-ink-2"}`}>{name}</span>
+                      <span className="text-[21px] font-semibold tnum">{x.score ?? "—"} %</span>
+                    </div>
+                    <MissionBar ok={x.ok} done={x.done} total={x.total} />
+                    {modelCompare && pm && (
+                      <p className="type-small text-ink-2 tnum">
+                        {pm.s} s · {usd(pm.usd, 3, lang)} {t("par mission", "per mission")}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <span className="more mt-auto pt-6 group-hover:underline">
+                {modelCompare ? `${t("Rapport", "Report")} ${competitor.model ?? DEFAULT_MODEL}` : t(`Rapport de ${competitor.sites.name}`, `${competitor.sites.name} report`)}
+              </span>
+            </Link>
+  ) : null;
+  // The merchant's first question: what do I fix first? The most frequent counted blocker, its fix and its proof.
+  const firstBlocker = s.blockers.find(([b]) => !EXCLUDED.includes(b));
+  const firstRun = firstBlocker ? runs.find((r: any) => r.status === "done" && r.success === false && r.blocker_type === firstBlocker[0]) : null;
+  const firstFix = firstBlocker ? fixHints(lang)[firstBlocker[0]] ?? fixHints(lang).other : null;
   return (
     <div className="bg-bg-2 pb-24 pt-16 max-[734px]:pt-10 print:bg-bg print:p-0">
       {running && <AutoRefresh />}
@@ -296,7 +334,6 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             </p>
           )}
           <p className="type-eyebrow text-ink-2">{paymentOnly ? t("Test de paiement", "Payment test") : t("Rapport d\u2019audit", "Audit report")} · <DeviceTag device={audit.device} lang={lang} />
-            {audit.model && ` · ${t("Modèle", "Model")} ${audit.model}`}
           </p>
           <h1 className="type-h1 mt-3 break-words">{audit.title || audit.sites.name}</h1>
           <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-ink-2">
@@ -383,34 +420,8 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             </div>
           </div>
 
-          {competitor && c ? (
-            <Link href={`/audit/${competitor.id}`} className="tile group flex flex-col transition-colors duration-200 hover:bg-tile/80">
-              <h2 className="type-headline">{modelCompare ? t("Deux modèles, mêmes missions", "Two models, same missions") : t("Face au concurrent", "Against the competitor")}</h2>
-              <div className="mt-8 space-y-6">
-                {(
-                  [
-                    [modelCompare ? audit.model ?? DEFAULT_MODEL : audit.sites.name, s, true, perMission(runs)],
-                    [modelCompare ? competitor.model ?? DEFAULT_MODEL : competitor.sites.name, c, false, perMission(competitor.runs)],
-                  ] as const
-                ).map(([name, x, self, pm]) => (
-                  <div key={name} className="space-y-2.5">
-                    <div className="flex items-baseline justify-between gap-3">
-                      <span className={`truncate ${self ? "font-semibold" : "text-ink-2"}`}>{name}</span>
-                      <span className="text-[21px] font-semibold tnum">{x.score ?? "—"} %</span>
-                    </div>
-                    <MissionBar ok={x.ok} done={x.done} total={x.total} />
-                    {modelCompare && pm && (
-                      <p className="type-small text-ink-2 tnum">
-                        {pm.s} s · {pm.usd.toFixed(3)} $ {t("par mission", "per mission")}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-              <span className="more mt-auto pt-6 group-hover:underline">
-                {modelCompare ? `${t("Rapport", "Report")} ${competitor.model ?? DEFAULT_MODEL}` : t(`Rapport de ${competitor.sites.name}`, `${competitor.sites.name} report`)}
-              </span>
-            </Link>
+          {competitor && c && !modelCompare ? (
+            compareCard
           ) : (
             <nav className="tile flex flex-col p-0! print:hidden" aria-label={t("Missions en bref", "Missions at a glance")}>
               <h2 className="type-headline px-7 pt-7 pb-3 max-[734px]:px-6">{t("Missions en bref", "Missions at a glance")}</h2>
@@ -460,6 +471,49 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                   : t("Aucun protocole d’achat pour agents : seuls ceux qui cliquent à l’écran peuvent acheter.", "No agent commerce protocol: only agents that click on screen can buy.")}
               </p>
             </div>
+          </section>
+        )}
+
+        {!paymentOnly && firstBlocker && firstRun && (
+          <section className="tile grid gap-x-10 gap-y-6 md:grid-cols-[minmax(0,1fr)_minmax(0,360px)] print:hidden" aria-labelledby="premier">
+            <div className="flex min-w-0 flex-col">
+              <p className="type-small font-semibold text-fail">{t("À corriger en premier", "Fix this first")}</p>
+              <h2 id="premier" className="type-h3 mt-2 flex items-start gap-2.5">
+                <BlockerIcon type={firstBlocker[0]} className="mt-[0.15em] h-[0.9em] w-[0.9em]" />
+                {blockerLabel(firstBlocker[0], lang)}
+              </h2>
+              <p className="mt-2 text-ink-2 tnum">
+                {lang === "en"
+                  ? `${firstBlocker[1]} of the ${s.done} counted missions stop here.`
+                  : `${firstBlocker[1]} des ${s.done} missions comptées s'arrêtent ici.`}
+              </p>
+              <p className="mt-4 flex gap-2">
+                <Chevron className="mt-[0.45em] h-3 w-3 shrink-0 text-link" />
+                <span>{firstFix}</span>
+              </p>
+              <div className="mt-auto flex flex-wrap items-center gap-x-5 gap-y-3 pt-6">
+                <Link href={`/replay/${firstRun.id}?a=${audit.id}`} className="no-print btn btn-dark min-h-[40px] px-[18px] text-[15px]">
+                  <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="currentColor" aria-hidden>
+                    <path d="M2.5 1.3v9.4L10.6 6z" />
+                  </svg>
+                  {t("Voir le replay", "Watch the replay")}
+                </Link>
+                {audit.recommendations && (
+                  <a href="#plan" className="type-small text-link hover:underline">
+                    {t("Tout le plan de corrections", "The full fix plan")}
+                  </a>
+                )}
+              </div>
+            </div>
+            {firstRun.screenshot_url && (
+              <a href={firstRun.screenshot_url} target="_blank" rel="noreferrer" className="block self-start rounded-[12px]" aria-label={`${t("Ouvrir la capture", "Open the screenshot")} : ${blockerLabel(firstBlocker[0], lang)}`}>
+                <BrowserFrame url={firstRun.final_url}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={firstRun.screenshot_url} alt={`${t("Écran où l'agent s'arrête", "Screen where the agent stops")} : ${blockerLabel(firstBlocker[0], lang)}`} className="block w-full" loading="lazy" />
+                  <Verdict success={false} label={blockerLabel(firstBlocker[0], lang)} className="absolute bottom-3 left-3" />
+                </BrowserFrame>
+              </a>
+            )}
           </section>
         )}
 
@@ -565,7 +619,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
         )}
 
         {audit.recommendations && (
-          <section>
+          <section id="plan" className="scroll-mt-24">
             <SectionHead title={t("Plan de corrections.", "Fix plan.")} />
             <Recommendations
               text={audit.recommendations}
@@ -581,6 +635,8 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
           </section>
         )}
 
+        {modelCompare && compareCard && <section className="max-w-[560px] print:hidden">{compareCard}</section>}
+
         {/* 3. Evidence: every mission with its last screen. */}
         {!paymentOnly && (
         <section className="print-new-page">
@@ -590,7 +646,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
               "Chaque mission part de l’accueil du site et s’arrête à l’entrée du checkout. La capture montre le dernier écran vu par l’agent.",
               "Each mission starts on the site's home page and stops at the checkout entrance. The screenshot shows the last screen the agent saw.",
             )}
-            aside={cost > 0 && <span className="type-small text-ink-2 tnum">{t("Coût agent", "Agent cost")} : {cost.toFixed(2)} $</span>}
+            aside={cost > 0 && <span className="type-small text-ink-2 tnum">{t("Coût agent", "Agent cost")} : {usd(cost, 2, lang)}</span>}
           />
           <div className="space-y-4">
             {runs.map((r: any, i: number) => (
@@ -668,7 +724,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                           [
                             [t("Étapes", "Steps"), r.steps ?? "?"],
                             [t("Durée", "Duration"), r.duration_s ? `${Math.round(r.duration_s)} s` : "?"],
-                            ...(r.cost_usd != null ? [[t("Coût", "Cost"), `${Number(r.cost_usd).toFixed(3)} $`]] : []),
+                            ...(r.cost_usd != null ? [[t("Coût", "Cost"), usd(Number(r.cost_usd), 3, lang)]] : []),
                           ] as [string, string | number][]
                         ).map(([k, v]) => (
                           <div key={k}>
@@ -687,7 +743,8 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                   )}
                 </div>
                 {r.screenshot_url ? (
-                  <a href={r.screenshot_url} target="_blank" rel="noreferrer" className="block self-start rounded-[12px]" aria-label={`${t("Ouvrir la capture", "Open the screenshot")} : ${missionTitle(r.missions.title, lang)}`}>
+                  <figure className="self-start">
+                  <a href={r.screenshot_url} target="_blank" rel="noreferrer" className="block rounded-[12px]" aria-label={`${t("Ouvrir la capture", "Open the screenshot")} : ${missionTitle(r.missions.title, lang)}`}>
                     <BrowserFrame url={r.final_url}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={r.screenshot_url} alt={`${t("Dernier écran vu par l'agent", "Last screen the agent saw")} : ${missionTitle(r.missions.title, lang)}`} className="block w-full" />
@@ -696,6 +753,16 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                       )}
                     </BrowserFrame>
                   </a>
+                  {r.status === "done" && r.success && (
+                    // A sign-in page under a cookie banner looks like a failure: say why it counts as reached.
+                    <figcaption className="type-caption mt-2 text-ink-2">
+                      {t(
+                        "Première page après le panier (connexion, e-mail ou adresse) : l’entrée du checkout est atteinte.",
+                        "First page after the cart (sign-in, e-mail or address): the checkout entrance is reached.",
+                      )}
+                    </figcaption>
+                  )}
+                  </figure>
                 ) : (
                   <div className="type-small grid aspect-[16/10] place-items-center self-start rounded-[12px] bg-bg-2 text-ink-2 dark:bg-[#2c2c2e]">
                     {r.status === "done" ? t("Pas de capture", "No screenshot") : t("Capture à venir", "Screenshot coming")}

@@ -33,9 +33,9 @@ function PayLine({ pay, multi, lang }: { pay: { status: string; verdict: string 
           : [`${P} : ${(PAYMENT_VERDICTS[pay.verdict ?? ""] ?? t("erreur", "error")).toLowerCase()}`, "text-fail"];
   const who = multi || pay.with_login ? (pay.with_login ? t(" (connecté)", " (signed in)") : t(" (sans compte)", " (no account)")) : "";
   return (
-    <span className={`type-small flex items-center gap-1 font-semibold ${cls}`}>
-      <Icon name="payment" className="h-[1.1em] w-[1.1em]" />
-      {text}{who}
+    <span className={`type-small flex min-w-0 items-center gap-1 font-semibold ${cls}`} title={`${text}${who}`}>
+      <Icon name="payment" className="h-[1.1em] w-[1.1em] shrink-0" />
+      <span className="md:truncate">{text}{who}</span>
     </span>
   );
 }
@@ -166,6 +166,7 @@ export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
       team={team}
       teams={teams}
       title={title}
+      parent={view === "all" ? undefined : [PATH.all, r.title]}
       intro={intro}
       actions={
         view === "trash" && manage && trash.some((a) => a.status === "done") ? (
@@ -189,7 +190,8 @@ export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
             ))}
           </nav>
           {view !== "trash" && scoped.length > 0 && (
-            <nav aria-label={r.filtersLabel} className="inline-flex rounded-[10px] bg-fill p-[3px]">
+            // Narrow screens show one control (the sub-sections): two stacked segmented controls both starting with "Tous" read as one.
+            <nav aria-label={r.filtersLabel} className="inline-flex rounded-[10px] bg-fill p-[3px] max-lg:hidden">
               {([["tous", r.filters.all], ["en-cours", r.filters.running], ["termines", r.filters.done]] as const).map(([v, l]) => (
                 <Link key={v} href={v === "tous" ? PATH[view] : `${PATH[view]}?vue=${v}`} scroll={false} aria-current={status === v ? "true" : undefined} className={tab}>
                   {l}
@@ -225,10 +227,16 @@ export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
                         <MissionBar ok={a.s.ok} done={a.s.done} total={a.s.total} size="sm" />
                       </span>
                       <span className="flex items-center justify-end gap-2 whitespace-nowrap tnum">
-                        {a.status === "done" ? (
+                        {a.status === "done" && a.s.score == null ? (
+                          // Nothing counted (anti-bot, stock, agent errors): say so instead of an unexplained "— %".
+                          <span className="type-small flex items-center gap-1.5 font-semibold text-ink-2">
+                            <StatusGlyph tone="unsure" className="h-4 w-4" />
+                            {lang === "en" ? "No score" : "Sans score"}
+                          </span>
+                        ) : a.status === "done" ? (
                           <>
                             <StatusGlyph tone={scoreTone(a.s.score)} className="h-4 w-4" />
-                            <span className="font-semibold">{a.s.score ?? "—"} %</span>
+                            <span className="font-semibold">{a.s.score} %</span>
                           </>
                         ) : (
                           <span className="type-small flex items-center gap-2 text-ink-2">

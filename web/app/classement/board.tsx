@@ -6,11 +6,20 @@ import { getLang } from "@/lib/lang";
 
 const COLS = "md:grid-cols-[1.75rem_minmax(0,1.5fr)_10.5rem_minmax(0,1.2fr)_minmax(0,1.3fr)_4.5rem]";
 
-// The public leaderboard, shared by /classement and the team space.
-export async function Leaderboard() {
+type ScoreRow = { score: number | null; runs_scored: number | null; name: string | null };
+// One order everywhere (home top 5, /classement, team space): score, then more missions counted, then name. Ties no longer depend on the database.
+export const byRank = (a: ScoreRow, b: ScoreRow) =>
+  (b.score ?? -1) - (a.score ?? -1) || (b.runs_scored ?? 0) - (a.runs_scored ?? 0) || (a.name ?? "").localeCompare(b.name ?? "", "fr");
+
+export type Device = "desktop" | "mobile";
+export const isDevice = (v: unknown): v is Device => v === "desktop" || v === "mobile";
+
+// The public leaderboard, shared by /classement and the team space. One device at a time, so a site never appears twice.
+export async function Leaderboard({ device = "desktop", base }: { device?: Device; base: string }) {
   const lang = await getLang();
   const t = tr(lang);
-  const { data: scores } = await db.from("site_scores").select("*").order("score", { ascending: false, nullsFirst: false });
+  const { data: rows } = await db.from("site_scores").select("*").eq("device", device);
+  const scores = (rows ?? []).sort(byRank);
   const auditIds = (scores ?? []).map((s) => s.audit_id);
   const { data: fails } = await db.from("runs").select("audit_id, blocker_type").in("audit_id", auditIds).eq("success", false);
   const topBlocker = (id: string) => {
@@ -30,7 +39,19 @@ export async function Leaderboard() {
 
   return (
     <>
-        {period && <p className="type-small mt-8 text-ink-2">{t("Derniers audits terminés", "Latest audits finished")} {period}.</p>}
+        <nav aria-label={t("Appareil", "Device")} className="mt-8 inline-grid grid-cols-2 rounded-[10px] bg-fill p-[3px]">
+          {(["desktop", "mobile"] as const).map((d) => (
+            <Link
+              key={d}
+              href={d === "desktop" ? base : `${base}?appareil=mobile`}
+              aria-current={d === device ? "page" : undefined}
+              className={`type-small flex h-9 min-w-[120px] items-center justify-center rounded-[8px] px-4 font-semibold transition-colors duration-200 ${d === device ? "bg-tile text-ink shadow-[0_1px_3px_rgb(0_0_0/0.12)] dark:bg-[#636366]" : "text-ink-2 hover:text-ink"}`}
+            >
+              {d === "desktop" ? t("Ordinateur", "Desktop") : "Mobile"}
+            </Link>
+          ))}
+        </nav>
+        {period && <p className="type-small mt-4 text-ink-2">{t("Derniers audits terminés", "Latest audits finished")} {period}.</p>}
         {scores?.length ? (
           <div className={`${period ? "mt-4" : "mt-12"} overflow-hidden rounded-[18px] bg-tile`}>
             <div className={`type-caption hidden gap-4 border-b border-hairline px-6 py-3 text-ink-2 md:grid ${COLS}`} aria-hidden>

@@ -1,6 +1,8 @@
 import type { TeamRow } from "@/lib/auth";
 import { getDict } from "@/lib/lang";
-import { AutoSubmitSelect, HistoryButtons, SpaceNav } from "./controls";
+import Link from "next/link";
+import { Chevron } from "@/lib/ui";
+import { AutoSubmitSelect, SpaceNav } from "./controls";
 
 // One frame for every page of the team space: a sidebar on the leading edge, the page beside it.
 // Wide screens: the sidebar sits against the window edge (logo above lines up with it) and the page is centred
@@ -13,6 +15,7 @@ export async function SpaceShell({
   intro,
   actions,
   narrow = false,
+  parent,
   children,
 }: {
   team?: TeamRow; // left out by loading skeletons: the team block turns into placeholders
@@ -21,6 +24,8 @@ export async function SpaceShell({
   intro?: React.ReactNode;
   actions?: React.ReactNode;
   narrow?: boolean;
+  /** Child pages only (a site, Favoris, Corbeille): the section they belong to, as a back link above the title. */
+  parent?: [href: string, label: string];
   children: React.ReactNode;
 }) {
   const t = await getDict();
@@ -69,9 +74,12 @@ export async function SpaceShell({
           <div className={`space-y-10 max-[734px]:space-y-8 ${narrow ? "max-w-[760px]" : ""}`}>
             <header className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
               <div className="min-w-0 flex-1 basis-[min(100%,520px)]">
-                <div className="mb-4">
-                  <HistoryButtons back={t.space.back} forward={t.space.forward} />
-                </div>
+                {parent && (
+                  <Link href={parent[0]} className="type-small mb-3 inline-flex min-h-8 items-center gap-1 text-link hover:underline">
+                    <Chevron dir="left" className="h-3 w-3" />
+                    {parent[1]}
+                  </Link>
+                )}
                 <h1 className="type-title">{title}</h1>
                 {intro && <p className="mt-2 max-w-[680px] text-ink-2">{intro}</p>}
               </div>

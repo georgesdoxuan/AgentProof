@@ -68,6 +68,19 @@ export async function MissionBar({ ok, done, total, size = "md" }: { ok: number;
   );
 }
 
+// Says what the three segment colors mean, once, under a group of bars.
+export async function MissionLegend({ className = "" }: { className?: string }) {
+  const t = await getT();
+  const dot = "inline-block h-2 w-3.5 rounded-full";
+  return (
+    <p className={`type-caption flex flex-wrap gap-x-4 gap-y-1 text-ink-2 ${className}`}>
+      <span className="inline-flex items-center gap-1.5"><span className={`${dot} bg-pass`} />{t("Mission réussie", "Mission passed")}</span>
+      <span className="inline-flex items-center gap-1.5"><span className={`${dot} bg-fail`} />{t("Mission bloquée", "Mission blocked")}</span>
+      <span className="inline-flex items-center gap-1.5"><span className={`${dot} bg-fill`} />{t("Hors score (anti-bot, rupture de stock…) ou pas encore jouée", "Out of score (anti-bot, out of stock…) or not played yet")}</span>
+    </p>
+  );
+}
+
 // ---------- runs ----------
 export async function StatusBadge({ run }: { run: { status: string; success: boolean | null; blocker_type?: string | null } }) {
   const t = await getT();
@@ -255,7 +268,8 @@ export function DeviceTag({ device, lang = "fr" }: { device: string; lang?: Lang
 }
 
 // ---------- helpers ----------
-export const blockerLabel = (b: string | null, lang: Lang = "fr") => (b ? blockerNames(lang)[b] ?? b : "—");
+// Non-breaking hyphen: « anti-bot » never splits across two lines in a card title.
+export const blockerLabel = (b: string | null, lang: Lang = "fr") => (b ? (blockerNames(lang)[b] ?? b).replace(/-/g, "‑") : "—");
 
 type Run = { status: string; success: boolean | null; blocker_type: string | null };
 
@@ -328,7 +342,7 @@ export function Field({ label, name, required, type = "url", defaultValue }: { l
         spellCheck={false}
         className="peer h-14 w-full rounded-[12px] border border-[#86868b] bg-tile px-4 pt-[18px] text-[17px] transition-[border-color,box-shadow] duration-200 focus:border-blue focus:shadow-[0_0_0_4px_rgb(0_113_227/0.3)] focus:outline-none dark:border-line"
       />
-      <span className="pointer-events-none absolute left-4 top-[9px] type-caption text-ink-2 transition-all duration-200 peer-placeholder-shown:top-[17px] peer-placeholder-shown:text-[17px] peer-focus:top-[9px] peer-focus:text-[12px]">
+      <span className="pointer-events-none absolute left-4 right-4 top-[9px] truncate type-caption text-ink-2 transition-all duration-200 peer-placeholder-shown:top-[17px] peer-placeholder-shown:text-[17px] peer-focus:top-[9px] peer-focus:text-[12px]">
         {label}
       </span>
     </label>

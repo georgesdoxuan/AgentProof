@@ -50,8 +50,8 @@ export default async function Automations() {
       teams={teams}
       title="Automations"
       intro={t(
-        "Une fois par jour, AgentProof relit chaque page suivie et la compare à la veille : scripts tiers (captcha, bandeau cookies), formulaires, boutons et champs. Prix et produits ne comptent pas. Si la page a changé, tu es prévenu ici et par e-mail, et un audit peut repartir tout seul. Avec le suivi mensuel, un audit complet repart tous les 30 jours, et tu reçois une alerte si le score baisse de 10 points ou plus.",
-        "Once a day, AgentProof rereads each tracked page and compares it with the day before: third-party scripts (captcha, cookie banner), forms, buttons and fields. Prices and products do not count. If the page changed, you are told here and by e-mail, and an audit can start on its own. With monthly tracking, a full audit runs every 30 days, and you get an alert if the score drops by 10 points or more.",
+        "Chaque jour, AgentProof relit tes pages (bandeau cookies, captcha, boutons, formulaires) et te prévient ici et par e-mail si elles changent. Les prix et les produits ne comptent pas.",
+        "Every day, AgentProof rereads your pages (cookie banner, captcha, buttons, forms) and tells you here and by e-mail when they change. Prices and products do not count.",
       )}
     >
       {items.length ? (
@@ -135,8 +135,8 @@ export default async function Automations() {
         <Group
           title={t("Suivre des pages", "Track pages")}
           footer={t(
-            "Une URL par ligne : accueil, page produit, panier… Chaque page est vérifiée une fois par jour, sans IA et sans crédit H. Seul l'audit relancé consomme des crédits.",
-            "One URL per line: home page, product page, cart… Each page is checked once a day, with no AI and no H credits. Only the rerun audit uses credits.",
+            "Une URL par ligne : accueil, page produit, panier… Chaque page est vérifiée une fois par jour, gratuitement. Seul un audit relancé est payant.",
+            "One URL per line: home page, product page, cart… Each page is checked once a day, for free. Only a rerun audit costs anything.",
           )}
         >
           <form action="/api/automations" method="post" className="grid gap-4 p-6 sm:p-8">

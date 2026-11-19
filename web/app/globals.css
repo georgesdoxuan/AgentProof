@@ -111,6 +111,11 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* The page's last block stretches to the footer: its own background (white or grey) fills the gap on short pages. */
+#contenu > :last-child {
+  flex-grow: 1;
+}
+
 ::selection {
   background: color-mix(in srgb, var(--blue) 24%, transparent);
 }

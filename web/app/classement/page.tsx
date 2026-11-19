@@ -1,5 +1,5 @@
 import { connection } from "next/server";
-import { Leaderboard } from "./board";
+import { Leaderboard, isDevice } from "./board";
 import { getT } from "@/lib/lang";
 
 export async function generateMetadata() {
@@ -7,8 +7,9 @@ export async function generateMetadata() {
   return { title: `${t("Classement", "Ranking")} · AgentProof` };
 }
 
-export default async function Classement() {
+export default async function Classement({ searchParams }: { searchParams: Promise<{ appareil?: string }> }) {
   await connection();
+  const { appareil } = await searchParams;
   const t = await getT();
   return (
     <div className="bg-bg-2 pb-24 pt-20 max-[734px]:pt-12">
@@ -24,7 +25,7 @@ export default async function Classement() {
           </p>
         </header>
 
-        <Leaderboard />
+        <Leaderboard device={isDevice(appareil) ? appareil : "desktop"} base="/classement" />
       </div>
     </div>
   );
