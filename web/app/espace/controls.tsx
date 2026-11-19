@@ -121,6 +121,24 @@ export function SpaceNav({ t, account }: { t: Dict["space"]; account?: AccountBa
   );
 }
 
+// The section's own glyph before the page title: the sidebar entry's icon, at the title's size. Read from the path
+// so every page in the shell (and its loading skeleton) gets it with nothing to pass; a page that is not a sidebar
+// entry (a site, « Lancer un audit ») keeps a bare title. « Compte » takes the person glyph, not the avatar.
+const SECTION_ICON: Record<string, string> = Object.fromEntries([
+  ...GROUPS.flatMap(([, items]) => items as readonly (readonly [string, string])[]),
+  ...Object.values(CHILDREN).flat(),
+]);
+export function SectionIcon() {
+  const d = SECTION_ICON[usePathname().replace(/\/$/, "")];
+  if (!d) return null;
+  // As tall as one line of the title, so it sits on the first line even when the title wraps.
+  return (
+    <span className="flex h-[1.12em] shrink-0 items-center" aria-hidden>
+      {glyph(d, "h-[0.86em] w-[0.86em] text-blue")}
+    </span>
+  );
+}
+
 // Narrow screens: three tabs a merchant uses every day, everything else behind "Plus", like a tab bar's More.
 // Nine sections in one scrolling strip hid the settings off screen with no hint they existed.
 const MAIN = ["/espace", "/espace/sites", "/espace/rapports"] as const;

@@ -2,7 +2,7 @@ import { getDict } from "@/lib/lang";
 import Link from "next/link";
 import { Chevron } from "@/lib/ui";
 import { Hint } from "@/lib/hint";
-import { AutoSubmitSelect, SpaceNav } from "./controls";
+import { AutoSubmitSelect, SectionIcon, SpaceNav } from "./controls";
 import { teamContext } from "@/lib/auth";
 import { accountColor, spaceColor } from "@/lib/avatar";
 
@@ -87,7 +87,11 @@ export function SpaceShell({
                   {parent[1]}
                 </Link>
               )}
-              <h1 className="type-title">{hint ? <Hint tip={hint}>{title}</Hint> : title}</h1>
+              {/* Icon + title: one header for every page, so a new page in the shell gets its sidebar icon too. */}
+              <h1 className="type-title flex items-start gap-3 max-[734px]:gap-2.5">
+                <SectionIcon />
+                <span className="min-w-0 flex-1">{hint ? <Hint tip={hint}>{title}</Hint> : title}</span>
+              </h1>
               {intro && <div className="mt-3 max-w-[680px] text-ink-2">{intro}</div>}
             </div>
             {actions}

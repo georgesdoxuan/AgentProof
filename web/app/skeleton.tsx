@@ -67,7 +67,7 @@ export function SkSpace({
           ) : long ? (
             <>
               <Line w="min(30rem, 100%)" />
-              <span className="min-[735px]:hidden">
+              <span className="block min-[735px]:hidden">
                 <Line w="60%" />
               </span>
             </>
