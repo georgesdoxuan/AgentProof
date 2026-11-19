@@ -117,6 +117,14 @@ R&D interne, hors produit : page `/test-paiement`, réservée aux comptes de l'�
 
 Espace › Automations : l'équipe colle une ou plusieurs URL. Une fois par jour, le tick lit chaque page via Jina Reader (rendu dans un vrai navigateur, passe les 403 anti-bot) et en garde la structure, sans IA : titre, domaines des scripts tiers, iframes, formulaires, champs, libellés des boutons. Prix, produits et chiffres sont ignorés. Si la liste diffère de la veille, l'équipe est prévenue (section + e-mail au créateur) et, en mode « Prévenir et auditer », un audit repart tout seul. Lecture stable vérifiée : 3 lectures identiques de suite sur jules.com, celio.com, allbirds.com. Une page anti-bot (moins de 5 éléments) n'est jamais prise comme référence. Tables `automations` et `automation_checks`. `JINA_API_KEY` facultative (gratuit : 20 pages par minute).
 
+Depuis le 19 novembre :
+- **Fréquence par page** : toutes les heures, 6 h, une fois par jour (défaut) ou par semaine (`automations.interval_hours`). Une vérification par tick tant qu'il reste 40 s.
+- **Contrôle statique suivi** : chaque vérification ajoute à la signature les lignes du contrôle statique (robots.txt, anti-bot, schema.org, UCP, ACP, WebMCP, llms.txt). Un robots.txt qui se ferme aux agents ou un profil UCP qui disparaît compte comme un changement. Les anciennes références adoptent ces lignes sans alerte.
+- **Webhook d'équipe** (`teams.webhook_url`) : chaque changement et chaque baisse de score part aussi sur Slack (`{text}`), Discord (`{content}`) ou une URL https quelconque (JSON `{source, event, domain, text, link}`).
+- **Seuil de baisse de score** par équipe : 5, 10 (défaut) ou 20 points (`teams.score_drop`).
+- **Mise en ligne** : `POST /api/hooks/<teams.hook_token>` (Vercel `deployment.succeeded`, Shopify `themes/publish`, GitHub `deployment_status`, ou `curl`) fait vérifier toutes les pages de l'équipe dans la minute. Un seul déclenchement par 2 minutes.
+- **Budget** : au plus un audit automatique par page et par 24 h ; les missions des audits automatiques (`runs.priority = 1`) partent après celles lancées à la main. `AUTOMATIONS_PAUSED=1` (variable Vercel) suspend veille et audits mensuels, par exemple pendant une démo.
+
 ## Pour les marchands et les agences
 
 - **Suivi mensuel** (offre à 149 €/mois) : dans Espace › Automations, « Audit tous les 30 jours » relance un audit complet chaque mois. À la clôture de chaque audit d'équipe, si le score baisse de 10 points ou plus par rapport à l'audit précédent (même site, appareil et modèle), le rapport l'affiche et un e-mail part.

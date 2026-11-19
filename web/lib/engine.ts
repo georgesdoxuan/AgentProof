@@ -153,7 +153,7 @@ export function normalizeUrl(input: string) {
   return { url: `${u.protocol}//${u.hostname}${u.pathname === "/" ? "" : u.pathname}`, domain: u.hostname.replace(/^www\./, "") };
 }
 
-export async function createAudit(input: string, opts: { device?: "desktop" | "mobile"; missions?: number; compareTo?: string; paymentTest?: string; model?: string; email?: string; ipHash?: string; teamId?: string; createdBy?: string } = {}) {
+export async function createAudit(input: string, opts: { device?: "desktop" | "mobile"; missions?: number; compareTo?: string; paymentTest?: string; model?: string; email?: string; ipHash?: string; teamId?: string; createdBy?: string; auto?: boolean } = {}) {
   const { url, domain } = normalizeUrl(input);
   const { data: created, error: e1 } = await db
     .from("sites")
@@ -170,7 +170,8 @@ export async function createAudit(input: string, opts: { device?: "desktop" | "m
   // missions: 0 = payment test only (the audit just carries the payment_test link).
   if (opts.missions !== 0) {
     const { data: missions } = await db.from("missions").select("id").eq("active", true).order("position").limit(opts.missions ?? 10);
-    await db.from("runs").insert(missions!.map((m) => ({ audit_id: audit.id, mission_id: m.id })));
+    // Automatic audits (site watch, monthly follow-up) get priority 1: a run someone is waiting for launches first.
+    await db.from("runs").insert(missions!.map((m) => ({ audit_id: audit.id, mission_id: m.id, ...(opts.auto ? { priority: 1 } : {}) })));
   }
   return audit.id as string;
 }
@@ -320,9 +321,12 @@ export async function tick(loopMs = LOOP_MS) {
   const auto = await import("./automations");
   if (room() > 25_000) await auto.runStaticChecks(log).catch((e) => log.push(`static check error: ${e}`));
   else log.push("static check postponed");
-  await auto.runMonthlyAudits(log).catch((e) => log.push(`monthly audits error: ${e}`));
-  if (room() > 15_000) await auto.runDueAutomations(log).catch((e) => log.push(`automations error: ${e}`));
-  else log.push("automations postponed");
+  // AUTOMATIONS_PAUSED=1 (Vercel env) stops the watch and the monthly audits, e.g. during a live demo.
+  if (process.env.AUTOMATIONS_PAUSED === "1") log.push("automations paused");
+  else {
+    await auto.runMonthlyAudits(log).catch((e) => log.push(`monthly audits error: ${e}`));
+    await auto.runDueAutomations(log, room).catch((e) => log.push(`automations error: ${e}`));
+  }
   return { log, budgetLeft: budget };
 }
 
@@ -371,6 +375,7 @@ async function pass(log: string[], left: () => number, spend: (n: number) => voi
         .from("runs")
         .select("*, missions(instruction, slug), audits(device, team_id, model, sites(id, url))")
         .eq("status", "todo")
+        .order("priority")
         .order("created_at")
         .limit(slots);
       // One request to H's quota, only when there is something to launch.
@@ -737,12 +742,12 @@ async function closeAudits(log: string[]) {
 }
 
 // Score drop alert (monthly follow-up): same team, site, device and model as the previous finished audit,
-// down by ALERT_DROP points or more. Stored on the audit for the report, and e-mailed to whoever launched it.
-const ALERT_DROP = 10;
+// down by the team's threshold (teams.score_drop, 10 points by default) or more.
+// Stored on the audit for the report, e-mailed to whoever launched it, and posted to the team's webhook.
 async function scoreAlert(auditId: string) {
   const { data: a } = await db
     .from("audits")
-    .select("id, team_id, site_id, device, model, email, created_at, sites(domain), runs(status, success, blocker_type)")
+    .select("id, team_id, site_id, device, model, email, created_at, sites(domain), teams(score_drop), runs(status, success, blocker_type)")
     .eq("id", auditId)
     .single();
   if (!a?.team_id || !a.runs.length) return;
@@ -762,16 +767,20 @@ async function scoreAlert(auditId: string) {
   const before = prev?.find((p) => (p.model ?? DEFAULT_MODEL) === (a.model ?? DEFAULT_MODEL) && p.runs.length);
   const now = scoreOf(a.runs);
   const was = before ? scoreOf(before.runs) : null;
-  if (now == null || was == null || was - now < ALERT_DROP) return;
+  const drop = (a.teams as any)?.score_drop ?? 10;
+  if (now == null || was == null || was - now < drop) return;
   await db.from("audits").update({ score_alert: { from: was, to: now, previous: before!.id } }).eq("id", a.id);
-  if (!a.email) return;
   const domain = (a.sites as any).domain;
   const link = `${process.env.PUBLIC_URL ?? ""}/audit/${a.id}`;
+  const text = `Le dernier audit de ${domain} donne ${now} %, contre ${was} % au précédent. Un agent IA achète moins bien sur le site qu'avant.`;
+  const { notifyTeam } = await import("./automations");
+  await notifyTeam(a.team_id, { event: "score_drop", domain, text, link }).catch(() => false);
+  if (!a.email) return;
   const { sendMail } = await import("./auth");
   await sendMail(
     a.email,
     `AgentProof : le score de ${domain} baisse (${was} % → ${now} %)`,
-    `Le dernier audit de ${domain} donne ${now} %, contre ${was} % au précédent. Un agent IA achète moins bien sur le site qu'avant.\n\nLe rapport montre les missions qui bloquent, avec les captures et les replays :\n${link}`,
+    `${text}\n\nLe rapport montre les missions qui bloquent, avec les captures et les replays :\n${link}`,
     link,
   );
 }
