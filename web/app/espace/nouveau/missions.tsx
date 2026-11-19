@@ -2,6 +2,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { Lang } from "@/lib/i18n";
 import type { PickItem } from "@/lib/missions";
+import { Hint } from "@/lib/hint";
 
 // Mission picker of the launch form: tick defaults, edit one for this audit or for the team, add the team's own.
 // Sends the pick as JSON in a hidden "missions" field; /api/audits checks every id and every text again.
@@ -69,7 +70,15 @@ export function MissionPicker({ items: initial, lang, max }: { items: PickItem[]
   return (
     <details ref={boxRef} className="group/m rounded-[12px] bg-bg-2 dark:bg-[#2c2c2e]">
       <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 py-2 [&::-webkit-details-marker]:hidden">
-        <span className="type-small font-semibold">{t("Missions", "Missions")}</span>
+        <Hint
+          focusable={false}
+          tip={t(
+            `Coche les missions à jouer (${max} au plus). Le score se calcule sur les missions choisies. Un concurrent rejoue les mêmes missions, ce qui double les crédits.`,
+            `Tick the missions to run (${max} at most). The score is computed on the chosen missions. A competitor replays the same missions, which doubles the credits.`,
+          )}
+        >
+          <span className="type-small font-semibold">{t("Missions", "Missions")}</span>
+        </Hint>
         <span className="type-small flex items-center gap-2 text-ink-2" aria-live="polite">
           <span className={n ? "" : "font-semibold text-fail"}>
             {n
@@ -83,12 +92,6 @@ export function MissionPicker({ items: initial, lang, max }: { items: PickItem[]
       </summary>
       <input type="hidden" name="missions" value={value} />
       <div className="grid gap-3 px-2 pb-3 sm:px-3">
-        <p className="type-caption px-2 text-ink-2">
-          {t(
-            `Coche les missions à jouer (${max} au plus). Le score se calcule sur les missions choisies. Un concurrent rejoue les mêmes missions, ce qui double les crédits.`,
-            `Tick the missions to run (${max} at most). The score is computed on the chosen missions. A competitor replays the same missions, which doubles the credits.`,
-          )}
-        </p>
         <ul className="overflow-hidden rounded-[12px] bg-tile">
           {items.map((m, i) => (
             <li key={m.key} className="border-b border-hairline last:border-0">
@@ -138,18 +141,21 @@ function Row({ item: m, lang, disabled, onToggle, onEdit }: { item: PickItem; la
   const tag = m.once ? t("Pour cet audit", "This audit only") : m.team ? t("De l’espace", "Team mission") : m.base_id ? t("Modifiée", "Edited") : "";
   return (
     <div className="flex items-start gap-3 px-3 py-3 sm:px-4">
-      <input id={id} data-pick type="checkbox" checked={m.checked} disabled={disabled} onChange={onToggle} className="mt-1 h-[18px] w-[18px] shrink-0 accent-blue disabled:opacity-40" />
+      <input id={id} aria-describedby={`${id}-d`} data-pick type="checkbox" checked={m.checked} disabled={disabled} onChange={onToggle} className="mt-1 h-[18px] w-[18px] shrink-0 accent-blue disabled:opacity-40" />
       <label htmlFor={id} className="min-w-0 flex-1 cursor-pointer">
         <span className="flex items-start gap-2">
           <svg viewBox="0 0 24 24" className={`mt-[3px] h-[18px] w-[18px] shrink-0 ${m.checked ? "text-blue" : "text-ink-2"}`} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d={m.icon} />
           </svg>
           <span className="min-w-0">
-            <span className="font-semibold">{m.label}</span>
+            <Hint focusable={false} tip={m.instruction}>
+              <span className="font-semibold">{m.label}</span>
+            </Hint>
             {tag && <span className="type-caption ml-2 inline-block rounded-full bg-fill px-2 py-0.5 align-[1px] font-semibold text-ink-2">{tag}</span>}
           </span>
         </span>
-        <span className="type-caption mt-0.5 line-clamp-2 pl-[26px] text-ink-2">{m.instruction}</span>
+        {/* The instruction shows on hover of the name; screen readers get it with the checkbox. */}
+        <span id={`${id}-d`} className="sr-only">{m.instruction}</span>
       </label>
       <button type="button" onClick={onEdit} className="type-small min-h-9 shrink-0 rounded-[8px] px-2 text-link hover:bg-fill" aria-label={`${t("Modifier", "Edit")} : ${m.label}`}>
         {t("Modifier", "Edit")}
@@ -220,18 +226,20 @@ function Editor({ item: m, lang, onCancel, onOnce, onSaved }: { item: PickItem; 
       </label>
       <label htmlFor={textId} className="grid gap-1.5">
         <span className="type-caption flex justify-between font-semibold text-ink-2">
-          {t("Consigne pour l’agent", "Instruction for the agent")}
+          <Hint
+            focusable={false}
+            tip={t(
+              "En langage courant. L’agent s’arrête toujours à la première page du checkout : il ne paie pas, ne crée pas de compte et ne saisit aucune donnée personnelle.",
+              "In plain words. The agent always stops at the first checkout page: it does not pay, create an account or enter personal data.",
+            )}
+          >
+            {t("Consigne pour l’agent", "Instruction for the agent")}
+          </Hint>
           <span className="font-normal tabular-nums">
             {text.trim().length} / {TEXT[1]}
           </span>
         </span>
         <textarea id={textId} value={text} rows={4} maxLength={TEXT[1]} onChange={(e) => setText(e.target.value)} className="resize-y rounded-[10px] bg-bg-2 px-3 py-2.5 leading-snug outline-none ring-blue focus-visible:ring-2 dark:bg-[#2c2c2e]" />
-        <span className="type-caption text-ink-2">
-          {t(
-            "En langage courant. L’agent s’arrête toujours à la première page du checkout : il ne paie pas, ne crée pas de compte et ne saisit aucune donnée personnelle.",
-            "In plain words. The agent always stops at the first checkout page: it does not pay, create an account or enter personal data.",
-          )}
-        </span>
       </label>
       {error && (
         <p role="alert" className="type-small font-semibold text-fail">

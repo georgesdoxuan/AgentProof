@@ -25,7 +25,7 @@ export default async function Paiement() {
       team={team}
       teams={teams}
       title={t("Moyen de paiement", "Payment method")}
-      intro={t(
+      hint={t(
         "La carte que l'agent utilise pour le test de paiement réel. Il part au plus près du checkout, prend le premier article disponible et paie une seule fois. Avec une carte approvisionnée, la commande est réelle.",
         "The card the agent uses for the real payment test. It starts as close to checkout as it can, takes the first available item and pays only once. With a funded card, the order is real.",
       )}

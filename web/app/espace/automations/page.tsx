@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Hint } from "@/lib/hint";
 import { redirect } from "next/navigation";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { listAutomations } from "@/lib/automations";
@@ -67,7 +68,7 @@ export default async function Automations({ searchParams }: { searchParams: Prom
       team={team}
       teams={teams}
       title="Automations"
-      intro={t(
+      hint={t(
         "AgentProof relit tes pages (bandeau cookies, captcha, boutons, formulaires, robots.txt, UCP) à la fréquence choisie et après chaque mise en ligne. S'il y a un changement, tu es prévenu ici, par e-mail et sur Slack. Les prix et les produits ne comptent pas.",
         "AgentProof rereads your pages (cookie banner, captcha, buttons, forms, robots.txt, UCP) at the chosen frequency and after every release. When something changes, you are told here, by e-mail and on Slack. Prices and products do not count.",
       )}
@@ -263,12 +264,11 @@ export default async function Automations({ searchParams }: { searchParams: Prom
                 <Segmented name="state" label={t("Quand une page change", "When a page changes")} value="notify" options={STATES.slice(0, 2)} />
               </div>
             </div>
-            <label className="type-small flex items-start gap-3 rounded-[12px] bg-bg-2 p-4 dark:bg-[#2c2c2e]">
-              <input type="checkbox" name="monthly" value="1" className="mt-0.5 h-4 w-4 shrink-0 accent-blue" />
-              <span>
+            <label className="type-small flex items-center gap-3 rounded-[12px] bg-bg-2 p-4 dark:bg-[#2c2c2e]">
+              <input type="checkbox" name="monthly" value="1" className="h-4 w-4 shrink-0 accent-blue" />
+              <Hint focusable={false} tip={t("Un audit complet tous les 30 jours, et une alerte (e-mail et Slack) si le score baisse plus que le seuil choisi.", "A full audit every 30 days, and an alert (e-mail and Slack) if the score drops more than the chosen threshold.")}>
                 <span className="font-semibold">{t("Suivi mensuel", "Monthly tracking")}</span>
-                <span className="block text-ink-2">{t("Un audit complet tous les 30 jours, et une alerte (e-mail et Slack) si le score baisse plus que le seuil choisi.", "A full audit every 30 days, and an alert (e-mail and Slack) if the score drops more than the chosen threshold.")}</span>
-              </span>
+              </Hint>
             </label>
             <div>
               <button className="btn">{t("Activer l’automation", "Turn on the automation")}</button>

@@ -26,7 +26,7 @@ export default async function Comptes() {
       team={team}
       teams={teams}
       title={t("Comptes de test", "Test accounts")}
-      intro={t(
+      hint={t(
         "Pour les sites qui exigent un compte avant de payer. Avec un compte enregistré, le test de paiement tourne deux fois : sans compte, puis connecté.",
         "For sites that require an account before paying. With a saved account, the payment test runs twice: without an account, then signed in.",
       )}

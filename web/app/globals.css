@@ -479,3 +479,80 @@ body {
 @media (prefers-reduced-motion: no-preference) {
   html { scroll-behavior: smooth; }
 }
+
+/* Hover hints (lib/hint.tsx): explanations stay hidden until the pointer, the keyboard or a tap reaches
+   the text or button they explain. Glass capsule like the verdict, small type, ink on glass. */
+@layer components {
+.ap-hint {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+.ap-hint[tabindex] {
+  cursor: help;
+  border-radius: 6px;
+}
+.ap-hint[tabindex]:focus {
+  outline: none;
+}
+.ap-hint[tabindex]:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+}
+.ap-tip {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 8px);
+  left: 0;
+  width: max-content;
+  max-width: min(320px, calc(100vw - 48px));
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  backdrop-filter: blur(24px) saturate(1.5);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.16), inset 0 0 0 0.5px var(--hairline);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  text-align: left;
+  text-transform: none;
+  white-space: normal;
+  cursor: auto;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-3px);
+  pointer-events: none;
+  transition: opacity 0.15s var(--ease-apple), transform 0.15s var(--ease-apple), visibility 0s linear 0.15s;
+}
+/* Bridge over the 8px gap so the pointer can reach a link inside the hint. */
+.ap-tip::before {
+  content: "";
+  position: absolute;
+  inset: -10px 0;
+  z-index: -1;
+}
+.ap-hint[data-align="end"] > .ap-tip { left: auto; right: 0; }
+.ap-hint[data-align="center"] > .ap-tip { left: 50%; transform: translate(-50%, -3px); }
+.ap-hint[data-side="top"] > .ap-tip { top: auto; bottom: calc(100% + 8px); }
+.ap-hint:hover > .ap-tip,
+.ap-hint:focus-within > .ap-tip {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  pointer-events: auto;
+  transition: opacity 0.18s var(--ease-apple) 0.3s, transform 0.18s var(--ease-apple) 0.3s, visibility 0s linear 0.3s;
+}
+.ap-hint:focus-within > .ap-tip { transition-delay: 0s; }
+.ap-hint[data-align="center"]:hover > .ap-tip,
+.ap-hint[data-align="center"]:focus-within > .ap-tip { transform: translateX(-50%); }
+@media (prefers-reduced-motion: reduce) {
+  .ap-tip { transform: none !important; transition: none !important; }
+  .ap-hint[data-align="center"] > .ap-tip { transform: translateX(-50%) !important; }
+}
+@media print {
+  .ap-tip { display: none; }
+}
+}
