@@ -172,7 +172,7 @@ function SideNav({ t, collapsed, reserve }: { t: Dict["space"]; collapsed: boole
 
 // Réglages: one page, one tab per setting. Each tab is its own URL (/espace/reglages/<tab>), so links and the back button work.
 // Each tab carries its glyph (the sidebar's trash for Corbeille). On phones the row scrolls sideways and the open tab
-// is scrolled into view.
+// is scrolled into view. Tighter padding below 64rem of page width, so all seven fit beside an open sidebar on a laptop.
 const SETTINGS = [
   ["equipe", GLYPH.team],
   ["abonnement", GLYPH.credit],
@@ -193,7 +193,7 @@ export function SettingsTabs({ t }: { t: Dict["space"] }) {
   }, [path]);
   return (
     <nav ref={nav} aria-label={t.settingsLabel} className="-mx-6 overflow-x-auto px-6 [scrollbar-width:none] sm:-mx-8 sm:px-8 lg:mx-0 lg:px-0">
-      <ul className="flex min-w-max gap-1 border-b border-hairline">
+      <ul className="flex min-w-max border-b border-hairline @5xl:gap-1">
         {SETTINGS.map(([s, icon]) => {
           const href = `/espace/reglages/${s}`;
           const on = path === href || path.startsWith(`${href}/`);
@@ -202,8 +202,8 @@ export function SettingsTabs({ t }: { t: Dict["space"] }) {
               <Link
                 href={href}
                 aria-current={on ? "page" : undefined}
-                className={`relative -mb-px flex h-11 items-center gap-2 whitespace-nowrap px-3 type-small font-semibold transition-colors ${
-                  on ? "text-ink after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-blue" : "text-ink-2 hover:text-ink"
+                className={`relative -mb-px flex h-11 items-center gap-1.5 whitespace-nowrap px-2 type-small @5xl:gap-2 @5xl:px-3 font-semibold transition-colors ${
+                  on ? "text-ink after:absolute after:inset-x-2 after:bottom-0 @5xl:after:inset-x-3 after:h-0.5 after:rounded-full after:bg-blue" : "text-ink-2 hover:text-ink"
                 }`}
               >
                 {glyph(icon, `h-4 w-4 shrink-0 ${on ? "text-blue" : ""}`)}

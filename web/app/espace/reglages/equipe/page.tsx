@@ -144,8 +144,18 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
         </Group>
       )}
 
+      {!isOwner && (
+        <Group>
+          <form action="/api/team" method="post">
+            <Hidden action="leave" />
+            <ConfirmButton message={t(`Quitter l'équipe ${team.name} ? Tu perds l'accès aux rapports de l'équipe. Le propriétaire peut t'inviter à nouveau.`, `Leave the team ${team.name}? You lose access to the team's reports. The owner can invite you again.`)} className="flex min-h-[60px] w-full items-center px-5 text-left text-fail hover:bg-bg-2/60">
+              {t("Quitter l’équipe", "Leave the team")}
+            </ConfirmButton>
+          </form>
+        </Group>
+      )}
         </>}
-        side={<>
+        side={isOwner && <>
       {isOwner && (
         <>
           <Group icon="invite" title={t("Inviter un membre", "Invite a member")} footer={t("La personne reçoit un lien par e-mail et se connecte avec cette adresse.", "They get a link by e-mail and sign in with this address.")}>
@@ -189,16 +199,6 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
         </>
       )}
 
-      {!isOwner && (
-        <Group>
-          <form action="/api/team" method="post">
-            <Hidden action="leave" />
-            <ConfirmButton message={t(`Quitter l'équipe ${team.name} ? Tu perds l'accès aux rapports de l'équipe. Le propriétaire peut t'inviter à nouveau.`, `Leave the team ${team.name}? You lose access to the team's reports. The owner can invite you again.`)} className="flex min-h-[60px] w-full items-center px-5 text-left text-fail hover:bg-bg-2/60">
-              {t("Quitter l’équipe", "Leave the team")}
-            </ConfirmButton>
-          </form>
-        </Group>
-      )}
         </>}
       />
     </SpaceShell>
