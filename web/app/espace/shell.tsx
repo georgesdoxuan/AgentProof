@@ -7,7 +7,7 @@ import { teamContext } from "@/lib/auth";
 import { accountColor, spaceColor } from "@/lib/avatar";
 
 // One frame for every page of the team space: a sidebar on the leading edge, the page beside it.
-// Wide screens: the sidebar sits against the window edge (logo above lines up with it) and the page is centred
+// Wide screens: the sidebar sits against the window edge and the page is centred
 // in the space left, capped at 1200px (forms and settings keep to its first 760px so lines stay readable).
 // Narrow screens: team and section tabs stack above the page, on the same 24/32px gutter as the header.
 //
