@@ -1,6 +1,7 @@
 import { db } from "@/lib/engine";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { msg } from "@/lib/lang";
+import { purgeAudit as purge } from "@/lib/purge";
 
 // Report management in the team space: favourite, rename, trash, restore, delete for good. Owner and admin only.
 // Every action is scoped to the current team; the form sends back where to land (a /espace/rapports page).
@@ -50,16 +51,4 @@ export async function POST(req: Request) {
     await purge(audit);
   }
   return Response.redirect(next, 303);
-}
-
-// Permanent delete: the audit and its runs (cascade), then its competitor or model-comparison audit
-// and its real payment test, which only exist through it.
-async function purge(a: { id: string; compare_to: string | null; payment_test: string | null }) {
-  await db.from("audits").update({ compare_to: null }).eq("compare_to", a.id);
-  await db.from("audits").delete().eq("id", a.id);
-  for (const linked of [a.compare_to, a.payment_test]) {
-    if (!linked) continue;
-    const { count } = await db.from("audits").select("id", { count: "exact", head: true }).or(`compare_to.eq.${linked},payment_test.eq.${linked}`);
-    if (!count) await db.from("audits").delete().eq("id", linked);
-  }
 }

@@ -30,6 +30,7 @@ const ICON = {
 
 // Sub-sections shown under their parent in the sidebar (Rapports › Favoris, Corbeille). On narrow screens the page shows them as tabs.
 const CHILDREN: Record<string, readonly (readonly [string, string])[]> = {
+  "/espace/sites": [["/espace/sites/corbeille", ICON.trash]],
   "/espace/rapports": [["/espace/rapports/favoris", ICON.star], ["/espace/rapports/corbeille", ICON.trash]],
 };
 

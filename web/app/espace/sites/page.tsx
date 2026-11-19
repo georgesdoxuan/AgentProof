@@ -5,7 +5,7 @@ import { loadSpace } from "@/lib/space";
 import { getT } from "@/lib/lang";
 import { MissionLegend } from "@/lib/ui";
 import { SpaceShell } from "../shell";
-import { SiteCard } from "../parts";
+import { SiteCard, SitesTabs } from "../parts";
 
 export const metadata = { title: "Sites · AgentProof" };
 
@@ -14,7 +14,7 @@ export default async function Sites() {
   if (!ctx) redirect("/connexion?next=/espace/sites");
   if (!ctx.team) redirect("/espace");
   const { teams, team } = ctx;
-  const { sites } = await loadSpace(team.id);
+  const { sites, trashedSites } = await loadSpace(team.id);
   const t = await getT();
 
   return (
@@ -31,11 +31,13 @@ export default async function Sites() {
         ) : undefined
       }
     >
+      <div>
+      <SitesTabs current="all" />
       {sites.length ? (
         <div className="space-y-3">
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {sites.map((s) => (
-              <SiteCard key={s.key} site={s} />
+              <SiteCard key={s.key} site={s} manage={canLaunch(team.role)} />
             ))}
           </div>
           <MissionLegend className="px-1" />
@@ -43,9 +45,18 @@ export default async function Sites() {
       ) : (
         <div className="tile text-center">
           <p className="type-headline">{t("Aucun site pour l’instant.", "No site yet.")}</p>
-          <p className="mt-1 text-ink-2">{t("Un site apparaît ici dès son premier audit.", "A site shows up here after its first audit.")}</p>
+          <p className="mt-1 text-ink-2">
+            {trashedSites.length ? (
+              <Link href="/espace/sites/corbeille" className="text-link hover:underline">
+                {t(`Voir la corbeille (${trashedSites.length})`, `See the trash (${trashedSites.length})`)}
+              </Link>
+            ) : (
+              t("Un site apparaît ici dès son premier audit.", "A site shows up here after its first audit.")
+            )}
+          </p>
         </div>
       )}
+      </div>
     </SpaceShell>
   );
 }
