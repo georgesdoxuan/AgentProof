@@ -91,7 +91,7 @@ export async function Leaderboard() {
                         <span className="md:hidden">{t("Blocage principal", "Main blocker")} : </span>
                         {blocker ? (
                           <span className="inline-flex items-center gap-1.5 align-middle text-ink">
-                            <BlockerIcon type={blocker} className="h-8 w-8 rounded-[9px]" />
+                            <BlockerIcon type={blocker} className="h-[18px] w-[18px]" />
                             {blockerLabel(blocker, lang)}
                           </span>
                         ) : t("Aucun", "None")}

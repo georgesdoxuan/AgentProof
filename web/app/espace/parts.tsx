@@ -75,7 +75,7 @@ export async function SiteCard({ site }: { site: SiteView }) {
           <dd className="flex min-w-0 items-center gap-1.5 font-semibold text-ink">
             {open.length ? (
               <>
-                <BlockerIcon type={open[0].type} className="h-6 w-6 rounded-[7px]" />
+                <BlockerIcon type={open[0].type} className="h-4 w-4" />
                 <span className="truncate">{`${open.length} · ${blockerLabel(open[0].type, lang)}`}</span>
               </>
             ) : site.latest ? t("Rien", "Nothing") : "—"}
@@ -107,7 +107,6 @@ export async function BlockerItem({ site, b, canEdit, compact = false }: { site:
   return (
     <article className={`tile grid min-w-0 gap-7 p-7! ${compact ? "" : "md:grid-cols-[1fr_minmax(0,360px)]"}`}>
       <div className="flex flex-col">
-        <BlockerIcon type={b.type} className="mb-4 h-11 w-11 rounded-[12px]" />
         <div className="type-small flex flex-wrap items-center gap-x-3 gap-y-1.5">
           {state && <span className={`rounded-full px-2.5 py-0.5 font-semibold ${state[2]}`}>{t(state[0], state[1])}</span>}
           <span className="text-ink-2">
@@ -117,7 +116,10 @@ export async function BlockerItem({ site, b, canEdit, compact = false }: { site:
             {compact && ` · ${site.domain}`}
           </span>
         </div>
-        <h3 className={`mt-3 ${compact ? "type-eyebrow" : "type-h3"}`}>{blockerLabel(b.type, lang)}</h3>
+        <h3 className={`mt-3 flex items-start gap-2.5 ${compact ? "type-eyebrow" : "type-h3"}`}>
+          <BlockerIcon type={b.type} className="mt-[0.15em] h-[0.9em] w-[0.9em]" />
+          {blockerLabel(b.type, lang)}
+        </h3>
         {b.run?.blocker_detail && <p className={`mt-2 text-ink-2 ${compact ? "type-small line-clamp-3" : ""}`}>{b.run.blocker_detail}</p>}
         <p className={`mt-4 flex gap-2 ${compact ? "type-small" : ""}`}>
           <Chevron className="mt-[0.45em] h-3 w-3 shrink-0 text-link" />
