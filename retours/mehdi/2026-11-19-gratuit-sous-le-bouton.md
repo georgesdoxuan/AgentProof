@@ -20,4 +20,4 @@ Test du 19 nov 2026 avec le skill « visiteurs » (100 visiteurs simulés par IA
 - Fichier : `web/app/(accueil)/page.tsx` (bloc des boutons autour de la ligne 46).
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait. « Gratuit · ton URL et ton e-mail · rapport en 10 à 20 min » sous les boutons du haut ; sur mobile le lien « Voir le classement » du haut est masqué (la barre des sections l'a déjà) pour que la ligne reste visible sans défiler à 375 px. Commits 66ba2fb, 9017753.

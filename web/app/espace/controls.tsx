@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import type { Dict } from "@/lib/i18n";
+import { GLYPH } from "@/lib/glyphs";
 
 // lib/ui pulls in the server engine, so client controls keep their own styles.
 // Pop-up button look for native <select>: keeps the system menu, drops the default chrome.
@@ -25,7 +26,7 @@ const ICON = {
   people: "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2.5 21a6.5 6.5 0 0 1 13 0M16 3.2a4 4 0 0 1 0 7.6M21.5 21a6.5 6.5 0 0 0-4-6",
   person: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7.5a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM6.5 18.2a6.5 6.5 0 0 1 11 0",
   star: "M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z",
-  gauge: "M3.6 17.5a9 9 0 1 1 16.8 0M12 15.5l4-5M12 14a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z",
+  credit: GLYPH.credit,
   trash: "M4 6.5h16M9.5 6.5V4.5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2M6 6.5l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M10 10.5v6M14 10.5v6",
 };
 
@@ -49,7 +50,7 @@ const itemCls = (current: boolean) =>
 const GROUPS = [
   ["track", [["/espace", ICON.home], ["/espace/sites", ICON.globe], ["/espace/rapports", ICON.doc], ["/espace/classement", ICON.podium]]],
   ["agent", [["/espace/paiement", ICON.card], ["/espace/comptes", ICON.key], ["/espace/automations", ICON.cycle]]],
-  ["settings", [["/equipe", ICON.people], ["/espace/abonnement", ICON.gauge], ["/compte", ICON.person]]],
+  ["settings", [["/equipe", ICON.people], ["/espace/abonnement", ICON.credit], ["/compte", ICON.person]]],
 ] as const;
 
 // Sidebar on wide screens, segmented tabs on narrow ones (groups and icons drop out). Tabs navigate, they never act.

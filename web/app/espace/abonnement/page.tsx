@@ -6,7 +6,7 @@ import { ALERTS, type Kind, PLANS, RATES, loadCredits } from "@/lib/credits";
 import { db } from "@/lib/engine";
 import { locale, tr } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
-import { Chip, DeviceTag, Group, Note, Row } from "@/lib/ui";
+import { Chip, DeviceTag, Group, Icon, Note, Row } from "@/lib/ui";
 import { SpaceShell } from "../shell";
 
 export async function generateMetadata() {
@@ -27,11 +27,18 @@ export default async function Abonnement() {
   const plan = PLANS[c.plan];
   const n = (x: number) => x.toLocaleString(loc);
   const cr = (x: number) => `${n(x)} ${t(x > 1 ? "crédits" : "crédit", x === 1 ? "credit" : "credits")}`;
+  // A credit amount with the credit glyph, as everywhere credits are mentioned.
+  const crIcon = (x: number, className = "") => (
+    <span className={`inline-flex items-center gap-1 whitespace-nowrap ${className}`}>
+      <Icon name="credit" className="h-[1em] w-[1em] text-ink-2" />
+      {cr(x)}
+    </span>
+  );
   const renews = c.renews.toLocaleDateString(loc, { day: "numeric", month: "long", timeZone: "UTC" });
   const level = c.pct >= 100 ? "fail" : c.pct >= ALERTS[0] ? "warn" : "ok";
   const over = c.projected != null && c.projected > c.included;
   const KIND: Record<Kind, [string, string]> = {
-    manual: [t("Audits lancés à la main", "Audits run by hand"), t("Une mission d'achat, concurrent et comparaison de modèles compris", "One shopping mission, competitor and model comparison included")],
+    manual: [t("Audits lancés à la main", "Audits run by hand"), t("Une mission d'achat, concurrent, Ordinateur + Mobile et comparaison de modèles compris", "One shopping mission, competitor, Desktop + Mobile and model comparison included")],
     automation: [t("Automations", "Automations"), t("Mission d'un audit relancé tout seul : page modifiée, mise en ligne, suivi mensuel", "Mission of an audit run on its own: page changed, release, monthly follow-up")],
     replay: [t("Missions rejouées", "Replayed missions"), t("Une mission en échec relancée une seconde fois par l'agent", "A failed mission the agent runs a second time")],
     payment: [t("Tests de paiement", "Payment tests"), t("Un vrai paiement avec la carte de l'équipe", "A real payment with the team's card")],
@@ -50,7 +57,8 @@ export default async function Abonnement() {
       <Group title={t("Ce mois-ci", "This month")} footer={t(`Les crédits repartent à zéro le ${renews}.`, `Credits reset on ${renews}.`)}>
         <div className="grid gap-5 p-6 sm:p-8">
           <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-            <p className="type-title tabular-nums">
+            <p className="type-title flex items-center gap-2 tabular-nums">
+              <Icon name="credit" className="h-[0.9em] w-[0.9em] text-blue" />
               {n(c.used)}
               <span className="type-headline font-normal text-ink-2"> {t("sur", "of")} {cr(c.included)}</span>
             </p>
@@ -83,14 +91,14 @@ export default async function Abonnement() {
             <div>
               <dt className="type-caption text-ink-2">{t("Projection fin de mois", "Month-end projection")}</dt>
               <dd className={`font-semibold tabular-nums ${over ? "text-warn" : ""}`}>
-                {c.projected == null ? t("Trop tôt pour estimer", "Too early to tell") : cr(c.projected)}
+                {c.projected == null ? t("Trop tôt pour estimer", "Too early to tell") : crIcon(c.projected)}
                 {over && <span className="type-caption block font-normal">{t("Au-delà du forfait à ce rythme", "Over the plan at this pace")}</span>}
               </dd>
             </div>
           </dl>
           {level !== "ok" && (
             <div role="status">
-              <Note icon={level === "fail" ? "info" : "trend"}>
+              <Note icon={level === "fail" ? "credit" : "trend"}>
                 {level === "fail"
                   ? t("Crédits épuisés · audits toujours ouverts pendant l'essai, rien n'est facturé.", "Credits used up · audits still run during the trial, nothing is charged.")
                   : t(`Plus de ${ALERTS[0]} % des crédits utilisés.`, `Over ${ALERTS[0]}% of credits used.`)}
@@ -100,11 +108,18 @@ export default async function Abonnement() {
         </div>
       </Group>
 
-      <Group title={t("Offre", "Plan")} footer={t("Le paiement en ligne n'est pas encore ouvert : l'offre se change bientôt ici.", "Online payment is not open yet: you will soon change plan here.")}>
+      <Group
+        title={t("Offre", "Plan")}
+        footer={t(
+          "Le paiement en ligne n'est pas encore ouvert : rien n'est facturé et l'offre se change bientôt ici. Un audit utilise 5 crédits. Le suivi mensuel (149 €) ajoute un audit automatique chaque mois et 150 crédits ; la relecture quotidienne des pages ne coûte aucun crédit.",
+          "Online payment is not open yet: nothing is charged and you will soon change plan here. An audit uses 5 credits. Monthly tracking (€149) adds an automatic audit every month and 150 credits; daily page reads cost no credits.",
+        )}
+      >
         <Row>
           <span className="min-w-0 flex-1">
             <span className="block font-semibold">{plan[lang]}</span>
-            <span className="type-small text-ink-2">
+            <span className="type-small inline-flex flex-wrap items-center gap-1 text-ink-2">
+              <Icon name="credit" className="h-[1em] w-[1em]" />
               {t(`${n(plan.credits)} crédits par mois`, `${n(plan.credits)} credits a month`)}
               {plan.price ? t(` · ${plan.price} € par mois`, ` · €${plan.price} a month`) : ""}
             </span>
@@ -132,7 +147,7 @@ export default async function Abonnement() {
                   {KIND[k][1]} · {cr(RATES[k])}
                 </span>
               </span>
-              <span className={`tabular-nums ${used ? "font-semibold" : "text-ink-2"}`}>{cr(used)}</span>
+              {crIcon(used, `tabular-nums ${used ? "font-semibold" : "text-ink-2"}`)}
             </Row>
           );
         })}
@@ -153,7 +168,7 @@ export default async function Abonnement() {
                   <span className="block h-full rounded-full bg-blue" style={{ width: `${Math.max(4, (s.credits / Math.max(1, c.bySite[0].credits)) * 100)}%` }} />
                 </span>
               </span>
-              <span className="w-24 text-right font-semibold tabular-nums">{cr(s.credits)}</span>
+              {crIcon(s.credits, "w-28 justify-end font-semibold tabular-nums")}
             </Row>
           ))
         ) : (
@@ -175,7 +190,7 @@ export default async function Abonnement() {
                     {(Object.keys(RATES) as Kind[]).filter((k) => a.kinds.has(k)).map((k) => KIND[k][0]).join(", ")}
                   </span>
                 </span>
-                <span className="font-semibold tabular-nums">{cr(a.credits)}</span>
+                {crIcon(a.credits, "font-semibold tabular-nums")}
               </Row>
             </Link>
           ))}
