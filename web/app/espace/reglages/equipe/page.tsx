@@ -103,7 +103,8 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
                 </span>
               </span>
               {manage && m.role !== "owner" && !me ? (
-                <span className="flex items-center gap-3">
+                // Phone: the controls go under the address, so the e-mail is not cut to a few letters.
+                <span className="flex items-center gap-3 max-sm:w-full max-sm:justify-end">
                   <form action="/api/team" method="post">
                     <Hidden action="role" user={m.users.id} />
                     <AutoSubmitSelect name="role" defaultValue={m.role} label={t(`Accès de ${m.users.email}`, `Access for ${m.users.email}`)} options={ROLES.map(([v, l]) => [v, l])} />
