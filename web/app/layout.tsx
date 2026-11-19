@@ -65,6 +65,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               <div className="flex flex-wrap gap-x-4 gap-y-1">
                 <span>{t.footer.credits}</span>
                 <Link href="/methode" className="hover:text-ink hover:underline">{t.footer.method}</Link>
+                <Link href="/faq" className="hover:text-ink hover:underline">{lang === "en" ? "Help" : "Aide"}</Link>
                 <LangSwitch lang={lang} />
               </div>
             </div>
