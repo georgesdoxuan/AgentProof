@@ -46,7 +46,7 @@ const labels = (lang: Lang) => {
   };
 };
 
-export default async function Automations() {
+export default async function Automations({ searchParams }: { searchParams: Promise<{ slack?: string }> }) {
   const ctx = await teamContext();
   if (!ctx) redirect("/connexion?next=/espace/automations");
   if (!ctx.team) redirect("/espace");
@@ -57,6 +57,8 @@ export default async function Automations() {
   const t = tr(lang);
   const { STATES, CHECK, MONTHLY, INTERVALS, DROPS } = labels(lang);
   const { data: settings } = await db.from("teams").select("webhook_url, hook_token, score_drop").eq("id", team.id).single();
+  const slack = (await searchParams).slack;
+  const onSlack = !!settings?.webhook_url?.startsWith("https://hooks.slack.com/");
   const hookUrl = settings?.hook_token ? `${process.env.PUBLIC_URL ?? ""}/api/hooks/${settings.hook_token}` : null;
   const every = (h: number) => INTERVALS.find(([v]) => v === String(h))?.[1].toLowerCase() ?? `${h} h`;
 
@@ -162,10 +164,32 @@ export default async function Automations() {
             "The webhook gets every page change and every score drop, on top of the e-mail. Slack, Discord, n8n, Make or Zapier: paste the incoming webhook URL.",
           )}
         >
+          {process.env.SLACK_CLIENT_ID && (
+            <Row>
+              <span className="grid min-w-0 flex-1 gap-1">
+                <span className="inline-flex items-center gap-1.5 font-semibold">
+                  {onSlack && <StatusGlyph tone="pass" />}
+                  {onSlack ? t("Slack est branché", "Slack is connected") : t("Brancher Slack", "Connect Slack")}
+                </span>
+                <span className="type-small text-ink-2">
+                  {slack === "ok"
+                    ? t("C'est fait : un message de test vient de partir dans le canal choisi.", "Done: a test message was just sent to the chosen channel.")
+                    : slack === "refused"
+                      ? t("Connexion annulée ou expirée. Recommence depuis ce bouton.", "Connection cancelled or expired. Start again from this button.")
+                      : slack === "error"
+                        ? t("Slack n'a pas donné de webhook. Réessaie dans un instant.", "Slack gave no webhook. Try again in a moment.")
+                        : t("En un clic : Slack te demande le canal où poster les alertes.", "One click: Slack asks for the channel to post alerts in.")}
+                </span>
+              </span>
+              <a href="/api/slack/install" className="btn">
+                {onSlack ? t("Changer de canal", "Change channel") : t("Connecter Slack", "Connect Slack")}
+              </a>
+            </Row>
+          )}
           <form action="/api/automations" method="post" className="grid gap-4 p-6 sm:p-8">
             <input type="hidden" name="action" value="alerts" />
             <label className="grid gap-2">
-              <span className="type-small text-ink-2">{t("URL du webhook (facultatif)", "Webhook URL (optional)")}</span>
+              <span className="type-small text-ink-2">{t("Ou une URL de webhook (Slack, Discord, n8n, Make, Zapier)", "Or a webhook URL (Slack, Discord, n8n, Make, Zapier)")}</span>
               <input
                 name="webhook_url"
                 type="url"
