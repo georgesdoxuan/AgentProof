@@ -206,9 +206,77 @@ export async function runMonthlyAudits(log: string[]) {
     q = a.last_audit_at ? q.eq("last_audit_at", a.last_audit_at) : q.is("last_audit_at", null);
     const { data: reserved } = await q.select("id");
     if (!reserved?.length) continue;
-    const auditId = await createAudit(a.url, { missions: MISSIONS, teamId: a.team_id, createdBy: a.created_by ?? undefined, email: a.users?.email, auto: true }).catch(() => null);
-    await db.from("automation_checks").insert({ automation_id: a.id, status: "monthly", detail: auditId ? "Audit mensuel lancé." : "Audit mensuel impossible à lancer.", audit_id: auditId });
+    // Tracked competitor: the one this team last compared the site with is audited again, so the monthly report
+    // says where the site stands against it now, not on the day of the first audit.
+    const rival = await lastCompetitor(a.team_id, a.url).catch(() => null);
+    const compareTo = rival ? await createAudit(rival, { missions: MISSIONS, teamId: a.team_id, createdBy: a.created_by ?? undefined, auto: true }).catch(() => undefined) : undefined;
+    const auditId = await createAudit(a.url, { missions: MISSIONS, compareTo, teamId: a.team_id, createdBy: a.created_by ?? undefined, email: a.users?.email, auto: true }).catch(() => null);
+    await db.from("automation_checks").insert({ automation_id: a.id, status: "monthly", detail: auditId ? (compareTo ? `Audit mensuel lancé, avec ${new URL(rival!).hostname}.` : "Audit mensuel lancé.") : "Audit mensuel impossible à lancer.", audit_id: auditId });
     log.push(`automation ${a.id}: monthly audit ${auditId}`);
+  }
+}
+
+// URL of the competitor in the team's latest comparison for this site (a model comparison, same site, does not count).
+async function lastCompetitor(teamId: string, url: string) {
+  const { domain } = normalizeUrl(url);
+  const { data } = await db
+    .from("audits")
+    .select("site_id, compare_to, sites!inner(domain)")
+    .eq("team_id", teamId)
+    .eq("sites.domain", domain)
+    .not("compare_to", "is", null)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .limit(5);
+  for (const a of (data ?? []) as any[]) {
+    const { data: c } = await db.from("audits").select("site_id, sites(url)").eq("id", a.compare_to).maybeSingle();
+    if (c && c.site_id !== a.site_id) return (c.sites as any).url as string;
+  }
+  return null;
+}
+
+// Monthly report (the 149 €/month offer): on the first ticks of a month, each team's owner and admins get last month's
+// review by e-mail, and the team webhook gets one line. Reserved per team, so it goes out once. Nothing to say, nothing sent.
+export async function runMonthlyReports(log: string[]) {
+  const now = new Date();
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+  const { data: teams } = await db.from("teams").select("id, name, monthly_report_at").or(`monthly_report_at.is.null,monthly_report_at.lt.${monthStart}`).limit(PER_TICK);
+  if (!teams?.length) return;
+  const { loadSpace } = await import("./space");
+  const { monthRecap } = await import("./month");
+  const lastMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 15));
+  for (const team of teams) {
+    let q = db.from("teams").update({ monthly_report_at: now.toISOString() }).eq("id", team.id);
+    q = team.monthly_report_at ? q.eq("monthly_report_at", team.monthly_report_at) : q.is("monthly_report_at", null);
+    const { data: reserved } = await q.select("id");
+    if (!reserved?.length) continue;
+    const { audits, sites } = await loadSpace(team.id);
+    const r = await monthRecap(team.id, audits, sites, lastMonth);
+    if (!r.audits && !r.checks && !r.deploys) {
+      log.push(`monthly report ${team.id}: nothing to report`);
+      continue;
+    }
+    const month = r.start.toLocaleDateString("fr-FR", { month: "long", year: "numeric", timeZone: "UTC" });
+    const link = `${process.env.PUBLIC_URL ?? ""}/espace`;
+    const scores = sites
+      .filter((s) => s.latest?.s.score != null)
+      .map((s) => `- ${s.domain}${s.device === "mobile" ? " (mobile)" : ""} : ${s.latest!.s.score} %${s.rank ? `, ${s.rank.pos}e sur ${s.rank.of} au classement` : ""}${s.competitor?.s.score != null ? `, concurrent ${s.competitor.sites?.domain} à ${s.competitor.s.score} %` : ""}`)
+      .join("\n");
+    const alerts = r.changes + r.drops;
+    const text = [
+      `Bilan AgentProof de ${month} pour ${team.name}.`,
+      "",
+      `${r.audits} audit${r.audits > 1 ? "s" : ""} terminé${r.audits > 1 ? "s" : ""}, ${r.checks} vérification${r.checks > 1 ? "s" : ""} de pages, ${r.deploys} mise${r.deploys > 1 ? "s" : ""} en ligne vérifiée${r.deploys > 1 ? "s" : ""}.`,
+      alerts ? `${alerts} alerte${alerts > 1 ? "s" : ""} : ${r.changes} changement${r.changes > 1 ? "s" : ""} de page, ${r.drops} baisse${r.drops > 1 ? "s" : ""} de score.` : "Aucune alerte : aucune page n'a changé, aucun score n'a baissé.",
+      `${r.proven} correction${r.proven > 1 ? "s" : ""} prouvée${r.proven > 1 ? "s" : ""} par l'agent, ${r.open} blocage${r.open > 1 ? "s" : ""} encore ouvert${r.open > 1 ? "s" : ""}.`,
+      scores ? `\nScores actuels :\n${scores}` : "",
+      `\nLe détail est dans ton espace :\n${link}`,
+    ].join("\n");
+    const { data: members } = await db.from("memberships").select("role, users(email)").eq("team_id", team.id).in("role", ["owner", "admin"]);
+    let sent = 0;
+    for (const m of (members ?? []) as any[]) if (m.users?.email && (await sendAlert(m.users.email, `AgentProof : ton bilan de ${month}`, text, link).catch(() => false))) sent++;
+    await notifyTeam(team.id, { event: "monthly_report", domain: team.name, text: `bilan de ${month} : ${r.audits} audits, ${r.checks} vérifications, ${alerts} alertes, ${r.proven} corrections prouvées.`, link }).catch(() => false);
+    log.push(`monthly report ${team.id}: ${sent} e-mails`);
   }
 }
 

@@ -153,7 +153,7 @@ export function normalizeUrl(input: string) {
   return { url: `${u.protocol}//${u.hostname}${u.pathname === "/" ? "" : u.pathname}`, domain: u.hostname.replace(/^www\./, "") };
 }
 
-export async function createAudit(input: string, opts: { device?: "desktop" | "mobile"; missions?: number; compareTo?: string; paymentTest?: string; model?: string; email?: string; ipHash?: string; teamId?: string; createdBy?: string; auto?: boolean } = {}) {
+export async function createAudit(input: string, opts: { device?: "desktop" | "mobile"; missions?: number; compareTo?: string; paymentTest?: string; model?: string; email?: string; ipHash?: string; teamId?: string; createdBy?: string; auto?: boolean; missionIds?: number[]; proofOf?: string } = {}) {
   const { url, domain } = normalizeUrl(input);
   const { data: created, error: e1 } = await db
     .from("sites")
@@ -163,13 +163,16 @@ export async function createAudit(input: string, opts: { device?: "desktop" | "m
   const site = created?.[0] ?? (await db.from("sites").select().eq("domain", domain).single()).data;
   const { data: audit, error: e2 } = await db
     .from("audits")
-    .insert({ site_id: site.id, device: opts.device ?? "desktop", compare_to: opts.compareTo ?? null, payment_test: opts.paymentTest ?? null, model: opts.model ?? null, email: opts.email ?? null, ip_hash: opts.ipHash ?? null, team_id: opts.teamId ?? null, created_by: opts.createdBy ?? null })
+    .insert({ site_id: site.id, device: opts.device ?? "desktop", compare_to: opts.compareTo ?? null, payment_test: opts.paymentTest ?? null, model: opts.model ?? null, email: opts.email ?? null, ip_hash: opts.ipHash ?? null, team_id: opts.teamId ?? null, created_by: opts.createdBy ?? null, proof_of: opts.proofOf ?? null })
     .select()
     .single();
   if (e2) throw e2;
   // missions: 0 = payment test only (the audit just carries the payment_test link).
   if (opts.missions !== 0) {
-    const { data: missions } = await db.from("missions").select("id").eq("active", true).order("position").limit(opts.missions ?? 10);
+    // missionIds: a proof audit replays only the missions a blocker stopped.
+    const { data: missions } = opts.missionIds?.length
+      ? await db.from("missions").select("id").in("id", opts.missionIds).order("position")
+      : await db.from("missions").select("id").eq("active", true).order("position").limit(opts.missions ?? 10);
     // Automatic audits (site watch, monthly follow-up) get priority 1: a run someone is waiting for launches first.
     await db.from("runs").insert(missions!.map((m) => ({ audit_id: audit.id, mission_id: m.id, ...(opts.auto ? { priority: 1 } : {}) })));
   }
@@ -188,6 +191,7 @@ export async function recentAudit(input: string, device: string, teamId: string)
     .eq("kind", "checkout")
     .eq("device", device)
     .is("deleted_at", null) // a report in the trash is never handed back
+    .is("proof_of", null) // a proof audit replays 1 to 3 missions: not a full report
     .or(`model.is.null,model.eq.${DEFAULT_MODEL}`)
     .gte("created_at", since)
     .order("created_at", { ascending: false })
@@ -325,6 +329,7 @@ export async function tick(loopMs = LOOP_MS) {
   if (process.env.AUTOMATIONS_PAUSED === "1") log.push("automations paused");
   else {
     await auto.runMonthlyAudits(log).catch((e) => log.push(`monthly audits error: ${e}`));
+    if (room() > 20_000) await auto.runMonthlyReports(log).catch((e) => log.push(`monthly reports error: ${e}`));
     await auto.runDueAutomations(log, room).catch((e) => log.push(`automations error: ${e}`));
   }
   return { log, budgetLeft: budget };
@@ -747,10 +752,10 @@ async function closeAudits(log: string[]) {
 async function scoreAlert(auditId: string) {
   const { data: a } = await db
     .from("audits")
-    .select("id, team_id, site_id, device, model, email, created_at, sites(domain), teams(score_drop), runs(status, success, blocker_type)")
+    .select("id, team_id, site_id, device, model, email, created_at, proof_of, sites(domain), teams(score_drop), runs(status, success, blocker_type)")
     .eq("id", auditId)
     .single();
-  if (!a?.team_id || !a.runs.length) return;
+  if (!a?.team_id || !a.runs.length || a.proof_of) return; // a proof audit plays a few missions: no score to compare
   const { data: prev } = await db
     .from("audits")
     .select("id, model, runs(status, success, blocker_type)")
@@ -761,6 +766,7 @@ async function scoreAlert(auditId: string) {
     .eq("status", "done")
     .is("deleted_at", null)
     .neq("id", a.id)
+    .is("proof_of", null)
     .lt("created_at", a.created_at)
     .order("created_at", { ascending: false })
     .limit(5);

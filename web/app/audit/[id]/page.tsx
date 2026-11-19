@@ -241,6 +241,7 @@ async function trendOf(audit: any) {
       .eq("kind", "checkout")
       .eq("status", "done")
       .is("deleted_at", null)
+      .is("proof_of", null)
       .or(`model.is.null,model.eq.${DEFAULT_MODEL}`)
       .lt("created_at", audit.created_at)
       .order("created_at", { ascending: false })
@@ -282,7 +283,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   const statik = audit.static_check as { items?: { key: string; label: string; tone: "pass" | "warn" | "fail" | "none"; detail: string }[]; agents?: AgentAccess[] | null } | null;
   const protocols = (statik?.items ?? []).filter((it) => ["ucp", "acp", "webmcp"].includes(it.key));
   const alert = audit.score_alert as { from: number; to: number; previous: string } | null;
-  const trend = audit.kind === "checkout" && audit.status === "done" ? await trendOf(audit) : null;
+  const trend = audit.kind === "checkout" && audit.status === "done" && !audit.proof_of ? await trendOf(audit) : null;
 
   const runs = [...audit.runs].sort((a: any, b: any) => a.missions.position - b.missions.position);
   const s = summarize(runs);
@@ -381,6 +382,15 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             </time>
             {!running && !paymentOnly && <PrintButton label={t("Télécharger en PDF", "Download as PDF")} />}
           </p>
+          {audit.proof_of && (
+            <p className="mt-6 rounded-[12px] bg-tile px-4 py-3 type-small">
+              <span className="font-semibold">{t("Audit de preuve", "Proof audit")}</span> :{" "}
+              {t(
+                `l'agent rejoue seulement les missions que « ${blockerLabel(audit.proof_of, lang)} » bloquait, pour vérifier la correction. Si elles passent, la correction est prouvée dans la checklist.`,
+                `the agent replays only the missions that “${blockerLabel(audit.proof_of, lang)}” stopped, to check the fix. If they pass, the fix is marked proven in the checklist.`,
+              )}
+            </p>
+          )}
           {audit.deleted_at && (
             <p className="mt-6 rounded-[12px] bg-tile px-4 py-3 type-small print:hidden">
               {t("Ce rapport est dans la corbeille de l'équipe.", "This report is in the team's trash.")}{" "}
