@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import type { Dict, Lang } from "@/lib/i18n";
@@ -60,7 +60,7 @@ const glyph = (d: string, cls: string) => (
   </svg>
 );
 const G = {
-  plus: "M12 5v14M5 12h14",
+  plus: "M12 4.75v14.5M4.75 12h14.5",
   eye: "M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z",
   help: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM9.6 9.4a2.5 2.5 0 0 1 4.9.6c0 1.7-2.5 2.2-2.5 3.6M12 17h.01",
   book: "M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z",
@@ -68,20 +68,114 @@ const G = {
 };
 const linkCls = "flex min-h-8 items-center gap-2.5 whitespace-nowrap rounded-[8px] px-3 text-[14px] text-ink-2 transition-colors duration-200 hover:bg-tile/60 hover:text-ink";
 
-// The main action, on every page of the space: a filled button under the team, a « + » when the bar is folded.
-export function LaunchButton({ t, collapsed }: { t: T; collapsed: boolean }) {
+// The main action, on every page of the space. Wide screens: a filled row under the team, aligned on the links below
+// (same height, same icon column), its shortcut « N » on the right; folded, the « + » alone with its name and shortcut
+// in a tooltip. Narrow screens: a 44 pt « + » beside the section tabs. Past the month's credits a dot says so: the form
+// still lets the team launch (soft limit, nouveau/page.tsx), so the button is never disabled, it only warns.
+const KEY = "n";
+const launchCls =
+  "relative flex items-center rounded-[8px] bg-blue text-white shadow-[0_1px_2px_rgb(0_0_0/0.14),inset_0_1px_0_rgb(255_255_255/0.14)] outline-offset-2 transition-[background-color,transform] duration-150 hover:bg-[color-mix(in_srgb,var(--blue),black_14%)] focus-visible:outline-2 focus-visible:outline-blue active:scale-[0.97] active:bg-[color-mix(in_srgb,var(--blue),black_20%)] motion-reduce:active:scale-100 aria-[current=page]:bg-[color-mix(in_srgb,var(--blue),black_12%)] dark:hover:bg-[color-mix(in_srgb,var(--blue),white_12%)] dark:aria-[current=page]:bg-[color-mix(in_srgb,var(--blue),white_9%)]";
+
+export function LaunchButton({ t, collapsed, mobile = false }: { t: T; collapsed: boolean; mobile?: boolean }) {
   const on = usePathname().startsWith("/espace/nouveau");
+  const c = useSide()?.credits;
+  const out = !!c && c.included > 0 && c.used >= c.included;
+  const ref = useRef<HTMLAnchorElement>(null);
+  const [tip, setTip] = useState<{ top: number; left: number } | null>(null);
+  // « N » anywhere in the space, except while typing. Only the sidebar's copy listens (the mobile one sits beside it).
+  useEffect(() => {
+    if (mobile) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== KEY || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey || e.repeat || e.defaultPrevented) return;
+      const el = e.target as HTMLElement | null;
+      if (el && (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) || el.isContentEditable)) return;
+      e.preventDefault();
+      ref.current?.click(); // through the Link: same prefetch, same pending state
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mobile]);
+  // The bar scrolls (overflow hidden on x), so the tooltip is fixed to the viewport beside the button, not inside it.
+  const showTip = collapsed || out;
+  const open = () => {
+    const r = ref.current?.getBoundingClientRect();
+    if (r && showTip && !mobile) setTip({ top: r.top + r.height / 2, left: r.right + 10 });
+  };
+  const close = () => setTip(null);
+  const warn = out ? `${t.outOfCredits} (${c!.used}/${c!.included}). ${t.outOfCreditsHint}` : "";
+  const dot = out && <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-warn ring-2 ring-bg-2" aria-hidden />;
+  if (mobile)
+    return (
+      <Link ref={ref} href="/espace/nouveau" aria-current={on ? "page" : undefined} aria-label={warn ? `${t.launch}. ${warn}` : t.launch} title={t.launch} className={`${launchCls} h-11 w-11 shrink-0 justify-center rounded-[10px] lg:hidden`}>
+        <LaunchIcon size="h-5 w-5" />
+        {dot}
+      </Link>
+    );
   return (
-    <Link
-      href="/espace/nouveau"
-      aria-current={on ? "page" : undefined}
-      aria-label={collapsed ? t.launch : undefined}
-      title={collapsed ? t.launch : undefined}
-      className={`flex h-9 items-center justify-center gap-2 rounded-[8px] bg-blue text-[15px] font-semibold text-white transition-colors duration-200 hover:bg-blue-hover max-lg:hidden ${collapsed ? "w-12" : "w-full px-3"}`}
-    >
-      {glyph(G.plus, "h-[18px] w-[18px] shrink-0")}
-      {!collapsed && t.launch}
-    </Link>
+    <>
+      <Link
+        ref={ref}
+        href="/espace/nouveau"
+        aria-current={on ? "page" : undefined}
+        aria-label={collapsed ? (warn ? `${t.launch}. ${warn}` : t.launch) : undefined}
+        aria-keyshortcuts="N"
+        aria-describedby={tip ? "ap-launch-tip" : undefined}
+        onMouseEnter={open}
+        onMouseLeave={close}
+        onFocus={open}
+        onBlur={close}
+        onClick={close}
+        className={`${launchCls} h-9 gap-2.5 whitespace-nowrap text-[15px] font-semibold max-lg:hidden ${collapsed ? "w-12 justify-center" : "w-full pl-3 pr-2"}`}
+      >
+        <LaunchIcon size="h-[18px] w-[18px]" />
+        {!collapsed && (
+          <>
+            <span className="min-w-0 flex-1 truncate">{t.launch}</span>
+            <kbd className="grid h-5 min-w-5 place-items-center rounded-[5px] bg-white/[0.18] px-1 font-sans text-[11px] font-semibold leading-none text-white/90" aria-hidden>
+              N
+            </kbd>
+          </>
+        )}
+        {warn && <span className="sr-only">{warn}</span>}
+        {dot}
+      </Link>
+      {tip && (
+        <span
+          role="tooltip"
+          id="ap-launch-tip"
+          className="pointer-events-none fixed z-[70] w-max max-w-[260px] -translate-y-1/2 rounded-[10px] bg-pop px-2.5 py-1.5 text-[13px] text-ink shadow-[0_8px_28px_rgb(0_0_0/0.16),inset_0_0_0_0.5px_var(--line)] motion-safe:animate-[ap-tip-in_0.14s_ease-out]"
+          style={{ top: tip.top, left: tip.left }}
+        >
+          {collapsed && (
+            <span className="flex items-center gap-2 font-semibold">
+              {t.launch}
+              <kbd className="grid h-5 min-w-5 place-items-center rounded-[5px] bg-fill px-1 font-sans text-[11px] font-semibold leading-none text-ink-2 shadow-[inset_0_0_0_0.5px_var(--line)] dark:bg-[#48484a] dark:text-ink">N</kbd>
+            </span>
+          )}
+          {warn && (
+            <span className={`block text-ink-2 ${collapsed ? "mt-1" : ""}`}>
+              <span className="font-semibold text-warn">{t.outOfCredits}</span> · {c!.used}/{c!.included}
+              <span className="block">{t.outOfCreditsHint}</span>
+            </span>
+          )}
+        </span>
+      )}
+    </>
+  );
+}
+
+// The « + », or a small spinner while the form's page loads (a click or « N » on a slow network).
+function LaunchIcon({ size }: { size: string }) {
+  const { pending } = useLinkStatus();
+  return pending ? (
+    <span className={`ap-spin grid shrink-0 place-items-center ${size}`} aria-hidden>
+      <span className="h-[15px] w-[15px] rounded-full border-2 border-white/90 border-t-transparent" />
+    </span>
+  ) : (
+    // A touch bolder than the outline glyphs: it sits on a filled button.
+    <svg viewBox="0 0 24 24" className={`${size} shrink-0`} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
+      <path d={G.plus} />
+    </svg>
   );
 }
 

@@ -109,7 +109,11 @@ export function Frame({
           </button>
         </div>
         {launch && <LaunchButton t={t.side} collapsed={collapsed} />}
-        <MobileNav t={t} />
+        {/* Narrow screens: the section tabs, and the « + » beside them. */}
+        <div className="flex items-center gap-2 lg:hidden">
+          <MobileNav t={t} />
+          {launch && <LaunchButton t={t.side} collapsed={false} mobile />}
+        </div>
         <SideNav t={t} collapsed={collapsed} reserve={reserve} />
         <SideFooter t={t.side} lang={lang} collapsed={collapsed} />
       </aside>
@@ -213,14 +217,14 @@ export function SectionIcon() {
 function MobileNav({ t }: { t: Dict["space"] }) {
   const path = usePathname();
   return (
-    <nav aria-label={t.label} className="lg:hidden">
+    <nav aria-label={t.label} className="min-w-0 flex-1">
       <div className="flex w-full gap-1 rounded-[10px] bg-fill p-[3px]">
         {NAV.flat().map(([href]) => (
           <Link
             key={href}
             href={href}
             aria-current={isOn(path, href) ? "page" : undefined}
-            className={`flex h-9 flex-auto items-center justify-center whitespace-nowrap rounded-[8px] px-3 type-small font-semibold transition-colors ${
+            className={`flex h-[38px] min-w-0 flex-auto items-center justify-center whitespace-nowrap rounded-[8px] px-2 type-small font-semibold transition-colors ${
               isOn(path, href) ? "bg-tile text-ink shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#3a3a3c]" : "text-ink-2"
             }`}
           >

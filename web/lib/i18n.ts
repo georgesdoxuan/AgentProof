@@ -47,6 +47,9 @@ const fr = {
     expand: "Déplier la barre latérale",
     side: {
       launch: "Lancer un audit",
+      shortcut: "Raccourci",
+      outOfCredits: "Crédits du mois épuisés",
+      outOfCreditsHint: "L’audit reste possible, au-delà du forfait.",
       open: "blocages ouverts",
       openOne: "blocage ouvert",
       running: "En cours",
@@ -183,6 +186,9 @@ const en: Dict = {
     expand: "Expand sidebar",
     side: {
       launch: "Run an audit",
+      shortcut: "Shortcut",
+      outOfCredits: "This month’s credits are used up",
+      outOfCreditsHint: "You can still run it, beyond your plan.",
       open: "open blockers",
       openOne: "open blocker",
       running: "Running",
