@@ -1,6 +1,6 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
-import { db } from "./engine";
+import { db, missionText } from "./engine";
 import { missionTitle, type Lang } from "./i18n";
 import { missionIconPath } from "./ui";
 
@@ -47,11 +47,12 @@ export function validate(rawTitle: unknown, rawText: unknown, lang: Lang): { tit
 // Defaults (with the team's saved edits laid over them), then the missions the team added.
 export async function teamMissions(teamId: string) {
   const [{ data: defaults }, { data: own }] = await Promise.all([
-    db.from("missions").select("id, title, instruction, position").is("team_id", null).eq("active", true).order("position"),
+    db.from("missions").select("id, slug, title, instruction, position").is("team_id", null).eq("active", true).order("position"),
     db.from("missions").select("id, base_id, title, instruction, checked, position, created_at").eq("team_id", teamId).eq("saved", true).eq("active", true).order("position").order("created_at"),
   ]);
   const edits = new Map((own ?? []).filter((m) => m.base_id).map((m) => [m.base_id as number, m]));
-  const list: TeamMission[] = (defaults ?? []).map((d) => {
+  const list: TeamMission[] = (defaults ?? []).map((row) => {
+    const d = { ...row, instruction: missionText(row) };
     const e = edits.get(d.id);
     return { id: e?.id ?? d.id, base_id: e ? d.id : null, title: e?.title ?? d.title, instruction: e?.instruction ?? d.instruction, default: { title: d.title, instruction: d.instruction }, checked: false, position: d.position };
   });
@@ -152,10 +153,10 @@ export function pickItems({ defaults, extras }: Awaited<ReturnType<typeof teamMi
       key: `d${m.base_id ?? m.id}`,
       id: m.id,
       base_id: m.base_id,
-      title: m.title,
+      title: m.base_id ? m.title : missionTitle(m.title, lang),
       label: m.base_id ? m.title : missionTitle(m.title, lang),
       instruction: m.instruction,
-      default: m.default,
+      default: m.default && { ...m.default, title: missionTitle(m.default.title, lang) },
       icon: missionIconPath(m.default?.title),
       team: false,
       once: false,

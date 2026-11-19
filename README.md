@@ -2,7 +2,7 @@
 
 **On envoie un client mystère IA sur ton site e-commerce.**
 
-Un agent IA computer-use (H Company, Holo) essaie d'acheter sur ton site comme un vrai client : il cherche, filtre, choisit une taille et va jusqu'à la première page du checkout, sans payer. Tu reçois un score, la capture du moment exact où l'agent bloque, le replay de chaque session, la comparaison avec un concurrent et un plan de corrections.
+Un agent IA computer-use (H Company, Holo) essaie d'acheter sur ton site comme un vrai client : il cherche, filtre, choisit une variante (taille, couleur…) si le produit en propose et va jusqu'à la première page du checkout, sans payer. Tu reçois un score, la capture du moment exact où l'agent bloque, le replay de chaque session, la comparaison avec un concurrent et un plan de corrections.
 
 - **Prototype en ligne : https://agentproof-iota-tawny.vercel.app**
 - Classement public : https://agentproof-iota-tawny.vercel.app/classement

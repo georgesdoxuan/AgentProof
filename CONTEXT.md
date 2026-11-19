@@ -30,7 +30,7 @@ AgentProof **envoie un vrai agent** qui essaie d'acheter, captures d'écran à l
 | **Responsable e-commerce** d'une marque mode française (5–50 M€ de CA, Shopify / PrestaShop / Salesforce Commerce) | Pilote la conversion, suit les KPI du tunnel | Il perd des ventes « agent » sans le voir. Il veut un score, des preuves, une liste de corrections. |
 | **Agence e-commerce / SEO** | Vend déjà des audits SEO et UX | Nouvel audit à revendre (« audit agent-ready »), même logique que l'audit SEO. |
 
-On commence par **un seul secteur : la mode** (missions comparables entre sites).
+On a commencé par **un seul secteur : la mode** (benchmark de 10 marques françaises). Depuis le 19 nov, les missions par défaut valent pour **tout site qui vend des produits physiques** (texte dans `web/lib/engine.ts`, `DEFAULT_MISSIONS`, qui remplace celui de la table `missions` ; slugs, titres en base, succès et score inchangés).
 
 ## 4. La solution (le SaaS)
 
@@ -92,10 +92,10 @@ En audit payant, le marchand peut fournir un compte de test ou un site de prépr
 
 ## 8. Les 10 missions du MVP (à affiner par Alexandre)
 
-1. Chercher « pull noir » avec la barre de recherche (ou un vêtement que le site vend), choisir un article, taille M, ajouter au panier, aller au checkout.
-2. Ouvrir une catégorie de vêtements via le menu, filtrer par taille, ajouter au panier, checkout.
+1. Chercher « pull noir » avec la barre de recherche (ou un produit que le site vend), choisir un article et une option disponible s'il en propose (taille M pour un vêtement), ajouter au panier, aller au checkout.
+2. Ouvrir une catégorie de produits via le menu, filtrer si possible (taille, couleur, prix…), ajouter au panier, checkout.
 3. Trouver un article à moins de 60 € avec le filtre de prix, ajouter au panier, checkout.
-4. Choisir une autre couleur que celle par défaut sur un produit à variantes, ajouter au panier, checkout.
+4. Choisir une autre variante que celle par défaut (couleur, taille, contenance…) sur un produit à variantes, ajouter au panier, checkout. Aucun produit à variantes : `mission_not_applicable`.
 5. Trouver un article en promotion, ajouter au panier, checkout.
 6. Ajouter deux articles différents au panier, checkout.
 7. Ajouter un article, passer la quantité à 2 dans le panier, checkout.
@@ -103,7 +103,7 @@ En audit payant, le marchand peut fournir un compte de test ou un site de prépr
 9. Chercher un produit avec une faute de frappe (« pul noir »), ajouter au panier, checkout.
 10. Depuis la page d'accueil sans recherche, trouver un haut blanc ou clair, ajouter au panier, checkout.
 
-Les missions restent neutres sur le type de produit (pas de « jean homme » chez une marque femme) : une mission impossible sur un site fausserait son score.
+Les missions restent neutres sur le type de produit (pas de « jean homme » chez une marque femme) : une mission impossible sur un site fausserait son score. Une étape sans objet (taille sur un produit qui n'en a pas) est sautée, pas comptée comme un échec.
 
 ## 9. Technologie
 

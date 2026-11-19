@@ -90,7 +90,7 @@ export default async function Accueil() {
           <ol className="grid md:grid-cols-3">
             {(
               [
-                ["pin", t("Indique ton site", "Enter your site"), t("Son adresse, et un concurrent si tu veux te comparer.", "Its address, and a competitor if you want to compare."), null],
+                ["pin", t("Indique ton site", "Enter your site"), t("Toute boutique de produits physiques : son adresse, et un concurrent si tu veux te comparer.", "Any shop selling physical products: its address, and a competitor if you want to compare."), null],
                 ["audit", t("L'agent essaie d'acheter", "The agent tries to buy"), t("Cinq missions réelles, de la recherche au checkout.", "Five real missions, from search to checkout."), pace && minutesLabel(estimateMinutes(5, pace.desktop))],
                 ["wrench", t("Corrige ce qui bloque", "Fix what blocks"), t("Capture du blocage, correction proposée, puis relance pour vérifier.", "Screenshot of the blocker, a suggested fix, then a rerun to check."), null],
               ] as const
