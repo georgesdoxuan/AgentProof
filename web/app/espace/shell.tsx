@@ -7,6 +7,7 @@ import { cookies } from "next/headers";
 import { AutoSubmitSelect, Frame, SectionIcon, SettingsTabs } from "./controls";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { spaceColor } from "@/lib/avatar";
+import { SideAccount } from "./side";
 
 // One frame for every page of the team space: a sidebar on the leading edge, the page beside it.
 // Wide screens: the sidebar sits against the window edge and the page is centred
@@ -21,7 +22,7 @@ export async function SpaceFrame({ children }: { children: React.ReactNode }) {
   const ctx = await teamContext();
   // Signed out (the page redirects) or in no team yet (the space's home offers to create one): no sidebar.
   if (!ctx?.team) return <>{children}</>;
-  const { team, teams } = ctx;
+  const { team, teams, user } = ctx;
   const t = await getDict();
   // Sidebar folded to icons: a cookie (set by the toggle in controls.tsx), so the first paint has the right width.
   const jar = await cookies();
@@ -37,6 +38,7 @@ export async function SpaceFrame({ children }: { children: React.ReactNode }) {
       side={side}
       reserve={reserve}
       launch={canLaunch(team.role)}
+      account={<SideAccount email={user.email} role={t.roles[team.role]} t={t.nav} />}
       head={
         <div className="flex items-center gap-3 lg:pl-3 lg:group-data-collapsed/frame:pl-0">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[9px] text-[17px] font-semibold text-white lg:group-data-collapsed/frame:mx-1.5" style={{ background: spaceColor(team.id) }} title={team.name} aria-hidden>

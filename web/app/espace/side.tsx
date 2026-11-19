@@ -5,6 +5,7 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import type { Dict, Lang } from "@/lib/i18n";
 import type { SideData } from "@/lib/sidebar";
 import { LEGAL } from "@/lib/legal";
+import { accountColor } from "@/lib/avatar";
 import { SiteLogo } from "../site-logo";
 import { SEEN_COOKIE, markSeen, parseSeen } from "@/lib/seen";
 
@@ -429,6 +430,47 @@ function Credits({ t, lang, collapsed }: { t: T; lang: Lang; collapsed: boolean 
         <Link href="/espace/reglages/abonnement" className="font-semibold text-link hover:underline">
           {t.more}
         </Link>
+      </div>
+    </div>
+  );
+}
+
+// A client-side link leaves the layout (and this popover) mounted: close it by hand.
+const hide = (e: React.MouseEvent<HTMLElement>) => (e.currentTarget.closest("[popover]") as HTMLElement | null)?.hidePopover();
+const menuItem = "flex min-h-9 w-full items-center rounded-[8px] px-3 text-left type-small text-ink transition-colors hover:bg-fill";
+
+// Bottom of the bar, Linear-style: who is signed in and their role here, opening the same menu as the header avatar.
+// Sticky: when the bar scrolls (low window), it stays in view over the rest. Folded: the avatar alone, centred.
+export function SideAccount({ email, role, t }: { email: string; role: string; t: Dict["nav"] }) {
+  return (
+    <div className="max-lg:hidden lg:sticky lg:-bottom-6 lg:-mx-3 lg:-mb-6 lg:mt-3! lg:border-t lg:border-hairline lg:bg-bg-2 lg:px-3 lg:py-2.5">
+      <button
+        type="button"
+        popoverTarget="compte-menu-side"
+        aria-label={`${t.account} : ${email}`}
+        title={`${email} · ${role}`}
+        className="flex min-h-11 w-full items-center gap-2.5 rounded-[8px] px-2 text-left transition-colors hover:bg-tile/60 group-data-collapsed/frame:w-12 group-data-collapsed/frame:justify-center group-data-collapsed/frame:px-0"
+      >
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[13px] font-semibold text-white" style={{ background: accountColor(email) }} aria-hidden>
+          {email[0]?.toUpperCase()}
+        </span>
+        <span className="min-w-0 flex-1 group-data-collapsed/frame:hidden">
+          <span className="block truncate text-[14px] text-ink">{email}</span>
+          <span className="type-caption block text-ink-2">{role}</span>
+        </span>
+      </button>
+      <div
+        id="compte-menu-side"
+        popover="auto"
+        className="fixed inset-auto bottom-[68px] left-3 m-0 w-64 rounded-[14px] border-0 bg-tile p-1.5 text-ink shadow-[0_12px_40px_-12px_rgb(0_0_0/0.35)] ring-1 ring-hairline"
+      >
+        <p className="type-caption truncate px-3 pb-1.5 pt-2 text-ink-2">{email}</p>
+        <Link href="/espace/reglages/equipe" onClick={hide} className={menuItem}>{t.team}</Link>
+        <Link href="/espace/reglages/compte" onClick={hide} className={menuItem}>{t.account}</Link>
+        <form action="/api/auth" method="post" className="mt-1 border-t border-hairline pt-1">
+          <input type="hidden" name="action" value="logout" />
+          <button className={menuItem}>{t.signOut}</button>
+        </form>
       </div>
     </div>
   );
