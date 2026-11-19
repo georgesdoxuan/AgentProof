@@ -58,14 +58,18 @@ export default async function Home() {
             <Link href={`/audit/${EXAMPLE_AUDIT}`} className="more">
               {t("Voir un exemple de rapport", "See a sample report")}
             </Link>
-            <Link href="/classement" className="more">
+            {/* Phones: the section bar already has Classement; one row less keeps the "free" line above the fold. */}
+            <Link href="/classement" className="more max-[734px]:hidden">
               {t("Voir le classement", "See the ranking")}
             </Link>
           </div>
           {/* What the click costs and asks for, then what the agent never does: both were only under the form.
               "Gratuit" holds while online payment is closed (see Tarifs); the guarantees are CONTEXT.md § 7, enforced by the engine. */}
           <p className="type-small ap-fade mt-4 text-ink-2 [animation-delay:0.5s]">
-            {t("Gratuit · ton URL et ton e-mail · rapport en 10 à 20 min", "Free · your URL and your e-mail · report in 10 to 20 min")}
+            {/* Each part stays whole, so a narrow screen breaks the line at a "·", never inside "10 à 20 min". */}
+            {(lang === "en" ? ["Free", "your URL and your e-mail", "report in 10 to 20 min"] : ["Gratuit", "ton URL et ton e-mail", "rapport en 10 à 20 min"]).map((part, i) => (
+              <span key={part} className="whitespace-nowrap">{i > 0 && " · "}{part}</span>
+            ))}
           </p>
           <Chips className="ap-fade mt-3 justify-center [animation-delay:0.5s]">
             <Chip icon="nopay">{t("Aucun paiement", "No payment")}</Chip>
