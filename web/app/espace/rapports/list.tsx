@@ -207,7 +207,7 @@ export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
         <div className="rounded-[18px] bg-tile">
           {shown.length ? (
             shown.map((a) => {
-              const name = a.title || a.sites?.domain || r.siteDeleted;
+              const name = a.label || r.siteDeleted;
               const sub = [
                 a.title && a.sites?.domain,
                 view === "trash" && a.deleted_at ? r.trashedOn(date(a.deleted_at)) : date(a.created_at),

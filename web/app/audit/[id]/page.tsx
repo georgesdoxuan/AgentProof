@@ -5,6 +5,7 @@ import { connection } from "next/server";
 import { DEFAULT_MODEL, EXCLUDED, db, paymentStages, paymentVerdicts, scoreOf } from "@/lib/engine";
 import { byRank } from "@/app/classement/board";
 import { rankText } from "@/app/espace/parts";
+import { reportSuffix } from "@/lib/space";
 import { locale, missionTitle, staticText, tr, type Lang, type T } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 import { BlockerIcon, BrowserFrame, MissionIcon, Chevron, DeviceTag, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, hurdles, summarize } from "@/lib/ui";
@@ -275,12 +276,14 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   const audit = await loadAudit(id);
   if (!audit) notFound();
   // Everything else the report needs, read in parallel (one round trip instead of four).
-  const [ctx, payAudit, competitor, { data: brand }] = await Promise.all([
+  const [ctx, payAudit, competitor, { data: brand }, suffix] = await Promise.all([
     audit.kind === "payment" || audit.payment_test ? teamContext() : null,
     audit.payment_test ? loadAudit(audit.payment_test) : null,
     audit.compare_to ? loadAudit(audit.compare_to) : null,
     // Agency white label: their name and logo replace AgentProof's on this report.
     audit.team_id ? db.from("teams").select("brand_name, brand_logo").eq("id", audit.team_id).maybeSingle() : { data: null },
+    // Same name as another report of the team: " (1)", " (2)"…, as in the reports list.
+    reportSuffix(audit),
   ]);
   // Real payment tests: only the team that ran them, or AgentProof staff.
   const inTeam = !!audit.team_id && !!ctx?.teams.some((t) => t.id === audit.team_id);
@@ -380,7 +383,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
           </p>
           <h1 className="type-h1 mt-3 flex items-center gap-4 break-words">
             <SiteLogo domain={audit.sites.domain} name={audit.sites.name} size="lg" />
-            <span className="min-w-0">{audit.title || audit.sites.name}</span>
+            <span className="min-w-0">{(audit.title || audit.sites.name) + suffix}</span>
           </h1>
           <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-ink-2">
             <a href={audit.sites.url} className="text-link hover:underline" target="_blank" rel="noreferrer">

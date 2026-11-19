@@ -57,7 +57,7 @@ export async function SiteCard({ site, manage = false }: { site: SiteView; manag
         <span className="flex min-w-0 items-center gap-3">
           <SiteLogo domain={site.domain} name={site.domain} size="lg" />
           <span className="min-w-0">
-            <span className="type-headline block truncate">{site.domain}</span>
+            <span className="type-headline block truncate">{site.label}</span>
             <span className="type-small text-ink-2">
               <DeviceTag device={site.device} lang={lang} /> · {site.latest ? shortDate(site.latest.created_at, lang) : t("Premier audit en cours", "First audit running")}
             </span>
@@ -101,7 +101,7 @@ export async function SiteCard({ site, manage = false }: { site: SiteView; manag
       <details className="absolute right-5 top-6 z-10">
         <summary
           className="grid h-9 w-9 cursor-pointer list-none place-items-center rounded-full text-ink-2 transition-colors hover:bg-fill hover:text-ink focus-visible:outline-2 focus-visible:outline-blue [&::-webkit-details-marker]:hidden"
-          aria-label={t(`Options de ${site.domain}`, `Options for ${site.domain}`)}
+          aria-label={t(`Options de ${site.label}`, `Options for ${site.label}`)}
           title={t("Plus", "More")}
         >
           <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="currentColor" aria-hidden>
@@ -156,7 +156,7 @@ export async function BlockerItem({ site, b, canEdit, compact = false }: { site:
             <span className="font-semibold text-ink">
               {b.missions} mission{b.missions > 1 ? "s" : ""} {t(`perdue${b.missions > 1 ? "s" : ""}`, "lost")}
             </span>
-            {compact && ` · ${site.domain}`}
+            {compact && ` · ${site.label}`}
           </span>
         </div>
         <h3 className={`mt-3 flex items-start gap-2.5 ${compact ? "type-eyebrow" : "type-h3"}`}>
