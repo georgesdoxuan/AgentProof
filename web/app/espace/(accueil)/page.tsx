@@ -81,7 +81,7 @@ export default async function Accueil() {
   // Large chips (36px) in the 40px row the button already sets: the sections below stay where they were. With no button
   // (read-only), a -5px margin keeps the row at the old 26px.
   // Each chip opens the page it sums up: Sites, Rapports (running), Corrections, the latest report.
-  const go = "rounded-full transition-opacity hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue";
+  const go = "flex rounded-full transition-opacity hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue";
   const status = audits.length ? (
     <Chips className={launch ? "" : "min-[735px]:-my-[5px]"}>
       <Link href="/espace/sites" className={go}>
@@ -175,12 +175,13 @@ export default async function Accueil() {
               const score = s.latest?.s.score ?? null;
               const tone = scoreTone(score);
               return (
-                <Link key={s.key} href={sitePath(s)} className="tile flex flex-col gap-3 rounded-[20px]! p-5! transition-colors duration-200 hover:bg-tile/80">
+                <Link key={s.key} href={sitePath(s)} className="tile flex flex-col gap-3 rounded-[20px]! p-5! transition-colors duration-200 hover:bg-tile/80 max-[734px]:p-4!">
                   <span className="flex items-baseline justify-between gap-3">
-                    <span className="flex min-w-0 items-center gap-3">
+                    {/* Phones: tighter padding, gap and name so a domain like « waterdrop.fr » shows whole in a half-width tile. */}
+                    <span className="flex min-w-0 items-center gap-3 max-[734px]:gap-2">
                       <SiteLogo domain={s.domain} name={s.domain} />
                       <span className="min-w-0">
-                        <span className="block truncate font-semibold">{s.label}</span>
+                        <span className="block truncate font-semibold max-[734px]:text-[15px]">{s.label}</span>
                         <span className="type-caption block text-ink-2"><DeviceTag device={s.device} lang={lang} /></span>
                       </span>
                     </span>
