@@ -23,7 +23,7 @@ export async function SpaceFrame({ children }: { children: React.ReactNode }) {
   const account = { initial: user.email[0].toUpperCase(), color: accountColor(user.email) };
   return (
     <div data-app-shell className="min-h-[70vh] bg-bg-2 lg:grid lg:grid-cols-[256px_minmax(0,1fr)]">
-      <aside className="min-w-0 space-y-5 px-6 pt-6 sm:px-8 lg:sticky lg:top-[52px] lg:h-[calc(100dvh-52px)] lg:space-y-7 lg:self-start lg:overflow-y-auto lg:border-r lg:border-hairline lg:px-3 lg:py-6">
+      <aside className="min-w-0 space-y-5 px-6 pt-6 sm:px-8 lg:sticky lg:top-[53px] lg:h-[calc(100dvh-53px)] lg:space-y-7 lg:self-start lg:overflow-y-auto lg:border-r lg:border-hairline lg:px-3 lg:py-6">
         <div className="flex items-center gap-3 lg:px-3">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[9px] text-[17px] font-semibold text-white" style={{ background: spaceColor(team.id) }} aria-hidden>
             {team.name[0]?.toUpperCase()}
