@@ -23,7 +23,7 @@ export default async function EspaceClassement({ searchParams }: { searchParams:
       team={ctx.team}
       teams={ctx.teams}
       title={t("Classement", "Ranking")}
-      intro={t(
+      hint={t(
         "Sites mode France : part des missions où l'agent atteint le checkout, vérifiée par un juge visuel, moyenne des 2 derniers passages.",
         "French fashion sites: share of missions where the agent reaches checkout, checked by a visual judge, average of the last 2 runs.",
       )}

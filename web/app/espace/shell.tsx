@@ -2,6 +2,7 @@ import type { TeamRow } from "@/lib/auth";
 import { getDict } from "@/lib/lang";
 import Link from "next/link";
 import { Chevron } from "@/lib/ui";
+import { Hint } from "@/lib/hint";
 import { AutoSubmitSelect, SpaceNav } from "./controls";
 
 // One frame for every page of the team space: a sidebar on the leading edge, the page beside it.
@@ -13,6 +14,7 @@ export async function SpaceShell({
   teams,
   title,
   intro,
+  hint,
   actions,
   narrow = false,
   parent,
@@ -21,7 +23,10 @@ export async function SpaceShell({
   team?: TeamRow; // left out by loading skeletons: the team block turns into placeholders
   teams?: TeamRow[];
   title: React.ReactNode;
+  /** Facts about the page (counts, status): always shown under the title. */
   intro?: React.ReactNode;
+  /** What the page is for: shown only on hover or focus of the title. */
+  hint?: React.ReactNode;
   actions?: React.ReactNode;
   narrow?: boolean;
   /** Child pages only (a site, Favoris, Corbeille): the section they belong to, as a back link above the title. */
@@ -80,7 +85,7 @@ export async function SpaceShell({
                     {parent[1]}
                   </Link>
                 )}
-                <h1 className="type-title">{title}</h1>
+                <h1 className="type-title">{hint ? <Hint tip={hint}>{title}</Hint> : title}</h1>
                 {intro && <p className="mt-2 max-w-[680px] text-ink-2">{intro}</p>}
               </div>
               {actions}
