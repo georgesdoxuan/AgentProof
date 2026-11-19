@@ -188,7 +188,7 @@ export default async function Accueil() {
         <section>
           <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-1">
             <h2 className="type-headline">{t("À corriger en priorité", "Fix first")}</h2>
-            <Chip icon="trend">{t("Par missions perdues", "By missions lost")}</Chip>
+            <Chip icon="trend" className="max-sm:hidden">{t("Par missions perdues", "By missions lost")}</Chip>
           </div>
           <div className={`grid gap-5 ${todo.length > 1 ? "md:grid-cols-2 xl:grid-cols-3" : ""}`}>
             {todo.map(({ site, b }) => (

@@ -136,7 +136,7 @@ export default async function Methode() {
 
         {/* The formula first, as a card: everything below explains its two terms. */}
         <div className="tile mt-8 grid gap-5 p-7!">
-          <p className="type-h3 whitespace-nowrap tnum">
+          <p className="type-h3 tnum">
             Score = <span className="text-pass">{t("réussies", "passed")}</span> ÷ {t("vérifiées", "verified")}
           </p>
           <Chips>
