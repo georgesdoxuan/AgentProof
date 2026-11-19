@@ -1,9 +1,13 @@
 import { Bone, Line, Loading as Busy } from "../skeleton";
+import { Sections } from "../nav";
+import { getDict } from "@/lib/lang";
 
 // Home: the hero (title, subtitle, actions) above the browser frame.
-export default function Loading() {
+export default async function Loading() {
+  const sections = (await getDict()).sections;
   return (
     <Busy>
+      <Sections t={sections} bar />
       <section className="overflow-hidden pt-[88px] text-center max-[734px]:pt-14">
         <div className="wrap">
           <p className="type-hero">

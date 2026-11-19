@@ -233,11 +233,9 @@ body {
   width: min(1200px, 87.5%);
   margin-inline: auto;
 }
-/* App pages (team space): header and footer run edge to edge so the logo lines up with the sidebar. */
-@media (min-width: 1024px) {
-  body:has([data-app-shell]) :is(header > nav, footer > div) { width: auto; margin-inline: 24px; }
-  body:has([data-app-shell]) #compte-menu { right: 24px; }
-}
+/* The header keeps the same width on every page, app pages included: it used to run edge to edge in the team space
+   (logo against the sidebar), so the logo and the account button jumped ~96 px sideways between the public pages and
+   the space. */
 /* Product-page tile: radius 30 / 25 / 20, padding 40 / 30. */
 @utility tile {
   border-radius: 30px;

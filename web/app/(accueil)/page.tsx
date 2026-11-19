@@ -4,7 +4,8 @@ import { db } from "@/lib/engine";
 import { currentUser } from "@/lib/auth";
 import { AgentCursor, BrowserFrame, Chip, Chips, Field, Icon, MissionBar, StatusGlyph, Verdict, blockerLabel, scoreTone } from "@/lib/ui";
 import { tr, type Lang, type T } from "@/lib/i18n";
-import { getLang } from "@/lib/lang";
+import { getDict, getLang } from "@/lib/lang";
+import { Sections } from "../nav";
 import { byRank } from "../classement/board";
 import { LEGAL } from "@/lib/legal";
 import { loadPace, estimateMinutes, minutesLabel } from "@/lib/estimate";
@@ -42,8 +43,10 @@ export default async function Home() {
   // The report e-mail goes through n8n: only announce it when that hook is configured.
   const mails = !!process.env.N8N_NOTIFY_URL;
 
+  const sections = (await getDict()).sections;
   return (
     <>
+      <Sections t={sections} bar />
       {/* Hero */}
       <section className="overflow-hidden pt-[88px] text-center max-[734px]:pt-14">
         <div className="wrap">

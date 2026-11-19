@@ -25,9 +25,11 @@ export function LangSwitch({ lang }: { lang: Lang }) {
 }
 
 // Home only: the page's sections, plus "Méthode" (its own page: visitors want the method before giving their site).
-// In the site header (one bar, not two). Centered beside the logo on wide screens,
-// a second row under it below 1024 px. The section crossing the middle of the window is marked current.
-export function Sections({ t }: { t: Dict["sections"] }) {
+// Wide screens: in the site header, centered beside the logo. Below 1024 px: a bar of its own at the top of the home
+// page (`bar`), sticky under the header. It used to be a second row of the header, so the header grew by 44 px on
+// arriving at the home page and shrank on leaving it: everything under it jumped.
+// The section crossing the middle of the window is marked current.
+export function Sections({ t, bar }: { t: Dict["sections"]; bar?: boolean }) {
   const path = usePathname();
   const [current, setCurrent] = useState<string | null>(null);
   const { label, ...items } = t;
@@ -43,23 +45,33 @@ export function Sections({ t }: { t: Dict["sections"] }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path]);
   if (path !== "/") return null;
-  return (
+  const list = (
     <ul
       aria-label={label}
-      className="type-caption order-last flex w-full gap-x-5 overflow-x-auto [scrollbar-width:none] max-[400px]:gap-x-3 lg:absolute lg:left-1/2 lg:w-auto lg:-translate-x-1/2 lg:gap-x-7"
+      className={
+        bar
+          ? "type-caption flex w-full gap-x-5 overflow-x-auto [scrollbar-width:none] max-[400px]:gap-x-3"
+          : "type-caption absolute left-1/2 flex -translate-x-1/2 gap-x-7 max-lg:hidden"
+      }
     >
       {ids.map((id) => (
         <li key={id}>
           <a
             href={id === "methode" ? "/methode" : `#${id}`}
             aria-current={current === id ? "location" : undefined}
-            className="relative inline-flex h-11 items-center whitespace-nowrap text-ink/80 transition-colors after:absolute after:inset-x-0 after:bottom-2 after:h-px after:origin-center after:scale-x-0 after:bg-ink after:transition-transform hover:text-ink aria-[current=location]:text-ink aria-[current=location]:after:scale-x-100 lg:h-[52px] lg:after:bottom-3"
+            className={`relative inline-flex h-11 items-center whitespace-nowrap text-ink/80 transition-colors after:absolute after:inset-x-0 after:bottom-2 after:h-px after:origin-center after:scale-x-0 after:bg-ink after:transition-transform hover:text-ink aria-[current=location]:text-ink aria-[current=location]:after:scale-x-100 ${bar ? "" : "h-[52px]! after:bottom-3!"}`}
           >
             {items[id as keyof typeof items]}
           </a>
         </li>
       ))}
     </ul>
+  );
+  if (!bar) return list;
+  return (
+    <div className="sticky top-[53px] z-30 border-b border-hairline bg-[var(--nav)] backdrop-blur-[20px] backdrop-saturate-[180%] lg:hidden">
+      <div className="wrap-wide">{list}</div>
+    </div>
   );
 }
 
