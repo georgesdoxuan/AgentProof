@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { db, getPaymentReplay, getReplay, paymentVerdicts } from "@/lib/engine";
+import { PAY_REACHED_BANK, db, getPaymentReplay, getReplay, paymentVerdicts } from "@/lib/engine";
 import { BlurredShot } from "./blurred";
 import { canSeePayment } from "@/lib/auth";
 import { AutoRefresh } from "@/app/audit/[id]/refresh";
@@ -48,7 +48,7 @@ export default async function Replay({ params, searchParams }: { params: Promise
   const back = payment ? (parent ? `/audit/${parent.id}` : "/test-paiement") : `/audit/${run.audit_id}`;
   // H deletes payment screenshots 4 hours after the test.
   const shotsGone = payment && hoursSince((run as any).finished_at) > 4;
-  const payOk = ["bank_declined", "payment_accepted"].includes((run as any).payment_verdict);
+  const payOk = PAY_REACHED_BANK.includes((run as any).payment_verdict);
 
   const live = !first && (run as any).status === "launched";
   let replay: Awaited<ReturnType<typeof getReplay>> = null;
@@ -67,7 +67,8 @@ export default async function Replay({ params, searchParams }: { params: Promise
   }
   if (!replay) notFound();
   // The first attempt shows its own verdict, kept when the mission was replayed.
-  const r = first ? { ...(run as any), ...(run as any).first_attempt } : (run as any);
+  // A payment test passes once the payment reached the bank (3D Secure request included), whatever older runs stored.
+  const r = first ? { ...(run as any), ...(run as any).first_attempt } : payment ? { ...(run as any), success: payOk } : (run as any);
   const last = replay.steps.length - 1;
   // Live: newest step first, page refreshes itself.
   const steps = replay.steps.map((s, i) => ({ s, i }));

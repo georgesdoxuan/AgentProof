@@ -271,7 +271,8 @@ Pendant un audit, l'agent s'arrête toujours avant de payer. Le **test de paieme
 
 - L'agent part au plus près du checkout, prend le **premier article disponible** et **paie une seule fois** avec la carte de votre équipe, en 3 à 10 minutes.
 - Il n'est **jamais** joué sur un concurrent.
-- Un refus « fonds insuffisants » prouve que le paiement a bien atteint la banque.
+- Un refus « fonds insuffisants » ou une **demande de 3D Secure** prouve que le paiement a bien atteint la banque : le test est **validé jusqu'à la banque**. Un agent ne peut pas valider le 3D Secure seul (c'est au porteur de la carte), donc la commande n'est pas confirmée.
+- Tant qu'aucune commande n'est confirmée (3D Secure non validé, carte refusée, erreur), un audit dont toutes les missions passent n'affiche pas « 100 % » seul mais **« 100 % hors paiement »**, et son rapport indique « Commande non confirmée ». Les missions, elles, gardent leur score.
 
 **Attention :** avec une carte approvisionnée, la commande est réelle. Utilisez une carte virtuelle à 0 € pour ne rien acheter, et gardez votre téléphone à portée pour valider le 3D Secure.
 

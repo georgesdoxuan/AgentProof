@@ -5,7 +5,7 @@ import { canLaunch, teamContext } from "@/lib/auth";
 import { deviceLabel, loadSpace, shortDate } from "@/lib/space";
 import { locale, tr } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
-import { BlockerIcon, Chevron, Chip, Chips, Empty, Group, Icon, MissionBar, Recommendations, Spinner, StatusGlyph, ToneLabel, blockerLabel, scoreTone } from "@/lib/ui";
+import { BlockerIcon, Chevron, Chip, Chips, Empty, ExPay, Group, Icon, MissionBar, Recommendations, Spinner, StatusGlyph, ToneLabel, blockerLabel, scoreTone } from "@/lib/ui";
 import { AutoRefresh } from "../../../audit/[id]/refresh";
 import { SpaceShell } from "../../shell";
 import { BlockerItem, Delta, RelaunchForm, rankText } from "../../parts";
@@ -76,12 +76,13 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
           <Link href={`/audit/${site.latest.id}`} className="tile group flex flex-col hover:bg-tile/80">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="type-headline">{t("Score agent", "Agent score")}</h2>
-              <ToneLabel score={s.score} />
+              <ToneLabel score={s.score} exPay={s.exPay} />
             </div>
             <p className="mt-6 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[80px] font-semibold leading-none tracking-[-0.015em] tnum max-[734px]:text-[64px]">
               <span>
                 {s.score ?? "—"}
                 <span className="ml-1 text-[36px] text-ink-2">%</span>
+                {s.exPay && <ExPay lang={lang} className="ml-2 text-[17px] tracking-normal" />}
               </span>
               <Delta site={site} className="text-[17px]!" />
             </p>
@@ -99,7 +100,9 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
               <ol className="mt-6 flex h-44 items-end gap-3" aria-label={t("Score de chaque audit, du plus ancien au plus récent", "Score of each audit, oldest to newest")}>
                 {history.slice(-8).map((a) => (
                   <li key={a.id} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2">
-                    <span className="type-small font-semibold tnum">{a.s.score} %</span>
+                    <span className="type-small inline-flex items-center gap-1 font-semibold tnum">
+                      {a.s.score} %{a.s.exPay && <ExPay lang={lang} short />}
+                    </span>
                     <Link
                       href={`/audit/${a.id}`}
                       className={`block w-full max-w-14 rounded-t-[8px] transition-opacity hover:opacity-80 ${{ pass: "bg-pass", warn: "bg-warn", fail: "bg-fail", none: "bg-fill" }[scoreTone(a.s.score)]}`}
@@ -224,6 +227,12 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
                   <>
                     <StatusGlyph tone={scoreTone(a.s.score)} className="h-4 w-4" />
                     {a.s.score} %
+                    {a.s.exPay && (
+                      <>
+                        <ExPay lang={lang} short className="md:hidden" />
+                        <ExPay lang={lang} className="type-small max-md:hidden" />
+                      </>
+                    )}
                   </>
                 ) : (
                   <span className="type-small flex items-center gap-2 font-normal text-ink-2">

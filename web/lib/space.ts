@@ -152,7 +152,10 @@ async function loadSpaceOnce(teamId: string) {
     : { data: [] as { audit_id: string; status: string; payment_verdict: string | null; with_login: boolean }[] };
   const payBy = new Map<string, SpaceAudit["pay"]>();
   for (const r of payRuns ?? []) payBy.set(r.audit_id, [...(payBy.get(r.audit_id) ?? []), { status: r.status, verdict: r.payment_verdict, with_login: r.with_login }]);
-  const all = ((data ?? []) as unknown as Omit<SpaceAudit, "s" | "pay" | "label" | "devices">[]).map((a) => ({ ...a, pay: a.payment_test ? payBy.get(a.payment_test) ?? [] : [], s: summarize(a.runs), label: "", devices: false }));
+  const all = ((data ?? []) as unknown as Omit<SpaceAudit, "s" | "pay" | "label" | "devices">[]).map((a) => {
+    const pay = a.payment_test ? payBy.get(a.payment_test) ?? [] : [];
+    return { ...a, pay, s: summarize(a.runs, pay), label: "", devices: false };
+  });
   const byId = new Map(all.map((a) => [a.id, a]));
   // Competitor audits show inside the main site, not as sites of their own.
   const competitorIds = hiddenLinked(all);

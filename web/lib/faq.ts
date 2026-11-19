@@ -573,8 +573,8 @@ export const FAQ: Faq[] = [
     cat: "payment",
     q: { fr: "Qu'est-ce que le test de paiement ?", en: "What is the payment test?" },
     a: {
-      fr: "Un test à part, facultatif : l'agent prend le premier article disponible et paie une seule fois avec la carte de ton équipe, en 3 à 10 minutes. Un refus « fonds insuffisants » prouve que le paiement a atteint la banque.",
-      en: "A separate, optional test: the agent takes the first available item and pays once with your team's card, in 3 to 10 minutes. An “insufficient funds” decline proves the payment reached the bank.",
+      fr: "Un test à part, facultatif : l'agent prend le premier article disponible et paie une seule fois avec la carte de ton équipe, en 3 à 10 minutes. Un refus « fonds insuffisants » ou une demande de 3D Secure prouve que le paiement a atteint la banque : le test est validé, mais la commande n'est pas confirmée.",
+      en: "A separate, optional test: the agent takes the first available item and pays once with your team's card, in 3 to 10 minutes. An “insufficient funds” decline or a 3D Secure request proves the payment reached the bank: the test passes, but no order is confirmed.",
     },
     keys: "paiement payer carte checkout commande banque achat reel payment pay card bank order purchase",
   },
@@ -598,6 +598,16 @@ export const FAQ: Faq[] = [
       en: "Yes, if the card has funds. Every test asks for your confirmation, and the agent never pays more than €150 shipping included. Use a virtual card at €0 to buy nothing, and keep your phone at hand to approve 3D Secure.",
     },
     keys: "vraie commande achat reel debit argent 3d secure virtuelle risque real order charged money virtual risk",
+  },
+  {
+    id: "3d-secure",
+    cat: "payment",
+    q: { fr: "Le 3D Secure fait-il échouer le test de paiement ?", en: "Does 3D Secure make the payment test fail?" },
+    a: {
+      fr: "Non. Quand ta banque demande le 3D Secure, le site a transmis le paiement : le tunnel du marchand est validé jusqu'à la banque. Un agent ne peut pas valider le 3D Secure seul, c'est au porteur de la carte. La commande n'est donc pas confirmée, et un audit à 100 % affiche « 100 % hors paiement ».",
+      en: "No. When your bank asks for 3D Secure, the site has sent the payment: the merchant's tunnel is validated up to the bank. An agent cannot approve 3D Secure alone, the cardholder does. So no order is confirmed, and an audit at 100% shows “100% excl. payment”.",
+    },
+    keys: "3d secure 3ds verification banque autorisation telephone revolut id check commande non confirmee hors paiement 100 bank approval phone order not confirmed excl payment",
   },
   {
     id: "comptes-test",

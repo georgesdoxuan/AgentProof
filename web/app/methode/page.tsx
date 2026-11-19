@@ -245,6 +245,12 @@ export default async function Methode() {
           </div>
           <p>
             {t(
+              "Une demande de 3D Secure compte comme un refus « fonds insuffisants » : le paiement a atteint la banque, le tunnel du marchand est validé. Un agent ne peut pas valider le 3D Secure seul, donc la commande n’est pas confirmée : un audit à 100 % affiche alors « 100 % hors paiement ».",
+              "A 3D Secure request counts like an “insufficient funds” decline: the payment reached the bank, the merchant’s tunnel is validated. An agent cannot approve 3D Secure alone, so no order is confirmed: an audit at 100% then shows “100% excl. payment”.",
+            )}
+          </p>
+          <p>
+            {t(
               "Prochaine étape : nos propres cartes, refusées en temps réel par notre serveur, pour une preuve bancaire automatique sans 3D Secure manuel.",
               "Next: our own cards, declined in real time by our server, for automatic bank proof with no manual 3D Secure.",
             )}

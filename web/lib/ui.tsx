@@ -1,4 +1,4 @@
-import { EXCLUDED, blockerNames } from "./engine";
+import { EXCLUDED, blockerNames, payOpen } from "./engine";
 import type { Lang } from "./i18n";
 import { getLang, getT } from "./lang";
 import { accountColor } from "./avatar";
@@ -43,9 +43,18 @@ export function StatusGlyph({ tone, className = "h-[1.05em] w-[1.05em]" }: { ton
   );
 }
 
-export async function ToneLabel({ score, className = "" }: { score: number | null; className?: string }) {
+export async function ToneLabel({ score, exPay = false, className = "" }: { score: number | null; exPay?: boolean; className?: string }) {
   const t = scoreTone(score);
-  const toneWord = toneWords(await getLang());
+  const lang = await getLang();
+  const toneWord = toneWords(lang);
+  // 100 % of the missions, but the real payment test placed no order: never "ready" without a word about it.
+  if (exPay)
+    return (
+      <span className={`inline-flex items-center gap-1.5 font-semibold text-warn ${className}`}>
+        <Icon name="payment" />
+        {lang === "en" ? "Order not confirmed" : "Commande non confirmée"}
+      </span>
+    );
   return (
     <span className={`inline-flex items-center gap-1.5 font-semibold ${toneText[t]} ${className}`}>
       <StatusGlyph tone={t} />
@@ -374,7 +383,26 @@ export const blockerLabel = (b: string | null, lang: Lang = "fr") => (b ? (block
 type Run = { status: string; success: boolean | null; blocker_type: string | null };
 
 
-export function summarize(runs: Run[]) {
+// Mention after a 100 % whose real payment test placed no order: "100 % hors paiement". Short: a card icon only, for
+// the narrow sidebar, with the words for screen readers and on hover.
+export function ExPay({ lang, short = false, className = "" }: { lang: Lang; short?: boolean; className?: string }) {
+  const words = lang === "en" ? "excl. payment" : "hors paiement";
+  const title = lang === "en" ? "Excluding payment: the real payment test placed no order" : "Hors paiement : le test de paiement réel n’a pas confirmé de commande";
+  return short ? (
+    <span title={title} className={`inline-flex text-warn ${className}`}>
+      <Icon name="payment" className="h-[1em] w-[1em]" />
+      <span className="sr-only">{title}</span>
+    </span>
+  ) : (
+    <span title={title} className={`whitespace-nowrap font-normal text-ink-2 ${className}`}>
+      {" "}
+      {words}
+    </span>
+  );
+}
+
+// pays: the real payment test linked to the audit, if any. exPay: a 100 % that must say "hors paiement".
+export function summarize(runs: Run[], pays: { status: string; verdict: string | null }[] = []) {
   const finished = runs.filter((r) => r.status === "done" || r.status === "error");
   const scored = runs.filter((r) => r.status === "done" && r.success !== null && !EXCLUDED.includes(r.blocker_type ?? ""));
   const ok = scored.filter((r) => r.success).length;
@@ -387,6 +415,7 @@ export function summarize(runs: Run[]) {
     done: scored.length,
     ok,
     score: scored.length ? Math.round((100 * ok) / scored.length) : null,
+    exPay: scored.length > 0 && ok === scored.length && payOpen(pays),
     blockers,
     unverified: runs.filter((r) => r.status === "done" && r.success === null).length,
     excluded: runs.filter((r) => r.status === "done" && r.success === false && EXCLUDED.includes(r.blocker_type ?? "")).length,

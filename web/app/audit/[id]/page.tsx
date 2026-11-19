@@ -2,13 +2,13 @@ import { canLaunch, staffUser, teamContext } from "@/lib/auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { DEFAULT_MODEL, EXCLUDED, db, paymentStages, paymentVerdicts, scoreOf } from "@/lib/engine";
+import { DEFAULT_MODEL, EXCLUDED, PAY_REACHED_BANK, db, payShown, paymentStages, paymentVerdicts, scoreOf } from "@/lib/engine";
 import { byRank } from "@/app/classement/board";
 import { rankText } from "@/app/espace/parts";
 import { reportSuffix } from "@/lib/space";
 import { locale, missionTitle, staticText, tr, type Lang, type T } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
-import { BlockerIcon, BrowserFrame, Chip, Chips, Icon, MissionIcon, Chevron, Note, DeviceTag, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, hurdles, summarize } from "@/lib/ui";
+import { BlockerIcon, BrowserFrame, Chip, Chips, ExPay, Icon, MissionIcon, Chevron, Note, DeviceTag, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, hurdles, summarize } from "@/lib/ui";
 import { Hint } from "@/lib/hint";
 import { headers } from "next/headers";
 import { CopyField } from "@/app/espace/controls";
@@ -175,6 +175,7 @@ function PrintCover(p: {
           <p className="text-[96pt] font-semibold leading-[0.85] tracking-[-0.03em] tnum">
             {s.score ?? "—"}
             <span className="ml-1 text-[36pt] text-ink-2">%</span>
+            {s.exPay && <ExPay lang={lang} className="ml-3 text-[15pt] tracking-normal" />}
           </p>
           <p className={`flex items-center gap-2 pb-2 text-[15pt] font-semibold ${TONE_TEXT[tone]}`}>
             <StatusGlyph tone={tone} className="h-[15pt] w-[15pt]" />
@@ -310,7 +311,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   const inTeam = !!audit.team_id && !!ctx?.teams.some((t) => t.id === audit.team_id);
   if (audit.kind === "payment" && !inTeam && !(await staffUser()).isStaff) notFound();
   // One run without account, plus one signed in when the team saved a test account for the site.
-  const pays: any[] = inTeam && payAudit ? [...(payAudit.runs ?? [])].sort((a: any, b: any) => +a.with_login - +b.with_login) : [];
+  const pays: any[] = inTeam && payAudit ? [...(payAudit.runs ?? [])].map(payShown).sort((a: any, b: any) => +a.with_login - +b.with_login) : [];
   const branded = !!brand?.brand_name;
   const h = await headers();
   const base = process.env.PUBLIC_URL || `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
@@ -326,7 +327,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   const trend = audit.kind === "checkout" && audit.status === "done" && !audit.proof_of ? await trendOf(audit) : null;
 
   const runs = [...audit.runs].sort((a: any, b: any) => a.missions.position - b.missions.position);
-  const s = summarize(runs);
+  const s = summarize(runs, pays.map((p) => ({ status: p.status, verdict: p.payment_verdict })));
   const c = competitor ? summarize(competitor.runs) : null;
   const running = audit.status === "running" || competitor?.status === "running" || pays.some((p) => p.status !== "done");
   // Owner or admin of the report's team, with that team open: the reports API acts on the current team only.
@@ -568,15 +569,28 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
           <div className="tile flex flex-col print:hidden">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="type-headline">{t("Score agent", "Agent score")}</h2>
-              {s.score == null && audit.status === "done" ? <span className="type-small font-semibold text-ink-2">{t("À confirmer", "To be confirmed")}</span> : <ToneLabel score={s.score} />}
+              {s.score == null && audit.status === "done" ? <span className="type-small font-semibold text-ink-2">{t("À confirmer", "To be confirmed")}</span> : <ToneLabel score={s.score} exPay={s.exPay} />}
             </div>
             <p className="mt-5 text-[96px] font-semibold leading-none tracking-[-0.015em] tnum max-[734px]:text-[72px]">
               {s.score ?? "—"}
               <span className="ml-1 text-[40px] font-semibold text-ink-2 max-[734px]:text-[32px]">%</span>
+              {s.exPay && <ExPay lang={lang} className="ml-3 text-[21px] tracking-normal max-[734px]:text-[17px]" />}
             </p>
             <p className="mt-3 text-ink-2">
               {t("Entrée du checkout atteinte", "Checkout entrance reached")} · <span className="font-semibold text-ink tnum">{s.ok}/{s.done}</span>
             </p>
+            {s.exPay && (
+              <p className="mt-2 text-ink-2">
+                {t("Paiement", "Payment")} ·{" "}
+                <span className="font-semibold text-ink">
+                  {pays.some((p) => p.payment_verdict === "three_ds_timeout")
+                    ? t("validé jusqu’au 3D Secure, commande non confirmée", "validated up to 3D Secure, order not confirmed")
+                    : pays.some((p) => PAY_REACHED_BANK.includes(p.payment_verdict))
+                      ? t("transmis à la banque, commande non confirmée", "sent to the bank, order not confirmed")
+                      : t("échoué, commande non confirmée", "failed, order not confirmed")}
+                </span>
+              </p>
+            )}
             <div className="mt-auto pt-8">
               <MissionBar ok={s.ok} done={s.done} total={s.total} size="lg" />
               <ul className="type-small mt-3 flex flex-wrap gap-x-5 gap-y-1 text-ink-2 tnum">
@@ -657,7 +671,9 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
           <section className="tile grid gap-6 md:grid-cols-2" aria-label={t("Deux voies d’achat", "Two buying roads")}>
             <div>
               <h2 className="type-headline">{t("Par l’écran", "Through the screen")}</h2>
-              <p className="mt-2 text-[40px] font-semibold leading-none tnum">{s.score ?? "—"} %</p>
+              <p className="mt-2 text-[40px] font-semibold leading-none tnum">
+                {s.score ?? "—"} %{s.exPay && <ExPay lang={lang} className="ml-2 text-[17px]" />}
+              </p>
               <p className="type-small mt-2 text-ink-2">{t("Agents qui cliquent comme un client", "Agents that click like a customer")}</p>
             </div>
             <div>
@@ -734,9 +750,19 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             </div>
             {pay.status === "done" ? (
               <>
-                <p className={`type-h3 mt-3 ${["bank_declined", "payment_accepted"].includes(pay.payment_verdict) ? "text-pass" : ["inconclusive", "three_ds_timeout"].includes(pay.payment_verdict) ? "text-warn" : "text-fail"}`}>
+                <p className={`type-h3 mt-3 ${PAY_REACHED_BANK.includes(pay.payment_verdict) ? "text-pass" : pay.payment_verdict === "inconclusive" ? "text-warn" : "text-fail"}`}>
                   {PAYMENT_VERDICTS[pay.payment_verdict] ?? pay.payment_verdict ?? t("Pas de résultat", "No result")}
                 </p>
+                {PAY_REACHED_BANK.includes(pay.payment_verdict) && pay.payment_verdict !== "payment_accepted" && (
+                  // The merchant's tunnel works up to the bank; the order itself is not placed, so the audit is never "100 %" alone.
+                  <p className="mt-2">
+                    {t("Tunnel de paiement validé jusqu’à la banque. ", "Payment tunnel validated up to the bank. ")}
+                    <span className="font-semibold">{t("Commande non confirmée", "Order not confirmed")}</span>
+                    {pay.payment_verdict === "three_ds_timeout"
+                      ? t(" : l’autorisation 3D Secure revient au porteur de la carte, un agent ne peut pas la valider seul.", ": 3D Secure approval belongs to the cardholder, an agent cannot give it alone.")
+                      : t(" : la banque a refusé la carte (sans fonds).", ": the bank declined the card (no funds).")}
+                  </p>
+                )}
                 {pay.agent_answer?.site_message && <p className="mt-2 text-ink-2">{t("Message du site", "Site message")} : « {pay.agent_answer.site_message} »</p>}
                 {pay.agent_answer?.furthest_stage && (
                   <p className="mt-2">
@@ -746,9 +772,18 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                 <Chips className="mt-3">
                   <Chip icon="lock">3D Secure · {pay.agent_answer?.three_ds_seen ? t("demandé", "requested") : t("non", "no")}</Chip>
                   <Chip icon="shield">{t("Prestataire", "Provider")} · {known(pay.agent_answer?.payment_provider)}</Chip>
-                  <Chip icon="payment">{known(pay.agent_answer?.payment_methods)}</Chip>
+                  <Chip icon="payment" className="max-w-full whitespace-normal!">{known(pay.agent_answer?.payment_methods)}</Chip>
                 </Chips>
-                {pay.judge?.result && pay.judge.result !== pay.payment_verdict && (
+                {pay.payment_verdict === "three_ds_timeout" && pay.judge?.earlier_screenshot ? (
+                  <p className="type-small mt-2 text-ink-2">
+                    {t("Juge visuel : page 3D Secure vue sur une capture précédente, la dernière montre le retour au formulaire de carte.", "Visual judge: 3D Secure page seen on an earlier screenshot, the last one shows the card form again.")}
+                  </p>
+                ) : pay.payment_verdict === "three_ds_timeout" && pay.judge?.result && pay.judge.result !== pay.payment_verdict ? (
+                  // Judged before 19/11 on the last screenshot only, taken once the 3D Secure page had expired.
+                  <p className="type-small mt-2 text-ink-2">
+                    {t("Juge visuel : il n’a vu que la dernière capture, prise après l’expiration du 3D Secure", "Visual judge: it only saw the last screenshot, taken after 3D Secure expired")} ({pay.judge.reason})
+                  </p>
+                ) : pay.judge?.result && pay.judge.result !== pay.payment_verdict && (
                   <p className="type-small mt-2 text-warn">
                     {t("Juge visuel en désaccord", "Visual judge disagrees")} : {PAYMENT_VERDICTS[pay.judge.result] ?? pay.judge.result}. {pay.judge.reason}
                   </p>

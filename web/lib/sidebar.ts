@@ -11,10 +11,10 @@ import { SEEN_COOKIE, parseSeen } from "./seen";
 export type SideData = {
   open: number; // blockers still open across the sites (same count as the home page's chip)
   running: { id: string; label: string; domain: string; done: number; total: number }[];
-  finished: { id: string; label: string; score: number | null }[]; // closed in the last half hour and not opened yet: the card turns green before it goes
+  finished: { id: string; label: string; score: number | null; exPay: boolean }[]; // closed in the last half hour and not opened yet: the card turns green before it goes
   more: string[]; // finished and unopened beyond the cards shown: one « +N » line instead of a stack
 
-  sites: { key: string; label: string; domain: string; device: string; score: number | null }[]; // most recent activity first
+  sites: { key: string; label: string; domain: string; device: string; score: number | null; exPay: boolean }[]; // most recent activity first
   watch: { pages: number; next: string | null; soon: boolean }; // enabled automations, next page check (soon: within a day)
   credits: { used: number; included: number; renews: string };
 };
@@ -45,12 +45,12 @@ export async function loadSidebar(teamId: string): Promise<SideData> {
       total: a.runs.length,
     }));
   const fresh = audits.filter((a) => a.status === "done" && a.runs.length && a.finished_at && Date.now() - Date.parse(a.finished_at) < FRESH && !seen.has(a.id));
-  const finished = fresh.slice(0, Math.max(0, Math.min(GREEN, CARDS - running.length))).map((a) => ({ id: a.id, label: a.label, score: a.s.score }));
+  const finished = fresh.slice(0, Math.max(0, Math.min(GREEN, CARDS - running.length))).map((a) => ({ id: a.id, label: a.label, score: a.s.score, exPay: !!a.s.exPay }));
   const last = (s: (typeof sites)[number]) => s.audits[0]?.created_at ?? "";
   const recent = [...sites]
     .sort((x, y) => last(y).localeCompare(last(x)))
     .slice(0, SITES)
-    .map((s) => ({ key: s.key, label: s.label, domain: s.domain, device: s.device, score: s.latest?.s.score ?? null }));
+    .map((s) => ({ key: s.key, label: s.label, domain: s.domain, device: s.device, score: s.latest?.s.score ?? null, exPay: !!s.latest?.s.exPay }));
   const now = Date.now();
   const nexts = (autos ?? []).map((a) => (a.last_checked_at ? Math.max(now, Date.parse(a.last_checked_at) + (a.interval_hours ?? 24) * HOUR) : now));
   const next = nexts.length ? Math.min(...nexts) : null;

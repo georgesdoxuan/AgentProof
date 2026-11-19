@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 import { staffUser } from "@/lib/auth";
-import { db, paymentStages, paymentVerdicts } from "@/lib/engine";
+import { PAY_REACHED_BANK, db, payShown, paymentStages, paymentVerdicts } from "@/lib/engine";
 import { locale, tr } from "@/lib/i18n";
 import { getLang, getT } from "@/lib/lang";
 import { Chip, Chips, StatusBadge } from "@/lib/ui";
@@ -13,7 +13,7 @@ export async function generateMetadata() {
 }
 
 const tone = (v: string | null) =>
-  v === "bank_declined" || v === "payment_accepted" ? "text-pass" : v === "three_ds_timeout" || v === "inconclusive" ? "text-warn" : "text-fail";
+  PAY_REACHED_BANK.includes(v ?? "") ? "text-pass" : v === "inconclusive" ? "text-warn" : "text-fail";
 
 const input =
   "h-12 w-full rounded-[12px] border border-[#86868b] bg-tile px-4 text-[17px] placeholder:text-ink-2 transition-[border-color,box-shadow] duration-200 focus:border-blue focus:shadow-[0_0_0_4px_rgb(0_113_227/0.3)] focus:outline-none dark:border-line";
@@ -60,7 +60,8 @@ export default async function TestPaiement() {
         </form>
 
         <section className="mt-8 space-y-4">
-          {(runs ?? []).map((r: any) => {
+          {(runs ?? []).map((row: any) => {
+            const r = payShown(row);
             const a = r.agent_answer ?? {};
             return (
               <article key={r.id} className="tile grid gap-6 p-7! md:grid-cols-[1fr_17rem]">
@@ -82,7 +83,14 @@ export default async function TestPaiement() {
                       <p className="type-small text-ink-2">
                         3D Secure : {a.three_ds_seen ? t("demandé", "requested") : t("non", "no")} · {t("Prestataire", "Provider")} : {a.payment_provider || "?"} · {t("Moyens", "Methods")} : {a.payment_methods || "?"}
                       </p>
-                      {r.judge?.result && r.judge.result !== r.payment_verdict && (
+                      {r.payment_verdict === "three_ds_timeout" && r.judge?.result && r.judge.result !== r.payment_verdict ? (
+                        <p className="type-small text-ink-2">
+                          {r.judge.earlier_screenshot
+                            ? t("Juge visuel : page 3D Secure vue sur une capture précédente.", "Visual judge: 3D Secure page seen on an earlier screenshot.")
+                            : t("Juge visuel : il n’a vu que la dernière capture, prise après l’expiration du 3D Secure", "Visual judge: it only saw the last screenshot, taken after 3D Secure expired")}{" "}
+                          ({r.judge.reason})
+                        </p>
+                      ) : r.judge?.result && r.judge.result !== r.payment_verdict && (
                         <p className="type-small text-warn">
                           {t("Juge visuel en désaccord", "Visual judge disagrees")} : {PAYMENT_VERDICTS[r.judge.result] ?? r.judge.result}. {r.judge.reason}
                         </p>
