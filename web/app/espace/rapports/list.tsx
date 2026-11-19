@@ -156,7 +156,10 @@ function RowActions({ a, view, back, t }: { a: SpaceAudit; view: View; back: str
   );
 }
 
-export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
+// Search: site name, report name or domain, accents and case ignored.
+const fold = (x: string) => x.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: string; q?: string }) {
   const ctx = await teamContext();
   if (!ctx) redirect(`/connexion?next=${PATH[view]}`);
   if (!ctx.team) redirect("/espace");
@@ -171,7 +174,9 @@ export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
   const scoped = view === "trash" ? trash : view === "favorites" ? audits.filter((a) => a.favorite) : audits;
   const status = view !== "trash" && STATUS.includes(vue as (typeof STATUS)[number]) ? (vue as (typeof STATUS)[number]) : "tous";
   const running = scoped.filter((a) => a.status !== "done");
-  const shown = status === "en-cours" ? running : status === "termines" ? scoped.filter((a) => a.status === "done") : scoped;
+  const query = fold(q.trim().slice(0, 80));
+  const byStatus = status === "en-cours" ? running : status === "termines" ? scoped.filter((a) => a.status === "done") : scoped;
+  const shown = query ? byStatus.filter((a) => fold(`${a.label ?? ""} ${a.title ?? ""} ${a.sites?.domain ?? ""}`).includes(query)) : byStatus;
   const back = status === "tous" ? PATH[view] : `${PATH[view]}?vue=${status}`;
 
   const intro =
@@ -349,6 +354,19 @@ export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
                 </label>
               ))}
             </fieldset>
+          )}
+          {view !== "trash" && scoped.length > 1 && (
+            <form method="get" action={PATH[view]} role="search" className="w-full">
+              {status !== "tous" && <input type="hidden" name="vue" value={status} />}
+              <input
+                type="search"
+                name="q"
+                defaultValue={q}
+                placeholder={lang === "en" ? "Search a site or a report" : "Chercher un site ou un rapport"}
+                aria-label={lang === "en" ? "Search reports" : "Chercher dans les rapports"}
+                className="h-10 w-full rounded-[10px] bg-tile px-3.5 text-[15px] outline-none ring-blue focus-visible:ring-2 dark:bg-[#2c2c2e]"
+              />
+            </form>
           )}
           </>}
           list={shown.length ? <div className="rounded-[18px] bg-tile">{shown.map((a) => row(a, true))}</div> : empty}

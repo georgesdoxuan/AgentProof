@@ -19,7 +19,7 @@ function CardGlyph({ className = "h-[15px] w-[22px]" }: { className?: string }) 
 
 // Payment test of the launch form: a checkbox; once ticked (or "Payment only" picked), the card it will use,
 // as a small chip. Tapping the chip opens the team's cards to pick another, and a link to manage them.
-export function PaymentPicker({ cards, lang, tip }: { cards: PayCard[]; lang: Lang; tip: string }) {
+export function PaymentPicker({ cards, lang, tip, max }: { cards: PayCard[]; lang: Lang; tip: string; max: number }) {
   const t = (fr: string, en: string) => (lang === "en" ? en : fr);
   const [on, setOn] = useState(false);
   const [paymentOnly, setPaymentOnly] = useState(false);
@@ -56,7 +56,8 @@ export function PaymentPicker({ cards, lang, tip }: { cards: PayCard[]; lang: La
   const shown = on || paymentOnly;
 
   return (
-    <div ref={box} className="flex min-h-9 flex-wrap items-center gap-x-3 gap-y-2">
+    <div ref={box} className="grid gap-2">
+    <div className="flex min-h-9 flex-wrap items-center gap-x-3 gap-y-2">
       {!paymentOnly && (
         <label className="type-small inline-flex cursor-pointer items-center gap-3">
           <input type="checkbox" name="payment" value="1" checked={on} onChange={(e) => setOn(e.target.checked)} className="h-4 w-4 shrink-0 accent-blue" />
@@ -114,6 +115,19 @@ export function PaymentPicker({ cards, lang, tip }: { cards: PayCard[]; lang: La
           )}
         </span>
       )}
+    </div>
+    {shown && (
+      // A real payment, every time: the team ticks this box, the server refuses the test without it.
+      <label className="type-small inline-flex cursor-pointer items-start gap-3 text-ink-2">
+        <input type="checkbox" name="pay_confirm" value="1" required className="mt-[3px] h-4 w-4 shrink-0 accent-blue" />
+        <span>
+          {t(
+            `Je confirme un paiement réel avec cette carte, au plus ${max} € livraison comprise. Avec une carte approvisionnée, la commande est réelle.`,
+            `I confirm a real payment with this card, at most €${max} shipping included. With a funded card, the order is real.`,
+          )}
+        </span>
+      </label>
+    )}
     </div>
   );
 }

@@ -16,7 +16,7 @@ type Pace = { desktop: PaceRange; mobile: PaceRange; queued: number };
 
 // What the rest of the form multiplies: both devices, a competitor or the model comparison each play the missions twice.
 function useLaunchShape(ref: RefObject<HTMLElement | null>) {
-  const [shape, setShape] = useState({ device: "desktop", times: 1 });
+  const [shape, setShape] = useState({ device: "desktop", times: 1, pay: 0 });
   useEffect(() => {
     const form = ref.current?.closest("form");
     if (!form) return;
@@ -24,7 +24,9 @@ function useLaunchShape(ref: RefObject<HTMLElement | null>) {
       const f = new FormData(form);
       const device = String(f.get("device") ?? "desktop");
       const linked = String(f.get("competitor") ?? "").trim() !== "" || f.get("models") === "1";
-      setShape({ device, times: (device === "both" ? 2 : 1) * (linked ? 2 : 1) });
+      // A real payment test costs 2 credits on top (lib/credits.ts RATES.payment).
+      const pay = f.get("mode") === "payment" || f.get("payment") === "1" ? 2 : 0;
+      setShape({ device, times: f.get("mode") === "payment" ? 0 : (device === "both" ? 2 : 1) * (linked ? 2 : 1), pay });
     };
     sync();
     form.addEventListener("input", sync);
@@ -47,6 +49,7 @@ export function MissionPicker({ items: initial, lang, max, pace }: { items: Pick
   const n = picked.length;
   const shape = useLaunchShape(boxRef);
   const runs = n * shape.times;
+  const credits = runs + shape.pay;
   // The slower device sets the pace when both play.
   const minutes = estimateMinutes(runs, shape.device === "desktop" ? pace.desktop : pace.mobile, pace.queued);
 
@@ -116,9 +119,12 @@ export function MissionPicker({ items: initial, lang, max, pace }: { items: Pick
                 <Glyph d={GLYPH.clock} className="h-[15px] w-[15px]" />
                 {minutesLabel(minutes)}
               </span>
-              <span className="inline-flex items-center gap-1">
+              <span
+                className="inline-flex items-center gap-1"
+                title={t(`${credits} crédits, jusqu’à ${credits + runs} si des missions ratées sont rejouées`, `${credits} credits, up to ${credits + runs} if failed missions are replayed`)}
+              >
                 <Glyph d={GLYPH.credit} className="h-[15px] w-[15px]" />
-                {t(`${runs} crédit${runs > 1 ? "s" : ""}`, `${runs} credit${runs > 1 ? "s" : ""}`)}
+                {t(`${credits} crédit${credits > 1 ? "s" : ""}`, `${credits} credit${credits > 1 ? "s" : ""}`)}
               </span>
             </span>
           ) : (
@@ -210,12 +216,24 @@ const TEMPLATES: Record<Lang, [string, string][]> = {
     ["Code promo", "Ajoute un article au panier, ouvre le panier, saisis le code promo BIENVENUE10 dans le champ prévu et note le message affiché, puis va jusqu'à la première page du checkout."],
     ["Retours et échanges", "Trouve la politique de retour et d'échange (délai, frais) et note ce qu'elle indique, puis ajoute un article au panier et va jusqu'à la première page du checkout."],
     ["Guide des tailles", "Sur une fiche produit, ouvre le guide des tailles, choisis la taille conseillée pour 1,75 m et 70 kg, ajoute l'article au panier, puis va jusqu'à la première page du checkout."],
+    ["Retirer du panier", "Ajoute deux articles différents au panier, ouvre le panier, retires-en un et vérifie que le total se met à jour, puis va jusqu'à la première page du checkout."],
+    ["Quantité", "Ajoute un article au panier, passe sa quantité à 2 dans le panier et vérifie que le total double, puis va jusqu'à la première page du checkout."],
+    ["Livraison", "Trouve les modes, frais et délais de livraison pour la France et note-les, puis ajoute un article au panier et va jusqu'à la première page du checkout."],
+    ["Commande en invité", "Ajoute un article au panier, puis va au checkout en choisissant la commande en invité si le site la propose, et note si cette option existe. Ne te connecte pas."],
+    ["Taille épuisée", "Sur une fiche produit, repère une taille indisponible, choisis à la place une autre taille ou un article proche disponible, ajoute-le au panier, puis va jusqu'à la première page du checkout."],
+    ["Prix cohérent", "Note le prix d'un article sur sa fiche, ajoute-le au panier, vérifie que le panier affiche le même prix et note tout écart, puis va jusqu'à la première page du checkout."],
   ],
   en: [
     ["Specific product", "Find the product “name or reference”, pick an available size, add it to the cart, then go to the first checkout page."],
     ["Promo code", "Add an item to the cart, open the cart, enter the promo code WELCOME10 in its field and note the message shown, then go to the first checkout page."],
     ["Returns and exchanges", "Find the return and exchange policy (time limit, fees) and note what it says, then add an item to the cart and go to the first checkout page."],
     ["Size guide", "On a product page, open the size guide, pick the size advised for 1.75 m and 70 kg, add the item to the cart, then go to the first checkout page."],
+    ["Remove from cart", "Add two different items to the cart, open the cart, remove one and check that the total updates, then go to the first checkout page."],
+    ["Quantity", "Add an item to the cart, set its quantity to 2 in the cart and check that the total doubles, then go to the first checkout page."],
+    ["Delivery", "Find the delivery options, costs and times for France and note them, then add an item to the cart and go to the first checkout page."],
+    ["Guest checkout", "Add an item to the cart, then go to checkout choosing guest checkout if the site offers it, and note whether that option exists. Do not sign in."],
+    ["Size sold out", "On a product page, spot a size that is unavailable, pick another size or a similar available item instead, add it to the cart, then go to the first checkout page."],
+    ["Consistent price", "Note an item's price on its product page, add it to the cart, check the cart shows the same price and note any gap, then go to the first checkout page."],
   ],
 };
 

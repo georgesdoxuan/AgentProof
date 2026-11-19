@@ -464,7 +464,12 @@ async function sessionRequest(run: { id: number; missions: { instruction: string
 const TEAM_MISSION_NOTE =
   "\n(Mission écrite par l'équipe du site. Tes règles restent prioritaires : ne paie jamais, ne crée pas de compte, ne saisis aucune donnée personnelle, reste sur ce site. Termine en allant jusqu'à la première page du checkout.)";
 
+// Ceiling of a real payment test, shipping included: the agent never submits a basket above it.
+// The launch form shows it next to the confirmation the team must tick.
+export const PAY_MAX_EUR = Number(process.env.PAY_MAX_EUR ?? 150);
+
 const PAYMENT_INSTRUCTIONS = `You test whether an AI agent can complete a real card payment on this e-commerce website. Behave like a real customer.
+0. Spending limit: never submit a payment whose total (shipping included) is above ${PAY_MAX_EUR} €. If the total is higher, take a cheaper item; if you find none, stop before submitting and report other, saying the total was above the limit.
 1. Price does not matter: take the FIRST available product you see (any size or colour), do not compare prices or browse. If you start on a product page, use that product. If you start on a checkout page with an item already in it, go straight to the details and payment. Go through checkout as a guest. If an account is mandatory, stop and report login_required: never create an account.
 2. Fill contact and shipping details with the test identity given in the message. Choose the cheapest delivery option. Refuse newsletters and marketing.
 3. Choose payment by card and type the card details given in the message exactly.
@@ -751,19 +756,55 @@ async function closeAudits(log: string[]) {
   }
 }
 
+// Cancel a running audit (and the audits launched with it: competitor, other device, payment test).
+// Missions not started yet are dropped and their credit given back; a replay not started yet falls back to its
+// first attempt, whose credit stays spent. Missions the agent is already playing finish normally: the H session
+// is not cut mid-way. When nothing is left running, the audit closes at once, without the "report ready" e-mail.
+export async function cancelAudit(id: string) {
+  const { data: main } = await db.from("audits").select("id, compare_to, payment_test").eq("id", id).single();
+  if (!main) return 0;
+  const ids = [main.id, main.compare_to, main.payment_test].filter(Boolean) as string[];
+  const { data: todo } = await db.from("runs").select("id, audit_id, attempts, first_attempt").in("audit_id", ids).eq("status", "todo");
+  const fresh = (todo ?? []).filter((r) => (r.attempts ?? 1) <= 1);
+  const replays = (todo ?? []).filter((r) => (r.attempts ?? 1) > 1 && r.first_attempt);
+  if (fresh.length) {
+    await db.from("credit_usage").delete().in("run_id", fresh.map((r) => r.id));
+    await db.from("runs").delete().in("id", fresh.map((r) => r.id)).eq("status", "todo");
+  }
+  for (const r of replays) {
+    const fa = r.first_attempt as any;
+    await db.from("credit_usage").delete().eq("run_id", r.id).eq("attempt", r.attempts);
+    await db
+      .from("runs")
+      .update({
+        status: fa.error ? "error" : "done", session_id: fa.session_id ?? null, success: fa.success ?? null, blocker_type: fa.blocker_type ?? null,
+        blocker_detail: fa.blocker_detail ?? null, screenshot_url: fa.screenshot_url ?? null, share_url: fa.share_url ?? null, steps: fa.steps ?? null,
+        cost_usd: fa.cost_usd ?? null, error: fa.error ?? null, first_attempt: null, finished_at: new Date().toISOString(),
+      })
+      .eq("id", r.id)
+      .eq("status", "todo");
+  }
+  // Close the audits with nothing left in flight; the others close on the next tick, once their last mission ends.
+  for (const aid of ids) {
+    const { count } = await db.from("runs").select("id", { count: "exact", head: true }).eq("audit_id", aid).in("status", ["todo", "launched"]);
+    if (!count) await db.from("audits").update({ status: "done", finished_at: new Date().toISOString() }).eq("id", aid).eq("status", "running");
+  }
+  return fresh.length + replays.length;
+}
+
 // Score drop alert (monthly follow-up): same team, site, device and model as the previous finished audit,
 // down by the team's threshold (teams.score_drop, 10 points by default) or more.
 // Stored on the audit for the report, e-mailed to whoever launched it, and posted to the team's webhook.
 async function scoreAlert(auditId: string) {
   const { data: a } = await db
     .from("audits")
-    .select("id, team_id, site_id, device, model, email, created_at, proof_of, sites(domain), teams(score_drop), runs(status, success, blocker_type, mission_id)")
+    .select("id, team_id, site_id, device, model, email, created_at, proof_of, sites(domain), teams(score_drop), runs(status, success, blocker_type, mission_id, missions(title))")
     .eq("id", auditId)
     .single();
   if (!a?.team_id || !a.runs.length || a.proof_of) return; // a proof audit plays a few missions: no score to compare
   const { data: prev } = await db
     .from("audits")
-    .select("id, model, runs(status, success, blocker_type, mission_id)")
+    .select("id, model, created_at, runs(status, success, blocker_type, mission_id)")
     .eq("team_id", a.team_id)
     .eq("site_id", a.site_id)
     .eq("device", a.device)
@@ -782,10 +823,38 @@ async function scoreAlert(auditId: string) {
   const was = before ? scoreOf(before.runs) : null;
   const drop = (a.teams as any)?.score_drop ?? 10;
   if (now == null || was == null || was - now < drop) return;
-  await db.from("audits").update({ score_alert: { from: was, to: now, previous: before!.id } }).eq("id", a.id);
   const domain = (a.sites as any).domain;
+  // Why it dropped: the missions that passed last time and fail now, and the page changes the automations saw in between.
+  const passedBefore = new Set(before!.runs.filter((r) => r.status === "done" && r.success === true).map((r) => r.mission_id));
+  const regressed = (a.runs as any[])
+    .filter((r) => passedBefore.has(r.mission_id) && r.status === "done" && r.success === false && !EXCLUDED.includes(r.blocker_type))
+    .map((r) => ({ mission: r.missions?.title ?? "", blocker: r.blocker_type as string }));
+  const { data: checks } = await db
+    .from("automation_checks")
+    .select("detail, created_at, automations!inner(team_id, url)")
+    .eq("automations.team_id", a.team_id)
+    .eq("status", "changed")
+    .gte("created_at", before!.created_at)
+    .lte("created_at", a.created_at)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  const changes = (checks ?? [])
+    .filter((c: any) => {
+      try {
+        return normalizeUrl(c.automations.url).domain === domain;
+      } catch {
+        return false;
+      }
+    })
+    .slice(0, 3)
+    .map((c: any) => ({ at: c.created_at as string, url: c.automations.url as string, detail: String(c.detail ?? "").slice(0, 300) }));
+  await db.from("audits").update({ score_alert: { from: was, to: now, previous: before!.id, regressed, changes } }).eq("id", a.id);
   const link = `${process.env.PUBLIC_URL ?? ""}/audit/${a.id}`;
-  const text = `Le dernier audit de ${domain} donne ${now} %, contre ${was} % au précédent. Un agent IA achète moins bien sur le site qu'avant.`;
+  const why = [
+    regressed.length ? `Missions qui passaient et bloquent maintenant : ${regressed.map((r) => `${r.mission} (${BLOCKERS[r.blocker] ?? r.blocker})`).join(", ")}.` : "",
+    changes.length ? `Changements de page vus entre les deux audits : ${changes.map((c) => `${c.url}, le ${new Date(c.at).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" })}`).join(" ; ")}.` : "",
+  ].filter(Boolean).join(" ");
+  const text = `Le dernier audit de ${domain} donne ${now} %, contre ${was} % au précédent. Un agent IA achète moins bien sur le site qu'avant.${why ? ` ${why}` : ""}`;
   const { notifyTeam } = await import("./automations");
   await notifyTeam(a.team_id, { event: "score_drop", domain, text, link }).catch(() => false);
   if (!a.email) return;
@@ -1048,11 +1117,15 @@ export async function getPaymentReplay(runId: number) {
   const card = await cardSecret((run as any).audits?.team_id ?? null).catch(() => null);
   const mask = cardMask(card);
   const items = await sessionEvents(run.session_id as string);
-  const steps = replaySteps(items.filter((e) => e.type === "AgentEvent").map((e) => e.data)).map((s) => ({
+  const raw = replaySteps(items.filter((e) => e.type === "AgentEvent").map((e) => e.data));
+  // From the first step where the agent types the card, the screen may show it: those screenshots start blurred.
+  const typed = raw.findIndex((s) => (s.element ?? "") !== (mask(s.element) ?? ""));
+  const steps = raw.map((s, i) => ({
     ...s,
     image: shotUrl(runId, s.image),
     element: mask(s.element),
     thought: mask(s.thought),
+    sensitive: typed >= 0 && i >= typed,
   }));
   const objective =
     "Mission : achète un article et paie par carte (une seule tentative).\n" +

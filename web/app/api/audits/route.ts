@@ -72,6 +72,8 @@ export async function POST(req: Request) {
     // Real payment test: the team's own card, on the main site only (never the competitor), always a fresh audit.
     const paymentOnly = form.get("mode") === "payment";
     const payment = paymentOnly || form.get("payment") === "1";
+    // A real payment needs the team's explicit yes, every time: the form's confirmation box, never a default.
+    if (payment && form.get("pay_confirm") !== "1") return retry(req, form, "confirmation");
     if (payment && !(await cardSecret(ctx.team.id))) return retry(req, form, "carte");
 
     // The missions picked on the launch form (JSON). Absent (no JavaScript, home form): the first default missions.

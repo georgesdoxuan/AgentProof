@@ -7,6 +7,7 @@ export async function generateMetadata() {
 }
 
 // Rapports › Tous: every active audit of the team, newest first.
-export default async function Rapports({ searchParams }: { searchParams: Promise<{ vue?: string }> }) {
-  return <ReportsList view="all" vue={(await searchParams).vue} />;
+export default async function Rapports({ searchParams }: { searchParams: Promise<{ vue?: string; q?: string }> }) {
+  const { vue, q } = await searchParams;
+  return <ReportsList view="all" vue={vue} q={q} />;
 }

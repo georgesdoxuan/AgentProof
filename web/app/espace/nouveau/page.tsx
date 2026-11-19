@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { cardView } from "@/lib/cards";
 import { loadCredits } from "@/lib/credits";
-import { COMPARE_MODEL, DEFAULT_MODEL } from "@/lib/engine";
+import { COMPARE_MODEL, DEFAULT_MODEL, PAY_MAX_EUR } from "@/lib/engine";
 import { Field, Group, Note, Segmented } from "@/lib/ui";
 import { Hint } from "@/lib/hint";
 import { getLang, getT } from "@/lib/lang";
@@ -25,6 +25,7 @@ const REFUSED: Record<string, [string, string]> = {
   email: ["L'e-mail du rapport n'est pas valide. Corrige-le, ou laisse le champ vide pour recevoir le rapport à ton adresse de connexion.", "The report e-mail is not valid. Fix it, or leave it empty to get the report at your sign-in address."],
   combo: ["Ordinateur + Mobile, concurrent et comparaison des agents ne se combinent pas : garde une seule de ces options.", "Desktop + Mobile, competitor and agent comparison do not combine: keep only one of these options."],
   carte: ["Aucune carte utilisable pour le test de paiement. Ajoute-la dans Paiement, ou lance un audit complet sans paiement.", "No usable card for the payment test. Add one in Payment method, or run a full audit without payment."],
+  confirmation: ["Le test de paiement demande ta confirmation : coche la case « Je confirme un paiement réel » sous la carte, puis relance.", "The payment test needs your confirmation: tick “I confirm a real payment” under the card, then run again."],
   heure: ["Trop d'audits lancés depuis ta connexion en une heure. Réessaie dans une heure : tes rapports en cours continuent.", "Too many audits started from your connection in one hour. Try again in an hour: your running reports carry on."],
   file: ["Beaucoup d'audits sont en cours en ce moment. Réessaie dans quelques minutes : rien n'a été lancé ni décompté.", "Many audits are running right now. Try again in a few minutes: nothing was started or counted."],
   missions: ["La sélection de missions n'est plus valable (une mission a pu être modifiée). Vérifie-la puis relance.", "The mission selection is no longer valid (a mission may have changed). Check it, then run again."],
@@ -150,6 +151,7 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
             {card && !card.missing && (
               <PaymentPicker
                 lang={lang}
+                max={PAY_MAX_EUR}
                 cards={[{ id: "team", label: card.label, last4: card.last4 }]}
                 tip={t(
                   "L’agent part au plus près du checkout, prend le premier article disponible et paie une fois avec cette carte. Avec une carte approvisionnée, la commande est réelle. Jamais sur le concurrent.",

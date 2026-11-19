@@ -144,7 +144,18 @@ export async function checkAutomation(a: Automation) {
       : null;
   await db.from("automations").update({ signature: sig, ...(auditId ? { last_auto_audit_at: new Date().toISOString() } : {}) }).eq("id", a.id);
   const note = a.mode === "audit" && auditToday ? " (audit déjà relancé aujourd'hui)" : "";
-  await db.from("automation_checks").insert({ automation_id: a.id, status: "changed", detail: `${detail}${note}`.slice(0, 1000), audit_id: auditId });
+  // Same change already announced in the last 24 h (a page flipping back and forth, an A/B test): log it, alert once.
+  const { data: last } = await db
+    .from("automation_checks")
+    .select("detail")
+    .eq("automation_id", a.id)
+    .eq("status", "changed")
+    .gte("created_at", new Date(Date.now() - DAY).toISOString())
+    .order("created_at", { ascending: false })
+    .limit(5);
+  const repeat = !auditId && (last ?? []).some((c) => String(c.detail ?? "").startsWith(detail));
+  await db.from("automation_checks").insert({ automation_id: a.id, status: "changed", detail: `${detail}${note}${repeat ? " (déjà signalé dans les 24 h)" : ""}`.slice(0, 1000), audit_id: auditId });
+  if (repeat) return "changed";
   await notifyTeam(a.team_id, {
     event: "page_changed",
     domain: normalizeUrl(a.url).domain,

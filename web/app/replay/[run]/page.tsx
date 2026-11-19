@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { db, getPaymentReplay, getReplay, paymentVerdicts } from "@/lib/engine";
+import { BlurredShot } from "./blurred";
 import { canSeePayment } from "@/lib/auth";
 import { AutoRefresh } from "@/app/audit/[id]/refresh";
 import { AgentCursor, BrowserFrame, Chevron, StatusGlyph, Verdict, blockerLabel } from "@/lib/ui";
@@ -109,7 +110,7 @@ export default async function Replay({ params, searchParams }: { params: Promise
             <p className="type-small mt-4 max-w-[760px] text-ink-2">
               {shotsGone
                 ? t("Les captures ont été effacées 4 h après le test pour protéger la carte. Les actions et le raisonnement de l’agent restent, numéro de carte masqué.", "Screenshots were deleted 4 hours after the test to protect the card. The agent's actions and reasoning remain, card number masked.")
-                : t("Replay privé, visible seulement par ton équipe. Numéro de carte, expiration et CVC sont masqués dans le texte. Les captures sont effacées 4 h après le test.", "Private replay, only your team can see it. Card number, expiry and CVC are masked in the text. Screenshots are deleted 4 hours after the test.")}
+                : t("Replay privé, visible seulement par ton équipe. Numéro de carte, expiration et CVC sont masqués dans le texte, et les captures sont floutées dès que l’agent tape la carte. Elles sont effacées 4 h après le test.", "Private replay, only your team can see it. Card number, expiry and CVC are masked in the text, and screenshots are blurred from the moment the agent types the card. They are deleted 4 hours after the test.")}
             </p>
           )}
           {!payment && r.success !== null && <Verdict success={!!r.success} label={r.success ? undefined : blockerLabel(r.blocker_type, lang)} className="mt-5" />}
@@ -130,8 +131,12 @@ export default async function Replay({ params, searchParams }: { params: Promise
                 {shotsGone ? (
                   <div className="type-small grid aspect-[16/10] place-items-center bg-bg-2 text-ink-2 dark:bg-[#2c2c2e]">{t("Capture effacée", "Screenshot deleted")}</div>
                 ) : (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={s.image} alt={`${t("Étape", "Step")} ${i + 1} : ${s.url}`} className="block w-full" loading={live && i === last ? "eager" : "lazy"} />
+                  "sensitive" in s && s.sensitive ? (
+                    <BlurredShot src={s.image} alt={`${t("Étape", "Step")} ${i + 1} : ${s.url}`} lang={lang} eager={live && i === last} />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={s.image} alt={`${t("Étape", "Step")} ${i + 1} : ${s.url}`} className="block w-full" loading={live && i === last ? "eager" : "lazy"} />
+                  )
                 )}
                 {!shotsGone && s.x != null && s.y != null && <AgentCursor x={s.x} y={s.y} />}
               </BrowserFrame>
