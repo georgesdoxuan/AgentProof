@@ -9,6 +9,7 @@ import { Chevron, DeviceTag, Field, Group, MissionBar, MissionLegend, Row, Spinn
 import { AutoRefresh } from "../audit/[id]/refresh";
 import { SpaceShell } from "./shell";
 import { BlockerItem, Delta, sitePath } from "./parts";
+import { SiteLogo } from "../site-logo";
 
 export async function generateMetadata() {
   return { title: `${(await getDict()).space.sections["/espace"]} · AgentProof` };
@@ -131,9 +132,12 @@ export default async function Accueil() {
               return (
                 <Link key={s.key} href={sitePath(s)} className="tile flex flex-col gap-3 rounded-[20px]! p-5! transition-colors duration-200 hover:bg-tile/80">
                   <span className="flex items-baseline justify-between gap-3">
-                    <span className="min-w-0">
-                      <span className="block truncate font-semibold">{s.domain}</span>
-                      <span className="type-caption block text-ink-2"><DeviceTag device={s.device} lang={lang} /></span>
+                    <span className="flex min-w-0 items-center gap-3">
+                      <SiteLogo domain={s.domain} name={s.domain} />
+                      <span className="min-w-0">
+                        <span className="block truncate font-semibold">{s.domain}</span>
+                        <span className="type-caption block text-ink-2"><DeviceTag device={s.device} lang={lang} /></span>
+                      </span>
                     </span>
                     <Delta site={s} />
                   </span>
@@ -160,10 +164,13 @@ export default async function Accueil() {
           {running.map((a) => (
             <Link key={a.id} href={`/audit/${a.id}`} className="block border-b border-hairline last:border-0 hover:bg-bg-2/60">
               <div className="grid min-h-[68px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-5 px-5 py-3 sm:grid-cols-[minmax(0,1fr)_10rem_7rem_1rem]">
-                <span className="min-w-0">
-                  <span className="block truncate font-semibold">{a.sites?.domain}</span>
-                  <span className="type-small text-ink-2">
-                    <DeviceTag device={a.device} lang={lang} /> · {t("lancé", "started")} {shortDate(a.created_at, lang)}
+                <span className="flex min-w-0 items-center gap-3">
+                  <SiteLogo domain={a.sites?.domain} name={a.sites?.domain} />
+                  <span className="min-w-0">
+                    <span className="block truncate font-semibold">{a.sites?.domain}</span>
+                    <span className="type-small text-ink-2">
+                      <DeviceTag device={a.device} lang={lang} /> · {t("lancé", "started")} {shortDate(a.created_at, lang)}
+                    </span>
                   </span>
                 </span>
                 <span className="hidden sm:block">

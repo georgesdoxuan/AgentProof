@@ -3,6 +3,7 @@ import { after } from "next/server";
 import { COMPARE_MODEL, DEFAULT_MODEL, attachEmail, auditsFromIp, createAudit, createPaymentTest, db, normalizeUrl, recentAudit, tick } from "@/lib/engine";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { cardSecret } from "@/lib/cards";
+import { refreshLogo } from "@/lib/logo";
 import { msg } from "@/lib/lang";
 
 const FORM_MISSIONS = Number(process.env.FORM_MISSIONS ?? 5); // 3 on demo day: one mission per free H slot
@@ -80,6 +81,8 @@ export async function POST(req: Request) {
     const id = await createAudit(url, { device, missions: paymentOnly ? 0 : FORM_MISSIONS, compareTo, paymentTest, model: models ? DEFAULT_MODEL : model, email: email || undefined, ipHash, ...team });
     // Launch the first missions now instead of waiting up to a minute for the cron.
     after(() => tick(0).catch(() => {}));
+    // Site logos, fetched once and cached (sites.logo_url): new sites get theirs before anyone opens the report.
+    after(() => Promise.all(domains.map((d) => refreshLogo(d).catch(() => null))));
     return Response.redirect(new URL(`/audit/${id}`, req.url), 303);
   } catch (e) {
     return fail(`${await msg("Erreur", "Error")} : ${(e as Error).message}`);

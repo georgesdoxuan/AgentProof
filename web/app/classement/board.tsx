@@ -3,6 +3,7 @@ import { EXCLUDED, db } from "@/lib/engine";
 import { BlockerIcon, DeviceTag, MissionBar, StatusGlyph, ToneLabel, blockerLabel, hurdles, scoreTone } from "@/lib/ui";
 import { tr } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
+import { SiteLogo } from "../site-logo";
 
 const COLS = "md:grid-cols-[1.75rem_minmax(0,1.5fr)_10.5rem_minmax(0,1.2fr)_minmax(0,1.3fr)_4.5rem]";
 
@@ -73,10 +74,13 @@ export async function Leaderboard({ device = "desktop", base }: { device?: Devic
                       className={`grid grid-cols-[1.75rem_1fr_auto] items-center gap-x-4 gap-y-2 px-6 py-5 transition-colors duration-200 hover:bg-bg-2/60 max-[734px]:px-5 ${COLS}`}
                     >
                       <span className="text-ink-2 tnum">{i + 1}</span>
-                      <span className="min-w-0">
-                        <span className="type-headline block truncate">{s.name}</span>
-                        <span className="type-small text-ink-2">
-                          <DeviceTag device={s.device} lang={lang} /> · {s.passes} audit{s.passes > 1 ? "s" : ""}, {s.runs_done} missions
+                      <span className="flex min-w-0 items-center gap-3">
+                        <SiteLogo domain={s.domain} name={s.name} />
+                        <span className="min-w-0">
+                          <span className="type-headline block truncate">{s.name}</span>
+                          <span className="type-small text-ink-2">
+                            <DeviceTag device={s.device} lang={lang} /> · {s.passes} audit{s.passes > 1 ? "s" : ""}, {s.runs_done} missions
+                          </span>
                         </span>
                       </span>
                       <span className="flex items-center justify-end gap-2 text-[21px] font-semibold tracking-[0.011em] tnum md:order-last">

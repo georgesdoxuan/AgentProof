@@ -7,6 +7,7 @@ import { tr, type Lang, type T } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 import { byRank } from "../classement/board";
 import { LEGAL } from "@/lib/legal";
+import { SiteLogo } from "../site-logo";
 
 // Report opened by "Voir un exemple de rapport": real counted blockers, captures, replays and a plan. Env var to swap it without code.
 const EXAMPLE_AUDIT = process.env.EXAMPLE_AUDIT_ID ?? "8c843d3f-3d95-4834-aace-21880a85f499"; // Promod, 78 %
@@ -255,7 +256,10 @@ export default async function Home() {
                     className="grid grid-cols-[1.75rem_1fr_auto] items-center gap-x-4 px-6 py-5 transition-colors duration-200 hover:bg-bg-2/60 max-[734px]:px-5 sm:grid-cols-[1.75rem_1fr_12rem_5.5rem]"
                   >
                     <span className="text-ink-2 tnum">{i + 1}</span>
-                    <span className="type-headline truncate">{s.name}</span>
+                    <span className="flex min-w-0 items-center gap-3">
+                      <SiteLogo domain={s.domain} name={s.name} />
+                      <span className="type-headline truncate">{s.name}</span>
+                    </span>
                     <span className="hidden sm:block">
                       <MissionBar ok={s.runs_success ?? 0} done={s.runs_scored ?? 0} total={s.runs_scored ?? 0} size="sm" />
                     </span>

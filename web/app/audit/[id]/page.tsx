@@ -28,6 +28,7 @@ function accessText(a: AgentAccess, t: T) {
     : t("Il navigue avec Chrome, comme l'agent AgentProof : le résultat des missions vaut aussi pour lui.", "It browses with Chrome, like the AgentProof agent: the missions' result applies to it too.");
 }
 import { fixHints } from "@/lib/space";
+import { SiteLogo } from "../../site-logo";
 
 // Agent cost in the reader's format: "0,061 $" in French, "$0.061" in English.
 const usd = (n: number, digits: number, lang: Lang) => (lang === "en" ? `$${n.toFixed(digits)}` : `${n.toFixed(digits).replace(".", ",")} $`);
@@ -144,7 +145,10 @@ function PrintCover(p: {
       </header>
 
       <div>
-        <h1 className="text-[40pt] font-semibold leading-[1.05] tracking-[-0.02em] [text-wrap:balance]">{p.site.name}</h1>
+        <h1 className="flex items-center gap-[5mm] text-[40pt] font-semibold leading-[1.05] tracking-[-0.02em] [text-wrap:balance]">
+          <SiteLogo domain={p.site.domain} name={p.site.name} size="lg" eager />
+          {p.site.name}
+        </h1>
         <p className="mt-2 text-[13pt] text-link">{p.site.domain}</p>
 
         <div className="mt-[14mm] flex items-end justify-between gap-8 border-t-[1.5pt] border-ink pt-[6mm]">
@@ -275,13 +279,16 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
               <div className="mt-8 space-y-6">
                 {(
                   [
-                    [modelCompare ? audit.model ?? DEFAULT_MODEL : audit.sites.name, s, true, perMission(runs)],
-                    [modelCompare ? competitor.model ?? DEFAULT_MODEL : competitor.sites.name, c, false, perMission(competitor.runs)],
+                    [modelCompare ? audit.model ?? DEFAULT_MODEL : audit.sites.name, s, true, perMission(runs), modelCompare ? null : audit.sites.domain],
+                    [modelCompare ? competitor.model ?? DEFAULT_MODEL : competitor.sites.name, c, false, perMission(competitor.runs), modelCompare ? null : competitor.sites.domain],
                   ] as const
-                ).map(([name, x, self, pm]) => (
+                ).map(([name, x, self, pm, domain]) => (
                   <div key={name} className="space-y-2.5">
                     <div className="flex items-baseline justify-between gap-3">
-                      <span className={`truncate ${self ? "font-semibold" : "text-ink-2"}`}>{name}</span>
+                      <span className={`flex min-w-0 items-center gap-2.5 ${self ? "font-semibold" : "text-ink-2"}`}>
+                        {domain && <SiteLogo domain={domain} name={name} size="sm" />}
+                        <span className="truncate">{name}</span>
+                      </span>
                       <span className="text-[21px] font-semibold tnum">{x.score ?? "—"} %</span>
                     </div>
                     <MissionBar ok={x.ok} done={x.done} total={x.total} />
@@ -335,7 +342,10 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
           )}
           <p className="type-eyebrow text-ink-2">{paymentOnly ? t("Test de paiement", "Payment test") : t("Rapport d\u2019audit", "Audit report")} · <DeviceTag device={audit.device} lang={lang} />
           </p>
-          <h1 className="type-h1 mt-3 break-words">{audit.title || audit.sites.name}</h1>
+          <h1 className="type-h1 mt-3 flex items-center gap-4 break-words">
+            <SiteLogo domain={audit.sites.domain} name={audit.sites.name} size="lg" eager />
+            <span className="min-w-0">{audit.title || audit.sites.name}</span>
+          </h1>
           <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-ink-2">
             <a href={audit.sites.url} className="text-link hover:underline" target="_blank" rel="noreferrer">
               {audit.sites.url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}

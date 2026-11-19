@@ -5,6 +5,7 @@ import { Field, Group, Row } from "@/lib/ui";
 import { getT } from "@/lib/lang";
 import { ConfirmButton } from "../controls";
 import { SpaceShell } from "../shell";
+import { SiteLogo } from "../../site-logo";
 
 export async function generateMetadata() {
   const t = await getT();
@@ -40,7 +41,10 @@ export default async function Comptes() {
         >
           {logins.map((l) => (
             <Row key={l.id}>
-              <span className="type-headline">{l.sites.domain}</span>
+              <span className="type-headline flex items-center gap-3">
+                <SiteLogo domain={l.sites.domain} name={l.sites.domain} />
+                {l.sites.domain}
+              </span>
               <span className="text-ink-2">{l.login_hint}</span>
               {admin && (
                 <form action="/api/logins" method="post">

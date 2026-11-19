@@ -8,6 +8,7 @@ import { loadSpace, type SpaceAudit } from "@/lib/space";
 import { Chevron, DeviceTag, Icon, MissionBar, Spinner, StatusGlyph, scoreTone } from "@/lib/ui";
 import { CloseMenu, ConfirmButton } from "../controls";
 import { SpaceShell } from "../shell";
+import { SiteLogo } from "../../site-logo";
 
 // Rapports › Tous / Favoris / Corbeille: one list, three scopes. Same rows, actions change with the scope.
 export type View = "all" | "favorites" | "trash";
@@ -212,6 +213,8 @@ export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
                 <div key={a.id} className="flex items-center border-b border-hairline first:rounded-t-[18px] last:rounded-b-[18px] last:border-0 hover:bg-bg-2/60">
                   <Link href={`/audit/${a.id}`} className="block min-w-0 flex-1">
                     <div className="grid min-h-[68px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-5 py-3 pl-5 pr-2 md:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_8rem_5.5rem_1rem]">
+                      <span className="flex min-w-0 items-start gap-3">
+                      <SiteLogo domain={a.sites?.domain} name={a.sites?.domain} className="mt-0.5" />
                       <span className="min-w-0">
                         <span className="block truncate font-semibold">
                           {name}
@@ -221,6 +224,7 @@ export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
                           {sub.join(" · ")} · <DeviceTag device={a.device} lang={lang} />
                         </span>
                         {a.pay.map((p, i) => <PayLine key={i} pay={p} multi={a.pay.length > 1} lang={lang} />)}
+                      </span>
                       </span>
                       <span className="type-small hidden truncate text-ink-2 md:block">{a.users?.email === user.email ? r.you : a.users?.email ?? "—"}</span>
                       <span className="hidden md:block">

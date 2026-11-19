@@ -3,6 +3,7 @@ import { BlockerIcon, BrowserFrame, Chevron, DeviceTag, MissionBar, StatusGlyph,
 import { fixHints, shortDate, type Blocker, type SiteView } from "@/lib/space";
 import { tr, type Lang } from "@/lib/i18n";
 import { getLang, getT } from "@/lib/lang";
+import { SiteLogo } from "../site-logo";
 
 export const sitePath = (v: SiteView) => `/espace/sites/${v.key}`;
 
@@ -52,10 +53,13 @@ export async function SiteCard({ site }: { site: SiteView }) {
   return (
     <Link href={sitePath(site)} className="tile group flex flex-col gap-6 p-7! transition-colors duration-200 hover:bg-tile/80">
       <div className="flex items-start justify-between gap-4">
-        <span className="min-w-0">
-          <span className="type-headline block truncate">{site.domain}</span>
-          <span className="type-small text-ink-2">
-            <DeviceTag device={site.device} lang={lang} /> · {site.latest ? shortDate(site.latest.created_at, lang) : t("Premier audit en cours", "First audit running")}
+        <span className="flex min-w-0 items-center gap-3">
+          <SiteLogo domain={site.domain} name={site.domain} size="lg" />
+          <span className="min-w-0">
+            <span className="type-headline block truncate">{site.domain}</span>
+            <span className="type-small text-ink-2">
+              <DeviceTag device={site.device} lang={lang} /> · {site.latest ? shortDate(site.latest.created_at, lang) : t("Premier audit en cours", "First audit running")}
+            </span>
           </span>
         </span>
         <Chevron className="mt-2 h-3 w-3 text-ink-2" />

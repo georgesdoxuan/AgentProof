@@ -4,6 +4,7 @@ import { db } from "@/lib/engine";
 import { DeviceTag, StatusGlyph, scoreTone } from "@/lib/ui";
 import { getLang, getT } from "@/lib/lang";
 import { tr } from "@/lib/i18n";
+import { SiteLogo } from "../site-logo";
 
 export async function generateMetadata() {
   const t = await getT();
@@ -59,6 +60,8 @@ export default async function SitesOuverts({ searchParams }: { searchParams: Pro
               const s = score(d);
               return (
                 <li key={d} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-hairline px-6 py-5 last:border-0 max-[734px]:px-5">
+                  <span className="flex min-w-0 items-center gap-3">
+                  <SiteLogo domain={d} name={a?.sites.name ?? d} />
                   <span className="min-w-0">
                     <span className="type-headline block truncate">{a?.sites.name ?? d}</span>
                     {a?.finished_at && (
@@ -66,6 +69,7 @@ export default async function SitesOuverts({ searchParams }: { searchParams: Pro
                         {t("Dernier audit le", "Latest audit on")} {new Date(a.finished_at).toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR", { day: "numeric", month: "long", timeZone: "Europe/Paris" })}
                       </span>
                     )}
+                  </span>
                   </span>
                   <span className="flex items-center gap-4">
                     {s != null && (
