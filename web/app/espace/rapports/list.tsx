@@ -393,7 +393,7 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
                 >
                   <Chip icon={icon} tone={status !== v ? "plain" : v === "en-cours" ? "live" : "pass"}>
                     {l}
-                    <span className="tnum font-normal opacity-70">{counts[v]}</span>
+                    {counts[v] > 0 && <span className="tnum font-normal opacity-70">{counts[v]}</span>}
                   </Chip>
                 </Link>
               ))}
@@ -406,7 +406,7 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
                   {/* Same colors as the rows and the sidebar: yellow = running, green = finished. */}
                   {v !== "tous" && <span className={`h-2 w-2 rounded-full ${v === "en-cours" ? "bg-live-fill" : "bg-pass"}`} aria-hidden />}
                   {l}
-                  <span className="tnum font-normal opacity-70">{counts[v]}</span>
+                  {counts[v] > 0 && <span className="tnum font-normal opacity-70">{counts[v]}</span>}
                 </Link>
               ))}
             </nav>

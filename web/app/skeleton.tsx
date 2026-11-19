@@ -106,7 +106,7 @@ function SkChips({ w = ["5.5rem", "7rem", "6rem"], big }: { w?: string[]; big?: 
   return (
     <div className="flex flex-wrap items-center gap-2">
       {w.map((w, i) => (
-        <Bone key={i} className={`${big ? "h-9" : "h-[26px]"} rounded-full`} w={w} />
+        <Bone key={i} className={`h-[26px] ${big ? "min-[735px]:h-9" : ""} rounded-full`} w={w} />
       ))}
     </div>
   );

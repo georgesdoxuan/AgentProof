@@ -282,12 +282,13 @@ const CHIP_TONE: Record<ChipTone, string> = {
   // An audit still running (yellow); a finished one uses pass. 4.6:1 at least on the tint, light and dark.
   live: "bg-live-fill/20 text-live",
 };
-// size "lg": the space home's header facts (36px, 15px text), still shorter than the 40px button beside them.
+// size "lg": the space home's header facts (36px, 15px text), still shorter than the 40px button beside them. Phones keep
+// the 26px chips: larger ones would wrap onto more lines and push the page down.
 export function Chip({ icon, tone = "plain", size = "md", children, className = "" }: { icon?: string; tone?: ChipTone; size?: "md" | "lg"; children: React.ReactNode; className?: string }) {
   const lg = size === "lg";
   return (
-    <span className={`inline-flex items-center whitespace-nowrap rounded-full font-semibold ${lg ? "min-h-9 gap-2 px-3.5 py-1 text-[15px] leading-5" : "type-caption min-h-[26px] gap-1.5 px-2.5 py-0.5"} ${CHIP_TONE[tone]} ${className}`}>
-      {icon && <Icon name={icon} className={`${lg ? "h-[18px] w-[18px]" : "h-[14px] w-[14px]"} ${tone === "plain" ? "text-ink-2" : ""}`} />}
+    <span className={`inline-flex items-center whitespace-nowrap rounded-full font-semibold type-caption min-h-[26px] gap-1.5 px-2.5 py-0.5 ${lg ? "min-[735px]:min-h-9 min-[735px]:gap-2 min-[735px]:px-3.5 min-[735px]:py-1 min-[735px]:text-[15px] min-[735px]:leading-5" : ""} ${CHIP_TONE[tone]} ${className}`}>
+      {icon && <Icon name={icon} className={`h-[14px] w-[14px] ${lg ? "min-[735px]:h-[18px] min-[735px]:w-[18px]" : ""} ${tone === "plain" ? "text-ink-2" : ""}`} />}
       {children}
     </span>
   );

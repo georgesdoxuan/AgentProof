@@ -77,7 +77,7 @@ export default async function Accueil() {
   // Large chips (36px) in the 40px row the button already sets: the sections below stay where they were. With no button
   // (read-only), a -5px margin keeps the row at the old 26px.
   const status = audits.length ? (
-    <Chips className={launch ? "" : "-my-[5px]"}>
+    <Chips className={launch ? "" : "min-[735px]:-my-[5px]"}>
       <Chip size="lg" icon="layers">{plural(sites.length, "site")}</Chip>
       {running.length > 0 && <Chip size="lg" icon="live" tone="live">{running.length} {t("en cours", "running")}</Chip>}
       {open.length > 0 ? (
