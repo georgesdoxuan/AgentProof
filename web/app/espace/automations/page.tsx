@@ -171,10 +171,9 @@ export default async function Automations({ searchParams }: { searchParams: Prom
   return (
     <SpaceShell
       narrow
+      bare
       title={t("Automations", "Automations")}
       intro={
-        <div className="grid gap-3">
-          <p>{t("AgentProof surveille tes pages et te prévient quand un agent risque d'être bloqué.", "AgentProof watches your pages and tells you when an agent may get blocked.")}</p>
           <Chips>
             <Chip icon="eye" tone={active ? "pass" : "plain"}>
               {items.length
@@ -187,7 +186,6 @@ export default async function Automations({ searchParams }: { searchParams: Prom
             </Chip>
             <Chip icon="credit">{t("Vérifications gratuites", "Checks are free")}</Chip>
           </Chips>
-        </div>
       }
       hint={t(
         "AgentProof relit tes pages comme un agent d'achat (bandeau cookies, captcha, boutons, formulaires, robots.txt). Si quelque chose change, tu es prévenu, et un audit peut repartir tout seul. Les prix et les produits ne comptent pas.",

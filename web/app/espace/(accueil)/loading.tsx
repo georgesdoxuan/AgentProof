@@ -6,7 +6,7 @@ import { Bone, Line, SkHead, SkSpace } from "../../skeleton";
 // Space home: site tiles, then the blockers to fix first.
 export default function Loading() {
   return (
-    <SkSpace action long intro={["5rem", "15rem", "6rem"]}>
+    <SkSpace bare action intro={["5rem", "15rem", "6rem"]}>
       <section>
         <SkHead w="4rem" aside />
         <div className="grid grid-cols-2 gap-4 max-[734px]:gap-3 xl:grid-cols-4">

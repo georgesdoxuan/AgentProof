@@ -31,12 +31,12 @@ export default async function Sites() {
 
   const actions = (
     <div className="flex flex-wrap gap-3">
-      <Link href="/espace/classement" className="btn btn-secondary gap-2">
+      <Link href="/espace/classement" className="btn btn-secondary gap-2 min-h-[40px] px-[18px] text-[15px]">
         <Icon name="ranking" />
         {t("Classement", "Ranking")}
       </Link>
       {canLaunch(team.role) && (
-        <Link href="/espace/nouveau" className="btn">
+        <Link href="/espace/nouveau" className="btn min-h-[40px] px-[18px] text-[15px]">
           {t("Ajouter un site", "Add a site")}
         </Link>
       )}

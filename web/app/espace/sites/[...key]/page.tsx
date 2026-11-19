@@ -36,9 +36,10 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
   return (
     <SpaceShell
       parent={["/espace/sites", "Sites"]}
+      compact
       title={
-        <span className="flex min-w-0 items-center gap-4">
-          <SiteLogo domain={site.domain} name={site.domain} size="lg" />
+        <span className="flex min-w-0 items-center gap-3">
+          <SiteLogo domain={site.domain} name={site.domain} size="md" />
           <span className="min-w-0 break-words">{site.label}</span>
         </span>
       }
@@ -55,7 +56,7 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
           )}
         </Chips>
       }
-      actions={edit ? <RelaunchForm site={site} label={t("Relancer l'audit", "Rerun the audit")} /> : undefined}
+      actions={edit ? <RelaunchForm site={site} label={t("Relancer l'audit", "Rerun the audit")} small /> : undefined}
     >
       {site.running && <AutoRefresh />}
       {site.running && (
@@ -72,32 +73,32 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
       )}
 
       {s && site.latest && (
-        <section className="grid gap-5 lg:grid-cols-[1fr_1.4fr] [&>*]:min-w-0" aria-label="Score">
-          <Link href={`/audit/${site.latest.id}`} className="tile group flex flex-col hover:bg-tile/80">
+        <section className="grid gap-4 lg:grid-cols-[1fr_1.4fr] [&>*]:min-w-0" aria-label="Score">
+          <Link href={`/audit/${site.latest.id}`} className="tile group flex flex-col p-7! hover:bg-tile/80 max-[734px]:p-6!">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="type-headline">{t("Score agent", "Agent score")}</h2>
               <ToneLabel score={s.score} exPay={s.exPay} />
             </div>
-            <p className="mt-6 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[80px] font-semibold leading-none tracking-[-0.015em] tnum max-[734px]:text-[64px]">
+            <p className="mt-4 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[56px] font-semibold leading-none tracking-[-0.015em] tnum max-[734px]:text-[48px]">
               <span>
                 {s.score ?? "—"}
-                <span className="ml-1 text-[36px] text-ink-2">%</span>
+                <span className="ml-1 text-[28px] text-ink-2">%</span>
                 {s.exPay && <ExPay lang={lang} className="ml-2 text-[17px] tracking-normal" />}
               </span>
               <Delta site={site} className="text-[17px]!" />
             </p>
-            <div className="mt-8">
+            <div className="mt-6">
               <MissionBar ok={s.ok} done={s.done} total={s.total} />
             </div>
-            <span className="more mt-auto pt-6 group-hover:underline">
+            <span className="more mt-auto pt-5 group-hover:underline">
               {t("Rapport du", "Report of")} {shortDate(site.latest.created_at, lang)}
             </span>
           </Link>
 
-          <div className="tile flex flex-col">
+          <div className="tile flex flex-col p-7! max-[734px]:p-6!">
             <h2 className="type-headline">{t("Évolution", "Trend")}</h2>
             {history.length > 1 ? (
-              <ol className="mt-6 flex h-44 items-end gap-3" aria-label={t("Score de chaque audit, du plus ancien au plus récent", "Score of each audit, oldest to newest")}>
+              <ol className="mt-4 flex h-36 items-end gap-3" aria-label={t("Score de chaque audit, du plus ancien au plus récent", "Score of each audit, oldest to newest")}>
                 {history.slice(-8).map((a) => (
                   <li key={a.id} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2">
                     <span className="type-small inline-flex items-center gap-1 font-semibold tnum">
@@ -116,7 +117,7 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
                 ))}
               </ol>
             ) : (
-              <div className="mt-6 flex flex-1 flex-col items-center justify-center gap-3 rounded-[12px] bg-bg-2 p-6 text-center text-ink-2 dark:bg-[#2c2c2e]">
+              <div className="mt-4 flex flex-1 flex-col items-center justify-center gap-3 rounded-[12px] bg-bg-2 p-6 text-center text-ink-2 dark:bg-[#2c2c2e]">
                 <Icon name="trend" className="h-6 w-6" />
                 <span className="type-small">{t("Dès le 2ᵉ audit", "From the 2nd audit")}</span>
               </div>
@@ -181,7 +182,7 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
       )}
 
       {c && s && (
-        <Link href={`/audit/${c.id}`} className="tile group block hover:bg-tile/80">
+        <Link href={`/audit/${c.id}`} className="tile group block p-7! hover:bg-tile/80 max-[734px]:p-6!">
           <h2 className="type-headline">{t("Face au concurrent", "Against the competitor")}</h2>
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             {(
