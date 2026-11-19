@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { cardView } from "@/lib/cards";
 import { loadCredits } from "@/lib/credits";
-import { COMPARE_MODEL, DEFAULT_MODEL, PAY_MAX_EUR } from "@/lib/engine";
+import { COMPARE_MODEL, DEFAULT_MODEL, PAY_MAX_EUR, listSiteLogins } from "@/lib/engine";
 import { Field, Group, Note, Segmented } from "@/lib/ui";
 import { Hint } from "@/lib/hint";
 import { getLang, getT } from "@/lib/lang";
@@ -28,6 +28,7 @@ const REFUSED: Record<string, [string, string]> = {
   confirmation: ["Le test de paiement demande ta confirmation : coche la case « Je confirme un paiement réel » sous la carte, puis relance.", "The payment test needs your confirmation: tick “I confirm a real payment” under the card, then run again."],
   heure: ["Trop d'audits lancés depuis ta connexion en une heure. Réessaie dans une heure : tes rapports en cours continuent.", "Too many audits started from your connection in one hour. Try again in an hour: your running reports carry on."],
   file: ["Beaucoup d'audits sont en cours en ce moment. Réessaie dans quelques minutes : rien n'a été lancé ni décompté.", "Many audits are running right now. Try again in a few minutes: nothing was started or counted."],
+  compte: ["Le compte de test choisi n'existe pas pour ce site. Choisis-en un autre, ajoute-le dans Comptes de test, ou teste sans compte.", "The chosen test account does not exist for this site. Pick another one, add it in Test accounts, or test without an account."],
   missions: ["La sélection de missions n'est plus valable (une mission a pu être modifiée). Vérifie-la puis relance.", "The mission selection is no longer valid (a mission may have changed). Check it, then run again."],
   technique: ["L'audit n'a pas pu être créé, à cause d'une erreur de notre côté. Réessaie dans un instant ; si ça recommence, écris-nous.", "The audit could not be created because of an error on our side. Try again in a moment; if it happens again, write to us."],
 };
@@ -40,7 +41,9 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
   // Filled in from the home form when the visitor had to sign in first (see /api/audits).
   const { url, competitor, device, email, force, erreur } = await searchParams;
   const refused = erreur ? REFUSED[erreur] : undefined;
-  const [card, credits, missions, lang, pace] = await Promise.all([cardView(team.id), loadCredits(team.id), teamMissions(team.id), getLang(), loadPace()]);
+  const [card, credits, missions, lang, pace, logins] = await Promise.all([cardView(team.id), loadCredits(team.id), teamMissions(team.id), getLang(), loadPace(), listSiteLogins(team.id)]);
+  // Test accounts offered to the payment test: name and masked login only, never a password (it stays in H's vault).
+  const accounts = logins.map((l) => ({ id: l.id, label: l.label, hint: l.login_hint, domain: l.sites.domain }));
   // Same default as /api/audits: the first FORM_MISSIONS missions (5, or 3 on demo day) come ticked.
   const items = pickItems(missions, lang, Number(process.env.FORM_MISSIONS ?? 5));
   const t = await getT();
@@ -77,6 +80,8 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
             action={
               erreur === "carte" ? (
                 <Link href="/espace/reglages/paiement" className="text-link hover:underline">{t("Paiement", "Payment method")}</Link>
+              ) : erreur === "compte" ? (
+                <Link href="/espace/reglages/comptes" className="text-link hover:underline">{t("Comptes de test", "Test accounts")}</Link>
               ) : erreur === "technique" ? (
                 <a href={`mailto:${LEGAL.contact}`} className="text-link hover:underline">{t("Nous écrire", "Write to us")}</a>
               ) : undefined
@@ -153,6 +158,7 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
                 lang={lang}
                 max={PAY_MAX_EUR}
                 cards={[{ id: "team", label: card.label, last4: card.last4 }]}
+                accounts={accounts}
                 tip={t(
                   "L’agent part au plus près du checkout, prend le premier article disponible et paie une fois avec cette carte. Avec une carte approvisionnée, la commande est réelle. Jamais sur le concurrent.",
                   "The agent starts as close to checkout as it can, takes the first available item and pays once with this card. With a funded card, the order is real. Never on the competitor.",

@@ -614,8 +614,8 @@ export const FAQ: Faq[] = [
     cat: "payment",
     q: { fr: "Et si le site exige un compte pour payer ?", en: "What if the site requires an account to pay?" },
     a: {
-      fr: "Ajoute un compte de test dans Comptes de test. Le test tourne alors deux fois : sans compte, puis connecté. Les mots de passe restent dans un coffre-fort chez H Company ; l'agent ne les voit jamais.",
-      en: "Add a test account in Test accounts. The test then runs twice: without an account, then signed in. Passwords stay in a vault at H Company; the agent never sees them.",
+      fr: "Ajoute un ou plusieurs comptes de test dans Comptes de test. Au lancement du test de paiement, choisis « Avec un compte de test » puis le compte : l'agent se connecte avec lui. Les mots de passe restent dans un coffre-fort chez H Company ; l'agent ne les voit jamais.",
+      en: "Add one or more test accounts in Test accounts. When you run the payment test, pick “With a test account” and the account: the agent signs in with it. Passwords stay in a vault at H Company; the agent never sees them.",
     },
     link: { href: "/espace/reglages/comptes", fr: "Comptes de test", en: "Test accounts" },
     keys: "compte test connexion identifiant mot de passe login obligatoire account password required sign in",

@@ -12,12 +12,14 @@ export async function generateMetadata() {
   return { title: `${t("Comptes de test", "Test accounts")} · AgentProof` };
 }
 
-export default async function Comptes() {
+export default async function Comptes({ searchParams }: { searchParams: Promise<{ site?: string }> }) {
   const ctx = await teamContext();
   if (!ctx) redirect("/connexion?next=/espace/reglages/comptes");
   if (!ctx.team) redirect("/espace");
   const { team } = ctx;
   const logins = await listSiteLogins(team.id);
+  // From the launch form's "Add an account": the site being audited, already filled in.
+  const site = String((await searchParams).site ?? "").slice(0, 200);
   const admin = canLaunch(team.role);
   const t = await getT();
 
@@ -25,8 +27,8 @@ export default async function Comptes() {
     <SpaceShell
       settings
       hint={t(
-        "Pour les sites qui exigent un compte avant de payer. Avec un compte enregistré, le test de paiement tourne deux fois : sans compte, puis connecté.",
-        "For sites that require an account before paying. With a saved account, the payment test runs twice: without an account, then signed in.",
+        "Pour les sites qui exigent un compte avant de payer. Au lancement d’un test de paiement, tu choisis : sans compte, ou connecté avec l’un de ces comptes.",
+        "For sites that require an account before paying. When you run a payment test, you choose: without an account, or signed in with one of these accounts.",
       )}
     >
       <Columns
@@ -47,7 +49,10 @@ export default async function Comptes() {
                 <SiteLogo domain={l.sites.domain} name={l.sites.domain} />
                 {l.sites.domain}
               </span>
-              <span className="text-ink-2">{l.login_hint}</span>
+              <span className="min-w-0 truncate">
+                {l.label && <span className="font-semibold">{l.label} · </span>}
+                <span className="text-ink-2">{l.login_hint}</span>
+              </span>
               {admin && (
                 <form action="/api/logins" method="post">
                   <input type="hidden" name="action" value="delete" />
@@ -72,14 +77,15 @@ export default async function Comptes() {
         <Group
           icon="plus"
           title={t("Ajouter un compte", "Add an account")}
-          aside={<Chip icon="refresh">{t("1 par site", "1 per site")}</Chip>}
+          aside={<Chip icon="key">{t("Plusieurs par site", "Several per site")}</Chip>}
           footer={t(
-            "Crée d'abord le compte toi-même sur le site, avec une adresse de test. Un compte par site : en ajouter un nouveau remplace l'ancien.",
-            "First create the account yourself on the site, with a test address. One account per site: adding a new one replaces the old one.",
+            "Crée d'abord le compte toi-même sur le site, avec une adresse de test. Tu peux en enregistrer plusieurs par site (client fidèle, nouveau client…) : un nom aide à les distinguer au lancement.",
+            "First create the account yourself on the site, with a test address. You can save several per site (loyal customer, new customer…): a name helps tell them apart at launch.",
           )}
         >
           <form action="/api/logins" method="post" className="grid gap-4 p-5 sm:p-6">
-            <Field label={t("Site (ex. adidas.fr)", "Site (e.g. adidas.fr)")} name="site" type="text" required />
+            <Field label={t("Site (ex. adidas.fr)", "Site (e.g. adidas.fr)")} name="site" type="text" required defaultValue={site || undefined} />
+            <Field label={t("Nom du compte (facultatif)", "Account name (optional)")} name="label" type="text" />
             <Field label={t("E-mail ou identifiant du compte", "Account e-mail or username")} name="login" type="text" required />
             <Field label={t("Mot de passe", "Password")} name="password" type="password" required />
             <label className="type-small flex items-start gap-3 text-ink-2">

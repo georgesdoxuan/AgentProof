@@ -229,75 +229,87 @@ async function withinTokenBudget() {
 }
 
 // One real payment attempt with the team's card (team space) or AgentProof's own card (staff R&D page, no team).
-export async function createPaymentTest(input: string, opts: { teamId?: string; createdBy?: string } = {}) {
+// loginId: the test account the team picked on the launch form (signed-in run); none: one run as a stranger.
+export async function createPaymentTest(input: string, opts: { teamId?: string; createdBy?: string; loginId?: number | null } = {}) {
   if (!(await cardSecret(opts.teamId ?? null))) throw new Error("Aucune carte utilisable pour ce test de paiement.");
   const { url, domain } = normalizeUrl(input);
   const { error } = await db.from("sites").upsert({ domain, name: domain, url }, { onConflict: "domain", ignoreDuplicates: true });
   if (error) throw error;
   const { data: site } = await db.from("sites").select().eq("domain", domain).single();
+  // The account must be one of this team's, saved for this very site: never another team's vault.
+  if (opts.loginId != null) {
+    const { data: login } = opts.teamId
+      ? await db.from("site_logins").select("id").eq("id", opts.loginId).eq("team_id", opts.teamId).eq("site_id", site!.id).maybeSingle()
+      : { data: null };
+    if (!login) throw new Error(LOGIN_REFUSED);
+  }
   const { data: audit } = await db.from("audits").insert({ site_id: site!.id, kind: "payment", team_id: opts.teamId ?? null, created_by: opts.createdBy ?? null }).select().single();
   const { data: mission } = await db.from("missions").select("id").eq("slug", "paiement").single();
-  // With a test account for this site: one run as a stranger, one signed in, to tell "blocks agents" from "payment broken".
-  const withLogin = !!(await loginVault(opts.teamId ?? null, site!.id));
-  await db.from("runs").insert(
-    [false, ...(withLogin ? [true] : [])].map((w) => ({ audit_id: audit!.id, mission_id: mission!.id, with_login: w })),
-  );
+  await db
+    .from("runs")
+    .insert({ audit_id: audit!.id, mission_id: mission!.id, with_login: opts.loginId != null, login_id: opts.loginId ?? null });
   return audit!.id as string;
 }
+export const LOGIN_REFUSED = "Compte de test introuvable pour ce site.";
 
 // ---------- test accounts (sites that require a login before paying) ----------
-// One H-hosted vault per team. Passwords go straight to H and never touch our database or the agent's context:
-// the agent fills them with fill_secret_at on pages matching the item's URLs.
+// Passwords go straight to H and never touch our database, our logs or the agent's context: the agent fills them with
+// fill_secret_at on pages matching the item's URLs. Each account has its own H vault, so a run handed that vault can
+// only fill that account, even when the team saved several for the same site. Accounts saved before 19/11/2026 sit in
+// the team's shared vault (teams.h_vault_id, one per site then).
 async function teamVault(teamId: string) {
   const { data: team } = await db.from("teams").select("h_vault_id").eq("id", teamId).single();
-  if (team?.h_vault_id) return team.h_vault_id as string;
-  const v = await (await h("/vaults", { method: "POST", body: JSON.stringify({ name: `agentproof-team-${teamId}`, provider_config: { provider: "internal" } }) })).json();
-  await db.from("teams").update({ h_vault_id: v.id }).eq("id", teamId);
-  return v.id as string;
+  return (team?.h_vault_id as string) ?? null;
 }
 
 const maskLogin = (l: string) => (l.includes("@") ? `${l[0]}•••@${l.split("@")[1]}` : `${l.slice(0, 2)}•••`);
 
-export async function addSiteLogin(teamId: string, siteInput: string, login: string, password: string, createdBy?: string) {
+export async function addSiteLogin(teamId: string, siteInput: string, login: string, password: string, createdBy?: string, label?: string) {
   if (!login || !password || login.length > 200 || password.length > 200) throw new Error("Identifiant ou mot de passe invalide.");
+  const name = (label ?? "").trim().slice(0, 60) || null;
   const { url, domain } = normalizeUrl(siteInput);
   await db.from("sites").upsert({ domain, name: domain, url }, { onConflict: "domain", ignoreDuplicates: true });
   const { data: site } = await db.from("sites").select("id").eq("domain", domain).single();
-  const vault = await teamVault(teamId);
+  const vault = await (await h("/vaults", { method: "POST", body: JSON.stringify({ name: `agentproof-login-${teamId}-${Date.now()}`, provider_config: { provider: "internal" } }) })).json();
   const host = new URL(url).hostname.replace(/^www\./, "");
   const item = await (
-    await h(`/vaults/${vault}/items`, {
+    await h(`/vaults/${vault.id}/items`, {
       method: "POST",
       body: JSON.stringify({ name: domain, urls: [`https://${host}`], values: { username: login, email: login, password } }),
     })
   ).json();
-  // One login per site and team: replace the previous one.
-  const { data: old } = await db.from("site_logins").select("h_item_id").eq("team_id", teamId).eq("site_id", site!.id).maybeSingle();
-  if (old) await h(`/vaults/${vault}/items/${old.h_item_id}`, { method: "DELETE" }).catch(() => {});
-  await db
+  const { error } = await db
     .from("site_logins")
-    .upsert({ team_id: teamId, site_id: site!.id, h_item_id: item.id, login_hint: maskLogin(login), created_by: createdBy ?? null }, { onConflict: "team_id,site_id" });
+    .insert({ team_id: teamId, site_id: site!.id, h_item_id: item.id, h_vault_id: vault.id, label: name, login_hint: maskLogin(login), created_by: createdBy ?? null });
+  if (error) {
+    await h(`/vaults/${vault.id}`, { method: "DELETE" }).catch(() => {});
+    throw error;
+  }
 }
 
 export async function deleteSiteLogin(teamId: string, id: number) {
-  const { data: row } = await db.from("site_logins").select("h_item_id").eq("id", id).eq("team_id", teamId).maybeSingle();
+  const { data: row } = await db.from("site_logins").select("h_item_id, h_vault_id").eq("id", id).eq("team_id", teamId).maybeSingle();
   if (!row) return;
-  const vault = await teamVault(teamId);
-  await h(`/vaults/${vault}/items/${row.h_item_id}`, { method: "DELETE" }).catch(() => {});
+  const vault = row.h_vault_id ?? (await teamVault(teamId));
+  if (vault) await h(`/vaults/${vault}/items/${row.h_item_id}`, { method: "DELETE" }).catch(() => {});
+  if (row.h_vault_id) await h(`/vaults/${row.h_vault_id}`, { method: "DELETE" }).catch(() => {});
   await db.from("site_logins").delete().eq("id", id).eq("team_id", teamId);
 }
 
+export type SiteLogin = { id: number; label: string | null; login_hint: string; created_at: string; sites: { domain: string } };
 export async function listSiteLogins(teamId: string) {
-  const { data } = await db.from("site_logins").select("id, login_hint, created_at, sites(domain)").eq("team_id", teamId).order("created_at", { ascending: false });
-  return (data ?? []) as unknown as { id: number; login_hint: string; created_at: string; sites: { domain: string } }[];
+  const { data } = await db.from("site_logins").select("id, label, login_hint, created_at, sites(domain)").eq("team_id", teamId).order("created_at", { ascending: false });
+  return (data ?? []) as unknown as SiteLogin[];
 }
 
-async function loginVault(teamId: string | null, siteId: number) {
+// The vault a signed-in payment run is handed: the picked account's own, or the team's shared one for older accounts.
+async function loginVault(teamId: string | null, siteId: number, loginId: number | null) {
   if (!teamId) return null;
-  const { data } = await db.from("site_logins").select("id").eq("team_id", teamId).eq("site_id", siteId).maybeSingle();
-  if (!data) return null;
-  const { data: team } = await db.from("teams").select("h_vault_id").eq("id", teamId).single();
-  return (team?.h_vault_id as string) ?? null;
+  const q = db.from("site_logins").select("id, h_vault_id").eq("team_id", teamId).eq("site_id", siteId);
+  const { data } = await (loginId != null ? q.eq("id", loginId) : q.order("created_at")).limit(1);
+  const row = data?.[0];
+  if (!row) return null;
+  return (row.h_vault_id as string) ?? (await teamVault(teamId));
 }
 
 // ---------- tick: the only place that calls H ----------
@@ -458,7 +470,7 @@ async function sessionRequest(run: { id: number; missions: { instruction: string
   if (isPayment(run)) {
     const card = await cardSecret(run.audits.team_id);
     if (!card) throw new Error("Carte de paiement retirée avant le lancement.");
-    const vault = (run as any).with_login ? await loginVault(run.audits.team_id, run.audits.sites.id) : null;
+    const vault = (run as any).with_login ? await loginVault(run.audits.team_id, run.audits.sites.id, (run as any).login_id ?? null) : null;
     if ((run as any).with_login && !vault) throw new Error("Compte de test retiré avant le lancement.");
     return paymentRequest(run.id, await paymentStart(run.audits.sites.id, url), card, vault);
   }

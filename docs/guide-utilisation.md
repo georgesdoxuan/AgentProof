@@ -286,7 +286,7 @@ Garde-fous :
 Pour le préparer :
 
 - **Moyen de paiement** : enregistrez la carte de l'équipe. Numéro, date et cryptogramme sont chiffrés et ne sont plus jamais affichés. Le propriétaire, les admins et les éditeurs gèrent la carte.
-- **Comptes de test** (si le site exige un compte pour payer) : créez vous-même un compte de test sur le site, puis enregistrez-le. Le test tourne alors deux fois : sans compte, puis connecté. Les mots de passe sont rangés dans un coffre-fort chez H Company ; AgentProof ne les stocke pas et l'agent ne les voit jamais. Un compte par site.
+- **Comptes de test** (si le site exige un compte pour payer) : créez vous-même un compte de test sur le site, puis enregistrez-le. Au lancement du test de paiement, choisissez « Sans compte » ou « Avec un compte de test », puis le compte voulu s'il y en a plusieurs pour ce site. Les mots de passe sont rangés dans un coffre-fort chez H Company ; AgentProof ne les stocke pas et l'agent ne les voit jamais. Plusieurs comptes par site possibles.
 
 Pour lancer le test : dans « Lancer un audit », choisissez **Tester le paiement** (avec l'audit) ou le type **Paiement seulement**.
 
