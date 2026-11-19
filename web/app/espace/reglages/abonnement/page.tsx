@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Hint } from "@/lib/hint";
 import { redirect } from "next/navigation";
-import { teamContext } from "@/lib/auth";
+import { canLaunch, teamContext } from "@/lib/auth";
 import { ALERTS, type Kind, PLANS, RATES, loadCredits } from "@/lib/credits";
 import { db } from "@/lib/engine";
 import { locale, tr } from "@/lib/i18n";
@@ -23,7 +23,11 @@ export default async function Abonnement() {
   const lang = await getLang();
   const t = tr(lang);
   const loc = locale(lang);
-  const [c, { data: settings }] = await Promise.all([loadCredits(team.id), db.from("teams").select("webhook_url").eq("id", team.id).single()]);
+  const [c, { data: settings }] = await Promise.all([loadCredits(team.id), db.from("teams").select("webhook_url, site_credit_cap").eq("id", team.id).single()]);
+  const cap = (settings?.site_credit_cap as number | null | undefined) ?? null;
+  // The cap counts a site on every device: total per domain, to flag the sites at or over it.
+  const perDomain = new Map<string, number>();
+  for (const s of c.bySite) perDomain.set(s.domain, (perDomain.get(s.domain) ?? 0) + s.credits);
   const plan = PLANS[c.plan];
   const n = (x: number) => x.toLocaleString(loc);
   const cr = (x: number) => `${n(x)} ${t(x > 1 ? "crédits" : "crédit", x === 1 ? "credit" : "credits")}`;
@@ -153,7 +157,10 @@ export default async function Abonnement() {
         })}
       </Group>
 
-      <Group title={t("Par site", "By site")}>
+      <Group
+        title={t("Par site", "By site")}
+        aside={cap != null ? <Chip icon="credit">{t(`Plafond : ${cr(cap)} par site`, `Cap: ${cr(cap)} per site`)}</Chip> : undefined}
+      >
         {c.bySite.length ? (
           c.bySite.map((s) => (
             <Row key={`${s.domain}/${s.device}`}>
@@ -161,6 +168,9 @@ export default async function Abonnement() {
                 <span className="block truncate">{s.domain}</span>
                 <span className="type-caption text-ink-2">
                   <DeviceTag device={s.device} lang={lang} />
+                  {cap != null && (perDomain.get(s.domain) ?? 0) >= cap && (
+                    <span className="font-semibold text-warn"> · {t("plafond atteint, audits automatiques en pause", "cap reached, automatic audits paused")}</span>
+                  )}
                 </span>
               </span>
               <span className="w-24 max-sm:hidden" aria-hidden>
@@ -196,6 +206,39 @@ export default async function Abonnement() {
           ))}
         </Group>
       )}
+
+      <Group title={t("Plafond par site", "Cap per site")}>
+        <Row>
+          <form action="/api/automations" method="post" className="flex w-full flex-wrap items-center gap-x-4 gap-y-3">
+            <input type="hidden" name="action" value="site_cap" />
+            <span className="min-w-0 basis-full sm:basis-0 sm:flex-1">
+              <Hint
+                side="top"
+                tip={t(
+                  "Crédits par site et par mois, tous appareils. Au-delà, les audits automatiques (page modifiée, mise en ligne, audit mensuel) ne partent plus jusqu'au 1er du mois ; un audit mensuel retenu attend le suivant. Un audit lancé à la main passe toujours. Vide : aucun plafond.",
+                  "Credits per site and per month, all devices. Past it, automatic audits (page changed, release, monthly audit) stop until the 1st of the month; a held monthly audit waits for the next one. An audit launched by hand always goes through. Empty: no cap.",
+                )}
+              >
+                <label htmlFor="site_credit_cap">{t("Crédits par site et par mois", "Credits per site per month")}</label>
+              </Hint>
+            </span>
+            <input
+              id="site_credit_cap"
+              name="site_credit_cap"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={10000}
+              step={1}
+              defaultValue={cap ?? ""}
+              placeholder={t("Aucun", "None")}
+              disabled={!canLaunch(team.role)}
+              className="h-9 w-28 rounded-[10px] bg-bg-2 px-3 text-right tabular-nums outline-none ring-blue focus-visible:ring-2 disabled:opacity-60 dark:bg-[#2c2c2e]"
+            />
+            {canLaunch(team.role) && <button className="btn-secondary min-h-9 rounded-full px-4 font-semibold">{t("Enregistrer", "Save")}</button>}
+          </form>
+        </Row>
+      </Group>
 
       <Group title={t("Alertes", "Alerts")}>
         <Row>

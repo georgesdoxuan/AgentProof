@@ -136,3 +136,22 @@ export async function creditsLeft(teamId: string, now = new Date()) {
   const plan = planOf(team?.plan);
   return { plan, included: PLANS[plan].credits, used: credits((data ?? []) as { kind: Kind }[]), renews: end.toISOString() };
 }
+
+// Per-site monthly cap (teams.site_credit_cap, null = none): credits this team used this month on one domain, all devices.
+// Only automatic audits are held back by it; a launch by hand is a person's explicit choice and still goes through.
+export async function siteCap(teamId: string, domain: string, now = new Date()) {
+  const { start } = period(now);
+  const { data: team } = await db.from("teams").select("site_credit_cap").eq("id", teamId).single();
+  const cap = (team?.site_credit_cap as number | null) ?? null;
+  if (cap == null) return { cap: null, used: 0 };
+  const { data: site } = await db.from("sites").select("id").eq("domain", domain.replace(/^www\./, "")).maybeSingle();
+  if (!site) return { cap, used: 0 };
+  const { data } = await db.from("credit_usage").select("kind").eq("team_id", teamId).eq("site_id", site.id).gte("created_at", start.toISOString()).limit(5000);
+  return { cap, used: credits((data ?? []) as { kind: Kind }[]) };
+}
+
+// May an automatic audit costing `cost` credits start on this site? Also says why not, for the automation log.
+export async function autoAuditAllowed(teamId: string, domain: string, cost: number) {
+  const { cap, used } = await siteCap(teamId, domain);
+  return cap == null || used + cost <= cap ? { ok: true as const } : { ok: false as const, note: `plafond du site atteint : ${used} crédits utilisés ce mois-ci sur ${cap}` };
+}
