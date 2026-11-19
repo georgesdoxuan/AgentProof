@@ -4,7 +4,7 @@ import { canLaunch, teamContext } from "@/lib/auth";
 import { deviceLabel, loadSpace, shortDate } from "@/lib/space";
 import { locale, tr } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
-import { Chevron, Group, MissionBar, Recommendations, Spinner, StatusGlyph, ToneLabel, blockerLabel, scoreTone } from "@/lib/ui";
+import { BlockerIcon, Chevron, DeviceTag, Group, MissionBar, Recommendations, Spinner, StatusGlyph, ToneLabel, blockerLabel, scoreTone } from "@/lib/ui";
 import { AutoRefresh } from "../../../audit/[id]/refresh";
 import { SpaceShell } from "../../shell";
 import { BlockerItem, Delta, RelaunchForm, rankText } from "../../parts";
@@ -38,7 +38,7 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
       title={site.domain}
       intro={
         <>
-          {deviceLabel(site.device, lang)} · {rankText(site.rank, lang)}
+          <DeviceTag device={site.device} lang={lang} /> · {rankText(site.rank, lang)}
           {other && (
             <>
               {" · "}
@@ -156,8 +156,9 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
           <Group title={t("Corrections vérifiées", "Verified fixes")} footer={t("Marquées corrigées, puis absentes de l'audit suivant.", "Marked fixed, then absent from the next audit.")}>
             {site.verified.map((v) => (
               <div key={v} className="flex min-h-[56px] items-center gap-3 border-b border-hairline px-5 last:border-0">
-                <StatusGlyph tone="pass" className="h-4 w-4" />
+                <BlockerIcon type={v} />
                 <span className="font-semibold">{blockerLabel(v, lang)}</span>
+                <StatusGlyph tone="pass" className="ml-auto h-4 w-4" />
               </div>
             ))}
           </Group>

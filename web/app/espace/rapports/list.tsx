@@ -5,7 +5,7 @@ import { paymentVerdicts } from "@/lib/engine";
 import { locale, tr, type Dict, type Lang } from "@/lib/i18n";
 import { getDict, getLang } from "@/lib/lang";
 import { loadSpace, type SpaceAudit } from "@/lib/space";
-import { Chevron, MissionBar, Spinner, StatusGlyph, scoreTone } from "@/lib/ui";
+import { Chevron, DeviceTag, Icon, MissionBar, Spinner, StatusGlyph, scoreTone } from "@/lib/ui";
 import { CloseMenu, ConfirmButton } from "../controls";
 import { SpaceShell } from "../shell";
 
@@ -32,7 +32,12 @@ function PayLine({ pay, multi, lang }: { pay: { status: string; verdict: string 
           ? [`${P} : ${PAYMENT_VERDICTS[pay.verdict!].toLowerCase()}`, "text-warn"]
           : [`${P} : ${(PAYMENT_VERDICTS[pay.verdict ?? ""] ?? t("erreur", "error")).toLowerCase()}`, "text-fail"];
   const who = multi || pay.with_login ? (pay.with_login ? t(" (connecté)", " (signed in)") : t(" (sans compte)", " (no account)")) : "";
-  return <span className={`type-small block font-semibold ${cls}`}>{text}{who}</span>;
+  return (
+    <span className={`type-small flex items-center gap-1 font-semibold ${cls}`}>
+      <Icon name="payment" className="h-[1.15em] w-[1.15em]" />
+      {text}{who}
+    </span>
+  );
 }
 
 const iconBtn =
@@ -200,7 +205,6 @@ export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
               const sub = [
                 a.title && a.sites?.domain,
                 view === "trash" && a.deleted_at ? r.trashedOn(date(a.deleted_at)) : date(a.created_at),
-                a.device === "mobile" ? r.device.mobile : r.device.desktop,
               ].filter(Boolean);
               return (
                 <div key={a.id} className="flex items-center border-b border-hairline first:rounded-t-[18px] last:rounded-b-[18px] last:border-0 hover:bg-bg-2/60">
@@ -211,7 +215,9 @@ export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
                           {name}
                           {a.compare_to && <span className="font-normal text-ink-2"> · {a.model ? r.vsModels : r.vsCompetitor}</span>}
                         </span>
-                        <span className="type-small text-ink-2">{sub.join(" · ")}</span>
+                        <span className="type-small block text-ink-2">
+                          {sub.join(" · ")} · <DeviceTag device={a.device} lang={lang} />
+                        </span>
                         {a.pay.map((p, i) => <PayLine key={i} pay={p} multi={a.pay.length > 1} lang={lang} />)}
                       </span>
                       <span className="type-small hidden truncate text-ink-2 md:block">{a.users?.email === user.email ? r.you : a.users?.email ?? "—"}</span>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { EXCLUDED, db } from "@/lib/engine";
-import { MissionBar, StatusGlyph, ToneLabel, blockerLabel, hurdles, scoreTone } from "@/lib/ui";
+import { BlockerIcon, DeviceTag, MissionBar, StatusGlyph, ToneLabel, blockerLabel, hurdles, scoreTone } from "@/lib/ui";
 import { tr } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 
@@ -55,7 +55,7 @@ export async function Leaderboard() {
                       <span className="min-w-0">
                         <span className="type-headline block truncate">{s.name}</span>
                         <span className="type-small text-ink-2">
-                          {s.device === "mobile" ? "Mobile" : t("Ordinateur", "Desktop")} · {s.passes} audit{s.passes > 1 ? "s" : ""}, {s.runs_done} missions
+                          <DeviceTag device={s.device} lang={lang} /> · {s.passes} audit{s.passes > 1 ? "s" : ""}, {s.runs_done} missions
                         </span>
                       </span>
                       <span className="flex items-center justify-end gap-2 text-[21px] font-semibold tracking-[0.011em] tnum md:order-last">
@@ -73,17 +73,28 @@ export async function Leaderboard() {
                       </span>
                       <span className="type-small col-span-3 col-start-2 hidden md:col-span-1 md:col-start-auto md:block">
                         {botOnly ? (
-                          <span className="font-semibold text-ink-2">{t("Anti-bot : hors classement", "Anti-bot: not ranked")}</span>
+                          <span className="inline-flex items-center gap-1.5 font-semibold text-ink-2">
+                            <StatusGlyph tone="none" />
+                            {t("Anti-bot : hors classement", "Anti-bot: not ranked")}
+                          </span>
                         ) : s.score == null ? (
                           // Nothing counted (agent errors, anti-bot, stock...): no verdict on the site until a new audit.
-                          <span className="font-semibold text-ink-2">{t("À confirmer", "To be confirmed")}</span>
+                          <span className="inline-flex items-center gap-1.5 font-semibold text-ink-2">
+                            <StatusGlyph tone="unsure" />
+                            {t("À confirmer", "To be confirmed")}
+                          </span>
                         ) : (
                           <ToneLabel score={s.score} />
                         )}
                       </span>
                       <span className="type-small col-span-3 col-start-2 text-ink-2 md:col-span-1 md:col-start-auto">
                         <span className="md:hidden">{t("Blocage principal", "Main blocker")} : </span>
-                        {blocker ? <span className="text-ink">{blockerLabel(blocker, lang)}</span> : t("Aucun", "None")}
+                        {blocker ? (
+                          <span className="inline-flex items-center gap-1.5 align-middle text-ink">
+                            <BlockerIcon type={blocker} className="h-6 w-6 rounded-[7px]" />
+                            {blockerLabel(blocker, lang)}
+                          </span>
+                        ) : t("Aucun", "None")}
                         {!blocker && topHurdle(s.audit_id) && ` · ${t("contourné", "got past")} : ${topHurdle(s.audit_id)!.toLowerCase()}`}
                         {s.runs_bot_blocked > 0 && !botOnly && " · anti-bot"}
                       </span>

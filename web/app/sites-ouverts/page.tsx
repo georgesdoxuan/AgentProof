@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { db } from "@/lib/engine";
-import { StatusGlyph, scoreTone } from "@/lib/ui";
+import { DeviceTag, StatusGlyph, scoreTone } from "@/lib/ui";
 import { getLang, getT } from "@/lib/lang";
 import { tr } from "@/lib/i18n";
 
@@ -64,6 +64,8 @@ export default async function SitesOuverts({ searchParams }: { searchParams: Pro
                       <span className="flex items-center gap-2 type-headline tnum">
                         <StatusGlyph tone={scoreTone(s)} className="h-4 w-4" />
                         {s} %
+                        {/* Scores here come from desktop audits only. */}
+                        <span className="type-small font-normal text-ink-2"><DeviceTag device="desktop" lang={lang} /></span>
                       </span>
                     )}
                     {a ? (

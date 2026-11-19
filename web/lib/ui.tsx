@@ -17,17 +17,20 @@ const TONE_WORD: Record<Lang, Record<Tone, string>> = {
 };
 export const toneWords = (lang: Lang) => TONE_WORD[lang];
 
-const toneText: Record<Tone, string> = { pass: "text-pass", warn: "text-warn", fail: "text-fail", none: "text-ink-2" };
+// "unsure": a verdict still to confirm (unverified mission, site with nothing counted). Glyph only, no score tone.
+type Glyph = Tone | "unsure";
+const toneText: Record<Glyph, string> = { pass: "text-pass", warn: "text-warn", fail: "text-fail", none: "text-ink-2", unsure: "text-ink-2" };
 
-// SF Symbols-style filled circles: checkmark, exclamationmark, xmark, minus.
-const GLYPH: Record<Tone, string> = {
+// SF Symbols-style filled circles: checkmark, exclamationmark, xmark, minus, questionmark.
+const GLYPH: Record<Glyph, string> = {
   pass: "M6.2 10.3l2.6 2.6 5-5.6",
   warn: "M10 5.6v5.2M10 14.1v.1",
   fail: "M7 7l6 6M13 7l-6 6",
   none: "M6.5 10h7",
+  unsure: "M7.7 7.6a2.4 2.4 0 1 1 3.5 2.1c-.7.4-1.2.9-1.2 1.7v.3M10 14.3v.1",
 };
 
-export function StatusGlyph({ tone, className = "h-[1.05em] w-[1.05em]" }: { tone: Tone; className?: string }) {
+export function StatusGlyph({ tone, className = "h-[1.05em] w-[1.05em]" }: { tone: Glyph; className?: string }) {
   return (
     <svg viewBox="0 0 20 20" className={`shrink-0 ${toneText[tone]} ${className}`} aria-hidden>
       <circle cx="10" cy="10" r="10" fill="currentColor" />
@@ -74,11 +77,11 @@ export async function StatusBadge({ run }: { run: { status: string; success: boo
         {t("En cours", "Running")}
       </span>
     );
-  const [text, tone]: [string, Tone] =
+  const [text, tone]: [string, Glyph] =
     run.status === "todo"
       ? [t("En attente", "Pending"), "none"]
       : run.status === "error" || run.success === null
-        ? [t("Non vérifiée", "Unverified"), "none"]
+        ? [t("Non vérifiée", "Unverified"), "unsure"]
         : run.success
           ? [t("Réussie", "Passed"), "pass"]
           : EXCLUDED.includes(run.blocker_type ?? "")
@@ -175,6 +178,60 @@ export function Wordmark({ className = "" }: { className?: string }) {
   );
 }
 
+// ---------- icons ----------
+// One outline set for blockers, hurdles and devices: SF Symbols-style, 24 grid, 1.8 stroke, round ends,
+// the same drawing rules as the team-space sidebar (app/espace/controls.tsx). Always next to a text label.
+const ICON: Record<string, string> = {
+  none: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM8 12.5l2.7 2.7L16 9.5",
+  cookie_banner: "M20.9 12.6A9 9 0 1 1 11.4 3.1a3 3 0 0 0 3.5 3.4 3 3 0 0 0 3.6 3.6 3 3 0 0 0 2.4 2.5zM8.5 10.5h.01M9.5 15.5h.01M14.5 15h.01",
+  popup: "M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM3 8h18M8 11.5h8v5H8z",
+  search_failed: "M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM20 20l-4.9-4.9M8.5 8.5l4 4M12.5 8.5l-4 4",
+  filter_failed: "M3.5 5h17l-6.5 8v6l-4-2v-4z",
+  size_selector: "M8.5 3.5 3 6.5l2 4.5 2.5-1.2v10.7h9V9.8L19 11l2-4.5-5.5-3a3.5 3.5 0 0 1-7 0z",
+  button_unresponsive: "M18 11.5V8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h6M13 12l8 3-3.5 1.2L16 20z",
+  captcha_or_bot_block: "M12 3l7.5 3v5.5c0 4.5-3.1 8.2-7.5 9.5-4.4-1.3-7.5-5-7.5-9.5V6zM9.5 9.5l5 5M14.5 9.5l-5 5",
+  login_required: "M12 4a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zM5 20.5a7 7 0 0 1 14 0",
+  out_of_stock: "M3.5 7.5 12 3l8.5 4.5v9L12 21l-8.5-4.5zM3.5 7.5 12 12l8.5-4.5M12 12v9",
+  page_error_or_timeout: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3.5 2",
+  mission_not_applicable: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM5.6 5.6l12.8 12.8",
+  agent_out_of_steps: "M3 20h5v-5h5v-5h5V5h3",
+  agent_tool_error: "M14.5 5.5a4.5 4.5 0 0 0-5.8 5.8L3.5 16.5a2.1 2.1 0 0 0 3 3l5.2-5.2a4.5 4.5 0 0 0 5.8-5.8l-2.7 2.7-2.6-.4-.4-2.6z",
+  other: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM8 12h.01M12 12h.01M16 12h.01",
+  payment: "M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM3 10h18M7 15h3",
+  desktop: "M4 4h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM8.5 20h7M12 16v4",
+  mobile: "M8 2.5h8a1.5 1.5 0 0 1 1.5 1.5v16a1.5 1.5 0 0 1-1.5 1.5H8A1.5 1.5 0 0 1 6.5 20V4A1.5 1.5 0 0 1 8 2.5zM11 18.5h2",
+};
+
+export function Icon({ name, className = "h-[1.1em] w-[1.1em]" }: { name: string; className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={`shrink-0 ${className}`} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d={ICON[name] ?? ICON.other} />
+    </svg>
+  );
+}
+
+// A blocker's icon on a rounded tile, like an iOS Settings row: blue when it counts against the site,
+// grey when it stays outside the score. Decorative: the blocker's name is always written beside it.
+export function BlockerIcon({ type, muted, className = "h-8 w-8 rounded-[9px]" }: { type: string | null; muted?: boolean; className?: string }) {
+  const out = muted || !type || EXCLUDED.includes(type) || type === "other";
+  return (
+    <span className={`grid shrink-0 place-items-center ${out ? "bg-fill text-ink-2" : "bg-blue/10 text-link dark:bg-blue/25"} ${className}`} aria-hidden>
+      <Icon name={type ?? "other"} className="h-[62%] w-[62%]" />
+    </span>
+  );
+}
+
+// "Ordinateur" / "Mobile" with its device glyph.
+export function DeviceTag({ device, lang = "fr" }: { device: string; lang?: Lang }) {
+  return (
+    // Inline, not flex: keeps the text on the surrounding baseline.
+    <span className="whitespace-nowrap">
+      <Icon name={device === "mobile" ? "mobile" : "desktop"} className="mr-1 inline-block h-[1.15em] w-[1.15em] align-[-0.2em]" />
+      {device === "mobile" ? "Mobile" : lang === "en" ? "Desktop" : "Ordinateur"}
+    </span>
+  );
+}
+
 // ---------- helpers ----------
 export const blockerLabel = (b: string | null, lang: Lang = "fr") => (b ? blockerNames(lang)[b] ?? b : "—");
 
@@ -203,23 +260,24 @@ export function summarize(runs: Run[]) {
 
 // What the agent had to get past on missions it still passed, read from its own report (steps_summary, blocker_detail).
 // ponytail: keyword match on the agent's text; add an "obstacles" field to the agent's answer schema if wording drifts.
-const HURDLES: [string, string, RegExp][] = [
-  ["Bandeau cookies à fermer", "Cookie banner to close", /cookie|consentement/i],
-  ["Pop-up à fermer", "Pop-up to close", /(dismiss|clos|ferm)[^.]{0,60}(pop-?up|newsletter|modal|overlay)|(pop-?up|newsletter|modal|overlay)[^.]{0,40}(dismiss|closed|ferm)/i],
-  ["Recherche à reprendre", "Search to retry", /no results?|aucun r[ée]sultat|pas de r[ée]sultat/i],
-  ["Filtre qui ne répond pas", "Filter that does not respond", /(tried|tent[ée]) (to )?(de )?(filter|filtrer)/i],
+const HURDLES: [string, string, RegExp, string][] = [
+  ["Bandeau cookies à fermer", "Cookie banner to close", /cookie|consentement/i, "cookie_banner"],
+  ["Pop-up à fermer", "Pop-up to close", /(dismiss|clos|ferm)[^.]{0,60}(pop-?up|newsletter|modal|overlay)|(pop-?up|newsletter|modal|overlay)[^.]{0,40}(dismiss|closed|ferm)/i, "popup"],
+  ["Recherche à reprendre", "Search to retry", /no results?|aucun r[ée]sultat|pas de r[ée]sultat/i, "search_failed"],
+  ["Filtre qui ne répond pas", "Filter that does not respond", /(tried|tent[ée]) (to )?(de )?(filter|filtrer)/i, "filter_failed"],
 ];
 export const LONG_PATH = 20;
 
 export function hurdles(runs: { success?: boolean | null; steps?: number | null; agent_answer?: { steps_summary?: string; blocker_detail?: string } | null }[], lang: Lang) {
   const won = runs.filter((r) => r.success);
-  const out: [string, number][] = [];
-  for (const [fr, en, re] of HURDLES) {
+  // [label, missions, icon]
+  const out: [string, number, string][] = [];
+  for (const [fr, en, re, icon] of HURDLES) {
     const n = won.filter((r) => re.test(`${r.agent_answer?.steps_summary ?? ""} ${r.agent_answer?.blocker_detail ?? ""}`)).length;
-    if (n) out.push([lang === "en" ? en : fr, n]);
+    if (n) out.push([lang === "en" ? en : fr, n, icon]);
   }
   const long = won.filter((r) => (r.steps ?? 0) >= LONG_PATH).length;
-  if (long) out.push([lang === "en" ? `Long path (${LONG_PATH}+ steps)` : `Parcours long (${LONG_PATH} étapes ou plus)`, long]);
+  if (long) out.push([lang === "en" ? `Long path (${LONG_PATH}+ steps)` : `Parcours long (${LONG_PATH} étapes ou plus)`, long, "agent_out_of_steps"]);
   return { passed: won.length, items: out.sort((a, b) => b[1] - a[1]) };
 }
 

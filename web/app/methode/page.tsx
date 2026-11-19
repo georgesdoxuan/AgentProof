@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { LEGAL, LEGAL_EN } from "@/lib/legal";
 import { getLang } from "@/lib/lang";
+import { BLOCKERS, EXCLUDED, blockerNames } from "@/lib/engine";
+import { BlockerIcon, DeviceTag, StatusGlyph } from "@/lib/ui";
 
 export async function generateMetadata() {
   return { title: `${(await getLang()) === "en" ? "Method" : "Méthode"} · AgentProof` };
@@ -14,6 +16,54 @@ const Section = ({ title, id, children }: { title: string; id?: string; children
 );
 
 const lk = "text-link hover:underline";
+
+// The marks used in reports, ranking and team space, with their meaning: statuses, blockers, devices.
+function Legend({ lang }: { lang: "fr" | "en" }) {
+  const en = lang === "en";
+  const names = blockerNames(lang);
+  const statuses = [
+    ["pass", en ? "Passed" : "Réussie", en ? "the agent reached the first checkout page." : "l’agent a atteint la première page du checkout."],
+    ["fail", en ? "Blocked" : "Bloquée", en ? "the site stopped the agent: counts against the score." : "le site a arrêté l’agent : compte contre le score."],
+    ["none", en ? "Out of score" : "Hors score", en ? "nothing to do with the site’s interface (stock, anti-bot, agent)." : "sans lien avec l’interface du site (stock, anti-bot, agent)."],
+    ["unsure", en ? "Unverified / to be confirmed" : "Non vérifiée / à confirmer", en ? "the judge could not decide: left out of the score." : "le juge n’a pas pu trancher : sort du score."],
+  ] as const;
+  return (
+    <Section title={en ? "Reading a report" : "Lire un rapport"} id="legende">
+      <ul className="space-y-2">
+        {statuses.map(([tone, name, text]) => (
+          <li key={tone} className="flex items-baseline gap-2.5">
+            <StatusGlyph tone={tone} className="h-4 w-4 translate-y-[3px]" />
+            <span>
+              <span className="font-semibold text-ink">{name}</span> : {text}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="pt-3">
+        {en
+          ? "Each blocker has its icon. Blue: it counts against the site. Grey: it stays outside the score."
+          : "Chaque blocage a son icône. En bleu : il compte contre le site. En gris : il reste hors score."}
+      </p>
+      <ul className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+        {Object.keys(BLOCKERS)
+          .filter((k) => k !== "none")
+          .map((k) => (
+            <li key={k} className="flex items-center gap-3">
+              <BlockerIcon type={k} />
+              <span className="text-ink">
+                {names[k]}
+                {EXCLUDED.includes(k) && <span className="type-small text-ink-2"> · {en ? "out of score" : "hors score"}</span>}
+              </span>
+            </li>
+          ))}
+      </ul>
+      <p className="flex flex-wrap gap-x-5 gap-y-1 pt-3 text-ink">
+        <DeviceTag device="desktop" lang={lang} />
+        <DeviceTag device="mobile" lang={lang} />
+      </p>
+    </Section>
+  );
+}
 // FAQ and team (retours Adonaï, 18 nov). Prénoms only, no surnames or photos.
 const FAQ = {
   fr: [
@@ -104,6 +154,8 @@ export default async function Methode() {
           </p>
         </Section>
 
+        <Legend lang="en" />
+
         <Section title="The limits">
           <p>
             The agent runs from a datacenter server: some anti-bot sites block it, as they would block a real shopping agent. The agent can also fail because of itself and
@@ -185,6 +237,8 @@ export default async function Methode() {
             rejoue pas ce qu&apos;un nouvel essai ne changerait pas : anti-bot, rupture de stock, compte obligatoire, mission impossible sur le catalogue.
           </p>
         </Section>
+
+        <Legend lang="fr" />
 
         <Section title="Les limites">
           <p>

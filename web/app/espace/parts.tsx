@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { BrowserFrame, Chevron, MissionBar, StatusGlyph, blockerLabel, scoreTone } from "@/lib/ui";
-import { deviceLabel, fixHints, shortDate, type Blocker, type SiteView } from "@/lib/space";
+import { BlockerIcon, BrowserFrame, Chevron, DeviceTag, MissionBar, StatusGlyph, blockerLabel, scoreTone } from "@/lib/ui";
+import { fixHints, shortDate, type Blocker, type SiteView } from "@/lib/space";
 import { tr, type Lang } from "@/lib/i18n";
 import { getLang, getT } from "@/lib/lang";
 
@@ -55,7 +55,7 @@ export async function SiteCard({ site }: { site: SiteView }) {
         <span className="min-w-0">
           <span className="type-headline block truncate">{site.domain}</span>
           <span className="type-small text-ink-2">
-            {deviceLabel(site.device, lang)} · {site.latest ? shortDate(site.latest.created_at, lang) : t("Premier audit en cours", "First audit running")}
+            <DeviceTag device={site.device} lang={lang} /> · {site.latest ? shortDate(site.latest.created_at, lang) : t("Premier audit en cours", "First audit running")}
           </span>
         </span>
         <Chevron className="mt-2 h-3 w-3 text-ink-2" />
@@ -72,7 +72,14 @@ export async function SiteCard({ site }: { site: SiteView }) {
       <dl className="type-small mt-auto grid gap-1.5 text-ink-2">
         <div className="flex justify-between gap-3">
           <dt>{t("À corriger", "To fix")}</dt>
-          <dd className="font-semibold text-ink">{open.length ? `${open.length} · ${blockerLabel(open[0].type, lang)}` : site.latest ? t("Rien", "Nothing") : "—"}</dd>
+          <dd className="flex min-w-0 items-center gap-1.5 font-semibold text-ink">
+            {open.length ? (
+              <>
+                <BlockerIcon type={open[0].type} className="h-5 w-5 rounded-[6px]" />
+                <span className="truncate">{`${open.length} · ${blockerLabel(open[0].type, lang)}`}</span>
+              </>
+            ) : site.latest ? t("Rien", "Nothing") : "—"}
+          </dd>
         </div>
         <div className="flex justify-between gap-3">
           <dt>{t("Classement", "Ranking")}</dt>
@@ -100,6 +107,7 @@ export async function BlockerItem({ site, b, canEdit, compact = false }: { site:
   return (
     <article className={`tile grid min-w-0 gap-7 p-7! ${compact ? "" : "md:grid-cols-[1fr_minmax(0,360px)]"}`}>
       <div className="flex flex-col">
+        <BlockerIcon type={b.type} className="mb-4 h-11 w-11 rounded-[12px]" />
         <div className="type-small flex flex-wrap items-center gap-x-3 gap-y-1.5">
           {state && <span className={`rounded-full px-2.5 py-0.5 font-semibold ${state[2]}`}>{t(state[0], state[1])}</span>}
           <span className="text-ink-2">
