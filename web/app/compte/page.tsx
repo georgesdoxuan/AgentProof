@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { Hint } from "@/lib/hint";
 import { teamContext } from "@/lib/auth";
 import { LANGS, LANG_NAME } from "@/lib/i18n";
 import { getDict, getLang, getT } from "@/lib/lang";
@@ -26,11 +27,13 @@ export default async function Compte({ searchParams }: { searchParams: Promise<{
 
   return (
     <SpaceShell narrow team={team} teams={teams} title={a.title}>
-      <Group footer={a.loginNote}>
+      <Group>
         <Row className="min-h-[76px]">
           <Avatar email={user.email} className="h-11 w-11" />
           <span className="min-w-0 flex-1">
-            <span className="type-headline block truncate">{user.email}</span>
+            <Hint tip={a.loginNote} className="block">
+              <span className="type-headline block truncate">{user.email}</span>
+            </Hint>
             <span className="type-small text-ink-2">
               {a.teams(teams.length)}
             </span>

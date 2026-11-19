@@ -22,7 +22,7 @@ export default async function Sites() {
       team={team}
       teams={teams}
       title="Sites"
-      intro={t("Le dernier score de chaque site, son évolution et ce qu'il reste à corriger.", "The latest score of each site, its trend and what is left to fix.")}
+      hint={t("Le dernier score de chaque site, son évolution et ce qu'il reste à corriger.", "The latest score of each site, its trend and what is left to fix.")}
       actions={
         canLaunch(team.role) ? (
           <Link href="/espace/nouveau" className="btn">

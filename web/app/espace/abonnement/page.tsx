@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Hint } from "@/lib/hint";
 import { redirect } from "next/navigation";
 import { teamContext } from "@/lib/auth";
 import { ALERTS, type Kind, PLANS, RATES, loadCredits } from "@/lib/credits";
@@ -43,7 +44,7 @@ export default async function Abonnement() {
       team={team}
       teams={teams}
       title={t("Abonnement et crédits", "Plan and credits")}
-      intro={t(
+      hint={t(
         "Chaque mission qu'un agent fait sur un site utilise un crédit. Un audit complet, ce sont cinq missions, donc cinq crédits.",
         "Every mission an agent runs on a site uses one credit. A full audit is five missions, so five credits.",
       )}
@@ -187,12 +188,15 @@ export default async function Abonnement() {
       <Group title={t("Alertes", "Alerts")}>
         <Row>
           <span className="min-w-0 flex-1">
-            <span className="block">{t(`À ${ALERTS.join(" % et ")} %`, `At ${ALERTS.join("% and ")}%`)}</span>
-            <span className="type-caption text-ink-2">
-              {settings?.webhook_url
-                ? t("Par e-mail au propriétaire de l'espace et sur le canal réglé dans Automations.", "By e-mail to the space owner and on the channel set in Automations.")
-                : t("Par e-mail au propriétaire de l'espace. Ajoute Slack ou un webhook dans Automations pour les recevoir aussi là.", "By e-mail to the space owner. Add Slack or a webhook in Automations to get them there too.")}
-            </span>
+            <Hint
+              tip={
+                settings?.webhook_url
+                  ? t("Par e-mail au propriétaire de l'espace et sur le canal réglé dans Automations.", "By e-mail to the space owner and on the channel set in Automations.")
+                  : t("Par e-mail au propriétaire de l'espace. Ajoute Slack ou un webhook dans Automations pour les recevoir aussi là.", "By e-mail to the space owner. Add Slack or a webhook in Automations to get them there too.")
+              }
+            >
+              {t(`À ${ALERTS.join(" % et ")} %`, `At ${ALERTS.join("% and ")}%`)}
+            </Hint>
           </span>
           <Link href="/espace/automations" className="more">
             {t("Régler", "Set up")}

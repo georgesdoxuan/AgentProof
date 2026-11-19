@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Hint } from "@/lib/hint";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/engine";
 import { canLaunch, teamContext } from "@/lib/auth";
@@ -99,21 +100,20 @@ export default async function Accueil() {
             ).map(([h, d], i) => (
               <li key={h} className="border-hairline p-8 max-md:border-b md:border-r md:last:border-0 max-md:last:border-0">
                 <span className="type-small grid h-7 w-7 place-items-center rounded-full bg-fill font-semibold tnum">{i + 1}</span>
-                <h2 className="type-headline mt-4">{h}</h2>
-                <p className="type-small mt-1 text-ink-2">{d}</p>
+                <h2 className="type-headline mt-4">
+                  <Hint tip={d}>{h}</Hint>
+                </h2>
               </li>
             ))}
           </ol>
           <div className="flex flex-wrap items-center justify-between gap-4 border-t border-hairline px-8 py-6">
-            <p className="type-small text-ink-2">
-              {launch
-                ? t(`Le rapport arrive aussi par e-mail à ${user.email}.`, `The report is also e-mailed to ${user.email}.`)
-                : t("Accès lecteur : un admin ou le propriétaire lance les audits.", "Viewer access: an admin or the owner runs audits.")}
-            </p>
+            {!launch && <p className="type-small text-ink-2">{t("Accès lecteur : un admin ou le propriétaire lance les audits.", "Viewer access: an admin or the owner runs audits.")}</p>}
             {launch && (
-              <Link href="/espace/nouveau" className="btn">
-                {t("Lancer mon premier audit", "Run my first audit")}
-              </Link>
+              <Hint focusable={false} align="end" side="top" className="ml-auto" tip={t(`Le rapport arrive aussi par e-mail à ${user.email}.`, `The report is also e-mailed to ${user.email}.`)}>
+                <Link href="/espace/nouveau" className="btn">
+                  {t("Lancer mon premier audit", "Run my first audit")}
+                </Link>
+              </Hint>
             )}
           </div>
         </section>

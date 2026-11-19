@@ -56,14 +56,14 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
       team={team}
       teams={teams}
       title={t("Équipe", "Team")}
-      intro={t(
+      hint={t(
         "Admin : lance des audits et lit les rapports. Lecteur : lit les rapports. Seul le propriétaire gère les membres.",
         "Admin: runs audits and reads reports. Viewer: reads reports. Only the owner manages members.",
       )}
     >
       {sp.invite && (
         <Group
-          title={sp.envoye === "1" ? t(`Invitation envoyée à ${sp.email}`, `Invitation sent to ${sp.email}`) : t(`Invitation créée pour ${sp.email}`, `Invitation created for ${sp.email}`)}
+          title={sp.envoye === "1" ? t(`Invitation envoyée à ${sp.email}`, `Invitation sent to ${sp.email}`) : t(`E-mail non envoyé : partage ce lien à ${sp.email}`, `E-mail not sent: share this link with ${sp.email}`)}
           footer={
             sp.envoye === "1"
               ? t("Lien valable 7 jours, réservé à cette adresse.", "Link valid for 7 days, for this address only.")
@@ -186,10 +186,10 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
       )}
 
       {!isOwner && (
-        <Group footer={t("Tu perds l'accès aux rapports de l'équipe. Le propriétaire peut t'inviter à nouveau.", "You lose access to the team's reports. The owner can invite you again.")}>
+        <Group>
           <form action="/api/team" method="post">
             <Hidden action="leave" />
-            <ConfirmButton message={t(`Quitter l'équipe ${team.name} ?`, `Leave the team ${team.name}?`)} className="flex min-h-[60px] w-full items-center px-5 text-left text-fail hover:bg-bg-2/60">
+            <ConfirmButton message={t(`Quitter l'équipe ${team.name} ? Tu perds l'accès aux rapports de l'équipe. Le propriétaire peut t'inviter à nouveau.`, `Leave the team ${team.name}? You lose access to the team's reports. The owner can invite you again.`)} className="flex min-h-[60px] w-full items-center px-5 text-left text-fail hover:bg-bg-2/60">
               {t("Quitter l’équipe", "Leave the team")}
             </ConfirmButton>
           </form>

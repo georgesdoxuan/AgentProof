@@ -244,6 +244,7 @@ async function trendOf(audit: any) {
       .eq("kind", "checkout")
       .eq("status", "done")
       .is("deleted_at", null)
+      .is("proof_of", null)
       .or(`model.is.null,model.eq.${DEFAULT_MODEL}`)
       .lt("created_at", audit.created_at)
       .order("created_at", { ascending: false })
@@ -273,22 +274,26 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const audit = await loadAudit(id);
   if (!audit) notFound();
+  // Everything else the report needs, read in parallel (one round trip instead of four).
+  const [ctx, payAudit, competitor, { data: brand }] = await Promise.all([
+    audit.kind === "payment" || audit.payment_test ? teamContext() : null,
+    audit.payment_test ? loadAudit(audit.payment_test) : null,
+    audit.compare_to ? loadAudit(audit.compare_to) : null,
+    // Agency white label: their name and logo replace AgentProof's on this report.
+    audit.team_id ? db.from("teams").select("brand_name, brand_logo").eq("id", audit.team_id).maybeSingle() : { data: null },
+  ]);
   // Real payment tests: only the team that ran them, or AgentProof staff.
-  const ctx = audit.kind === "payment" || audit.payment_test ? await teamContext() : null;
   const inTeam = !!audit.team_id && !!ctx?.teams.some((t) => t.id === audit.team_id);
   if (audit.kind === "payment" && !inTeam && !(await staffUser()).isStaff) notFound();
   // One run without account, plus one signed in when the team saved a test account for the site.
-  const pays: any[] = inTeam && audit.payment_test ? [...((await loadAudit(audit.payment_test))?.runs ?? [])].sort((a: any, b: any) => +a.with_login - +b.with_login) : [];
-  const competitor = audit.compare_to ? await loadAudit(audit.compare_to) : null;
-  // Agency white label: their name and logo replace AgentProof's on this report.
-  const { data: brand } = audit.team_id ? await db.from("teams").select("brand_name, brand_logo").eq("id", audit.team_id).maybeSingle() : { data: null };
+  const pays: any[] = inTeam && payAudit ? [...(payAudit.runs ?? [])].sort((a: any, b: any) => +a.with_login - +b.with_login) : [];
   const branded = !!brand?.brand_name;
   const h = await headers();
   const base = process.env.PUBLIC_URL || `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
   const statik = audit.static_check as { items?: { key: string; label: string; tone: "pass" | "warn" | "fail" | "none"; detail: string }[]; agents?: AgentAccess[] | null } | null;
   const protocols = (statik?.items ?? []).filter((it) => ["ucp", "acp", "webmcp"].includes(it.key));
   const alert = audit.score_alert as { from: number; to: number; previous: string } | null;
-  const trend = audit.kind === "checkout" && audit.status === "done" ? await trendOf(audit) : null;
+  const trend = audit.kind === "checkout" && audit.status === "done" && !audit.proof_of ? await trendOf(audit) : null;
 
   const runs = [...audit.runs].sort((a: any, b: any) => a.missions.position - b.missions.position);
   const s = summarize(runs);
@@ -387,6 +392,15 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             </time>
             {!running && !paymentOnly && <PrintButton label={t("Télécharger en PDF", "Download as PDF")} />}
           </p>
+          {audit.proof_of && (
+            <p className="mt-6 rounded-[12px] bg-tile px-4 py-3 type-small">
+              <span className="font-semibold">{t("Audit de preuve", "Proof audit")}</span> :{" "}
+              {t(
+                `l'agent rejoue seulement les missions que « ${blockerLabel(audit.proof_of, lang)} » bloquait, pour vérifier la correction. Si elles passent, la correction est prouvée dans la checklist.`,
+                `the agent replays only the missions that “${blockerLabel(audit.proof_of, lang)}” stopped, to check the fix. If they pass, the fix is marked proven in the checklist.`,
+              )}
+            </p>
+          )}
           {audit.deleted_at && (
             <p className="mt-6 rounded-[12px] bg-tile px-4 py-3 type-small print:hidden">
               {t("Ce rapport est dans la corbeille de l'équipe.", "This report is in the team's trash.")}{" "}
@@ -857,7 +871,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                   <a href={r.screenshot_url} target="_blank" rel="noreferrer" className="block rounded-[12px]" aria-label={`${t("Ouvrir la capture", "Open the screenshot")} : ${missionTitle(r.missions.title, lang)}`}>
                     <BrowserFrame url={r.final_url}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={r.screenshot_url} alt={`${t("Dernier écran vu par l'agent", "Last screen the agent saw")} : ${missionTitle(r.missions.title, lang)}`} className="block w-full" />
+                      <img src={r.screenshot_url} alt={`${t("Dernier écran vu par l'agent", "Last screen the agent saw")} : ${missionTitle(r.missions.title, lang)}`} className="block w-full" loading="lazy" decoding="async" />
                       {r.status === "done" && r.success !== null && (
                         <Verdict success={!!r.success} label={r.success ? undefined : missionBlocker(r, lang)} className="no-print absolute bottom-3 left-3" />
                       )}

@@ -48,29 +48,39 @@ export async function setTeam(teamId: string) {
   (await cookies()).set(TEAM, teamId, cookieOpts);
 }
 
-// Once per request: the header, the page and the space sidebar all ask for it.
-export const currentUser = cache(async function currentUser(): Promise<{ id: string; email: string } | null> {
+// The user id from a valid session cookie (signature and expiry checked), without any database read.
+async function sessionUserId() {
   const raw = (await cookies()).get(SESSION)?.value;
   if (!raw || !SECRET) return null;
   const [id, exp, mac = ""] = raw.split(".");
   const expected = sign(`${id}.${exp}`);
   if (mac.length !== expected.length || !timingSafeEqual(Buffer.from(mac), Buffer.from(expected)) || Number(exp) < Date.now()) return null;
-  const { data } = await db.from("users").select("id, email").eq("id", id).maybeSingle();
-  return data;
+  return id;
+}
+
+const loadUser = (id: string) => db.from("users").select("id, email").eq("id", id).maybeSingle().then(({ data }) => data as { id: string; email: string } | null);
+const loadMemberships = (userId: string) => db.from("memberships").select("role, teams(id, name, owner_id)").eq("user_id", userId).order("created_at");
+
+// cache(): the layout (nav), generateMetadata and the page all ask for the user in one request; the database is read once.
+export const currentUser = cache(async (): Promise<{ id: string; email: string } | null> => {
+  const id = await sessionUserId();
+  return id ? loadUser(id) : null;
 });
 
 export type TeamRow = { id: string; name: string; owner_id: string; role: Role };
 
 // The signed-in user, every team they belong to, and the team they are working in (cookie, else the first one).
-export async function teamContext() {
-  const user = await currentUser();
+// The user and their teams are read in parallel: the signed cookie already gives the user id.
+export const teamContext = cache(async () => {
+  const id = await sessionUserId();
+  if (!id) return null;
+  const [user, { data }] = await Promise.all([currentUser(), loadMemberships(id)]);
   if (!user) return null;
-  const { data } = await db.from("memberships").select("role, teams(id, name, owner_id)").eq("user_id", user.id).order("created_at");
   const teams: TeamRow[] = (data ?? []).map((m: any) => ({ ...m.teams, role: m.role }));
   const wanted = (await cookies()).get(TEAM)?.value;
   const team = teams.find((t) => t.id === wanted) ?? teams[0] ?? null;
   return { user, teams, team };
-}
+});
 
 export async function createTeam(name: string, ownerId: string) {
   const { data: team, error } = await db.from("teams").insert({ name: name.slice(0, 80), owner_id: ownerId }).select("id").single();
