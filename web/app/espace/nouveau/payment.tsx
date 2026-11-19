@@ -24,9 +24,10 @@ const Chevron = ({ open }: { open: boolean }) => (
 );
 
 // A chip that opens a small pop-up list to pick one item (a card, a test account), plus a link to manage them.
-function ChipMenu<I extends { id: string | number }>({ items, value, onPick, glyph, main, side, label, listLabel, manage }: {
+// align "right": the chip sits at the end of its row, so the list opens leftwards and stays inside the card.
+function ChipMenu<I extends { id: string | number }>({ items, value, onPick, glyph, main, side, label, listLabel, manage, align = "left" }: {
   items: I[]; value: I; onPick: (id: I["id"]) => void; glyph: React.ReactNode; main: (i: I) => string; side: (i: I) => string;
-  label: string; listLabel: string; manage: { href: string; text: string };
+  label: string; listLabel: string; manage: { href: string; text: string }; align?: "left" | "right";
 }) {
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLSpanElement>(null);
@@ -60,7 +61,7 @@ function ChipMenu<I extends { id: string | number }>({ items, value, onPick, gly
         <Chevron open={open} />
       </button>
       {open && (
-        <div className="absolute left-0 top-[calc(100%+6px)] z-50 w-[min(300px,calc(100vw-48px))] overflow-hidden rounded-[14px] bg-pop p-1.5 shadow-[0_10px_32px_rgb(0_0_0/0.18),inset_0_0_0_0.5px_var(--line)] motion-safe:animate-[ap-fade_0.15s_ease-out]">
+        <div className={`absolute ${align === "right" ? "right-0" : "left-0"} top-[calc(100%+6px)] z-50 w-[min(300px,calc(100vw-48px))] overflow-hidden rounded-[14px] bg-pop p-1.5 shadow-[0_10px_32px_rgb(0_0_0/0.18),inset_0_0_0_0.5px_var(--line)] motion-safe:animate-[ap-fade_0.15s_ease-out]`}>
           <ul id={listId} role="listbox" aria-label={listLabel}>
             {items.map((c) => (
               <li key={c.id} role="option" aria-selected={c.id === value.id}>
@@ -192,10 +193,16 @@ export function PaymentPicker({ cards, accounts = [], lang, tip, max }: { cards:
             {(
               [
                 ["none", t("Sans compte", "No account")],
-                ["login", t("Avec un compte de test", "With a test account")],
+                [
+                  "login",
+                  <>
+                    <span className="max-sm:hidden">{t("Avec un compte de test", "With a test account")}</span>
+                    <span className="sm:hidden">{t("Compte de test", "Test account")}</span>
+                  </>,
+                ],
               ] as const
             ).map(([v, l]) => (
-              <label key={v} className="relative cursor-pointer">
+              <label key={v} className="relative min-w-0 cursor-pointer">
                 <input type="radio" name="account" value={v} checked={mode === v} onChange={() => setMode(v)} className="peer sr-only" />
                 <span className="type-small flex h-9 items-center justify-center whitespace-nowrap rounded-[8px] px-4 font-semibold text-ink-2 transition-colors duration-200 max-sm:px-3 peer-checked:bg-tile peer-checked:text-ink peer-checked:shadow-[0_1px_3px_rgb(0_0_0/0.12)] peer-focus-visible:outline-2 peer-focus-visible:outline-blue dark:peer-checked:bg-[#636366]">
                   {l}
@@ -220,6 +227,7 @@ export function PaymentPicker({ cards, accounts = [], lang, tip, max }: { cards:
                     label={t(`Compte de test : ${accountName(account)}. Changer de compte`, `Test account: ${accountName(account)}. Change account`)}
                     listLabel={t(`Comptes de test pour ${domain}`, `Test accounts for ${domain}`)}
                     manage={{ href: addHref, text: t("Gérer les comptes de test", "Manage test accounts") }}
+                    align="right"
                   />
                 ) : (
                   <span className="type-caption inline-flex h-8 min-w-0 items-center gap-2 rounded-full bg-tile px-3 font-semibold shadow-[inset_0_0_0_0.5px_var(--line)] dark:bg-[#3a3a3c]">
