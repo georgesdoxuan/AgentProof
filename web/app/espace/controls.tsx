@@ -253,7 +253,7 @@ function MobileNav({ t }: { t: Dict["space"] }) {
                 on ? "bg-tile text-ink shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#3a3a3c]" : "text-ink-2"
               }`}
             >
-              {glyph(icon, `h-[17px] w-[17px] shrink-0 ${on ? "text-blue" : ""} sm:hidden`)}
+              {!on && glyph(icon, "h-[17px] w-[17px] shrink-0 sm:hidden")}
               <span className={on ? "truncate" : "max-sm:sr-only"}>{t.sections[href]}</span>
             </Link>
           );
