@@ -5,7 +5,19 @@ import { Bone, Line, SkSpace } from "../../../skeleton";
 // Sites: one card per site (name, score, missions, what is left to fix).
 export default function Loading() {
   return (
-    <SkSpace action>
+    <SkSpace bare>
+      {/* No title: the extension chips and the two buttons share the top row, as on the page. */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
+        <div className="flex flex-wrap items-center gap-2">
+          {["4.5rem", "3.5rem", "3.5rem"].map((w, i) => (
+            <Bone key={i} className="h-[26px] rounded-full" w={w} />
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <Bone className="h-12 w-40 rounded-full" />
+          <Bone className="h-12 w-44 rounded-full" />
+        </div>
+      </div>
       <div className="grid gap-5 sm:grid-cols-[repeat(auto-fill,minmax(20rem,1fr))]">
         {[0, 1, 2].map((i) => (
           <div key={i} className="tile flex flex-col gap-6 p-7!">

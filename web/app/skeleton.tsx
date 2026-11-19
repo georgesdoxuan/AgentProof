@@ -41,9 +41,12 @@ export function SkSpace({
   logo,
   long,
   settings,
+  bare,
   children,
 }: {
   narrow?: boolean;
+  /** Pages with no visible title (Sites): only the content's placeholders. */
+  bare?: boolean;
   action?: boolean;
   /** "chips": a row of Chips (26px), or the widths of each chip; "line": one line of text. Left out when the page has no intro. */
   intro?: "chips" | "line" | string[];
@@ -61,6 +64,7 @@ export function SkSpace({
     <Loading>
       <SpaceShell
         settings={settings}
+        bare={bare}
         narrow={narrow}
         parent={parent ? ["#", ""] : undefined}
         title={
