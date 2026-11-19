@@ -1,6 +1,7 @@
 import "server-only";
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
+import { cache } from "react";
 import { db } from "./engine";
 
 // Passwordless e-mail login: one-time link -> signed session cookie. Users, teams and invitations live in Supabase.
@@ -47,7 +48,8 @@ export async function setTeam(teamId: string) {
   (await cookies()).set(TEAM, teamId, cookieOpts);
 }
 
-export async function currentUser(): Promise<{ id: string; email: string } | null> {
+// Once per request: the header, the page and the space sidebar all ask for it.
+export const currentUser = cache(async function currentUser(): Promise<{ id: string; email: string } | null> {
   const raw = (await cookies()).get(SESSION)?.value;
   if (!raw || !SECRET) return null;
   const [id, exp, mac = ""] = raw.split(".");
@@ -55,7 +57,7 @@ export async function currentUser(): Promise<{ id: string; email: string } | nul
   if (mac.length !== expected.length || !timingSafeEqual(Buffer.from(mac), Buffer.from(expected)) || Number(exp) < Date.now()) return null;
   const { data } = await db.from("users").select("id, email").eq("id", id).maybeSingle();
   return data;
-}
+});
 
 export type TeamRow = { id: string; name: string; owner_id: string; role: Role };
 

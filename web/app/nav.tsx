@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { accountColor } from "@/lib/avatar";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LANG_NAME, type Dict, type Lang } from "@/lib/i18n";
@@ -90,7 +91,7 @@ export function Nav({ email, t }: { email: string | null; t: Dict["nav"] }) {
         <span className="min-[481px]:hidden">{t.space}</span>
       </Link>
       <button type="button" popoverTarget="compte-menu" aria-label={`${t.account} : ${email}`} className="-mr-2 grid h-11 w-11 place-items-center rounded-full">
-        <span className="grid h-7 w-7 place-items-center rounded-full bg-ink font-semibold text-bg" aria-hidden>
+        <span className="grid h-7 w-7 place-items-center rounded-full font-semibold text-white" style={{ background: accountColor(email) }} aria-hidden>
           {email[0].toUpperCase()}
         </span>
       </button>

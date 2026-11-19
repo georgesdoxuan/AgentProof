@@ -3,6 +3,8 @@ import { getDict } from "@/lib/lang";
 import Link from "next/link";
 import { Chevron } from "@/lib/ui";
 import { AutoSubmitSelect, SpaceNav } from "./controls";
+import { currentUser } from "@/lib/auth";
+import { accountColor, spaceColor } from "@/lib/avatar";
 
 // One frame for every page of the team space: a sidebar on the leading edge, the page beside it.
 // Wide screens: the sidebar sits against the window edge (logo above lines up with it) and the page is centred
@@ -29,12 +31,15 @@ export async function SpaceShell({
   children: React.ReactNode;
 }) {
   const t = await getDict();
+  // Cached per request (the header already read it): the « Compte » row wears the account's own avatar.
+  const email = team ? (await currentUser())?.email : undefined;
+  const account = email ? { initial: email[0].toUpperCase(), color: accountColor(email) } : undefined;
   return (
     <div data-app-shell className="min-h-[70vh] bg-bg-2 lg:grid lg:grid-cols-[256px_minmax(0,1fr)]">
       <aside className="min-w-0 space-y-5 px-6 pt-6 sm:px-8 lg:sticky lg:top-[52px] lg:h-[calc(100dvh-52px)] lg:space-y-7 lg:self-start lg:overflow-y-auto lg:border-r lg:border-hairline lg:px-3 lg:py-6">
         {team ? (
           <div className="flex items-center gap-3 lg:px-3">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[9px] bg-ink text-[17px] font-semibold text-bg" aria-hidden>
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[9px] text-[17px] font-semibold text-white" style={{ background: spaceColor(team.id) }} aria-hidden>
               {team.name[0]?.toUpperCase()}
             </span>
             <span className="min-w-0 flex-1">
@@ -65,7 +70,7 @@ export async function SpaceShell({
             </span>
           </div>
         )}
-        <SpaceNav t={t.space} />
+        <SpaceNav t={t.space} account={account} />
       </aside>
 
       <div className="min-w-0 px-6 pb-24 pt-8 sm:px-8 lg:px-12 lg:pt-10 xl:px-16">
