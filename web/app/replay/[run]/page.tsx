@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { db, getReplay } from "@/lib/engine";
+import { db, getPaymentReplay, getReplay, paymentVerdicts } from "@/lib/engine";
+import { canSeePayment } from "@/lib/auth";
 import { AutoRefresh } from "@/app/audit/[id]/refresh";
-import { AgentCursor, BrowserFrame, Chevron, Verdict, blockerLabel } from "@/lib/ui";
+import { AgentCursor, BrowserFrame, Chevron, StatusGlyph, Verdict, blockerLabel } from "@/lib/ui";
 import { missionTitle, tr } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 
@@ -20,6 +21,8 @@ const ACTIONS: Record<string, [string, string]> = {
   answer: ["Réponse finale", "Final answer"],
 };
 
+const hoursSince = (iso: string | null) => (iso ? (Date.now() - new Date(iso).getTime()) / 3600_000 : 0);
+
 export default async function Replay({ params, searchParams }: { params: Promise<{ run: string }>; searchParams: Promise<{ a?: string; essai?: string }> }) {
   await connection();
   const lang = await getLang();
@@ -30,13 +33,26 @@ export default async function Replay({ params, searchParams }: { params: Promise
   // Run ids follow each other: the link must also carry the audit's unguessable id, like the report it comes from.
   // Otherwise anyone could walk /replay/1, /replay/2… and spend the H request budget creating share links.
   if (!Number.isInteger(id) || !a || !/^[0-9a-f-]{36}$/.test(a)) notFound();
-  const { data: run } = await db.from("runs").select("id, audit_id, status, success, blocker_type, first_attempt, missions(title), audits(sites(name))").eq("id", id).maybeSingle();
+  const { data: run } = await db
+    .from("runs")
+    .select("id, audit_id, status, success, blocker_type, first_attempt, with_login, payment_verdict, finished_at, missions(title, slug), audits(team_id, sites(name))")
+    .eq("id", id)
+    .maybeSingle();
   if (!run || run.audit_id !== a) notFound();
+  // Real payment test: private replay, card masked, only for the team that ran it (see getPaymentReplay).
+  const payment = (run as any).missions?.slug === "paiement";
+  if (payment && (first || !(await canSeePayment((run as any).audits?.team_id ?? null)))) notFound();
+  // Back to the report the payment test was launched from (staff tests without one go back to their R&D page).
+  const { data: parent } = payment ? await db.from("audits").select("id").eq("payment_test", run.audit_id).limit(1).maybeSingle() : { data: null };
+  const back = payment ? (parent ? `/audit/${parent.id}` : "/test-paiement") : `/audit/${run.audit_id}`;
+  // H deletes payment screenshots 4 hours after the test.
+  const shotsGone = payment && hoursSince((run as any).finished_at) > 4;
+  const payOk = ["bank_declined", "payment_accepted"].includes((run as any).payment_verdict);
 
   const live = !first && (run as any).status === "launched";
   let replay: Awaited<ReturnType<typeof getReplay>> = null;
   try {
-    replay = await getReplay(id, live, first);
+    replay = payment ? await getPaymentReplay(id) : await getReplay(id, live, first);
   } catch {
     return (
       <div className="bg-bg-2 py-32">
@@ -60,7 +76,7 @@ export default async function Replay({ params, searchParams }: { params: Promise
     <div className="bg-bg-2 pb-24 pt-10">
       <div className="wrap-wide">
         <header>
-          <Link href={`/audit/${r.audit_id}`} className="-ml-0.5 inline-flex min-h-11 items-center gap-1 text-link hover:underline">
+          <Link href={back} className="-ml-0.5 inline-flex min-h-11 items-center gap-1 text-link hover:underline">
             <Chevron dir="left" className="h-3 w-3" />
             {t("Rapport", "Report")} {r.audits.sites.name}
           </Link>
@@ -78,8 +94,25 @@ export default async function Replay({ params, searchParams }: { params: Promise
               Replay{first ? t(" du premier essai", " of the first attempt") : ""} · {replay.steps.length} {t("étapes", "steps")}
             </p>
           )}
-          <h1 className="type-h1 mt-3">{missionTitle(r.missions.title, lang)}</h1>
-          {r.success !== null && <Verdict success={!!r.success} label={r.success ? undefined : blockerLabel(r.blocker_type, lang)} className="mt-5" />}
+          <h1 className="type-h1 mt-3">
+            {payment
+              ? t("Test de paiement réel", "Real payment test") + (r.with_login ? t(" · connecté avec le compte de test", " · signed in with the test account") : t(" · sans compte", " · without an account"))
+              : missionTitle(r.missions.title, lang)}
+          </h1>
+          {payment && r.payment_verdict && (
+            <p className="type-small mt-5 inline-flex items-center gap-1.5 font-semibold">
+              <StatusGlyph tone={payOk ? "pass" : "fail"} />
+              {paymentVerdicts(lang)[r.payment_verdict] ?? r.payment_verdict}
+            </p>
+          )}
+          {payment && (
+            <p className="type-small mt-4 max-w-[760px] text-ink-2">
+              {shotsGone
+                ? t("Les captures ont été effacées 4 h après le test pour protéger la carte. Les actions et le raisonnement de l’agent restent, numéro de carte masqué.", "Screenshots were deleted 4 hours after the test to protect the card. The agent's actions and reasoning remain, card number masked.")
+                : t("Replay privé, visible seulement par ton équipe. Numéro de carte, expiration et CVC sont masqués dans le texte. Les captures sont effacées 4 h après le test.", "Private replay, only your team can see it. Card number, expiry and CVC are masked in the text. Screenshots are deleted 4 hours after the test.")}
+            </p>
+          )}
+          {!payment && r.success !== null && <Verdict success={!!r.success} label={r.success ? undefined : blockerLabel(r.blocker_type, lang)} className="mt-5" />}
           <details className="group mt-8 max-w-[760px] rounded-[18px] bg-tile">
             <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 px-6 type-headline [&::-webkit-details-marker]:hidden">
               {t("Consigne donnée à l’agent", "Instructions given to the agent")}
@@ -94,9 +127,13 @@ export default async function Replay({ params, searchParams }: { params: Promise
           {steps.map(({ s, i }) => (
             <li key={i} className="grid gap-6 md:grid-cols-[minmax(0,1fr)_300px] md:gap-10">
               <BrowserFrame url={s.url}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={s.image} alt={`${t("Étape", "Step")} ${i + 1} : ${s.url}`} className="block w-full" loading={live && i === last ? "eager" : "lazy"} />
-                {s.x != null && s.y != null && <AgentCursor x={s.x} y={s.y} />}
+                {shotsGone ? (
+                  <div className="type-small grid aspect-[16/10] place-items-center bg-bg-2 text-ink-2 dark:bg-[#2c2c2e]">{t("Capture effacée", "Screenshot deleted")}</div>
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={s.image} alt={`${t("Étape", "Step")} ${i + 1} : ${s.url}`} className="block w-full" loading={live && i === last ? "eager" : "lazy"} />
+                )}
+                {!shotsGone && s.x != null && s.y != null && <AgentCursor x={s.x} y={s.y} />}
               </BrowserFrame>
               <div className="md:sticky md:top-[76px] md:self-start">
                 <p className="type-small flex items-center gap-2 text-ink-2 tnum">
