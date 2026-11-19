@@ -5,7 +5,7 @@ import { connection } from "next/server";
 import { DEFAULT_MODEL, EXCLUDED, db, paymentStages, paymentVerdicts } from "@/lib/engine";
 import { locale, missionTitle, staticText, tr, type Lang, type T } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
-import { BlockerIcon, BrowserFrame, Chevron, DeviceTag, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, hurdles, summarize } from "@/lib/ui";
+import { BlockerIcon, BrowserFrame, MissionIcon, Chevron, DeviceTag, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, hurdles, summarize } from "@/lib/ui";
 import { headers } from "next/headers";
 import { CopyField } from "@/app/espace/controls";
 import { Mark, Wordmark, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
@@ -390,6 +390,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                   <li key={r.id} className="border-t border-hairline first:border-0">
                     <a href={`#mission-${i + 1}`} className="flex min-h-[52px] items-center gap-3 px-7 py-2.5 transition-colors hover:bg-bg-2/70 max-[734px]:px-6 dark:hover:bg-white/5">
                       <span className="w-4 shrink-0 type-small text-ink-2 tnum">{i + 1}</span>
+                      <MissionIcon title={r.missions.title} className="h-7 w-7 rounded-[8px]" />
                       <span className="min-w-0 flex-1 truncate">{missionTitle(r.missions.title, lang)}</span>
                       <span className="type-small shrink-0">
                         <StatusBadge run={r} />
@@ -539,7 +540,10 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                     <span className="text-ink-2 tnum">Mission {i + 1}</span>
                     <StatusBadge run={r} />
                   </div>
-                  <h3 className="type-h3 mt-2">{missionTitle(r.missions.title, lang)}</h3>
+                  <h3 className="type-h3 mt-3 flex items-center gap-3">
+                    <MissionIcon title={r.missions.title} className="h-10 w-10 rounded-[11px]" />
+                    {missionTitle(r.missions.title, lang)}
+                  </h3>
                   {r.status === "done" && (
                     <div className="mt-4">
                       {!r.success && r.success !== null && (

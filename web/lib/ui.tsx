@@ -221,6 +221,32 @@ export function BlockerIcon({ type, muted, className = "h-8 w-8 rounded-[9px]" }
   );
 }
 
+// Mission types, keyed by the French title stored in the database. Neutral tile: a mission is a task, not a verdict.
+const MISSION_ICON: Record<string, string> = {
+  "Recherche + taille": "M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM20 20l-4.9-4.9",
+  "Menu + filtre taille": "M4 6h16M4 12h16M4 18h10",
+  "Filtre de prix": "M3.5 12.5v-8a1 1 0 0 1 1-1h8l8 8-9 9zM8 8h.01",
+  "Variante couleur": "M12 3.5s-6 6.4-6 10.5a6 6 0 0 0 12 0c0-4.1-6-10.5-6-10.5z",
+  "Article en promo": "M6 18 18 6M7.5 6a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM16.5 15a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z",
+  "Deux articles": "M5 8h14l-1 12.5H6zM9 8V6.5a3 3 0 0 1 6 0V8",
+  "Quantité dans le panier": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8v8M8 12h8",
+  "Frais de livraison": "M3 6h11v10H3zM14 9.5h4l3 3.5v3h-7M7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM17.5 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4z",
+  "Recherche avec faute": "M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM20 20l-4.9-4.9M7.5 11c1-1.3 2-1.3 3 0s2 1.3 3 0",
+  "Parcours depuis l'accueil": "M3.5 10.5 12 3.5l8.5 7V20a1 1 0 0 1-1 1H15v-6H9v6H4.5a1 1 0 0 1-1-1z",
+  "Test de paiement": ICON.payment,
+};
+export const MISSION_TYPES = Object.keys(MISSION_ICON);
+
+export function MissionIcon({ title, className = "h-8 w-8 rounded-[9px]" }: { title: string | null | undefined; className?: string }) {
+  return (
+    <span className={`grid shrink-0 place-items-center bg-fill text-ink ${className}`} aria-hidden>
+      <svg viewBox="0 0 24 24" className="h-[62%] w-[62%]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d={MISSION_ICON[title ?? ""] ?? ICON.other} />
+      </svg>
+    </span>
+  );
+}
+
 // "Ordinateur" / "Mobile" with its device glyph.
 export function DeviceTag({ device, lang = "fr" }: { device: string; lang?: Lang }) {
   return (

@@ -2,7 +2,8 @@ import Link from "next/link";
 import { LEGAL, LEGAL_EN } from "@/lib/legal";
 import { getLang } from "@/lib/lang";
 import { BLOCKERS, EXCLUDED, blockerNames } from "@/lib/engine";
-import { BlockerIcon, DeviceTag, StatusGlyph } from "@/lib/ui";
+import { BlockerIcon, DeviceTag, MISSION_TYPES, MissionIcon, StatusGlyph } from "@/lib/ui";
+import { missionTitle } from "@/lib/i18n";
 
 export async function generateMetadata() {
   return { title: `${(await getLang()) === "en" ? "Method" : "Méthode"} · AgentProof` };
@@ -29,6 +30,15 @@ function Legend({ lang }: { lang: "fr" | "en" }) {
   ] as const;
   return (
     <Section title={en ? "Reading a report" : "Lire un rapport"} id="legende">
+      <p>{en ? "Each mission type has its icon:" : "Chaque type de mission a son icône :"}</p>
+      <ul className="grid gap-x-6 gap-y-3 pb-3 sm:grid-cols-2">
+        {MISSION_TYPES.map((m) => (
+          <li key={m} className="flex items-center gap-3 text-ink">
+            <MissionIcon title={m} />
+            {missionTitle(m, lang)}
+          </li>
+        ))}
+      </ul>
       <ul className="space-y-2">
         {statuses.map(([tone, name, text]) => (
           <li key={tone} className="flex items-baseline gap-2.5">
