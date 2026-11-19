@@ -75,7 +75,7 @@ export async function SiteCard({ site }: { site: SiteView }) {
           <dd className="flex min-w-0 items-center gap-1.5 font-semibold text-ink">
             {open.length ? (
               <>
-                <BlockerIcon type={open[0].type} className="h-5 w-5 rounded-[6px]" />
+                <BlockerIcon type={open[0].type} className="h-6 w-6 rounded-[7px]" />
                 <span className="truncate">{`${open.length} · ${blockerLabel(open[0].type, lang)}`}</span>
               </>
             ) : site.latest ? t("Rien", "Nothing") : "—"}

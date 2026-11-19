@@ -34,7 +34,7 @@ function PayLine({ pay, multi, lang }: { pay: { status: string; verdict: string 
   const who = multi || pay.with_login ? (pay.with_login ? t(" (connecté)", " (signed in)") : t(" (sans compte)", " (no account)")) : "";
   return (
     <span className={`type-small flex items-center gap-1 font-semibold ${cls}`}>
-      <Icon name="payment" className="h-[1.15em] w-[1.15em]" />
+      <Icon name="payment" className="h-[1.1em] w-[1.1em]" />
       {text}{who}
     </span>
   );
