@@ -35,7 +35,7 @@ const TYPE_TONE: Record<AuditType, string> = {
   both: "bg-blue/12 text-link",
 };
 // The badge: icon(s) + label, beside the name on wide screens, on its own line under the row on phones.
-function TypeBadge({ type, t, className = "" }: { type: AuditType; t: Dict["reports"]["types"]; className?: string }) {
+export function TypeBadge({ type, t, className = "" }: { type: AuditType; t: Dict["reports"]["types"]; className?: string }) {
   return (
     <span title={t.tip[type]} className={`type-caption inline-flex h-[22px] shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2 font-semibold ${TYPE_TONE[type]} ${className}`}>
       {TYPE_ICONS[type].map((i) => <Icon key={i} name={i} className="h-[13px] w-[13px]" />)}
