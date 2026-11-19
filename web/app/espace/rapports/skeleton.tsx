@@ -12,7 +12,7 @@ export function SkReports({ intro, parent }: { intro?: "chips"; parent?: boolean
         </div>
         <div className="overflow-hidden rounded-[18px] bg-tile">
           {[0, 1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="grid min-h-[68px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-5 border-b border-hairline py-3 pl-5 pr-5 last:border-0 md:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_8rem_5.5rem]">
+            <div key={i} className="grid min-h-[68px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-5 border-b border-hairline py-3 pl-5 pr-5 last:border-0 md:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_8rem_6.5rem]">
               <span className="min-w-0">
                 <span className="block font-semibold">
                   <Line w={["52%", "40%", "64%", "46%", "58%", "36%"][i]} />

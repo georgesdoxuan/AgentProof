@@ -208,7 +208,7 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
       <Group title={t("Audits de ce site", "Audits of this site")}>
         {site.audits.map((a) => (
           <Link key={a.id} href={`/audit/${a.id}`} className="block border-b border-hairline last:border-0 hover:bg-bg-2/60">
-            <div className="grid min-h-[60px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-5 px-5 py-3 sm:grid-cols-[minmax(0,1fr)_8rem_5.5rem_1rem]">
+            <div className="grid min-h-[60px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-5 px-5 py-3 sm:grid-cols-[minmax(0,1fr)_8rem_6.5rem_1rem]">
               <span className="min-w-0">
                 <span className="block truncate font-semibold">{shortDate(a.created_at, lang)}</span>
                 <span className="type-small text-ink-2">{a.users?.email ?? "—"}</span>
@@ -224,16 +224,16 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
                     {t("Sans score", "No score")}
                   </span>
                 ) : a.status === "done" ? (
-                  <>
-                    <StatusGlyph tone={scoreTone(a.s.score)} className="h-4 w-4" />
-                    {a.s.score} %
-                    {a.s.exPay && (
-                      <>
-                        <ExPay lang={lang} short className="md:hidden" />
-                        <ExPay lang={lang} className="type-small max-md:hidden" />
-                      </>
-                    )}
-                  </>
+                  // "hors paiement" goes under the score, never beside it: the column keeps its width and the
+                  // score never runs over the mission bar.
+                  <span className="flex flex-col items-end">
+                    <span className="flex items-center gap-2">
+                      <StatusGlyph tone={scoreTone(a.s.score)} className="h-4 w-4" />
+                      {a.s.score} %
+                      {a.s.exPay && <ExPay lang={lang} short className="sm:hidden" />}
+                    </span>
+                    {a.s.exPay && <ExPay lang={lang} className="type-small leading-tight max-sm:hidden" />}
+                  </span>
                 ) : (
                   <span className="type-small flex items-center gap-2 font-normal text-ink-2">
                     <Spinner className="h-3.5 w-3.5" />
