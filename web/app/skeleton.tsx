@@ -1,5 +1,6 @@
 import { getT } from "@/lib/lang";
 import { SpaceShell } from "./espace/shell";
+import { Columns } from "@/lib/ui";
 
 // Loading placeholders (loading.tsx of each route). Each one reuses the real page's frame and spacing, so nothing
 // moves when the content arrives. Text placeholders sit inside an element with the real type style: the line keeps
@@ -40,9 +41,12 @@ export function SkSpace({
   logo,
   long,
   settings,
+  bare,
   children,
 }: {
   narrow?: boolean;
+  /** Pages with no visible title (Sites): only the content's placeholders. */
+  bare?: boolean;
   action?: boolean;
   /** "chips": a row of Chips (26px), or the widths of each chip; "line": one line of text. Left out when the page has no intro. */
   intro?: "chips" | "line" | string[];
@@ -60,6 +64,7 @@ export function SkSpace({
     <Loading>
       <SpaceShell
         settings={settings}
+        bare={bare}
         narrow={narrow}
         parent={parent ? ["#", ""] : undefined}
         title={
@@ -153,7 +158,7 @@ export function SkGroup({ title = true, rows = 3, tall, footer, children }: { ti
 // A form inside a group: Field-sized inputs (56px) and a pill button.
 export function SkForm({ fields = 2, segmented }: { fields?: number; segmented?: boolean }) {
   return (
-    <div className="grid gap-4 p-6 sm:p-8">
+    <div className="grid gap-4 p-5 sm:p-6">
       {segmented && <Bone className="h-9 w-64 max-w-full rounded-[10px]" />}
       {Array.from({ length: fields }, (_, i) => (
         <Bone key={i} className="h-14 rounded-[12px]" />
@@ -164,13 +169,18 @@ export function SkForm({ fields = 2, segmented }: { fields?: number; segmented?:
 }
 
 // Settings-like pages of the space (payment, logins, automations, team, account): a list, then a form.
+// Same two columns as the tabs (lib/ui Columns): the list on the leading side, the form beside it.
 export function SkSettings({ rows = 3, fields = 3 }: { rows?: number; fields?: number }) {
   return (
-    <SkSpace narrow settings>
-      <SkGroup rows={rows} footer />
-      <SkGroup>
-        <SkForm fields={fields} />
-      </SkGroup>
+    <SkSpace settings>
+      <Columns
+        main={<SkGroup rows={rows} />}
+        side={
+          <SkGroup>
+            <SkForm fields={fields} />
+          </SkGroup>
+        }
+      />
     </SkSpace>
   );
 }

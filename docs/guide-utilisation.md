@@ -83,7 +83,7 @@ AgentProof fonctionne pour **tout site e-commerce qui vend des produits physique
 2. Entrez votre adresse e-mail. Vous recevez un **lien de connexion valable 15 minutes**. Il n'y a pas de mot de passe.
 3. À la première connexion, un **espace d'équipe** est créé pour vous. Vous en êtes le propriétaire.
 
-Votre espace se trouve sous **Mon espace**. La barre de gauche donne accès à Accueil, Sites, Rapports et Réglages ; le bouton en bas de la barre la replie en icônes. **Réglages** regroupe en onglets Équipe, Abonnement, Paiement, Comptes de test, Automations, Corbeille et Compte. Le **Classement** s’ouvre depuis la page Sites.
+Votre espace se trouve sous **Mon espace**. La barre de gauche donne accès à Accueil, Sites, Rapports, Automations et Réglages ; le bouton en haut de la barre la replie en icônes. **Réglages** regroupe en onglets Équipe, Abonnement, Paiement, Comptes de test, Corbeille et Compte. Le **Classement** s’ouvre depuis la page Sites.
 
 L'interface existe en **français et en anglais** : la langue se règle dans **Compte**. Les rapports d'audit restent en français pour l'instant.
 
@@ -146,7 +146,7 @@ Si le site a déjà été audité il y a moins de 7 jours, AgentProof vous ouvre
 - Avec un concurrent ou en Ordinateur + Mobile, comptez environ le double du temps.
 - Chaque mission ratée est **rejouée une fois** avant la fin de l'audit, pour écarter un échec dû au hasard. C'est le second essai qui compte.
 - Quand l'audit est terminé, **un e-mail part** avec le lien du rapport.
-- Vous pouvez **annuler l'audit** depuis le rapport (lien « Annuler l'audit » sous la progression, propriétaire et admins). Les missions pas encore lancées sont retirées et leurs crédits rendus ; celles que l'agent joue déjà se terminent et restent dans le rapport.
+- Vous pouvez **annuler l'audit** depuis le rapport (lien « Annuler l'audit » sous la progression, propriétaire, admins et éditeurs). Les missions pas encore lancées sont retirées et leurs crédits rendus ; celles que l'agent joue déjà se terminent et restent dans le rapport.
 
 ## 7. Lire le rapport
 
@@ -228,7 +228,7 @@ Le rangement se fait dans **Rapports**, qui a deux rubriques : **Tous** et **Fav
 
 ## 10. Suivre son site : automations, Slack, suivi mensuel
 
-Un site change souvent : nouveau thème, nouveau bandeau cookies, nouveau widget de chat. Les **automations** surveillent ces changements. Elles se trouvent dans **Réglages › Automations**, en cinq cartes. Chaque réglage s'enregistre aussitôt et un message « Enregistré » le confirme en bas de l'écran.
+Un site change souvent : nouveau thème, nouveau bandeau cookies, nouveau widget de chat. Les **automations** surveillent ces changements. Elles ont leur entrée **Automations** dans la barre de gauche, en cinq cartes. Chaque réglage s'enregistre aussitôt et un message « Enregistré » le confirme en haut de l'écran.
 
 ### Surveillance des pages (gratuit)
 
@@ -285,7 +285,7 @@ Garde-fous :
 
 Pour le préparer :
 
-- **Moyen de paiement** : enregistrez la carte de l'équipe. Numéro, date et cryptogramme sont chiffrés et ne sont plus jamais affichés. Seuls le propriétaire et les admins gèrent la carte.
+- **Moyen de paiement** : enregistrez la carte de l'équipe. Numéro, date et cryptogramme sont chiffrés et ne sont plus jamais affichés. Le propriétaire, les admins et les éditeurs gèrent la carte.
 - **Comptes de test** (si le site exige un compte pour payer) : créez vous-même un compte de test sur le site, puis enregistrez-le. Le test tourne alors deux fois : sans compte, puis connecté. Les mots de passe sont rangés dans un coffre-fort chez H Company ; AgentProof ne les stocke pas et l'agent ne les voit jamais. Un compte par site.
 
 Pour lancer le test : dans « Lancer un audit », choisissez **Tester le paiement** (avec l'audit) ou le type **Paiement seulement**.
@@ -300,9 +300,10 @@ Dans **Équipe**, entrez son adresse e-mail. Il reçoit un lien valable **7 jour
 
 | Rôle | Ce qu'il peut faire |
 |---|---|
-| **Propriétaire** | Tout, et gère les membres. |
-| **Admin** | Lance des audits, gère les automations, la carte et les comptes de test. |
-| **Lecteur** | Lit les rapports. |
+| **Propriétaire** | Tout. Ne peut pas être retiré ni changer de rôle. |
+| **Admin** | Tout, y compris inviter, retirer des membres et changer leurs rôles (sauf le sien et celui du propriétaire). |
+| **Éditeur** | Tout sauf les membres : audits (lancer, annuler), sites, rapports, favoris, corbeille et suppression définitive, automations, plafond de crédits, carte, comptes de test, nom et marque blanche de l'équipe. |
+| **Lecteur** | Lit les rapports, sans rien modifier. |
 
 ### Plusieurs équipes
 
@@ -330,7 +331,7 @@ Dans **Équipe**, indiquez le nom et le logo à afficher : ils **remplacent Agen
 
 La page **Abonnement et crédits** montre les crédits utilisés ce mois-ci, par type et par site, et une projection de fin de mois. Vous êtes prévenu à **80 %** et à **100 %** du forfait, par e-mail et sur Slack si vous l'avez branché. Les crédits repartent le **1er de chaque mois**.
 
-**Plafond par site** : dans Réglages › Automations (carte Plafond de crédits), l'équipe peut fixer un nombre maximum de crédits par site et par mois (tous appareils). Une fois ce plafond atteint, les audits automatiques sur ce site (page modifiée, mise en ligne, audit mensuel) ne partent plus jusqu'au 1er du mois (un audit mensuel retenu attend le mois suivant), et l'automation note pourquoi. Un audit lancé à la main passe toujours. Laissez le champ vide pour ne fixer aucun plafond.
+**Plafond par site** : dans Automations (carte Plafond de crédits), l'équipe peut fixer un nombre maximum de crédits par site et par mois (tous appareils). Une fois ce plafond atteint, les audits automatiques sur ce site (page modifiée, mise en ligne, audit mensuel) ne partent plus jusqu'au 1er du mois (un audit mensuel retenu attend le mois suivant), et l'automation note pourquoi. Un audit lancé à la main passe toujours. Laissez le champ vide pour ne fixer aucun plafond.
 
 ### Les offres
 

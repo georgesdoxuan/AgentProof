@@ -10,7 +10,7 @@ const fail = (msg: string, status = 400) => new Response(msg, { status, headers:
 export async function POST(req: Request) {
   const ctx = await teamContext();
   if (!ctx) return go(req, "/connexion?next=/espace/reglages/comptes");
-  if (!ctx.team || !canLaunch(ctx.team.role)) return fail(await msg("Seuls le propriétaire et les admins de l'équipe gèrent les comptes de test.", "Only the team's owner and admins manage test accounts."), 403);
+  if (!ctx.team || !canLaunch(ctx.team.role)) return fail(await msg("Ton rôle (lecteur) ne permet pas de gérer les comptes de test.", "Your role (viewer) cannot manage test accounts."), 403);
   const form = await req.formData();
   try {
     if (form.get("action") === "delete") await deleteSiteLogin(ctx.team.id, Number(form.get("id")));

@@ -6,7 +6,7 @@ import { ALERTS, type Kind, PLANS, RATES, loadCredits } from "@/lib/credits";
 import { db } from "@/lib/engine";
 import { locale, tr } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
-import { Chip, DeviceTag, Group, Icon, Note, Row } from "@/lib/ui";
+import { Chip, Columns, DeviceTag, Group, Icon, Note, Row } from "@/lib/ui";
 import { SpaceShell } from "../../shell";
 
 export async function generateMetadata() {
@@ -51,14 +51,15 @@ export default async function Abonnement() {
 
   return (
     <SpaceShell
-      narrow
       settings
       hint={t(
         "Chaque mission qu'un agent fait sur un site utilise un crédit. Un audit complet, ce sont cinq missions, donc cinq crédits.",
         "Every mission an agent runs on a site uses one credit. A full audit is five missions, so five credits.",
       )}
     >
-      <Group title={t("Ce mois-ci", "This month")} footer={t(`Les crédits repartent à zéro le ${renews}.`, `Credits reset on ${renews}.`)}>
+      <Columns
+        main={<>
+      <Group icon="credit" title={t("Ce mois-ci", "This month")} footer={t(`Les crédits repartent à zéro le ${renews}.`, `Credits reset on ${renews}.`)}>
         <div className="grid gap-5 p-6 sm:p-8">
           <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
             <p className="type-title flex items-center gap-2 tabular-nums">
@@ -112,35 +113,7 @@ export default async function Abonnement() {
         </div>
       </Group>
 
-      <Group
-        title={t("Offre", "Plan")}
-        footer={t(
-          "Le paiement en ligne n'est pas encore ouvert : rien n'est facturé et l'offre se change bientôt ici. Un audit utilise 5 crédits. Le suivi mensuel (149 €) ajoute un audit automatique chaque mois et 150 crédits ; la relecture quotidienne des pages ne coûte aucun crédit.",
-          "Online payment is not open yet: nothing is charged and you will soon change plan here. An audit uses 5 credits. Monthly tracking (€149) adds an automatic audit every month and 150 credits; daily page reads cost no credits.",
-        )}
-      >
-        <Row>
-          <span className="min-w-0 flex-1">
-            <span className="block font-semibold">{plan[lang]}</span>
-            <span className="type-small inline-flex flex-wrap items-center gap-1 text-ink-2">
-              <Icon name="credit" className="h-[1em] w-[1em]" />
-              {t(`${n(plan.credits)} crédits par mois`, `${n(plan.credits)} credits a month`)}
-              {plan.price ? t(` · ${plan.price} € par mois`, ` · €${plan.price} a month`) : ""}
-            </span>
-          </span>
-          <Chip icon="none" tone="pass">{t("Actif", "Active")}</Chip>
-        </Row>
-        <Row className="justify-between">
-          <Link href="/#tarifs" className="more">
-            {t("Voir les tarifs", "See pricing")}
-          </Link>
-          <button type="button" disabled className="btn btn-dark min-h-9 cursor-not-allowed px-4 text-[14px] opacity-50">
-            {t("Changer d'offre · bientôt", "Change plan · soon")}
-          </button>
-        </Row>
-      </Group>
-
-      <Group title={t("Par type", "By type")} footer={t("Barème provisoire, susceptible d'évoluer avant l'ouverture du paiement.", "Provisional rates, may change before payment opens.")} aside={<Chip icon="info">{t("Provisoire", "Provisional")}</Chip>}>
+      <Group icon="layers" title={t("Par type", "By type")} footer={t("Barème provisoire, susceptible d'évoluer avant l'ouverture du paiement.", "Provisional rates, may change before payment opens.")} aside={<Chip icon="info">{t("Provisoire", "Provisional")}</Chip>}>
         {(Object.keys(RATES) as Kind[]).map((k) => {
           const used = c.byKind.find((b) => b.kind === k)?.credits ?? 0;
           return (
@@ -158,6 +131,7 @@ export default async function Abonnement() {
       </Group>
 
       <Group
+        icon="globe"
         title={t("Par site", "By site")}
         aside={cap != null ? <Chip icon="credit">{t(`Plafond : ${cr(cap)} par site`, `Cap: ${cr(cap)} per site`)}</Chip> : undefined}
       >
@@ -189,7 +163,7 @@ export default async function Abonnement() {
       </Group>
 
       {c.recent.length > 0 && (
-        <Group title={t("Derniers audits", "Latest audits")}>
+        <Group icon="clock" title={t("Derniers audits", "Latest audits")}>
           {c.recent.map((a) => (
             <Link key={a.audit_id} href={`/audit/${a.audit_id}`} className="block hover:bg-fill/50">
               <Row>
@@ -207,7 +181,38 @@ export default async function Abonnement() {
         </Group>
       )}
 
-      <Group title={t("Plafond par site", "Cap per site")}>
+        </>}
+        side={<>
+      <Group
+        icon="tag"
+        title={t("Offre", "Plan")}
+        footer={t(
+          "Le paiement en ligne n'est pas encore ouvert : rien n'est facturé et l'offre se change bientôt ici. Un audit utilise 5 crédits. Le suivi mensuel (149 €) ajoute un audit automatique chaque mois et 150 crédits ; la relecture quotidienne des pages ne coûte aucun crédit.",
+          "Online payment is not open yet: nothing is charged and you will soon change plan here. An audit uses 5 credits. Monthly tracking (€149) adds an automatic audit every month and 150 credits; daily page reads cost no credits.",
+        )}
+      >
+        <Row>
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold">{plan[lang]}</span>
+            <span className="type-small inline-flex flex-wrap items-center gap-1 text-ink-2">
+              <Icon name="credit" className="h-[1em] w-[1em]" />
+              {t(`${n(plan.credits)} crédits par mois`, `${n(plan.credits)} credits a month`)}
+              {plan.price ? t(` · ${plan.price} € par mois`, ` · €${plan.price} a month`) : ""}
+            </span>
+          </span>
+          <Chip icon="none" tone="pass">{t("Actif", "Active")}</Chip>
+        </Row>
+        <Row className="justify-between">
+          <Link href="/#tarifs" className="more">
+            {t("Voir les tarifs", "See pricing")}
+          </Link>
+          <button type="button" disabled className="btn btn-dark min-h-9 cursor-not-allowed px-4 text-[14px] opacity-50">
+            {t("Changer d'offre · bientôt", "Change plan · soon")}
+          </button>
+        </Row>
+      </Group>
+
+      <Group icon="shield" title={t("Plafond par site", "Cap per site")}>
         <Row>
           <span className="min-w-0 flex-1">
             <Hint
@@ -219,13 +224,13 @@ export default async function Abonnement() {
               {cap ? crIcon(cap) : t("Aucun plafond", "No cap")}
             </Hint>
           </span>
-          <Link href="/espace/reglages/automations#plafond" className="more">
+          <Link href="/espace/automations#plafond" className="more">
             {t("Régler", "Set up")}
           </Link>
         </Row>
       </Group>
 
-      <Group title={t("Alertes", "Alerts")}>
+      <Group icon="mail" title={t("Alertes", "Alerts")}>
         <Row>
           <span className="min-w-0 flex-1">
             <Hint
@@ -238,11 +243,13 @@ export default async function Abonnement() {
               {t(`À ${ALERTS.join(" % et ")} %`, `At ${ALERTS.join("% and ")}%`)}
             </Hint>
           </span>
-          <Link href="/espace/reglages/automations" className="more">
+          <Link href="/espace/automations" className="more">
             {t("Régler", "Set up")}
           </Link>
         </Row>
       </Group>
+        </>}
+      />
     </SpaceShell>
   );
 }

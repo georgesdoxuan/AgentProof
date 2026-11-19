@@ -25,7 +25,7 @@ export async function exportAccount(user: { id: string; email: string }) {
 }
 
 // Permanent erasure. Teams the user owns alone go with them (audits, screenshots rows, automations, card, test accounts).
-// Teams with other members stay: ownership moves to the oldest remaining admin, else the oldest member.
+// Teams with other members stay: ownership moves to the oldest remaining admin, else editor, else the oldest member.
 // Never call it for someone else: the only caller is POST /api/account, for the signed-in user, after they typed their e-mail.
 export async function deleteAccount(user: { id: string; email: string }) {
   const { data: mine } = await db.from("memberships").select("team_id, role").eq("user_id", user.id);
@@ -37,7 +37,7 @@ export async function deleteAccount(user: { id: string; email: string }) {
       .neq("user_id", user.id)
       .order("created_at", { ascending: true });
     if (others?.length) {
-      const heir = others.find((o) => o.role === "admin") ?? others[0];
+      const heir = others.find((o) => o.role === "admin") ?? others.find((o) => o.role === "editor") ?? others[0];
       const { data: team } = await db.from("teams").select("owner_id").eq("id", m.team_id).single();
       if (team?.owner_id === user.id) {
         await db.from("teams").update({ owner_id: heir.user_id }).eq("id", m.team_id);

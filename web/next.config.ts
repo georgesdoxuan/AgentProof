@@ -5,8 +5,10 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   // Every setting is a tab of Réglages. Old addresses (bookmarks, e-mails, Slack) keep working; the query string follows.
   async redirects() {
-    const moved = { "/equipe": "equipe", "/compte": "compte", "/espace/abonnement": "abonnement", "/espace/paiement": "paiement", "/espace/comptes": "comptes", "/espace/automations": "automations" };
+    const moved = { "/equipe": "equipe", "/compte": "compte", "/espace/abonnement": "abonnement", "/espace/paiement": "paiement", "/espace/comptes": "comptes" };
     return [
+      // Automations left Réglages for its own sidebar entry (19/11/2026).
+      { source: "/espace/reglages/automations", destination: "/espace/automations", permanent: false },
       { source: "/espace/reglages", destination: "/espace/reglages/equipe", permanent: false },
       // The trash moved from the sidebar (Sites › Corbeille, Rapports › Corbeille) to Réglages › Corbeille.
       { source: "/espace/reglages/corbeille", destination: "/espace/reglages/corbeille/sites", permanent: false },

@@ -6,8 +6,8 @@ import { AUTO_AUDIT_MISSIONS, listAutomations } from "@/lib/automations";
 import { RATES } from "@/lib/credits";
 import { db } from "@/lib/engine";
 import { Chip, Chips, Empty, Icon, Note, Row, StatusGlyph, type Tone } from "@/lib/ui";
-import { AutoSubmitSelect, ConfirmButton, CopyField, Flash, KeepScroll } from "../../controls";
-import { SpaceShell } from "../../shell";
+import { AutoSubmitSelect, ConfirmButton, CopyField, Flash, KeepScroll } from "../controls";
+import { SpaceShell } from "../shell";
 import { shortDate } from "@/lib/space";
 import { locale, tr, type Lang, type T } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
@@ -61,7 +61,7 @@ const labels = (t: T) => ({
     webhook_off: t("Webhook retiré", "Webhook removed"),
   } as Record<string, string>,
   ERR: {
-    role: t("Seuls le propriétaire et les admins modifient les automations.", "Only the owner and admins change automations."),
+    role: t("Ton rôle (lecteur) ne permet pas de modifier les automations.", "Your role (viewer) cannot change automations."),
     url: t("Adresse invalide : indique le domaine public d'un site, par exemple https://www.exemple.fr.", "Invalid address: enter a site's public domain, for example https://www.example.com."),
     max: t("20 pages suivies au maximum par équipe.", "20 tracked pages at most per team."),
     webhook: t("Le webhook doit commencer par https:// et viser un nom de domaine.", "The webhook must start with https:// and point to a domain name."),
@@ -113,7 +113,7 @@ const input = "h-10 rounded-[10px] bg-bg-2 px-3 text-[15px] outline-none ring-bl
 
 export default async function Automations({ searchParams }: { searchParams: Promise<{ slack?: string; ok?: string; err?: string }> }) {
   const ctx = await teamContext();
-  if (!ctx) redirect("/connexion?next=/espace/reglages/automations");
+  if (!ctx) redirect("/connexion?next=/espace/automations");
   if (!ctx.team) redirect("/espace");
   const { team } = ctx;
   const [items, { data: settings }, lang, sp] = await Promise.all([
@@ -169,28 +169,26 @@ export default async function Automations({ searchParams }: { searchParams: Prom
   return (
     <SpaceShell
       narrow
-      settings
+      title={t("Automations", "Automations")}
+      intro={
+        <div className="grid gap-3">
+          <p>{t("AgentProof surveille tes pages et te prévient quand un agent risque d'être bloqué.", "AgentProof watches your pages and tells you when an agent may get blocked.")}</p>
+          <Chips>
+            <Chip icon="eye" tone={active ? "pass" : "plain"}>
+              {items.length
+                ? t(`${active} page${active > 1 ? "s" : ""} surveillée${active > 1 ? "s" : ""} sur ${items.length}`, `${active} of ${items.length} page${items.length > 1 ? "s" : ""} monitored`)
+                : t("Aucune page surveillée", "No page monitored")}
+            </Chip>
+            <Chip icon="mail">{onSlack ? t("Alertes : e-mail et Slack", "Alerts: e-mail and Slack") : settings?.webhook_url ? t("Alertes : e-mail et webhook", "Alerts: e-mail and webhook") : t("Alertes : e-mail", "Alerts: e-mail")}</Chip>
+            <Chip icon="credit">{t("Vérifications gratuites", "Checks are free")}</Chip>
+          </Chips>
+        </div>
+      }
       hint={t(
         "AgentProof relit tes pages comme un agent d'achat (bandeau cookies, captcha, boutons, formulaires, robots.txt). Si quelque chose change, tu es prévenu, et un audit peut repartir tout seul. Les prix et les produits ne comptent pas.",
         "AgentProof rereads your pages as a shopping agent would (cookie banner, captcha, buttons, forms, robots.txt). When something changes, you are told, and an audit can start on its own. Prices and products do not count.",
       )}
     >
-      <div className="grid gap-3">
-        <div className="grid gap-1">
-          <h2 className="text-[24px] font-semibold leading-tight tracking-[0.004em]">{t("Automations", "Automations")}</h2>
-          <p className="text-ink-2">{t("AgentProof surveille tes pages et te prévient quand un agent risque d'être bloqué.", "AgentProof watches your pages and tells you when an agent may get blocked.")}</p>
-        </div>
-        <Chips>
-          <Chip icon="eye" tone={active ? "pass" : "plain"}>
-            {items.length
-              ? t(`${active} page${active > 1 ? "s" : ""} surveillée${active > 1 ? "s" : ""} sur ${items.length}`, `${active} of ${items.length} page${items.length > 1 ? "s" : ""} monitored`)
-              : t("Aucune page surveillée", "No page monitored")}
-          </Chip>
-          <Chip icon="mail">{onSlack ? t("Alertes : e-mail et Slack", "Alerts: e-mail and Slack") : settings?.webhook_url ? t("Alertes : e-mail et webhook", "Alerts: e-mail and webhook") : t("Alertes : e-mail", "Alerts: e-mail")}</Chip>
-          <Chip icon="credit">{t("Vérifications gratuites", "Checks are free")}</Chip>
-        </Chips>
-      </div>
-
       {!admin && <Note icon="lock">{t("Lecture seule : un admin gère les automations.", "Read-only: an admin manages automations.")}</Note>}
 
       {/* ---------- 1. Page monitoring: free, one row per page ---------- */}

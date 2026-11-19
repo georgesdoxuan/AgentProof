@@ -11,9 +11,12 @@ const SESSION = "ap_session";
 const TEAM = "ap_team";
 const DAYS = 30;
 
-export type Role = "owner" | "admin" | "viewer";
-export const ROLE_LABEL: Record<Role, string> = { owner: "Propriétaire", admin: "Admin", viewer: "Lecteur" };
-export const canLaunch = (role?: Role | null) => role === "owner" || role === "admin";
+export type Role = "owner" | "admin" | "editor" | "viewer";
+export const ROLE_LABEL: Record<Role, string> = { owner: "Propriétaire", admin: "Admin", editor: "Éditeur", viewer: "Lecteur" };
+// Everything but members: audits, sites, reports, trash, automations, card, test accounts, team name.
+export const canLaunch = (role?: Role | null) => role === "owner" || role === "admin" || role === "editor";
+// Invite, remove, change roles: owner and admins only, never an editor or a viewer.
+export const canManageMembers = (role?: Role | null) => role === "owner" || role === "admin";
 
 export const newToken = () => randomBytes(32).toString("base64url");
 export const hashToken = (t: string) => createHash("sha256").update(t).digest("hex");

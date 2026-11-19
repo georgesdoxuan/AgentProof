@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { cardView } from "@/lib/cards";
-import { Chip, Empty, Field, Group, Note, Row } from "@/lib/ui";
+import { Chip, Columns, Empty, Field, Group, Note, Row } from "@/lib/ui";
 import { getT } from "@/lib/lang";
 import { ConfirmButton } from "../../controls";
 import { SpaceShell } from "../../shell";
@@ -21,15 +21,18 @@ export default async function Paiement() {
   const t = await getT();
 
   return (
-    <SpaceShell narrow
+    <SpaceShell
       settings
       hint={t(
         "La carte que l'agent utilise pour le test de paiement réel. Il part au plus près du checkout, prend le premier article disponible et paie une seule fois. Avec une carte approvisionnée, la commande est réelle.",
         "The card the agent uses for the real payment test. It starts as close to checkout as it can, takes the first available item and pays only once. With a funded card, the order is real.",
       )}
     >
+      <Columns
+        main={<>
       {card ? (
         <Group
+          icon="card"
           title={t("Carte enregistrée", "Saved card")}
           aside={<Chip icon="lock">{card.source === "env" ? t("Hors base", "Not in database") : t("Chiffrée", "Encrypted")}</Chip>}
           footer={
@@ -85,13 +88,16 @@ export default async function Paiement() {
         </Empty>
       )}
 
+        </>}
+        side={<>
       {admin ? (
         <Group
+          icon="plus"
           title={card ? t("Remplacer la carte", "Replace the card") : t("Ajouter une carte", "Add a card")}
           footer={t("L'agent saisit ces données sur le site testé. Elles transitent par H Company, qui fait tourner l'agent.", "The agent enters this data on the tested site. It goes through H Company, which runs the agent.")}
           aside={<Chip icon="shield">{t("Via H Company", "Via H Company")}</Chip>}
         >
-          <form action="/api/card" method="post" className="grid gap-4 p-6 sm:p-8">
+          <form action="/api/card" method="post" className="grid gap-4 p-5 sm:p-6">
             <Field label={t("Nom de la carte", "Card name")} name="label" type="text" />
             <Field label={t("Numéro de carte", "Card number")} name="number" type="text" required />
             <div className="grid gap-4 sm:grid-cols-2">
@@ -116,6 +122,8 @@ export default async function Paiement() {
       ) : (
         <Note icon="eye">{t("Lecture seule : un admin gère la carte.", "Read-only: an admin manages the card.")}</Note>
       )}
+        </>}
+      />
     </SpaceShell>
   );
 }

@@ -4,7 +4,7 @@ import { INTERVALS, SCORE_DROPS, checkAutomation, postWebhook, webhookOk } from 
 
 // Every answer goes back to the page with a short code: ?ok=… shows "Saved", ?err=… shows what to fix (no plain-text page).
 // The page itself reopens at the reader's scroll position (controls.tsx KeepScroll). back=abonnement for forms kept there.
-const PAGE = "/espace/reglages/automations";
+const PAGE = "/espace/automations";
 const go = (req: Request, q: string, back?: string) => Response.redirect(new URL(`${back === "abonnement" ? "/espace/reglages/abonnement" : PAGE}?${q}`, req.url), 303);
 const MAX_PER_TEAM = 20;
 export const maxDuration = 60;

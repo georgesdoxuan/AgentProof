@@ -1,10 +1,13 @@
+import { Columns } from "@/lib/ui";
 import { Bone, Line, SkGroup, SkSpace } from "../../../skeleton";
 
-// Same frame as the page: the meter tile, then the plan and usage lists.
+// Same frame as the page: the meter tile and usage lists on the leading side, plan, cap and alerts beside them.
 export default function Loading() {
   return (
-    <SkSpace narrow settings>
-      <SkGroup footer>
+    <SkSpace settings>
+      <Columns
+        main={<>
+      <SkGroup>
         <div className="grid gap-5 p-6 sm:p-8">
           <p className="type-title">
             <Line w="12rem" />
@@ -19,8 +22,14 @@ export default function Loading() {
           </div>
         </div>
       </SkGroup>
+      <SkGroup rows={4} />
+        </>}
+        side={<>
       <SkGroup rows={2} />
-      <SkGroup rows={4} footer />
+      <SkGroup rows={1} />
+      <SkGroup rows={1} />
+        </>}
+      />
     </SkSpace>
   );
 }

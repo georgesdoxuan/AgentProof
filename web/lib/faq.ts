@@ -101,8 +101,8 @@ export const FAQ: Faq[] = [
     cat: "audits",
     q: { fr: "Puis-je annuler un audit en cours ?", en: "Can I cancel a running audit?" },
     a: {
-      fr: "Oui, depuis le rapport : « Annuler l'audit ». Les missions pas encore lancées sont retirées et leurs crédits rendus ; celles en cours se terminent et restent dans le rapport. Propriétaire et admins seulement.",
-      en: "Yes, from the report: “Cancel the audit”. Missions not started yet are dropped and their credits given back; those running finish and stay in the report. Owner and admins only.",
+      fr: "Oui, depuis le rapport : « Annuler l'audit ». Les missions pas encore lancées sont retirées et leurs crédits rendus ; celles en cours se terminent et restent dans le rapport. Propriétaire, admins et éditeurs seulement.",
+      en: "Yes, from the report: “Cancel the audit”. Missions not started yet are dropped and their credits given back; those running finish and stay in the report. Owner, admins and editors only.",
     },
     keys: "annuler arreter stopper interrompre audit en cours cancel stop abort running",
   },
@@ -386,10 +386,10 @@ export const FAQ: Faq[] = [
     cat: "credits",
     q: { fr: "Puis-je limiter les crédits dépensés sur un site ?", en: "Can I limit the credits spent on one site?" },
     a: {
-      fr: "Oui : fixe un plafond de crédits par site et par mois dans Réglages › Automations, carte Plafond de crédits. Au-delà, les audits automatiques sur ce site s'arrêtent jusqu'au 1er du mois ; un audit lancé à la main passe toujours.",
-      en: "Yes: set a monthly credit cap per site in Settings › Automations, Credit cap card. Past it, automatic audits on that site stop until the 1st of the month; an audit launched by hand always goes through.",
+      fr: "Oui : fixe un plafond de crédits par site et par mois dans Automations (barre de gauche), carte Plafond de crédits. Au-delà, les audits automatiques sur ce site s'arrêtent jusqu'au 1er du mois ; un audit lancé à la main passe toujours.",
+      en: "Yes: set a monthly credit cap per site in Automations (left sidebar), Credit cap card. Past it, automatic audits on that site stop until the 1st of the month; an audit launched by hand always goes through.",
     },
-    link: { href: "/espace/reglages/automations#plafond", fr: "Plafond de crédits", en: "Credit cap" },
+    link: { href: "/espace/automations#plafond", fr: "Plafond de crédits", en: "Credit cap" },
     keys: "plafond limite budget maximum site credits depense automatique cap limit budget spending",
   },
   {
@@ -423,7 +423,7 @@ export const FAQ: Faq[] = [
       fr: "Elles relisent tes pages (bandeau cookies, captcha, boutons, formulaires, robots.txt) à la fréquence choisie et après chaque mise en ligne. Si quelque chose change, tu es prévenu, et un audit peut repartir tout seul.",
       en: "They reread your pages (cookie banner, captcha, buttons, forms, robots.txt) at the chosen frequency and after every release. When something changes, you are told, and an audit can start on its own.",
     },
-    link: { href: "/espace/reglages/automations", fr: "Automations", en: "Automations" },
+    link: { href: "/espace/automations", fr: "Automations", en: "Automations" },
     keys: "surveillance suivi monitoring veille changement alerte automatique watch track monitor change automatic",
   },
   {
@@ -441,10 +441,10 @@ export const FAQ: Faq[] = [
     cat: "automations",
     q: { fr: "Comment recevoir les alertes sur Slack ?", en: "How do I get alerts on Slack?" },
     a: {
-      fr: "Dans Réglages › Automations, carte Alertes, clique sur « Connecter » à côté de Slack et choisis le canal : un message de test part aussitôt. Discord, n8n, Make ou Zapier : colle une URL dans le champ Webhook, puis « Tester ».",
-      en: "In Settings › Automations, Alerts card, click “Connect” next to Slack and pick the channel: a test message goes out right away. Discord, n8n, Make or Zapier: paste a URL in the Webhook field, then “Test”.",
+      fr: "Dans Automations (barre de gauche), carte Alertes, clique sur « Connecter » à côté de Slack et choisis le canal : un message de test part aussitôt. Discord, n8n, Make ou Zapier : colle une URL dans le champ Webhook, puis « Tester ».",
+      en: "In Automations (left sidebar), Alerts card, click “Connect” next to Slack and pick the channel: a test message goes out right away. Discord, n8n, Make or Zapier: paste a URL in the Webhook field, then “Test”.",
     },
-    link: { href: "/espace/reglages/automations", fr: "Automations", en: "Automations" },
+    link: { href: "/espace/automations", fr: "Automations", en: "Automations" },
     keys: "slack discord teams webhook zapier make n8n notification canal message alertes channel notify",
   },
   {
@@ -455,7 +455,7 @@ export const FAQ: Faq[] = [
       fr: "Oui. Appelle l'adresse secrète donnée dans Automations après un déploiement (Vercel, Shopify ou GitHub) : toutes les pages suivies sont vérifiées dans la minute.",
       en: "Yes. Call the secret address shown in Automations after a deployment (Vercel, Shopify or GitHub): every tracked page is checked within a minute.",
     },
-    link: { href: "/espace/reglages/automations", fr: "Automations", en: "Automations" },
+    link: { href: "/espace/automations", fr: "Automations", en: "Automations" },
     keys: "deploiement mise en ligne release deploy hook vercel shopify github theme publication ci",
   },
   {
@@ -485,8 +485,8 @@ export const FAQ: Faq[] = [
     cat: "team",
     q: { fr: "Comment inviter un collègue ?", en: "How do I invite a colleague?" },
     a: {
-      fr: "Dans Équipe, entre son adresse : il reçoit un lien valable 7 jours, réservé à cette adresse. Seul le propriétaire de l'équipe gère les membres.",
-      en: "In Team, enter their address: they get a link valid for 7 days, for that address only. Only the team's owner manages members.",
+      fr: "Dans Équipe, entre son adresse : il reçoit un lien valable 7 jours, réservé à cette adresse. Seuls le propriétaire et les admins gèrent les membres.",
+      en: "In Team, enter their address: they get a link valid for 7 days, for that address only. Only the team's owner and admins manage members.",
     },
     link: { href: "/espace/reglages/equipe", fr: "Équipe", en: "Team" },
     keys: "inviter ajouter membre collegue collaborateur partager acces invitation invite add member colleague access",
@@ -496,10 +496,10 @@ export const FAQ: Faq[] = [
     cat: "team",
     q: { fr: "Quels sont les rôles dans une équipe ?", en: "What are the team roles?" },
     a: {
-      fr: "Propriétaire : gère les membres. Admin : lance des audits, gère automations, carte et comptes de test. Lecteur : lit les rapports.",
-      en: "Owner: manages members. Admin: runs audits, manages automations, card and test accounts. Viewer: reads reports.",
+      fr: "Propriétaire : tout, ne peut pas être retiré. Admin : tout, y compris inviter, retirer et changer les rôles. Éditeur : tout sauf les membres (audits, sites, rapports, corbeille, automations, carte, comptes de test). Lecteur : lit les rapports.",
+      en: "Owner: everything, cannot be removed. Admin: everything, including inviting, removing and changing roles. Editor: everything but members (audits, sites, reports, trash, automations, card, test accounts). Viewer: reads reports.",
     },
-    keys: "role roles droits permissions admin lecteur proprietaire acces rights viewer owner",
+    keys: "role roles droits permissions admin editeur lecteur proprietaire acces rights editor viewer owner",
   },
   {
     id: "marque-blanche",
@@ -583,8 +583,8 @@ export const FAQ: Faq[] = [
     cat: "payment",
     q: { fr: "Où enregistrer la carte de l'équipe ?", en: "Where do I add the team's card?" },
     a: {
-      fr: "Dans Moyen de paiement. Numéro, date et cryptogramme sont chiffrés et ne sont plus jamais affichés. Seuls le propriétaire et les admins gèrent la carte.",
-      en: "In Payment method. Number, date and security code are encrypted and never shown again. Only the owner and admins manage the card.",
+      fr: "Dans Moyen de paiement. Numéro, date et cryptogramme sont chiffrés et ne sont plus jamais affichés. Le propriétaire, les admins et les éditeurs gèrent la carte.",
+      en: "In Payment method. Number, date and security code are encrypted and never shown again. The owner, admins and editors manage the card.",
     },
     link: { href: "/espace/reglages/paiement", fr: "Moyen de paiement", en: "Payment method" },
     keys: "carte bancaire ajouter enregistrer cb visa moyen paiement securite chiffre card add save credit secure encrypted",

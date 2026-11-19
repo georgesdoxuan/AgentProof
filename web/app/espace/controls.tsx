@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { GLYPH } from "@/lib/glyphs";
 import type { Dict, Lang } from "@/lib/i18n";
 import type { SideData } from "@/lib/sidebar";
 import { LaunchButton, NavBadge, RecentSites, SideFooter, SideProvider } from "./side";
@@ -46,9 +47,10 @@ const itemCls = (current: boolean) =>
     current ? "bg-tile font-semibold text-ink shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#3a3a3c]" : "text-ink-2 hover:bg-tile/60 hover:text-ink"
   }`;
 
-// The daily sections, then Réglages: every setting (team, plan, payment, test accounts, automations, trash, account) is a tab of that one page.
+// The daily sections (Automations included: page watch, automatic audits, alerts), then Réglages: every other setting
+// (team, plan, payment, test accounts, trash, account) is a tab of that one page.
 const NAV = [
-  [["/espace", ICON.home], ["/espace/sites", ICON.globe], ["/espace/rapports", ICON.doc]],
+  [["/espace", ICON.home], ["/espace/sites", ICON.globe], ["/espace/rapports", ICON.doc], ["/espace/automations", GLYPH.bolt]],
   [["/espace/reglages", ICON.sliders]],
 ] as const;
 type Section = keyof Dict["space"]["sections"];
@@ -170,13 +172,29 @@ function SideNav({ t, lang, collapsed, reserve }: { t: Dict["space"]; lang: Lang
 }
 
 // Réglages: one page, one tab per setting. Each tab is its own URL (/espace/reglages/<tab>), so links and the back button work.
-const SETTINGS = ["equipe", "abonnement", "paiement", "comptes", "automations", "corbeille", "compte"] as const;
+// Each tab carries its glyph (the sidebar's trash for Corbeille). On phones the row scrolls sideways and the open tab
+// is scrolled into view. Tighter padding below 64rem of page width, so all six fit beside an open sidebar on a laptop.
+const SETTINGS = [
+  ["equipe", GLYPH.team],
+  ["abonnement", GLYPH.credit],
+  ["paiement", GLYPH.card],
+  ["comptes", GLYPH.key],
+  ["corbeille", ICON.trash],
+  ["compte", GLYPH.person],
+] as const;
 export function SettingsTabs({ t }: { t: Dict["space"] }) {
   const path = usePathname();
+  const nav = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const el = nav.current;
+    const on = el?.querySelector<HTMLElement>("[aria-current=page]");
+    if (!el || !on || el.scrollWidth <= el.clientWidth) return;
+    el.scrollTo({ left: on.offsetLeft - (el.clientWidth - on.offsetWidth) / 2 });
+  }, [path]);
   return (
-    <nav aria-label={t.settingsLabel} className="-mx-6 overflow-x-auto px-6 [scrollbar-width:none] sm:-mx-8 sm:px-8 lg:mx-0 lg:px-0">
-      <ul className="flex min-w-max gap-1 border-b border-hairline">
-        {SETTINGS.map((s) => {
+    <nav ref={nav} aria-label={t.settingsLabel} className="-mx-6 overflow-x-auto px-6 [scrollbar-width:none] sm:-mx-8 sm:px-8 lg:mx-0 lg:px-0">
+      <ul className="flex min-w-max border-b border-hairline @5xl:gap-1">
+        {SETTINGS.map(([s, icon]) => {
           const href = `/espace/reglages/${s}`;
           const on = path === href || path.startsWith(`${href}/`);
           return (
@@ -184,10 +202,11 @@ export function SettingsTabs({ t }: { t: Dict["space"] }) {
               <Link
                 href={href}
                 aria-current={on ? "page" : undefined}
-                className={`relative -mb-px flex h-10 items-center whitespace-nowrap px-3 type-small font-semibold transition-colors ${
-                  on ? "text-ink after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-blue" : "text-ink-2 hover:text-ink"
+                className={`relative -mb-px flex h-11 items-center gap-1 whitespace-nowrap px-2 type-small @5xl:gap-2 @5xl:px-3 font-semibold transition-colors ${
+                  on ? "text-ink after:absolute after:inset-x-2 after:bottom-0 @5xl:after:inset-x-3 after:h-0.5 after:rounded-full after:bg-blue" : "text-ink-2 hover:text-ink"
                 }`}
               >
+                {glyph(icon, `h-4 w-4 shrink-0 ${on ? "text-blue" : ""}`)}
                 {t.settings[s]}
               </Link>
             </li>
@@ -214,24 +233,31 @@ export function SectionIcon() {
   );
 }
 
-// Narrow screens: the four sections as one segmented control.
+// Narrow screens: the five sections as one segmented control.
 function MobileNav({ t }: { t: Dict["space"] }) {
   const path = usePathname();
   return (
     <nav aria-label={t.label} className="min-w-0 flex-1">
       <div className="flex w-full gap-1 rounded-[10px] bg-fill p-[3px]">
-        {NAV.flat().map(([href]) => (
-          <Link
-            key={href}
-            href={href}
-            aria-current={isOn(path, href) ? "page" : undefined}
-            className={`flex h-[38px] min-w-0 flex-auto items-center justify-center whitespace-nowrap rounded-[8px] px-2 type-small font-semibold transition-colors ${
-              isOn(path, href) ? "bg-tile text-ink shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#3a3a3c]" : "text-ink-2"
-            }`}
-          >
-            {t.sections[href]}
-          </Link>
-        ))}
+        {/* Five sections do not fit as words at 390 px: on phones the open one shows its name, the others their icon. */}
+        {NAV.flat().map(([href, icon]) => {
+          const on = isOn(path, href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              aria-current={on ? "page" : undefined}
+              aria-label={t.sections[href]}
+              title={t.sections[href]}
+              className={`flex h-[38px] min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-[8px] px-2 type-small font-semibold transition-colors sm:flex-auto ${on ? "flex-auto" : "max-sm:w-10 max-sm:shrink-0 max-sm:px-0"} ${
+                on ? "bg-tile text-ink shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#3a3a3c]" : "text-ink-2"
+              }`}
+            >
+              {!on && glyph(icon, "h-[17px] w-[17px] shrink-0 sm:hidden")}
+              <span className={on ? "truncate" : "max-sm:sr-only"}>{t.sections[href]}</span>
+            </Link>
+          );
+        })}
       </div>
     </nav>
   );
@@ -330,12 +356,13 @@ export function ReportsLayout({ initial, toolbar, list, bySite }: { initial: boo
 // Sites › extension chips (".com", ".fr"…). The server renders the chips and every card; this only hides the cards of
 // other extensions. The choice lives in a cookie (read in sites/(liste)/page.tsx), so the server renders it: no jump on load.
 const SITES_EXT_COOKIE = "ap_sites_ext";
-export function SitesByExt({ initial, chips, cards }: { initial: string; chips: React.ReactNode; cards: { key: string; ext: string; card: React.ReactNode }[] }) {
+export function SitesByExt({ initial, chips, actions, cards }: { initial: string; chips: React.ReactNode; actions?: React.ReactNode; cards: { key: string; ext: string; card: React.ReactNode }[] }) {
   const [ext, setExt] = useState(initial);
   return (
     <>
+      {/* The page has no visible title: the extension chips and the page's buttons share the top row. */}
       <div
-        className="mb-4"
+        className="mb-4 flex flex-wrap items-center justify-between gap-x-8 gap-y-4"
         onChange={(e) => {
           const input = e.target as HTMLInputElement;
           if (input.name !== SITES_EXT_COOKIE) return;
@@ -344,6 +371,7 @@ export function SitesByExt({ initial, chips, cards }: { initial: string; chips: 
         }}
       >
         {chips}
+        {actions}
       </div>
       {/* A card needs ~20rem for "À corriger" and the ranking line: three columns only when they fit (not at 1280 with the sidebar). */}
       <div className="grid gap-5 sm:grid-cols-[repeat(auto-fill,minmax(20rem,1fr))]">
