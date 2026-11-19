@@ -25,8 +25,9 @@ const Chevron = ({ open }: { open: boolean }) => (
 
 // A chip that opens a small pop-up list to pick one item (a card, a test account), plus a link to manage them.
 // align "right": the chip sits at the end of its row, so the list opens leftwards and stays inside the card.
-function ChipMenu<I extends { id: string | number }>({ items, value, onPick, glyph, main, side, label, listLabel, manage, align = "left" }: {
-  items: I[]; value: I; onPick: (id: I["id"]) => void; glyph: React.ReactNode; main: (i: I) => string; side: (i: I) => string;
+// With no value yet, the chip shows the placeholder instead (e.g. "Choose an account" before the site is typed).
+function ChipMenu<I extends { id: string | number }>({ items, value, placeholder, onPick, glyph, main, side, label, listLabel, manage, align = "left" }: {
+  items: I[]; value?: I; placeholder?: string; onPick: (id: I["id"]) => void; glyph: React.ReactNode; main: (i: I) => string; side: (i: I) => string;
   label: string; listLabel: string; manage: { href: string; text: string }; align?: "left" | "right";
 }) {
   const [open, setOpen] = useState(false);
@@ -56,15 +57,15 @@ function ChipMenu<I extends { id: string | number }>({ items, value, onPick, gly
         className="type-caption inline-flex h-8 max-w-full items-center gap-2 rounded-full bg-tile px-3 font-semibold shadow-[inset_0_0_0_0.5px_var(--line)] transition-colors hover:bg-fill motion-safe:animate-[ap-fade_0.2s_ease-out] dark:bg-[#3a3a3c]"
       >
         {glyph}
-        <span className="min-w-0 truncate">{main(value)}</span>
-        {side(value) && <span className="shrink-0 font-normal text-ink-2 tnum">{side(value)}</span>}
+        <span className="min-w-0 truncate">{value ? main(value) : placeholder}</span>
+        {value && side(value) && <span className="shrink-0 font-normal text-ink-2 tnum">{side(value)}</span>}
         <Chevron open={open} />
       </button>
       {open && (
         <div className={`absolute ${align === "right" ? "right-0" : "left-0"} top-[calc(100%+6px)] z-50 w-[min(300px,calc(100vw-48px))] overflow-hidden rounded-[14px] bg-pop p-1.5 shadow-[0_10px_32px_rgb(0_0_0/0.18),inset_0_0_0_0.5px_var(--line)] motion-safe:animate-[ap-fade_0.15s_ease-out]`}>
           <ul id={listId} role="listbox" aria-label={listLabel}>
             {items.map((c) => (
-              <li key={c.id} role="option" aria-selected={c.id === value.id}>
+              <li key={c.id} role="option" aria-selected={c.id === value?.id}>
                 <button
                   type="button"
                   onClick={() => (onPick(c.id), setOpen(false))}
@@ -73,7 +74,7 @@ function ChipMenu<I extends { id: string | number }>({ items, value, onPick, gly
                   {glyph}
                   <span className="min-w-0 flex-1 truncate font-semibold">{main(c)}</span>
                   <span className="shrink-0 text-ink-2 tnum">{side(c)}</span>
-                  <svg viewBox="0 0 12 12" className={`h-3 w-3 shrink-0 text-blue ${c.id === value.id ? "" : "invisible"}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <svg viewBox="0 0 12 12" className={`h-3 w-3 shrink-0 text-blue ${c.id === value?.id ? "" : "invisible"}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                     <path d="M2 6.5l2.5 2.5L10 3.5" />
                   </svg>
                 </button>
@@ -91,9 +92,11 @@ function ChipMenu<I extends { id: string | number }>({ items, value, onPick, gly
   );
 }
 
-// The domain typed in the form's address field, as the server stores it (no scheme, no www, no path).
+// The domain typed in the form's address field, as the server stores it (lib/engine normalizeUrl: hostname in
+// lower case, no scheme, no www, no path). Also drops a port, a user@ prefix and a trailing dot, which the URL
+// parser drops too, so "HTTPS://www.Nike.com:443/fr/" matches an account saved for nike.com.
 function domainOf(input: string) {
-  const v = input.trim().toLowerCase().replace(/^https?:\/\//, "").split(/[/?#]/)[0].replace(/^www\./, "");
+  const v = input.trim().toLowerCase().replace(/^[a-z][a-z0-9+.-]*:\/\//, "").split(/[/?#]/)[0].replace(/^.*@/, "").replace(/:\d*$/, "").replace(/\.$/, "").replace(/^www\./, "");
   return /^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(v) ? v : "";
 }
 
@@ -122,11 +125,22 @@ export function PaymentPicker({ cards, accounts = [], lang, tip, max }: { cards:
   const current = cards.find((c) => c.id === card) ?? cards[0];
   const mine = accounts.filter((a) => a.domain === domain);
   const account = mine.find((a) => a.id === login) ?? mine[0];
+  const boxForm = () => box.current?.closest("form") ?? null;
+
+  // Before the site is typed, picking one of the team's accounts fills the address with its site.
+  const pickAccount = (id: number) => {
+    const picked = accounts.find((a) => a.id === id);
+    const field = boxForm()?.elements.namedItem("url");
+    if (!picked || !(field instanceof HTMLInputElement)) return;
+    setLogin(id);
+    field.value = picked.domain;
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+  };
 
   // "Test type" and the site's address live in the same form: follow them ("Payment only" shows the card too,
   // and the accounts offered are the ones saved for the site being typed).
   useEffect(() => {
-    const form = box.current?.closest("form");
+    const form = boxForm();
     if (!form) return;
     const sync = () => {
       const data = new FormData(form);
@@ -237,12 +251,26 @@ export function PaymentPicker({ cards, accounts = [], lang, tip, max }: { cards:
                   </span>
                 )}
               </>
+            ) : !domain && accounts.length > 0 ? (
+              // No address yet: show every account the team saved (name, masked login, site); picking one fills the address.
+              <ChipMenu
+                items={accounts}
+                onPick={(id) => pickAccount(id)}
+                placeholder={t("Choisir un compte", "Choose an account")}
+                glyph={<KeyGlyph />}
+                main={(a) => (a.label ? `${a.domain} · ${a.label}` : a.domain)}
+                side={(a) => a.hint}
+                label={t("Choisir un compte de test : il renseigne l’adresse du site", "Choose a test account: it fills in the site’s address")}
+                listLabel={t("Comptes de test de l’équipe", "Team test accounts")}
+                manage={{ href: addHref, text: t("Gérer les comptes de test", "Manage test accounts") }}
+                align="right"
+              />
             ) : (
               <span className="type-small text-ink-2" role="status">
-                {domain ? t(`Aucun compte de test pour ${domain}`, `No test account for ${domain}`) : t("Saisis d’abord l’adresse du site", "Enter the site’s address first")}
+                {domain ? t(`Aucun compte de test pour ${domain}`, `No test account for ${domain}`) : t("Aucun compte de test enregistré", "No test account saved yet")}
               </span>
             )}
-            {(!account || mine.length === 1) && (
+            {(mine.length === 1 || (!account && (domain || accounts.length === 0))) && (
               <Link href={addHref} className="type-small text-link hover:underline">
                 {account ? t("Ajouter un autre compte", "Add another account") : t("Ajouter un compte", "Add an account")}
               </Link>
