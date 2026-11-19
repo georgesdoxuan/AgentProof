@@ -3,31 +3,31 @@ import { Bone, Line, Loading as Busy } from "../../skeleton";
 // Audit report: title block, score and missions summary, then one card per mission with its last screen.
 export default function Loading() {
   return (
-    <Busy className="bg-bg-2 pb-24 pt-16 max-[734px]:pt-10">
-      <div className="wrap-wide space-y-16 max-[734px]:space-y-12">
+    <Busy className="bg-bg-2 pb-24 pt-8 max-[734px]:pt-6">
+      <div className="wrap-wide space-y-12 max-[734px]:space-y-10">
         <header>
-          <p className="type-eyebrow">
+          <p className="type-small font-semibold">
             <Line w="16rem" />
           </p>
-          <h1 className="type-h1 mt-3">
+          <h1 className="type-title mt-1.5">
             <Line w="min(32rem, 80%)" />
           </h1>
-          <p className="mt-4">
+          <p className="type-small mt-2.5">
             <Line w="min(26rem, 90%)" />
           </p>
         </header>
-        <section className="grid gap-5 lg:grid-cols-[3fr_2fr]">
-          <div className="tile flex flex-col">
+        <section className="grid gap-4 lg:grid-cols-[3fr_2fr]">
+          <div className="tile flex flex-col p-7! max-[734px]:p-6!">
             <p className="type-headline">
               <Line w="8rem" />
             </p>
-            <p className="mt-5 text-[96px] font-semibold leading-none max-[734px]:text-[72px]">
+            <p className="mt-4 text-[64px] font-semibold leading-none max-[734px]:text-[52px]">
               <Line w="12rem" className="h-[0.8em]" />
             </p>
             <p className="mt-3">
               <Line w="75%" />
             </p>
-            <div className="mt-auto pt-8">
+            <div className="mt-auto pt-6">
               <Bone className="h-3 rounded-full" />
               <p className="type-small mt-3">
                 <Line w="10rem" />
@@ -51,8 +51,8 @@ export default function Loading() {
           </div>
         </section>
         <section>
-          <div className="mb-6">
-            <p className="type-h2">
+          <div className="mb-4">
+            <p className="type-h3 text-[24px]!">
               <Line w="min(22rem, 80%)" />
             </p>
             <p className="mt-3">

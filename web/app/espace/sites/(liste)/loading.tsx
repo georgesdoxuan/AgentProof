@@ -14,8 +14,8 @@ export default function Loading() {
           ))}
         </div>
         <div className="flex flex-wrap gap-3">
-          <Bone className="h-12 w-40 rounded-full" />
-          <Bone className="h-12 w-44 rounded-full" />
+          <Bone className="h-10 w-36 rounded-full" />
+          <Bone className="h-10 w-40 rounded-full" />
         </div>
       </div>
       <div className="grid gap-5 sm:grid-cols-[repeat(auto-fill,minmax(20rem,1fr))]">

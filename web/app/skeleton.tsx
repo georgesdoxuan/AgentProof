@@ -42,10 +42,13 @@ export function SkSpace({
   long,
   settings,
   bare,
+  compact,
   children,
 }: {
+  /** A child page with the smaller title (a site). */
+  compact?: boolean;
   narrow?: boolean;
-  /** Pages with no visible title (Sites): only the content's placeholders. */
+  /** Pages with no visible title (Accueil, Sites, Rapports, Automations): the facts and the action on one row, then the content. */
   bare?: boolean;
   action?: boolean;
   /** "chips": a row of Chips (26px), or the widths of each chip; "line": one line of text. Left out when the page has no intro. */
@@ -65,12 +68,13 @@ export function SkSpace({
       <SpaceShell
         settings={settings}
         bare={bare}
+        compact={compact}
         narrow={narrow}
         parent={parent ? ["#", ""] : undefined}
         title={
           logo ? (
             <span className="flex min-w-0 items-center gap-4">
-              <Bone className="h-12 w-12 shrink-0 rounded-[12px]" />
+              <Bone className={`shrink-0 ${compact ? "h-8 w-8 rounded-[8px]" : "h-12 w-12 rounded-[12px]"}`} />
               <Line w="min(18rem, 70%)" />
             </span>
           ) : long ? (
@@ -86,7 +90,7 @@ export function SkSpace({
           )
         }
         intro={Array.isArray(intro) ? <SkChips w={intro} /> : intro === "chips" ? <SkChips /> : intro === "line" ? <Line w="min(36rem, 100%)" /> : undefined}
-        actions={action ? <Bone className="h-12 w-44 rounded-full" /> : undefined}
+        actions={action ? <Bone className={`rounded-full ${compact || bare ? "h-10 w-40" : "h-12 w-44"}`} /> : undefined}
       >
         {children}
       </SpaceShell>

@@ -76,10 +76,11 @@ export default async function Accueil() {
   return (
     <SpaceShell
       title={audits.length ? headline(sites, t) : t("Ton espace est prêt.", "Your space is ready.")}
+      bare
       intro={status}
       actions={
         launch && audits.length > 0 ? (
-          <Link href="/espace/nouveau" className="btn">
+          <Link href="/espace/nouveau" className="btn min-h-[40px] px-[18px] text-[15px]">
             {t("Lancer un audit", "Run an audit")}
           </Link>
         ) : undefined
