@@ -34,7 +34,7 @@ export function LangMenu({ lang, label }: { lang: Lang; label: string }) {
         aria-label={`${label} : ${LANG_NAME[lang]}`}
         title={label}
         onClick={() => setOpen((o) => !o)}
-        className="inline-flex h-11 items-center gap-1 px-1.5 text-ink/80 transition-colors hover:text-ink aria-expanded:text-ink"
+        className="inline-flex h-11 items-center gap-1 px-1.5 max-[400px]:px-1 text-ink/80 transition-colors hover:text-ink aria-expanded:text-ink"
       >
         <svg viewBox="0 0 24 24" className="h-[19px] w-[19px]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d={GLOBE} />

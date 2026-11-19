@@ -43,10 +43,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           {t.skip}
         </a>
         <header className="sticky top-0 z-40 border-b border-hairline bg-[var(--nav)] backdrop-blur-[20px] backdrop-saturate-[180%]">
-          <nav className="relative flex min-h-[52px] px-6 sm:px-8 lg:px-6 flex-wrap items-center justify-between" aria-label={t.navLabel}>
+          <nav className="relative flex min-h-[52px] px-6 max-[380px]:px-4 sm:px-8 lg:px-6 flex-wrap items-center justify-between" aria-label={t.navLabel}>
             <Link href="/" aria-label={t.home} className="-ml-1 flex items-center gap-2.5 rounded-md px-1 py-2">
-              <Mark className="h-[32px] w-[32px] max-[734px]:h-[28px] max-[734px]:w-[28px]" />
-              <Wordmark className="text-[21px] leading-none max-[734px]:text-[19px]" />
+              <Mark className="h-[32px] w-[32px] max-[734px]:h-[28px] max-[734px]:w-[28px] max-[380px]:h-[24px] max-[380px]:w-[24px]" />
+              <Wordmark className="text-[21px] leading-none max-[734px]:text-[19px] max-[380px]:text-[17px]" />
             </Link>
             <Sections t={t.sections} />
             <Nav email={(await currentUser())?.email ?? null} t={t.nav} lang={lang} langLabel={t.footer.language} />
