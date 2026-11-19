@@ -115,7 +115,7 @@ export function Frame({
           <MobileNav t={t} />
           {launch && <LaunchButton t={t.side} collapsed={false} mobile />}
         </div>
-        <SideNav t={t} collapsed={collapsed} reserve={reserve} />
+        <SideNav t={t} lang={lang} collapsed={collapsed} reserve={reserve} />
         <SideFooter t={t.side} lang={lang} collapsed={collapsed} />
       </aside>
       <div className="min-w-0">{children}</div>
@@ -124,7 +124,7 @@ export function Frame({
   );
 }
 
-function SideNav({ t, collapsed, reserve }: { t: Dict["space"]; collapsed: boolean; reserve: number }) {
+function SideNav({ t, lang, collapsed, reserve }: { t: Dict["space"]; lang: Lang; collapsed: boolean; reserve: number }) {
   const path = usePathname();
   return (
     <nav aria-label={t.label} className="space-y-6 max-lg:hidden">
@@ -146,7 +146,7 @@ function SideNav({ t, collapsed, reserve }: { t: Dict["space"]; collapsed: boole
                 </Link>
                 {(children.length > 0 || href === "/espace/sites") && !collapsed && (
                   <ul className="mt-0.5 flex flex-col gap-0.5 pl-7">
-                    {href === "/espace/sites" && <RecentSites reserve={reserve} />}
+                    {href === "/espace/sites" && <RecentSites reserve={reserve} lang={lang} />}
                     {children.map(([c, cIcon]) => {
                       const on = path === c || path.startsWith(`${c}/`);
                       return (

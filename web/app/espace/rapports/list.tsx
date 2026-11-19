@@ -3,11 +3,11 @@ import { Hint } from "@/lib/hint";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { canLaunch, teamContext } from "@/lib/auth";
-import { paymentVerdicts } from "@/lib/engine";
+import { PAY_REACHED_BANK, paymentVerdicts } from "@/lib/engine";
 import { locale, tr, type Dict, type Lang } from "@/lib/i18n";
 import { getDict, getLang } from "@/lib/lang";
 import { loadSpace, siteKey, type SpaceAudit } from "@/lib/space";
-import { Chevron, Chip, Chips, DeviceTag, Icon, MissionBar, Spinner, StatusGlyph, scoreTone } from "@/lib/ui";
+import { Chevron, Chip, Chips, DeviceTag, ExPay, Icon, MissionBar, Spinner, StatusGlyph, scoreTone } from "@/lib/ui";
 import { CloseMenu, ConfirmButton, ReportsLayout } from "../controls";
 import { SpaceShell } from "../shell";
 import { TrashTabs } from "../parts";
@@ -29,11 +29,13 @@ function PayLine({ pays, lang }: { pays: { status: string; verdict: string | nul
   const multi = pays.length > 1;
   const groups = new Map<string, { reached: boolean; who: string[] }>();
   for (const pay of pays) {
-    const reached = pay.verdict === "bank_declined" || pay.verdict === "payment_accepted";
+    const reached = PAY_REACHED_BANK.includes(pay.verdict ?? "");
     const text =
       pay.status !== "done" && pay.status !== "error"
         ? t("test en cours", "test running")
-        : reached
+        : pay.verdict === "three_ds_timeout"
+          ? t("validé jusqu’au 3D Secure", "validated up to 3D Secure")
+          : reached
           ? t("transmis à la banque", "sent to the bank")
           : (PAYMENT_VERDICTS[pay.verdict ?? ""] ?? t("erreur", "error")).toLowerCase();
     const g = groups.get(text) ?? { reached, who: [] };
@@ -229,6 +231,12 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
               <>
                 <StatusGlyph tone={scoreTone(a.s.score)} className="h-4 w-4" />
                 <span className="font-semibold">{a.s.score} %</span>
+                {a.s.exPay && (
+                                <>
+                                  <ExPay lang={lang} short className="md:hidden" />
+                                  <ExPay lang={lang} className="type-small max-md:hidden" />
+                                </>
+                              )}
               </>
             ) : (
               <span className="type-small flex items-center gap-2 font-semibold text-live">
@@ -414,6 +422,12 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
                             <>
                               <StatusGlyph tone={scoreTone(last.s.score)} className="h-4 w-4" />
                               <span className="font-semibold">{last.s.score} %</span>
+                              {last.s.exPay && (
+                                <>
+                                  <ExPay lang={lang} short className="md:hidden" />
+                                  <ExPay lang={lang} className="type-small max-md:hidden" />
+                                </>
+                              )}
                             </>
                           )}
                         </span>

@@ -8,7 +8,7 @@ import { getDict, getLang } from "@/lib/lang";
 import { loadSpace, priorities, shortDate, type SiteView } from "@/lib/space";
 import { monthRecap } from "@/lib/month";
 import { loadPace, estimateMinutes, minutesLabel } from "@/lib/estimate";
-import { Chevron, Chip, Chips, DeviceTag, Field, Group, Icon, MissionBar, MissionLegend, Row, Note, Spinner, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
+import { Chevron, Chip, Chips, DeviceTag, ExPay, Field, Group, Icon, MissionBar, MissionLegend, Row, Note, Spinner, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
 import { AutoRefresh } from "../../audit/[id]/refresh";
 import { SpaceShell } from "../shell";
 import { Delta, PriorityCard, sitePath } from "../parts";
@@ -27,7 +27,9 @@ function headline(sites: SiteView[], t: T) {
   const ready = scored.filter((s) => scoreTone(s.latest!.s.score) === "pass").length;
   if (!n) return t("Premier audit en cours.", "First audit running.");
   if (n === 1)
-    return ready
+    return scored[0].latest!.s.exPay
+      ? t("Les agents vont jusqu'au paiement sur ton site, sans commande confirmée.", "Agents get through to payment on your site, with no confirmed order.")
+      : ready
       ? t("Les agents achètent sur ton site.", "Agents can buy on your site.")
       : t(`Les agents réussissent ${scored[0].latest!.s.score}\u00a0% des achats sur ton site.`, `Agents complete ${scored[0].latest!.s.score}\u00a0% of purchases on your site.`);
   if (ready === n) return t(`Les agents achètent sur tes ${n} sites.`, `Agents can buy on all ${n} of your sites.`);
@@ -149,6 +151,7 @@ export default async function Accueil() {
                     <StatusGlyph tone={tone} className="h-5 w-5" />
                     {score ?? "—"}
                     <span className="-ml-1 text-[17px] text-ink-2">%</span>
+                    {s.latest?.s.exPay && <ExPay lang={lang} className="self-end text-[13px] leading-normal" />}
                   </span>
                   {s.latest ? <MissionBar ok={s.latest.s.ok} done={s.latest.s.done} total={s.latest.s.total} size="sm" /> : <span className="type-caption text-ink-2">{t("Premier audit en cours", "First audit running")}</span>}
                 </Link>

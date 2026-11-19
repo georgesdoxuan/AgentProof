@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BlockerIcon, BrowserFrame, Chevron, Chip, DeviceTag, MissionBar, StatusGlyph, blockerLabel, scoreTone } from "@/lib/ui";
+import { BlockerIcon, BrowserFrame, Chevron, Chip, DeviceTag, ExPay, MissionBar, StatusGlyph, blockerLabel, scoreTone } from "@/lib/ui";
 import { deviceLabel, fixHints, shortDate, type Blocker, type SiteView } from "@/lib/space";
 import { tr, type Lang } from "@/lib/i18n";
 import { getLang, getT } from "@/lib/lang";
@@ -70,6 +70,7 @@ export async function SiteCard({ site, manage = false }: { site: SiteView; manag
           <StatusGlyph tone={scoreTone(s?.score ?? null)} className="h-6 w-6" />
           {s?.score ?? "—"}
           <span className="-ml-1.5 text-[24px] text-ink-2">%</span>
+          {s?.exPay && <ExPay lang={lang} className="-ml-1 self-end text-[15px] leading-normal tracking-normal" />}
         </span>
         <Delta site={site} className="pb-1" />
       </div>

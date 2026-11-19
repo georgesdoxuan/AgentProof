@@ -203,7 +203,7 @@ export function NavBadge({ href, t, collapsed }: { href: string; t: T; collapsed
 const toneCls = (s: number | null) => (s == null ? "text-ink-2" : s >= 70 ? "text-pass" : s >= 40 ? "text-warn" : "text-fail");
 
 // The last sites the team worked on, under Sites: logo, name, score. Their rows are reserved while they load.
-export function RecentSites({ reserve }: { reserve: number }) {
+export function RecentSites({ reserve, lang }: { reserve: number; lang: Lang }) {
   const d = useSide();
   const path = usePathname();
   if (!d)
@@ -230,11 +230,27 @@ export function RecentSites({ reserve }: { reserve: number }) {
             {s.label}
             {s.device === "mobile" && <span className="text-ink-2"> · M</span>}
           </span>
-          <span className={`text-[13px] font-semibold tabular-nums ${toneCls(s.score)}`}>{s.score == null ? "—" : `${s.score} %`}</span>
+          <span className={`inline-flex items-center gap-1 text-[13px] font-semibold tabular-nums ${toneCls(s.score)}`}>
+            {s.score == null ? "—" : `${s.score} %`}
+            {s.exPay && <PayMark lang={lang} />}
+          </span>
         </Link>
       </li>
     );
   });
+}
+
+// After a 100 % whose real payment test placed no order (same rule as ExPay in lib/ui, which is server-only).
+function PayMark({ lang }: { lang: Lang }) {
+  const title = lang === "en" ? "Excluding payment: the real payment test placed no order" : "Hors paiement : le test de paiement réel n’a pas confirmé de commande";
+  return (
+    <span title={title} className="inline-flex text-warn">
+      <svg viewBox="0 0 24 24" className="h-[1em] w-[1em]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM3 10h18M7 15h3" />
+      </svg>
+      <span className="sr-only">{title}</span>
+    </span>
+  );
 }
 
 const fmt = (iso: string, lang: Lang, o: Intl.DateTimeFormatOptions) => new Date(iso).toLocaleString(lang === "en" ? "en-GB" : "fr-FR", o);
@@ -278,7 +294,11 @@ export function SideFooter({ t, lang, collapsed }: { t: T; lang: Lang; collapsed
             <span className="flex items-center gap-2 text-[13px] font-semibold text-pass">
               {glyph(G.done, "h-3.5 w-3.5")}
               {t.finished}
-              {a.score != null && <span className="ml-auto tabular-nums text-ink-2">{a.score} %</span>}
+              {a.score != null && (
+                <span className="ml-auto inline-flex items-center gap-1 tabular-nums text-ink-2">
+                  {a.score} %{a.exPay && <PayMark lang={lang} />}
+                </span>
+              )}
             </span>
             <span className="mt-1 block truncate text-[14px] text-ink">{a.label}</span>
             {/* Same height as a running card: the bar fills green, nothing jumps when it turns. */}
