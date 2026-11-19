@@ -32,6 +32,7 @@ export type SpaceAudit = {
   payment_test: string | null;
   pay: { status: string; verdict: string | null; with_login: boolean }[]; // real payment test runs linked to this audit
   s: ReturnType<typeof summarize>;
+  label: string; // name shown everywhere: title or domain, plus " (1)", " (2)"… when another report has the same name
 };
 
 export type Fix = { site_id: number; device: string; blocker_type: string; fixed_at: string };
@@ -47,6 +48,7 @@ export type SiteView = {
   key: string; // "domain" or "domain/mobile", also the URL segment
   domain: string;
   name: string;
+  label: string; // domain, plus " (1)"… when another site (other device) has the same one
   url: string;
   site_id: number;
   device: string;
@@ -64,6 +66,7 @@ export type SiteView = {
 export type TrashedSite = {
   key: string;
   domain: string;
+  label: string;
   site_id: number;
   device: string;
   deleted_at: string; // latest move to the trash
@@ -75,6 +78,42 @@ export const siteKey = (domain: string, device: string) => (device === "mobile" 
 export const deviceLabel = (d: string, lang: Lang = "fr") => (d === "mobile" ? "Mobile" : lang === "en" ? "Desktop" : "Ordinateur");
 export const shortDate = (d: string, lang: Lang = "fr") =>
   new Date(d).toLocaleDateString(locale(lang), { timeZone: "Europe/Paris", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+
+// Same name twice: the oldest keeps it, the next ones get " (1)", " (2)"… in creation order, like the Finder.
+// Counted over everything the team has (trash included), so a number never moves when a report is trashed or restored.
+export function numberDuplicates<T>(items: T[], name: (x: T) => string, created: (x: T) => string) {
+  const seen = new Map<string, number>();
+  const out = new Map<T, string>();
+  for (const x of [...items].sort((a, b) => Date.parse(created(a)) - Date.parse(created(b)))) {
+    const n = name(x);
+    const k = n.trim().toLocaleLowerCase("fr");
+    const i = seen.get(k) ?? 0;
+    seen.set(k, i + 1);
+    out.set(x, n && i ? `${n} (${i})` : n);
+  }
+  return out;
+}
+
+const reportName = (a: { title: string | null; sites: { domain: string } | null }) => a.title || a.sites?.domain || "";
+
+// The " (n)" a report of this team carries in the lists, for pages that load one report on its own.
+export async function reportSuffix(audit: { id: string; team_id: string | null; kind: string; title: string | null; sites: { domain: string } | null }) {
+  if (!audit.team_id || audit.kind !== "checkout" || !reportName(audit)) return "";
+  const { data } = await db
+    .from("audits")
+    .select("id, created_at, title, compare_to, sites(domain)")
+    .eq("team_id", audit.team_id)
+    .eq("kind", "checkout")
+    .order("created_at", { ascending: false })
+    .limit(200);
+  const rows = (data ?? []) as unknown as { id: string; created_at: string; title: string | null; compare_to: string | null; sites: { domain: string } | null }[];
+  const competitors = new Set(rows.map((a) => a.compare_to).filter(Boolean));
+  const mine = rows.filter((a) => !competitors.has(a.id));
+  const row = mine.find((a) => a.id === audit.id);
+  if (!row) return "";
+  const label = numberDuplicates(mine, reportName, (a) => a.created_at).get(row) ?? "";
+  return label.slice(reportName(row).length);
+}
 
 export async function loadSpace(teamId: string) {
   const [{ data }, { data: fixes }, { data: board }] = await Promise.all([
@@ -98,13 +137,25 @@ export async function loadSpace(teamId: string) {
     : { data: [] as { audit_id: string; status: string; payment_verdict: string | null; with_login: boolean }[] };
   const payBy = new Map<string, SpaceAudit["pay"]>();
   for (const r of payRuns ?? []) payBy.set(r.audit_id, [...(payBy.get(r.audit_id) ?? []), { status: r.status, verdict: r.payment_verdict, with_login: r.with_login }]);
-  const all = ((data ?? []) as unknown as Omit<SpaceAudit, "s" | "pay">[]).map((a) => ({ ...a, pay: a.payment_test ? payBy.get(a.payment_test) ?? [] : [], s: summarize(a.runs) }));
+  const all = ((data ?? []) as unknown as Omit<SpaceAudit, "s" | "pay" | "label">[]).map((a) => ({ ...a, pay: a.payment_test ? payBy.get(a.payment_test) ?? [] : [], s: summarize(a.runs), label: "" }));
   const byId = new Map(all.map((a) => [a.id, a]));
   // Competitor audits show inside the main site, not as sites of their own.
   const competitorIds = new Set(all.map((a) => a.compare_to).filter(Boolean));
   // Reports in the trash leave every view (sites, checklist, home) until restored; the trash page lists them.
   const trash = all.filter((a) => !competitorIds.has(a.id) && a.deleted_at).sort((x, y) => Date.parse(y.deleted_at!) - Date.parse(x.deleted_at!));
   const audits = all.filter((a) => !competitorIds.has(a.id) && !a.deleted_at);
+  const reports = all.filter((a) => !competitorIds.has(a.id));
+  const labels = numberDuplicates(reports, reportName, (a) => a.created_at);
+  for (const a of all) a.label = labels.get(a) ?? reportName(a);
+  // A site is one domain on one device: desktop and mobile of the same domain are two sites with the same name.
+  const firstAudit = new Map<string, { key: string; domain: string; at: string }>();
+  for (const a of [...reports].reverse()) {
+    if (!a.sites) continue;
+    const key = siteKey(a.sites.domain, a.device);
+    if (!firstAudit.has(key)) firstAudit.set(key, { key, domain: a.sites.domain, at: a.created_at });
+  }
+  const siteLabels = numberDuplicates([...firstAudit.values()], (x) => x.domain, (x) => x.at);
+  const siteLabel = (key: string, domain: string) => siteLabels.get(firstAudit.get(key)!) ?? domain;
 
   const sites = new Map<string, SiteView>();
   for (const a of audits) {
@@ -118,6 +169,7 @@ export async function loadSpace(teamId: string) {
         key,
         domain: a.sites.domain,
         name: a.sites.name,
+        label: siteLabel(key, a.sites.domain),
         url: a.sites.url,
         site_id: a.site_id,
         device: a.device,
@@ -166,7 +218,7 @@ export async function loadSpace(teamId: string) {
     const key = siteKey(a.sites.domain, a.device);
     if (sites.has(key)) continue;
     let v = trashedSites.get(key);
-    if (!v) trashedSites.set(key, (v = { key, domain: a.sites.domain, site_id: a.site_id, device: a.device, deleted_at: a.deleted_at!, audits: [], running: false }));
+    if (!v) trashedSites.set(key, (v = { key, domain: a.sites.domain, label: siteLabel(key, a.sites.domain), site_id: a.site_id, device: a.device, deleted_at: a.deleted_at!, audits: [], running: false }));
     v.audits.push(a);
     if (a.status !== "done") v.running = true;
   }

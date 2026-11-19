@@ -137,7 +137,7 @@ export default async function Accueil() {
                     <span className="flex min-w-0 items-center gap-3">
                       <SiteLogo domain={s.domain} name={s.domain} />
                       <span className="min-w-0">
-                        <span className="block truncate font-semibold">{s.domain}</span>
+                        <span className="block truncate font-semibold">{s.label}</span>
                         <span className="type-caption block text-ink-2"><DeviceTag device={s.device} lang={lang} /></span>
                       </span>
                     </span>
@@ -212,7 +212,7 @@ export default async function Accueil() {
                 <span className="flex min-w-0 items-center gap-3">
                   <SiteLogo domain={a.sites?.domain} name={a.sites?.domain} />
                   <span className="min-w-0">
-                    <span className="block truncate font-semibold">{a.sites?.domain}</span>
+                    <span className="block truncate font-semibold">{a.label}</span>
                     <span className="type-small text-ink-2">
                       <DeviceTag device={a.device} lang={lang} /> · {t("lancé", "started")} {shortDate(a.created_at, lang)}
                     </span>

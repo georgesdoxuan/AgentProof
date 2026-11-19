@@ -5,6 +5,7 @@ import { connection } from "next/server";
 import { DEFAULT_MODEL, EXCLUDED, db, paymentStages, paymentVerdicts, scoreOf } from "@/lib/engine";
 import { byRank } from "@/app/classement/board";
 import { rankText } from "@/app/espace/parts";
+import { reportSuffix } from "@/lib/space";
 import { locale, missionTitle, staticText, tr, type Lang, type T } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 import { BlockerIcon, BrowserFrame, MissionIcon, Chevron, DeviceTag, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, hurdles, summarize } from "@/lib/ui";
@@ -281,7 +282,11 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   const pays: any[] = inTeam && audit.payment_test ? [...((await loadAudit(audit.payment_test))?.runs ?? [])].sort((a: any, b: any) => +a.with_login - +b.with_login) : [];
   const competitor = audit.compare_to ? await loadAudit(audit.compare_to) : null;
   // Agency white label: their name and logo replace AgentProof's on this report.
-  const { data: brand } = audit.team_id ? await db.from("teams").select("brand_name, brand_logo").eq("id", audit.team_id).maybeSingle() : { data: null };
+  // Same name as another report of the team: " (1)", " (2)"…, as in the reports list.
+  const [{ data: brand }, suffix] = await Promise.all([
+    audit.team_id ? db.from("teams").select("brand_name, brand_logo").eq("id", audit.team_id).maybeSingle() : Promise.resolve({ data: null }),
+    reportSuffix(audit),
+  ]);
   const branded = !!brand?.brand_name;
   const h = await headers();
   const base = process.env.PUBLIC_URL || `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
@@ -375,7 +380,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
           </p>
           <h1 className="type-h1 mt-3 flex items-center gap-4 break-words">
             <SiteLogo domain={audit.sites.domain} name={audit.sites.name} size="lg" />
-            <span className="min-w-0">{audit.title || audit.sites.name}</span>
+            <span className="min-w-0">{(audit.title || audit.sites.name) + suffix}</span>
           </h1>
           <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-ink-2">
             <a href={audit.sites.url} className="text-link hover:underline" target="_blank" rel="noreferrer">

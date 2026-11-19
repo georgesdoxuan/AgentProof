@@ -40,7 +40,7 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
       title={
         <span className="flex min-w-0 items-center gap-4">
           <SiteLogo domain={site.domain} name={site.domain} size="lg" />
-          <span className="min-w-0 break-words">{site.domain}</span>
+          <span className="min-w-0 break-words">{site.label}</span>
         </span>
       }
       intro={
@@ -189,7 +189,7 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             {(
               [
-                [site.domain, s, true, site.domain],
+                [site.label, s, true, site.domain],
                 [c.sites?.domain ?? t("Concurrent", "Competitor"), c.s, false, c.sites?.domain],
               ] as const
             ).map(([name, x, self, domain]) => (
