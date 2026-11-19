@@ -3,7 +3,7 @@ import { Bone, Line, SkSpace } from "../../skeleton";
 // New audit: site and competitor fields, the model comparison option, model and device choices, then Run.
 export default function Loading() {
   return (
-    <SkSpace narrow>
+    <SkSpace>
       <section>
         <div className="grid gap-5 rounded-[18px] bg-tile p-6 sm:p-8">
           <Bone className="h-14 rounded-[12px]" />

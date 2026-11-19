@@ -50,7 +50,7 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
   const t = await getT();
 
   return (
-    <SpaceShell narrow
+    <SpaceShell
       title={t("Lancer un audit", "Run an audit")}
       hint={t(
         "Un agent IA essaie d'acheter sur ton site, comme un vrai client : tout site qui vend des produits physiques (mode, maison, beauté, high-tech…). Les missions s'arrêtent avant le paiement et ne saisissent aucune donnée personnelle.",
@@ -98,123 +98,127 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
         <Note icon="refresh">{t("Nouveau passage complet : le rapport précédent reste dans ton espace.", "New full pass: the previous report stays in your space.")}</Note>
       )}
       <Group>
-        <form action="/api/audits" method="post" className="grid gap-5 p-6 sm:p-8">
-          {/* Kept from "Relancer" on a report: a fresh pass, not the 7-day reuse. */}
-          {force === "1" && <input type="hidden" name="force" value="1" />}
-          <Field label={t("Adresse de ton site", "Your site's address")} name="url" required defaultValue={url} />
-          <Field label={t("Un concurrent (facultatif)", "A competitor (optional)")} name="competitor" defaultValue={competitor} />
-          {/* A report address carried over from the home form stays editable: a refused one must be fixable here. */}
-          {(email || erreur === "email") && (
-            <Field label={t("E-mail du rapport (vide : ton adresse de connexion)", "Report e-mail (empty: your sign-in address)")} name="email" type="email" defaultValue={email} />
-          )}
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <Hint tip={t("Mobile : format téléphone simulé (écran 390 × 844), pas un vrai smartphone. Ordinateur + Mobile : les mêmes missions sur les deux, côte à côte dans le rapport, deux fois plus de crédits.", "Mobile: simulated phone format (390 × 844 screen), not a real smartphone. Desktop + Mobile: the same missions on both, side by side in the report, twice the credits.")}>
-              <span className="text-ink-2">{t("Appareil", "Device")}</span>
-            </Hint>
-            <Segmented
-              name="device"
-              label={t("Appareil", "Device")}
-              value={device === "mobile" || device === "both" ? device : "desktop"}
-              options={[
-                ["desktop", t("Ordinateur", "Desktop"), "desktop"],
-                ["mobile", "Mobile", "mobile"],
-                [
-                  "both",
-                  <>
-                    <span className="max-sm:hidden">{t("Ordinateur + Mobile", "Desktop + Mobile")}</span>
-                    <span className="sm:hidden">{t("Les deux", "Both")}</span>
-                  </>,
-                  "both",
-                ],
-              ]}
-            />
-          </div>
-
-          <MissionPicker items={items} lists={lists} lang={lang} max={MAX_PER_AUDIT} pace={pace} />
-
-          {/* Engine choices and the paid test, always in view. Their explanations show on hover of each label. */}
-          <section className="grid gap-4 rounded-[12px] bg-bg-2 px-4 pb-4 pt-3 dark:bg-[#2c2c2e]" aria-labelledby="avancees">
-            <h2 id="avancees" className="type-small font-semibold">
-              {t("Options avancées", "Advanced options")}
-            </h2>
-            {card && !card.missing && (
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <Hint tip={t("Paiement seulement : un achat réel avec la carte de l'équipe, 3 à 10 minutes, sans le concurrent.", "Payment only: a real purchase with the team's card, 3 to 10 minutes, without the competitor.")}>
-                  <span className="type-small text-ink-2">{t("Type de test", "Test type")}</span>
-                </Hint>
-                <Segmented
-                  name="mode"
-                  className="max-sm:w-full"
-                  label={t("Type de test", "Test type")}
-                  value="audit"
-                  options={[
-                    ["audit", t("Audit complet", "Full audit")],
-                    ["payment", t("Paiement seulement", "Payment only")],
-                  ]}
-                />
-              </div>
-            )}
-            {card && !card.missing && (
-              <PaymentPicker
-                lang={lang}
-                max={PAY_MAX_EUR}
-                cards={[{ id: "team", label: card.label, last4: card.last4 }]}
-                accounts={accounts}
-                tip={t(
-                  "L’agent part au plus près du checkout, prend le premier article disponible et paie une fois avec cette carte. Avec une carte approvisionnée, la commande est réelle. Jamais sur le concurrent.",
-                  "The agent starts as close to checkout as it can, takes the first available item and pays once with this card. With a funded card, the order is real. Never on the competitor.",
-                )}
-              />
+        <form action="/api/audits" method="post" className="grid items-start gap-5 p-6 sm:p-8 @4xl:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] @4xl:gap-8 @6xl:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
+          {/* Wide screens: the site, device and missions on the left; options and the Run button on the right, in view from the top. */}
+          <div className="grid min-w-0 content-start gap-5">
+            {/* Kept from "Relancer" on a report: a fresh pass, not the 7-day reuse. */}
+            {force === "1" && <input type="hidden" name="force" value="1" />}
+            <Field label={t("Adresse de ton site", "Your site's address")} name="url" required defaultValue={url} />
+            <Field label={t("Un concurrent (facultatif)", "A competitor (optional)")} name="competitor" defaultValue={competitor} />
+            {/* A report address carried over from the home form stays editable: a refused one must be fixable here. */}
+            {(email || erreur === "email") && (
+              <Field label={t("E-mail du rapport (vide : ton adresse de connexion)", "Report e-mail (empty: your sign-in address)")} name="email" type="email" defaultValue={email} />
             )}
             <div className="flex flex-wrap items-center justify-between gap-3">
-              {/* Precise costs 1.5 credits per mission, an audit rounded up (lib/credits-shared.ts); measured on 17/11/2026, the
-                  same pace (median 87 s per mission vs 90 s): the time estimate above does not change with the agent. */}
-              <Hint tip={t(`Rapide : ${DEFAULT_MODEL}, 1 crédit par mission. Précis : ${COMPARE_MODEL}, le plus capable de H, 1,5 crédit par mission (8 crédits pour 5 missions, arrondi au crédit supérieur). Même durée, mesurée.`, `Fast: ${DEFAULT_MODEL}, 1 credit per mission. Precise: ${COMPARE_MODEL}, H's most capable, 1.5 credits per mission (8 credits for 5 missions, rounded up). Same duration, as measured.`)}>
-                <span className="type-small text-ink-2">{t("Agent", "Agent")}</span>
+              <Hint tip={t("Mobile : format téléphone simulé (écran 390 × 844), pas un vrai smartphone. Ordinateur + Mobile : les mêmes missions sur les deux, côte à côte dans le rapport, deux fois plus de crédits.", "Mobile: simulated phone format (390 × 844 screen), not a real smartphone. Desktop + Mobile: the same missions on both, side by side in the report, twice the credits.")}>
+                <span className="text-ink-2">{t("Appareil", "Device")}</span>
               </Hint>
               <Segmented
-                name="model"
-                label={t("Agent", "Agent")}
-                value="fast"
+                name="device"
+                label={t("Appareil", "Device")}
+                value={device === "mobile" || device === "both" ? device : "desktop"}
                 options={[
-                  ["fast", t("Rapide", "Fast")],
-                  ["precise", t("Précis", "Precise")],
+                  ["desktop", t("Ordinateur", "Desktop"), "desktop"],
+                  ["mobile", "Mobile", "mobile"],
+                  [
+                    "both",
+                    <>
+                      <span className="max-sm:hidden">{t("Ordinateur + Mobile", "Desktop + Mobile")}</span>
+                      <span className="sm:hidden">{t("Les deux", "Both")}</span>
+                    </>,
+                    "both",
+                  ],
                 ]}
               />
             </div>
-            <label className="type-small inline-flex cursor-pointer items-center gap-3 justify-self-start ap-not-pay">
-              <input type="checkbox" name="models" value="1" className="h-4 w-4 shrink-0 accent-blue" />
-              <Hint
-                focusable={false}
-                tip={t(
-                  "Les mêmes missions jouées par l'agent rapide et l'agent précis : réussite, durée et coût côte à côte. Un audit rapide plus un audit précis (13 crédits pour 5 missions), sans concurrent.",
-                  "The same missions played by the fast and the precise agent: success, duration and cost side by side. A fast audit plus a precise audit (13 credits for 5 missions), no competitor.",
-                )}
-              >
-                <span className="font-semibold">{t("Comparer les deux agents", "Compare both agents")}</span>
-              </Hint>
-            </label>
-          </section>
 
-          <Hint
-            focusable={false}
-            side="top"
-            className="block"
-            tip={t(`Le rapport s'ouvre tout de suite et arrive aussi par e-mail à ${user.email}.`, `The report opens right away and is also e-mailed to ${user.email}.`)}
-          >
-            <button className="btn min-h-[52px] w-full rounded-[12px]">{t("Lancer l’audit", "Run the audit")}</button>
-          </Hint>
-          {/* Consent stays visible: the merchant confirms it before clicking, not on hover. */}
-          <p className="type-small text-center text-ink-2">
-            {t(
-              "En lançant l’audit, tu confirmes gérer ce site ou être autorisé à le tester. Un concurrent n’est visité que sur ses pages publiques, sans payer :",
-              "By running the audit, you confirm you run this site or are allowed to test it. A competitor is only visited on its public pages, without paying:",
-            )}{" "}
-            <Link href="/conditions" className="text-link hover:underline">
-              {t("conditions", "terms")}
-            </Link>
-            .
-          </p>
+            <MissionPicker items={items} lists={lists} lang={lang} max={MAX_PER_AUDIT} pace={pace} />
+          </div>
+          <div className="grid min-w-0 content-start gap-5">
+            {/* Engine choices and the paid test, always in view. Their explanations show on hover of each label. */}
+            <section className="grid gap-4 rounded-[12px] bg-bg-2 px-4 pb-4 pt-3 dark:bg-[#2c2c2e]" aria-labelledby="avancees">
+              <h2 id="avancees" className="type-small font-semibold">
+                {t("Options avancées", "Advanced options")}
+              </h2>
+              {card && !card.missing && (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <Hint tip={t("Paiement seulement : un achat réel avec la carte de l'équipe, 3 à 10 minutes, sans le concurrent.", "Payment only: a real purchase with the team's card, 3 to 10 minutes, without the competitor.")}>
+                    <span className="type-small text-ink-2">{t("Type de test", "Test type")}</span>
+                  </Hint>
+                  <Segmented
+                    name="mode"
+                    className="max-sm:w-full"
+                    label={t("Type de test", "Test type")}
+                    value="audit"
+                    options={[
+                      ["audit", t("Audit complet", "Full audit")],
+                      ["payment", t("Paiement seulement", "Payment only")],
+                    ]}
+                  />
+                </div>
+              )}
+              {card && !card.missing && (
+                <PaymentPicker
+                  lang={lang}
+                  max={PAY_MAX_EUR}
+                  cards={[{ id: "team", label: card.label, last4: card.last4 }]}
+                  accounts={accounts}
+                  tip={t(
+                    "L’agent part au plus près du checkout, prend le premier article disponible et paie une fois avec cette carte. Avec une carte approvisionnée, la commande est réelle. Jamais sur le concurrent.",
+                    "The agent starts as close to checkout as it can, takes the first available item and pays once with this card. With a funded card, the order is real. Never on the competitor.",
+                  )}
+                />
+              )}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                {/* Precise costs 1.5 credits per mission, an audit rounded up (lib/credits-shared.ts); measured on 17/11/2026, the
+                    same pace (median 87 s per mission vs 90 s): the time estimate above does not change with the agent. */}
+                <Hint tip={t(`Rapide : ${DEFAULT_MODEL}, 1 crédit par mission. Précis : ${COMPARE_MODEL}, le plus capable de H, 1,5 crédit par mission (8 crédits pour 5 missions, arrondi au crédit supérieur). Même durée, mesurée.`, `Fast: ${DEFAULT_MODEL}, 1 credit per mission. Precise: ${COMPARE_MODEL}, H's most capable, 1.5 credits per mission (8 credits for 5 missions, rounded up). Same duration, as measured.`)}>
+                  <span className="type-small text-ink-2">{t("Agent", "Agent")}</span>
+                </Hint>
+                <Segmented
+                  name="model"
+                  label={t("Agent", "Agent")}
+                  value="fast"
+                  options={[
+                    ["fast", t("Rapide", "Fast")],
+                    ["precise", t("Précis", "Precise")],
+                  ]}
+                />
+              </div>
+              <label className="type-small inline-flex cursor-pointer items-center gap-3 justify-self-start ap-not-pay">
+                <input type="checkbox" name="models" value="1" className="h-4 w-4 shrink-0 accent-blue" />
+                <Hint
+                  focusable={false}
+                  tip={t(
+                    "Les mêmes missions jouées par l'agent rapide et l'agent précis : réussite, durée et coût côte à côte. Un audit rapide plus un audit précis (13 crédits pour 5 missions), sans concurrent.",
+                    "The same missions played by the fast and the precise agent: success, duration and cost side by side. A fast audit plus a precise audit (13 credits for 5 missions), no competitor.",
+                  )}
+                >
+                  <span className="font-semibold">{t("Comparer les deux agents", "Compare both agents")}</span>
+                </Hint>
+              </label>
+            </section>
+
+            <Hint
+              focusable={false}
+              side="top"
+              className="block"
+              tip={t(`Le rapport s'ouvre tout de suite et arrive aussi par e-mail à ${user.email}.`, `The report opens right away and is also e-mailed to ${user.email}.`)}
+            >
+              <button className="btn min-h-[52px] w-full rounded-[12px]">{t("Lancer l’audit", "Run the audit")}</button>
+            </Hint>
+            {/* Consent stays visible: the merchant confirms it before clicking, not on hover. */}
+            <p className="type-small text-center text-ink-2">
+              {t(
+                "En lançant l’audit, tu confirmes gérer ce site ou être autorisé à le tester. Un concurrent n’est visité que sur ses pages publiques, sans payer :",
+                "By running the audit, you confirm you run this site or are allowed to test it. A competitor is only visited on its public pages, without paying:",
+              )}{" "}
+              <Link href="/conditions" className="text-link hover:underline">
+                {t("conditions", "terms")}
+              </Link>
+              .
+            </p>
+          </div>
         </form>
       </Group>
     </SpaceShell>
