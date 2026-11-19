@@ -10,7 +10,11 @@ import { sendMail } from "./auth";
 
 const DAY = 86400_000;
 const MONTH = 30 * DAY;
-const PER_TICK = 2; // one fetch (≤ 25 s) each, inside a 60 s tick: 2880 pages a day
+const HOUR = 3600_000;
+const PER_TICK = 2; // monthly audits launched per tick
+export const INTERVALS = [1, 6, 24, 168]; // hours between two checks of a page
+export const SCORE_DROPS = [5, 10, 20]; // score drop (points) that triggers an alert
+const CHECK_ROOM = 40_000; // one page check: rendered read (≤ 25 s) + static check (≤ 12 s)
 const MISSIONS = Number(process.env.FORM_MISSIONS ?? 5);
 
 const ENTITIES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", eacute: "é", egrave: "è", agrave: "à", ccedil: "ç", ecirc: "ê", times: "×" };
@@ -68,13 +72,51 @@ export function diff(before: string[], after: string[]) {
   return { added: after.filter((x) => !a.has(x)), removed: before.filter((x) => !b.has(x)) };
 }
 
-type Automation = { id: number; team_id: string; url: string; mode: string; signature: string[] | null; created_by: string | null; users: { email: string } | null };
+type Automation = {
+  id: number; team_id: string; url: string; mode: string; signature: string[] | null; created_by: string | null;
+  last_auto_audit_at?: string | null; users: { email: string } | null;
+};
+
+// The static check, as signature lines: a robots.txt that shuts agents out, a new captcha or a lost UCP profile is a change.
+// Left out: "access" and an unreadable robots.txt, since a request that fails once is noise (the rendered read already says if the page is gone).
+const STATIC = "contrôle: ";
+export const staticLines = (items: StaticItem[]) =>
+  items.filter((i) => i.key !== "access" && i.key !== "error" && !(i.key === "robots" && i.tone === "none")).map((i) => `${STATIC}${i.label}`);
+
+type Alert = { event: string; domain: string; text: string; link: string };
+
+// Team alerts besides e-mail: Slack, Discord or any https endpoint (n8n, Make, Zapier). Each gets the payload it reads.
+export async function notifyTeam(teamId: string, msg: Alert) {
+  const { data: team } = await db.from("teams").select("webhook_url").eq("id", teamId).single();
+  const url = team?.webhook_url as string | null;
+  return url ? postWebhook(url, msg) : false;
+}
+
+export async function postWebhook(url: string, msg: Alert) {
+  const host = new URL(url).hostname;
+  const line = `AgentProof · ${msg.domain} : ${msg.text}${msg.link ? ` ${msg.link}` : ""}`;
+  const body = host === "hooks.slack.com" ? { text: line } : /(^|\.)discord(app)?\.com$/.test(host) ? { content: line } : { source: "agentproof", ...msg };
+  const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(8000), redirect: "error" });
+  return res.ok;
+}
+
+// What a team may store as webhook: https, a real host name (no IP, no localhost), no credentials in the URL.
+export function webhookOk(raw: string) {
+  try {
+    const u = new URL(raw);
+    return u.protocol === "https:" && !u.username && !u.password && !u.port && /\.[a-z]{2,}$/i.test(u.hostname) && !/(^|\.)(localhost|local|internal)$/i.test(u.hostname);
+  } catch {
+    return false;
+  }
+}
 
 export async function checkAutomation(a: Automation) {
   let sig: string[];
   try {
-    sig = signature(await fetchPage(a.url));
+    const html = await fetchPage(a.url);
+    sig = signature(html);
     if (sig.length < 5) throw new Error("page vide ou anti-bot (moins de 5 éléments lus)"); // a challenge page must never become the reference
+    sig = [...sig, ...staticLines(await staticCheck(a.url, html))].sort();
   } catch (e) {
     await db.from("automation_checks").insert({ automation_id: a.id, status: "error", detail: `Page illisible : ${(e as Error).message}`.slice(0, 300) });
     return "error";
@@ -84,7 +126,9 @@ export async function checkAutomation(a: Automation) {
     await db.from("automation_checks").insert({ automation_id: a.id, status: "baseline", detail: `Référence enregistrée (${sig.length} éléments suivis).` });
     return "baseline";
   }
-  const { added, removed } = diff(a.signature, sig);
+  // A reference saved before the static check was watched: adopt today's static lines silently, so they are not "new".
+  const before = a.signature.some((x) => x.startsWith(STATIC)) ? a.signature : [...a.signature, ...sig.filter((x) => x.startsWith(STATIC))];
+  const { added, removed } = diff(before, sig);
   if (!added.length && !removed.length) {
     await db.from("automation_checks").insert({ automation_id: a.id, status: "same" });
     return "same";
@@ -92,10 +136,21 @@ export async function checkAutomation(a: Automation) {
   const lines = [...added.map((x) => `+ ${x}`), ...removed.map((x) => `− ${x}`)];
   const detail = `${added.length} ajout${added.length > 1 ? "s" : ""}, ${removed.length} retrait${removed.length > 1 ? "s" : ""} : ${lines.slice(0, 6).join(" · ")}${lines.length > 6 ? " …" : ""}`;
   const email = a.users?.email;
+  // At most one automatic audit a day per page: a page that changes every hour must not spend the whole H budget.
+  const auditToday = !!a.last_auto_audit_at && Date.now() - new Date(a.last_auto_audit_at).getTime() < DAY;
   const auditId =
-    a.mode === "audit" ? await createAudit(a.url, { missions: MISSIONS, teamId: a.team_id, createdBy: a.created_by ?? undefined, email }).catch(() => null) : null;
-  await db.from("automations").update({ signature: sig }).eq("id", a.id);
-  await db.from("automation_checks").insert({ automation_id: a.id, status: "changed", detail: detail.slice(0, 1000), audit_id: auditId });
+    a.mode === "audit" && !auditToday
+      ? await createAudit(a.url, { missions: MISSIONS, teamId: a.team_id, createdBy: a.created_by ?? undefined, email, auto: true }).catch(() => null)
+      : null;
+  await db.from("automations").update({ signature: sig, ...(auditId ? { last_auto_audit_at: new Date().toISOString() } : {}) }).eq("id", a.id);
+  const note = a.mode === "audit" && auditToday ? " (audit déjà relancé aujourd'hui)" : "";
+  await db.from("automation_checks").insert({ automation_id: a.id, status: "changed", detail: `${detail}${note}`.slice(0, 1000), audit_id: auditId });
+  await notifyTeam(a.team_id, {
+    event: "page_changed",
+    domain: normalizeUrl(a.url).domain,
+    text: `${a.url} a changé. ${lines.slice(0, 6).join(" · ")}${auditId ? " Un nouvel audit est lancé." : ""}`,
+    link: `${process.env.PUBLIC_URL ?? ""}${auditId ? `/audit/${auditId}` : "/espace/automations"}`,
+  }).catch(() => false);
   if (email) {
     const link = `${process.env.PUBLIC_URL ?? ""}${auditId ? `/audit/${auditId}` : "/espace/automations"}`;
     await sendMail(
@@ -109,17 +164,23 @@ export async function checkAutomation(a: Automation) {
   return "changed";
 }
 
-// Called from the tick: a few enabled automations not checked for 24 h. Reserve first, so two ticks never check the same page twice.
-export async function runDueAutomations(log: string[]) {
-  const due = new Date(Date.now() - DAY).toISOString();
+// Called from the tick: enabled automations whose own interval (1 h to a week) has passed, oldest first, while the tick has room.
+// Reserve first, so two ticks never check the same page twice. The deploy hook sets last_checked_at to null: due at once.
+export async function runDueAutomations(log: string[], room: () => number) {
+  const due = new Date(Date.now() - HOUR).toISOString();
   const { data } = await db
     .from("automations")
-    .select("id, team_id, url, mode, signature, created_by, last_checked_at, users:created_by(email)")
+    .select("id, team_id, url, mode, signature, created_by, last_checked_at, last_auto_audit_at, interval_hours, users:created_by(email)")
     .eq("enabled", true)
     .or(`last_checked_at.is.null,last_checked_at.lt.${due}`)
     .order("last_checked_at", { ascending: true, nullsFirst: true })
-    .limit(PER_TICK);
-  for (const a of (data ?? []) as any[]) {
+    .limit(50);
+  const ready = ((data ?? []) as any[]).filter((a) => !a.last_checked_at || Date.now() - new Date(a.last_checked_at).getTime() >= (a.interval_hours ?? 24) * HOUR);
+  for (const a of ready) {
+    if (room() < CHECK_ROOM) {
+      log.push("automations postponed");
+      break;
+    }
     let q = db.from("automations").update({ last_checked_at: new Date().toISOString() }).eq("id", a.id);
     q = a.last_checked_at ? q.eq("last_checked_at", a.last_checked_at) : q.is("last_checked_at", null);
     const { data: reserved } = await q.select("id");
@@ -145,7 +206,7 @@ export async function runMonthlyAudits(log: string[]) {
     q = a.last_audit_at ? q.eq("last_audit_at", a.last_audit_at) : q.is("last_audit_at", null);
     const { data: reserved } = await q.select("id");
     if (!reserved?.length) continue;
-    const auditId = await createAudit(a.url, { missions: MISSIONS, teamId: a.team_id, createdBy: a.created_by ?? undefined, email: a.users?.email }).catch(() => null);
+    const auditId = await createAudit(a.url, { missions: MISSIONS, teamId: a.team_id, createdBy: a.created_by ?? undefined, email: a.users?.email, auto: true }).catch(() => null);
     await db.from("automation_checks").insert({ automation_id: a.id, status: "monthly", detail: auditId ? "Audit mensuel lancé." : "Audit mensuel impossible à lancer.", audit_id: auditId });
     log.push(`automation ${a.id}: monthly audit ${auditId}`);
   }
@@ -243,7 +304,8 @@ export async function agentAccess(url: string): Promise<AgentAccess[]> {
   });
 }
 
-export async function staticCheck(url: string): Promise<StaticItem[]> {
+// rendered: the page as a real browser drew it, when the caller already has it (the site watch): no second rendered read.
+export async function staticCheck(url: string, rendered?: string): Promise<StaticItem[]> {
   const origin = new URL(url).origin;
   const [robots, home, llms, catalog, ucp, acp] = await Promise.all([
     get(`${origin}/robots.txt`), get(url), get(`${origin}/llms.txt`), get(`${origin}/products.json?limit=1`),
@@ -269,7 +331,7 @@ export async function staticCheck(url: string): Promise<StaticItem[]> {
   let html = home.text;
   if (home.status !== 200) {
     items.push({ key: "access", label: "Le site refuse une requête automatique simple", tone: "warn", detail: `Réponse ${home.status || "absente"} sans navigateur complet : les agents qui lisent le HTML directement sont bloqués.` });
-    html = await fetchPage(url).catch(() => "");
+    html = rendered ?? (await fetchPage(url).catch(() => ""));
     // The reader often gets the anti-bot challenge too: a page that thin says nothing about captcha or schema.org.
     if (signature(html).length < 5) html = "";
   } else items.push({ key: "access", label: "Page d'accueil lisible sans navigateur", tone: "pass", detail: "Un agent qui lit le HTML obtient la page." });
@@ -399,7 +461,7 @@ export async function runStaticChecks(log: string[]) {
 export async function listAutomations(teamId: string) {
   const { data } = await db
     .from("automations")
-    .select("id, url, enabled, mode, monthly, last_audit_at, last_checked_at, automation_checks(id, checked_at, status, detail, audit_id)")
+    .select("id, url, enabled, mode, monthly, interval_hours, last_audit_at, last_checked_at, automation_checks(id, checked_at, status, detail, audit_id)")
     .eq("team_id", teamId)
     .order("created_at")
     .order("checked_at", { referencedTable: "automation_checks", ascending: false })

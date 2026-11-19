@@ -1,6 +1,6 @@
 import { canLaunch, teamContext } from "@/lib/auth";
 import { db, normalizeUrl } from "@/lib/engine";
-import { checkAutomation } from "@/lib/automations";
+import { INTERVALS, SCORE_DROPS, checkAutomation, postWebhook, webhookOk } from "@/lib/automations";
 import { msg } from "@/lib/lang";
 
 const go = (req: Request) => Response.redirect(new URL("/espace/automations", req.url), 303);
@@ -34,10 +34,23 @@ export async function POST(req: Request) {
       await db.from("automations").update(settings).eq("id", id).eq("team_id", teamId);
     } else if (action === "monthly") {
       await db.from("automations").update({ monthly: form.get("monthly") === "1" }).eq("id", id).eq("team_id", teamId);
+    } else if (action === "interval") {
+      const hours = Number(form.get("interval"));
+      if (INTERVALS.includes(hours)) await db.from("automations").update({ interval_hours: hours }).eq("id", id).eq("team_id", teamId);
+    } else if (action === "alerts") {
+      // Team alerts: webhook (Slack, Discord, n8n…) and the score drop that triggers an alert. Empty URL = no webhook.
+      const url = String(form.get("webhook_url") ?? "").trim();
+      if (url && !webhookOk(url)) return fail(await msg("L'URL du webhook doit commencer par https:// et viser un nom de domaine.", "The webhook URL must start with https:// and point to a domain name."));
+      const drop = Number(form.get("score_drop"));
+      await db.from("teams").update({ webhook_url: url || null, ...(SCORE_DROPS.includes(drop) ? { score_drop: drop } : {}) }).eq("id", teamId);
+      if (url && form.get("test") === "1") {
+        const ok = await postWebhook(url, { event: "test", domain: "agentproof", text: "message de test : les alertes arriveront ici.", link: "" }).catch(() => false);
+        if (!ok) return fail(await msg("Webhook enregistré, mais le message de test a été refusé. Vérifie l'URL.", "Webhook saved, but the test message was refused. Check the URL."));
+      }
     } else if (action === "delete") {
       await db.from("automations").delete().eq("id", id).eq("team_id", teamId);
     } else if (action === "check") {
-      const { data: a } = await db.from("automations").select("id, team_id, url, mode, signature, created_by, users:created_by(email)").eq("id", id).eq("team_id", teamId).single();
+      const { data: a } = await db.from("automations").select("id, team_id, url, mode, signature, created_by, last_auto_audit_at, users:created_by(email)").eq("id", id).eq("team_id", teamId).single();
       if (a) {
         await db.from("automations").update({ last_checked_at: new Date().toISOString() }).eq("id", id);
         await checkAutomation(a as any);
