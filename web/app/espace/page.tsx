@@ -6,6 +6,7 @@ import { canLaunch, teamContext } from "@/lib/auth";
 import { dict, tr, type Lang, type T } from "@/lib/i18n";
 import { getDict, getLang } from "@/lib/lang";
 import { loadSpace, priorities, shortDate, type SiteView } from "@/lib/space";
+import { monthRecap } from "@/lib/month";
 import { Chevron, DeviceTag, Field, Group, MissionBar, MissionLegend, Row, Spinner, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
 import { AutoRefresh } from "../audit/[id]/refresh";
 import { SpaceShell } from "./shell";
@@ -49,6 +50,7 @@ export default async function Accueil() {
   const lost = open.reduce((n, b) => n + b.missions, 0);
   const last = audits.find((a) => a.status === "done" && a.runs.length);
   const launch = canLaunch(team.role);
+  const month = audits.length ? await monthRecap(team.id, audits, sites) : null;
 
   const status = !audits.length
     ? t("Lance un premier audit pour voir si un agent IA peut acheter sur ton site.", "Run a first audit to see whether an AI agent can buy on your site.")
@@ -153,6 +155,49 @@ export default async function Accueil() {
             })}
           </div>
           <MissionLegend className="mt-3 px-1" />
+        </section>
+      )}
+
+      {month && (
+        <section aria-labelledby="mois">
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-1">
+            <h2 id="mois" className="type-headline">
+              {t("Ce mois-ci", "This month")} · {month.start.toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR", { month: "long", year: "numeric", timeZone: "UTC" })}
+            </h2>
+            <Link href="/espace/automations" className="type-small text-link hover:underline">
+              {t("Automations", "Automations")}
+            </Link>
+          </div>
+          <div className="tile p-0!">
+            <dl className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6">
+              {(
+                [
+                  [month.audits, t("audits terminés", "audits finished")],
+                  [month.checks, t("vérifications de pages", "page checks")],
+                  [month.deploys, t("mises en ligne vérifiées", "releases checked")],
+                  [month.changes, t("changements détectés", "changes detected")],
+                  [month.drops, t("baisses de score", "score drops")],
+                  [month.proven, t("corrections prouvées", "fixes proven")],
+                ] as const
+              ).map(([n, label]) => (
+                <div key={label} className="flex flex-col border-b border-r border-hairline px-5 py-4">
+                  <dt className="type-small order-last text-ink-2">{label}</dt>
+                  <dd className="text-[28px] font-semibold leading-tight tnum">{n}</dd>
+                </div>
+              ))}
+            </dl>
+            <p className="type-small px-5 py-4 text-ink-2">
+              {month.checks + month.audits === 0
+                ? t("Aucune vérification ce mois-ci : active une automation pour que tes pages soient relues.", "No check this month: turn on an automation so your pages are reread.")
+                : month.changes + month.drops === 0
+                ? t(
+                    `Aucune alerte ce mois-ci : aucune page n'a changé, aucun score n'a baissé${month.checks ? ` (${month.checks} vérifications)` : ""}.`,
+                    `No alert this month: no page changed, no score dropped${month.checks ? ` (${month.checks} checks)` : ""}.`,
+                  )
+                : t(`${month.changes + month.drops} alerte${month.changes + month.drops > 1 ? "s" : ""} ce mois-ci, détail dans Automations et dans les rapports.`, `${month.changes + month.drops} alert${month.changes + month.drops > 1 ? "s" : ""} this month, details in Automations and the reports.`)}
+              {month.open > 0 && t(` ${month.open} blocage${month.open > 1 ? "s" : ""} encore ouvert${month.open > 1 ? "s" : ""}.`, ` ${month.open} blocker${month.open > 1 ? "s" : ""} still open.`)}
+            </p>
+          </div>
         </section>
       )}
 
