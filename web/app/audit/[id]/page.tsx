@@ -10,6 +10,23 @@ import { headers } from "next/headers";
 import { CopyField } from "@/app/espace/controls";
 import { Mark, Wordmark, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
 import { AutoRefresh, PrintButton } from "./refresh";
+import type { AgentAccess } from "@/lib/automations";
+
+// One line per AI assistant, from the static check's per-agent reading (lib/automations.ts agentAccess).
+function accessText(a: AgentAccess, t: T) {
+  const bots = a.robots.filter((r) => r !== "*").join(", ");
+  if (a.robots.includes("*") && a.tone === "fail") return t("robots.txt interdit tout le site aux robots, et Grok ne publie pas de nom à part.", "robots.txt bans every bot from the whole site, and Grok publishes no name of its own.");
+  if (a.tone === "fail" && a.http === null) return t(`robots.txt interdit tout le site à ${a.robots[0]}, le robot qui lit les pages pour un client en direct.`, `robots.txt bans ${a.robots[0]}, the bot that reads pages for a customer live, from the whole site.`);
+  if (a.tone === "fail")
+    return a.challenge
+      ? t(`Le site lui oppose un défi anti-bot, alors qu'un navigateur passe.`, `The site answers it with an anti-bot challenge, while a browser gets through.`)
+      : t(`Le site lui répond ${a.http || "rien"}, alors qu'il répond 200 à un navigateur.`, `The site answers it ${a.http || "nothing"}, while it answers 200 to a browser.`);
+  if (a.tone === "warn") return t(`Accès possible, mais robots.txt interdit ${bots} : le site sort des réponses de ${a.name}.`, `Access works, but robots.txt bans ${bots}: the site drops out of ${a.name}'s answers.`);
+  if (a.tone === "none") return t("Le site refuse toute requête sans navigateur : impossible d'isoler cet agent. L'agent AgentProof, lui, passe par un vrai navigateur.", "The site refuses every request without a browser: this agent can't be isolated. The AgentProof agent uses a real browser.");
+  return a.ownUa
+    ? t("robots.txt l'autorise et le site lui répond.", "robots.txt allows it and the site answers it.")
+    : t("Il navigue avec Chrome, comme l'agent AgentProof : le résultat des missions vaut aussi pour lui.", "It browses with Chrome, like the AgentProof agent: the missions' result applies to it too.");
+}
 
 const RUN_FIELDS =
   "id, status, payment_verdict, with_login, session_id, success, reached_checkout, blocker_type, blocker_detail, screenshot_url, final_url, steps, duration_s, cost_usd, judge, agent_answer, attempts, first_attempt, missions(title, position)";
@@ -230,7 +247,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   const branded = !!brand?.brand_name;
   const h = await headers();
   const base = process.env.PUBLIC_URL || `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
-  const statik = audit.static_check as { items?: { key: string; label: string; tone: "pass" | "warn" | "fail" | "none"; detail: string }[] } | null;
+  const statik = audit.static_check as { items?: { key: string; label: string; tone: "pass" | "warn" | "fail" | "none"; detail: string }[]; agents?: AgentAccess[] | null } | null;
   const protocols = (statik?.items ?? []).filter((it) => ["ucp", "acp", "webmcp"].includes(it.key));
   const alert = audit.score_alert as { from: number; to: number; previous: string } | null;
 
@@ -714,6 +731,23 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                   </li>
                 ))}
               </ul>
+              {statik.agents && (
+                <>
+                  <h3 className="border-t border-hairline px-6 pb-1 pt-5 font-semibold">{t("Accès par agent IA", "Access per AI agent")}</h3>
+                  <p className="type-small px-6 text-ink-2">{t("Ce que le site laisse passer pour l'agent qu'utilise le client. Accès seulement : la réussite de l'achat, c'est le score de l'agent.", "What the site lets through for the agent a customer uses. Access only: purchase success is the agent's score.")}</p>
+                  <ul className="mt-2 grid lg:grid-cols-2">
+                    {statik.agents.map((a) => (
+                      <li key={a.name} className="flex items-start gap-3 border-t border-hairline px-6 py-4 lg:odd:border-r">
+                        <StatusGlyph tone={a.tone} className="mt-0.5 h-5 w-5" />
+                        <span className="min-w-0">
+                          <span className="font-semibold">{a.name}</span>
+                          <span className="type-small block text-ink-2">{accessText(a, t)}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
               </div>
             ) : (
               <p className="type-small flex items-center gap-2 text-ink-2">

@@ -156,6 +156,18 @@ export async function runMonthlyAudits(log: string[]) {
 const BROWSER_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36";
 const AI_AGENTS = ["ChatGPT-User", "Claude-User", "Perplexity-User", "GPTBot", "OAI-SearchBot", "ClaudeBot", "PerplexityBot", "Google-Extended"];
 const SHOPPING_AGENTS = ["ChatGPT-User", "Claude-User", "Perplexity-User"]; // fetch pages for a user, in real time
+// One row per assistant a shopper uses. live: the robots name of its real-time fetcher (blocking it shuts the shopper out);
+// the other names feed the assistant's answers or training. Google-Extended only controls Gemini's use of the content. ua: the user agent its fetcher announces; null = it browses with a normal Chrome
+// (Gemini in Chrome, Grok), so the plain browser request stands for it. Grok publishes no robots name: it follows "*".
+const ASSISTANTS = [
+  { name: "ChatGPT", live: "ChatGPT-User", robots: ["ChatGPT-User", "OAI-SearchBot", "GPTBot"], ua: "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; ChatGPT-User/1.0; +https://openai.com/bot" },
+  { name: "Claude", live: "Claude-User", robots: ["Claude-User", "Claude-SearchBot", "ClaudeBot"], ua: "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Claude-User/1.0; +Claude-User@anthropic.com)" },
+  { name: "Perplexity", live: "Perplexity-User", robots: ["Perplexity-User", "PerplexityBot"], ua: "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Perplexity-User/1.0; +https://perplexity.ai/perplexity-user)" },
+  { name: "Gemini", live: null, robots: ["Google-Extended"], ua: null },
+  { name: "Grok", live: "*", robots: ["*"], ua: null },
+];
+const CHALLENGE = /cf-chl|challenge-platform|captcha-delivery|_Incapsula_|px-captcha|Just a moment\.\.\./i;
+export type AgentAccess = { name: string; tone: "pass" | "warn" | "fail" | "none"; robots: string[]; http: number | null; challenge: boolean; ownUa: boolean };
 const ANTI_BOT: [RegExp, string][] = [
   [/google\.com\/recaptcha|recaptcha\/api|grecaptcha/i, "reCAPTCHA"],
   [/hcaptcha\.com/i, "hCaptcha"],
@@ -177,9 +189,9 @@ const PLATFORMS: [RegExp, string][] = [
 
 export type StaticItem = { key: string; label: string; tone: "pass" | "warn" | "fail" | "none"; detail: string };
 
-async function get(u: string, ms = 6000) {
+async function get(u: string, ms = 6000, ua = BROWSER_UA) {
   try {
-    const r = await fetch(u, { headers: { "User-Agent": BROWSER_UA, Accept: "text/html,application/json,text/plain,*/*" }, signal: AbortSignal.timeout(ms), cache: "no-store" });
+    const r = await fetch(u, { headers: { "User-Agent": ua, Accept: "text/html,application/json,text/plain,*/*" }, signal: AbortSignal.timeout(ms), cache: "no-store" });
     return { status: r.status, text: r.ok ? (await r.text()).slice(0, 2_000_000) : "" };
   } catch {
     return { status: 0, text: "" };
@@ -187,7 +199,7 @@ async function get(u: string, ms = 6000) {
 }
 
 // robots.txt groups: an agent obeys its own group, else the "*" group. Returns the AI agents shut out of the whole site.
-export function robotsBlocked(txt: string): string[] {
+export function robotsBlocked(txt: string, agents = AI_AGENTS): string[] {
   const groups: { agents: string[]; all: boolean }[] = [];
   let cur: { agents: string[]; all: boolean } | null = null;
   let agentLine = false;
@@ -204,7 +216,31 @@ export function robotsBlocked(txt: string): string[] {
       if (cur && k === "disallow" && v === "/") cur.all = true;
     }
   }
-  return AI_AGENTS.filter((a) => (groups.find((g) => g.agents.includes(a.toLowerCase())) ?? groups.find((g) => g.agents.includes("*")))?.all);
+  return agents.filter((a) => (groups.find((g) => g.agents.includes(a.toLowerCase())) ?? groups.find((g) => g.agents.includes("*")))?.all);
+}
+
+// Per assistant: does robots.txt shut it out, and what does the home page answer to its user agent?
+// fail = its live fetcher is refused (robots or HTTP); warn = only its answer/training bots are refused; none = can't tell.
+export async function agentAccess(url: string): Promise<AgentAccess[]> {
+  const origin = new URL(url).origin;
+  const [robots, browser, ...own] = await Promise.all([
+    get(`${origin}/robots.txt`),
+    get(url),
+    ...ASSISTANTS.map((a) => (a.ua ? get(url, 8000, a.ua) : null)),
+  ]);
+  // Our request comes from a server, not the assistant's own IPs: a refusal only counts when the same request with a
+  // browser user agent gets through, i.e. the site targets that assistant. Otherwise the site refuses every plain request
+  // (shown in the static check) and we can't tell. Chrome-based assistants get no HTTP verdict: the agent's run covers them.
+  const browserOk = browser.status === 200 && !CHALLENGE.test(browser.text);
+  return ASSISTANTS.map((a, i) => {
+    const res = own[i];
+    const blocked = robots.status === 200 ? robotsBlocked(robots.text, a.robots) : [];
+    const challenge = !!res && res.status === 200 && CHALLENGE.test(res.text);
+    const http = res && browserOk ? res.status : null;
+    const refused = (http !== null && (http !== 200 || challenge)) || (!!a.live && blocked.includes(a.live));
+    const tone = refused ? "fail" : blocked.length ? "warn" : a.ua && http === null ? "none" : "pass";
+    return { name: a.name, tone, robots: blocked, http, challenge, ownUa: !!a.ua };
+  });
 }
 
 export async function staticCheck(url: string): Promise<StaticItem[]> {
@@ -351,8 +387,11 @@ export async function runStaticChecks(log: string[]) {
     q = a.static_check ? q.eq("static_check->>pending_at", a.static_check.pending_at) : q.is("static_check", null);
     const { data: reserved } = await q.select("id");
     if (!reserved?.length) continue;
-    const items = await staticCheck(a.sites.url).catch((e) => [{ key: "error", label: "Analyse impossible", tone: "none", detail: String(e).slice(0, 200) }]);
-    await db.from("audits").update({ static_check: { checked_at: new Date().toISOString(), items } }).eq("id", a.id);
+    const [items, agents] = await Promise.all([
+      staticCheck(a.sites.url).catch((e) => [{ key: "error", label: "Analyse impossible", tone: "none", detail: String(e).slice(0, 200) }]),
+      agentAccess(a.sites.url).catch(() => null),
+    ]);
+    await db.from("audits").update({ static_check: { checked_at: new Date().toISOString(), items, agents } }).eq("id", a.id);
     log.push(`static check ${a.id}: ${items.length} items`);
   }
 }
