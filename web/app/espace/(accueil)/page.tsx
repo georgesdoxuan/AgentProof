@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Hint } from "@/lib/hint";
 import { redirect } from "next/navigation";
-import { EXCLUDED, db } from "@/lib/engine";
+import { db } from "@/lib/engine";
 import { payIssues } from "@/lib/corrections";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { dict, tr, type Lang, type T } from "@/lib/i18n";
@@ -56,10 +56,9 @@ export default async function Accueil() {
   const running = audits.filter((a) => a.status !== "done");
   const todo = priorities(sites);
   const open = sites.flatMap((s) => s.blockers.filter((b) => b.state !== "check"));
-  // Same counts as Corrections › À faire and the sidebar's badge: open blockers plus the payment tests that never reached
-  // the bank; missions lost leave out the out-of-score blockers (anti-bot, stock), as the score does.
+  // Same count as Corrections › À faire and the sidebar's badge: open blockers plus the payment tests that never reached
+  // the bank. No « missions perdues » beside it: the cards below give each blocker's own count (some are out of score).
   const toFix = open.length + sites.reduce((n, s) => n + payIssues(s).length, 0);
-  const lost = open.filter((b) => !EXCLUDED.includes(b.type)).reduce((n, b) => n + b.missions, 0);
   const last = audits.find((a) => a.status === "done" && a.runs.length);
   const launch = canLaunch(team.role);
   // The recap's period: the current month by default, or the one saved by the title's pop-up.
@@ -97,7 +96,6 @@ export default async function Accueil() {
         <Link href="/espace/corrections" className={go}>
           <Chip size="lg" icon="wrench" tone="warn">
             {toFix > 1 ? t(`${toFix} corrections à faire`, `${toFix} fixes to do`) : t("1 correction à faire", "1 fix to do")}
-            {lost > 0 && <> · {plural(lost, "mission")} {t(lost > 1 ? "perdues" : "perdue", "lost")}</>}
           </Chip>
         </Link>
       ) : (
@@ -186,9 +184,12 @@ export default async function Accueil() {
                         <span className="type-caption block text-ink-2"><DeviceTag device={s.device} lang={lang} /></span>
                       </span>
                     </span>
-                    <Delta site={s} />
+                    {/* Phones: two tiles per row leave no room for the trend; the name keeps the width. */}
+                    <span className="max-[734px]:hidden">
+                      <Delta site={s} />
+                    </span>
                   </span>
-                  <span className="flex items-center gap-2 text-[32px] font-semibold leading-none tnum">
+                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[32px] font-semibold leading-none tnum">
                     <span className="sr-only">{toneWords(lang)[tone]} :</span>
                     <StatusGlyph tone={tone} className="h-5 w-5" />
                     {score ?? "—"}
