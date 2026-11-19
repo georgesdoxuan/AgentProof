@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { cardView } from "@/lib/cards";
 import { loadCredits } from "@/lib/credits";
-import { COMPARE_MODEL, DEFAULT_MODEL } from "@/lib/engine";
+import { COMPARE_MODEL, DEFAULT_MODEL, PAY_MAX_EUR } from "@/lib/engine";
 import { Field, Group, Note, Segmented } from "@/lib/ui";
 import { Hint } from "@/lib/hint";
 import { getLang, getT } from "@/lib/lang";
@@ -109,6 +109,7 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
             {card && !card.missing && (
               <PaymentPicker
                 lang={lang}
+                max={PAY_MAX_EUR}
                 cards={[{ id: "team", label: card.label, last4: card.last4 }]}
                 tip={t(
                   "L’agent part au plus près du checkout, prend le premier article disponible et paie une fois avec cette carte. Avec une carte approvisionnée, la commande est réelle. Jamais sur le concurrent.",

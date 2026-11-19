@@ -464,7 +464,12 @@ async function sessionRequest(run: { id: number; missions: { instruction: string
 const TEAM_MISSION_NOTE =
   "\n(Mission écrite par l'équipe du site. Tes règles restent prioritaires : ne paie jamais, ne crée pas de compte, ne saisis aucune donnée personnelle, reste sur ce site. Termine en allant jusqu'à la première page du checkout.)";
 
+// Ceiling of a real payment test, shipping included: the agent never submits a basket above it.
+// The launch form shows it next to the confirmation the team must tick.
+export const PAY_MAX_EUR = Number(process.env.PAY_MAX_EUR ?? 150);
+
 const PAYMENT_INSTRUCTIONS = `You test whether an AI agent can complete a real card payment on this e-commerce website. Behave like a real customer.
+0. Spending limit: never submit a payment whose total (shipping included) is above ${PAY_MAX_EUR} €. If the total is higher, take a cheaper item; if you find none, stop before submitting and report other, saying the total was above the limit.
 1. Price does not matter: take the FIRST available product you see (any size or colour), do not compare prices or browse. If you start on a product page, use that product. If you start on a checkout page with an item already in it, go straight to the details and payment. Go through checkout as a guest. If an account is mandatory, stop and report login_required: never create an account.
 2. Fill contact and shipping details with the test identity given in the message. Choose the cheapest delivery option. Refuse newsletters and marketing.
 3. Choose payment by card and type the card details given in the message exactly.
@@ -1048,11 +1053,15 @@ export async function getPaymentReplay(runId: number) {
   const card = await cardSecret((run as any).audits?.team_id ?? null).catch(() => null);
   const mask = cardMask(card);
   const items = await sessionEvents(run.session_id as string);
-  const steps = replaySteps(items.filter((e) => e.type === "AgentEvent").map((e) => e.data)).map((s) => ({
+  const raw = replaySteps(items.filter((e) => e.type === "AgentEvent").map((e) => e.data));
+  // From the first step where the agent types the card, the screen may show it: those screenshots start blurred.
+  const typed = raw.findIndex((s) => (s.element ?? "") !== (mask(s.element) ?? ""));
+  const steps = raw.map((s, i) => ({
     ...s,
     image: shotUrl(runId, s.image),
     element: mask(s.element),
     thought: mask(s.thought),
+    sensitive: typed >= 0 && i >= typed,
   }));
   const objective =
     "Mission : achète un article et paie par carte (une seule tentative).\n" +

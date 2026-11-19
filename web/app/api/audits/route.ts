@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { after } from "next/server";
-import { COMPARE_MODEL, DEFAULT_MODEL, attachEmail, auditsFromIp, createAudit, createPaymentTest, db, normalizeUrl, recentAudit, tick } from "@/lib/engine";
+import { COMPARE_MODEL, DEFAULT_MODEL, PAY_MAX_EUR, attachEmail, auditsFromIp, createAudit, createPaymentTest, db, normalizeUrl, recentAudit, tick } from "@/lib/engine";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { cardSecret } from "@/lib/cards";
 import { refreshLogo } from "@/lib/logo";
@@ -60,6 +60,8 @@ export async function POST(req: Request) {
     // Real payment test: the team's own card, on the main site only (never the competitor), always a fresh audit.
     const paymentOnly = form.get("mode") === "payment";
     const payment = paymentOnly || form.get("payment") === "1";
+    // A real payment needs the team's explicit yes, every time: the form's confirmation box, never a default.
+    if (payment && form.get("pay_confirm") !== "1") return fail(await msg(`Confirme le paiement réel (au plus ${PAY_MAX_EUR} €) avant de lancer le test.`, `Confirm the real payment (at most €${PAY_MAX_EUR}) before running the test.`));
     if (payment && !(await cardSecret(ctx.team.id))) return fail(await msg("Aucune carte utilisable pour l'équipe : ajoute-la dans Espace › Paiement.", "No usable card for the team: add one in Space › Payment method."));
 
     // The missions picked on the launch form (JSON). Absent (no JavaScript, home form): the first default missions.
