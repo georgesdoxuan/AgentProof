@@ -160,7 +160,9 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
               />
             )}
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <Hint tip={t(`Rapide : ${DEFAULT_MODEL}. Précis : ${COMPARE_MODEL}, le plus capable de H, plus lent et plus cher.`, `Fast: ${DEFAULT_MODEL}. Precise: ${COMPARE_MODEL}, H's most capable, slower and costlier.`)}>
+              {/* Same credits (1 per mission, whatever the model: lib/credits.ts) and, measured on 17/11/2026, the same pace
+                  (median 87 s per mission vs 90 s): the estimate above does not change with the agent, so the tip must not promise it. */}
+              <Hint tip={t(`Rapide : ${DEFAULT_MODEL}. Précis : ${COMPARE_MODEL}, le plus capable de H. Mêmes crédits (un par mission) et, mesuré, même durée.`, `Fast: ${DEFAULT_MODEL}. Precise: ${COMPARE_MODEL}, H's most capable. Same credits (one per mission) and, as measured, the same duration.`)}>
                 <span className="type-small text-ink-2">{t("Agent", "Agent")}</span>
               </Hint>
               <Segmented
