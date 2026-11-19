@@ -74,7 +74,7 @@ const linkCls = "flex min-h-8 items-center gap-2.5 whitespace-nowrap rounded-[8p
 // still lets the team launch (soft limit, nouveau/page.tsx), so the button is never disabled, it only warns.
 const KEY = "n";
 const launchCls =
-  "relative flex items-center rounded-[8px] bg-blue text-white shadow-[0_1px_2px_rgb(0_0_0/0.14),inset_0_1px_0_rgb(255_255_255/0.14)] outline-offset-2 transition-[background-color,transform] duration-150 hover:bg-[color-mix(in_srgb,var(--blue),black_9%)] focus-visible:outline-2 focus-visible:outline-blue active:scale-[0.97] active:bg-[color-mix(in_srgb,var(--blue),black_16%)] motion-reduce:active:scale-100 aria-[current=page]:bg-[color-mix(in_srgb,var(--blue),black_12%)] dark:hover:bg-[color-mix(in_srgb,var(--blue),white_9%)] dark:aria-[current=page]:bg-[color-mix(in_srgb,var(--blue),white_9%)]";
+  "relative flex items-center rounded-[8px] bg-blue text-white shadow-[0_1px_2px_rgb(0_0_0/0.14),inset_0_1px_0_rgb(255_255_255/0.14)] outline-offset-2 transition-[background-color,transform] duration-150 hover:bg-[color-mix(in_srgb,var(--blue),black_14%)] focus-visible:outline-2 focus-visible:outline-blue active:scale-[0.97] active:bg-[color-mix(in_srgb,var(--blue),black_20%)] motion-reduce:active:scale-100 aria-[current=page]:bg-[color-mix(in_srgb,var(--blue),black_12%)] dark:hover:bg-[color-mix(in_srgb,var(--blue),white_12%)] dark:aria-[current=page]:bg-[color-mix(in_srgb,var(--blue),white_9%)]";
 
 export function LaunchButton({ t, collapsed, mobile = false }: { t: T; collapsed: boolean; mobile?: boolean }) {
   const on = usePathname().startsWith("/espace/nouveau");
@@ -149,7 +149,7 @@ export function LaunchButton({ t, collapsed, mobile = false }: { t: T; collapsed
           {collapsed && (
             <span className="flex items-center gap-2 font-semibold">
               {t.launch}
-              <kbd className="grid h-5 min-w-5 place-items-center rounded-[5px] bg-fill px-1 font-sans text-[11px] font-semibold leading-none text-ink-2">N</kbd>
+              <kbd className="grid h-5 min-w-5 place-items-center rounded-[5px] bg-fill px-1 font-sans text-[11px] font-semibold leading-none text-ink-2 shadow-[inset_0_0_0_0.5px_var(--line)] dark:bg-[#48484a] dark:text-ink">N</kbd>
             </span>
           )}
           {warn && (
