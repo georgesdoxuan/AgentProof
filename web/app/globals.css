@@ -610,6 +610,8 @@ form:has(input[name="mode"][value="payment"]:checked) .ap-not-pay { display: non
 .ap-clamp {
   display: flex;
   flex-direction: column;
+}
+.ap-clamp[data-clamp="closed"] {
   min-height: 0;
 }
 .ap-clamp[data-clamp="closed"] > .ap-clamp-text {
@@ -625,7 +627,7 @@ form:has(input[name="mode"][value="payment"]:checked) .ap-not-pay { display: non
     contain: size;
     align-self: stretch;
   }
-  .ap-clamp-fill {
+  .ap-clamp-fill[data-clamp="closed"] {
     flex: 1 1 0;
   }
   .ap-clamp-fill[data-clamp="closed"] > .ap-clamp-text {
