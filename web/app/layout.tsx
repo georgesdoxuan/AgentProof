@@ -6,6 +6,8 @@ import { NavProgress } from "./progress";
 import { currentUser } from "@/lib/auth";
 import { Mark, Wordmark } from "@/lib/ui";
 import { getDict, getLang } from "@/lib/lang";
+import { LEGAL_PAGES } from "@/lib/legal";
+import { CookieNotice } from "./cookie-notice";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -63,12 +65,21 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               <div className="flex flex-wrap gap-x-4 gap-y-1">
                 <span>{t.footer.credits}</span>
                 <Link href="/methode" className="hover:text-ink hover:underline">{t.footer.method}</Link>
-                <Link href="/confidentialite" className="hover:text-ink hover:underline">{t.footer.privacy}</Link>
                 <LangSwitch lang={lang} />
               </div>
             </div>
+            <nav aria-label={t.footer.legal} className="mt-3 border-t border-line pt-4">
+              <ul className="flex flex-wrap gap-x-4 gap-y-1">
+                {LEGAL_PAGES.map((p) => (
+                  <li key={p.href}>
+                    <Link href={p.href} className="inline-flex min-h-6 items-center hover:text-ink hover:underline">{lang === "en" ? p.en : p.fr}</Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
           </div>
         </footer>
+        <CookieNotice text={t.footer.cookies} more={t.footer.cookiesMore} ok={t.footer.cookiesOk} />
       </body>
     </html>
   );

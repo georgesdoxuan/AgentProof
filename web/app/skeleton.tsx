@@ -132,11 +132,11 @@ export function SkHeader({ eyebrow = true, intro = 2 }: { eyebrow?: boolean; int
       <h1 className={`type-h1 ${eyebrow ? "mt-3" : ""}`}>
         <Line w="85%" />
       </h1>
-      <p className="type-intro mt-5">
+      {intro > 0 && <p className="type-intro mt-5">
         {Array.from({ length: intro }, (_, i) => (
           <Line key={i} w={i === intro - 1 ? "55%" : "100%"} />
         ))}
-      </p>
+      </p>}
     </header>
   );
 }
@@ -169,5 +169,34 @@ export function SkBoard({ rows = 8 }: { rows?: number }) {
         ))}
       </div>
     </>
+  );
+}
+
+// Legal pages (app/legal.tsx): date, title, the row of page links, the template notice, then sections of text.
+export function SkLegal() {
+  return (
+    <Loading className="bg-bg-2 pb-24 pt-16 max-[734px]:pt-10">
+      <div className="wrap max-w-[760px]">
+        <SkHeader intro={0} />
+        <div className="mt-6 flex flex-wrap gap-2">
+          {[7, 9, 6, 8, 5, 10].map((w, i) => (
+            <Bone key={i} className="h-9 rounded-full" w={`${w}rem`} />
+          ))}
+        </div>
+        <Bone className="mt-8 h-[76px] rounded-[12px]" />
+        {[0, 1, 2].map((s) => (
+          <section key={s} className="mt-12">
+            <p className="type-h3">
+              <Line w="45%" />
+            </p>
+            <p className="mt-4">
+              {[0, 1, 2].map((i) => (
+                <Line key={i} w={i === 2 ? "60%" : "100%"} />
+              ))}
+            </p>
+          </section>
+        ))}
+      </div>
+    </Loading>
   );
 }

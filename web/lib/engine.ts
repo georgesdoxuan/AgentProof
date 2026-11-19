@@ -776,8 +776,8 @@ async function scoreAlert(auditId: string) {
   const { notifyTeam } = await import("./automations");
   await notifyTeam(a.team_id, { event: "score_drop", domain, text, link }).catch(() => false);
   if (!a.email) return;
-  const { sendMail } = await import("./auth");
-  await sendMail(
+  const { sendAlert } = await import("./optout");
+  await sendAlert(
     a.email,
     `AgentProof : le score de ${domain} baisse (${was} % → ${now} %)`,
     `${text}\n\nLe rapport montre les missions qui bloquent, avec les captures et les replays :\n${link}`,

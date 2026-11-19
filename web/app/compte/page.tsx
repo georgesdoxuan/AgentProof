@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { teamContext } from "@/lib/auth";
 import { LANGS, LANG_NAME } from "@/lib/i18n";
-import { getDict, getLang } from "@/lib/lang";
+import { getDict, getLang, getT } from "@/lib/lang";
 import { Avatar, Field, Group, Row } from "@/lib/ui";
 import { AutoSubmitSelect } from "../espace/controls";
 import { SpaceShell } from "../espace/shell";
@@ -11,7 +11,9 @@ export async function generateMetadata() {
 }
 
 // Account: who you are, every team you belong to, the interface language, and signing out. Things changed rarely, kept out of the daily view.
-export default async function Compte() {
+export default async function Compte({ searchParams }: { searchParams: Promise<{ erreur?: string }> }) {
+  const sp = await searchParams;
+  const tt = await getT();
   const ctx = await teamContext();
   if (!ctx) redirect("/connexion?next=/compte");
   if (!ctx.team) redirect("/espace");
@@ -77,6 +79,44 @@ export default async function Compte() {
           </form>
         </Row>
       </Group>
+
+      <Group
+        title={tt("Tes données", "Your data")}
+        footer={
+          <>
+            {tt("Ce que nous gardons et pourquoi : ", "What we keep and why: ")}
+            <a href="/confidentialite" className="text-link hover:underline">
+              {tt("confidentialité", "privacy")}
+            </a>
+            .
+          </>
+        }
+      >
+        <a href="/api/account" download className="flex min-h-[60px] w-full items-center px-5 text-link hover:bg-bg-2/60">
+          {tt("Télécharger mes données (JSON)", "Download my data (JSON)")}
+        </a>
+      </Group>
+
+      {/* RGPD art. 17. Retyping the e-mail stands in for a confirmation dialog, and works without JavaScript. */}
+      <section id="supprimer" className="scroll-mt-24">
+        <h2 className="type-headline mb-3 px-1">{tt("Supprimer mon compte", "Delete my account")}</h2>
+        <form action="/api/account" method="post" className="grid gap-4 rounded-[18px] bg-tile p-5 sm:p-6">
+          <input type="hidden" name="action" value="delete" />
+          <p className="type-small text-ink-2">
+            {tt(
+              "Ton compte est effacé tout de suite et définitivement. Les équipes dont tu es le seul membre sont supprimées avec leurs rapports, automatisations, carte et comptes de test. Les équipes partagées restent : un admin, sinon le plus ancien membre, en devient propriétaire.",
+              "Your account is erased at once and for good. Teams where you are the only member are deleted with their reports, automations, card and test accounts. Shared teams stay: an admin, otherwise the oldest member, becomes their owner.",
+            )}
+          </p>
+          <Field label={tt(`Tape ${user.email} pour confirmer`, `Type ${user.email} to confirm`)} name="confirm" type="email" required />
+          {sp.erreur === "confirmation" && (
+            <p role="alert" className="type-small text-fail">
+              {tt("L’adresse tapée ne correspond pas : rien n’a été supprimé.", "The address typed does not match: nothing was deleted.")}
+            </p>
+          )}
+          <button className="btn justify-self-start bg-fail hover:bg-fail/90">{tt("Supprimer définitivement", "Delete for good")}</button>
+        </form>
+      </section>
 
       <Group>
         <form action="/api/auth" method="post">
