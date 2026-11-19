@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { canLaunch, teamContext } from "@/lib/auth";
-import { isJury, juryAuditsLeft } from "@/lib/jury";
+import { isJury, juryLeft as loadJuryLeft } from "@/lib/jury";
 import { cardView } from "@/lib/cards";
 import { loadCredits } from "@/lib/credits";
 import { COMPARE_MODEL, DEFAULT_MODEL, PAY_MAX_EUR, listSiteLogins } from "@/lib/engine";
@@ -32,7 +32,8 @@ const REFUSED: Record<string, [string, string]> = {
   file: ["Beaucoup d'audits sont en cours en ce moment. Réessaie dans quelques minutes : rien n'a été lancé ni décompté.", "Many audits are running right now. Try again in a few minutes: nothing was started or counted."],
   compte: ["Le compte de test choisi n'existe pas pour ce site. Choisis-en un autre, ajoute-le dans Comptes de test, ou teste sans compte.", "The chosen test account does not exist for this site. Pick another one, add it in Test accounts, or test without an account."],
   missions: ["La sélection de missions n'est plus valable (une mission a pu être modifiée). Vérifie-la puis relance.", "The mission selection is no longer valid (a mission may have changed). Check it, then run again."],
-  jury: ["Démo jury : tu as utilisé tes audits (2 par juge, 24 par jour pour tout le jury). Les rapports d'exemple restent ouverts.", "Jury demo: you have used your audits (2 per judge, 24 a day for the whole jury). The sample reports stay open."],
+  jury: ["Démo jury : tu as utilisé tes audits (2 par juge, 30 par jour pour tout le jury). Les rapports d'exemple restent ouverts.", "Jury demo: you have used your audits (2 per judge, 30 a day for the whole jury). The sample reports stay open."],
+  "jury-paiement": ["Démo jury : tu as déjà lancé ton test de paiement (1 par juge). Tu peux encore lancer un audit sans paiement.", "Jury demo: you have already run your payment test (1 per judge). You can still run an audit without payment."],
   technique: ["L'audit n'a pas pu être créé, à cause d'une erreur de notre côté. Réessaie dans un instant ; si ça recommence, écris-nous.", "The audit could not be created because of an error on our side. Try again in a moment; if it happens again, write to us."],
 };
 
@@ -44,9 +45,9 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
   // Filled in from the home form when the visitor had to sign in first (see /api/audits).
   const { url, competitor, device, email, force, erreur } = await searchParams;
   const refused = erreur ? REFUSED[erreur] : undefined;
-  // Jury demo: no card and no test account are ever offered (no real payment), and the audits left are shown.
+  // Jury demo: the audits and payment test left are shown (the card is the demo's zero-balance one, set by an admin).
   const jury = isJury(user.email);
-  const [card, credits, missions, lang, pace, lists, logins, juryLeft] = await Promise.all([jury ? null : cardView(team.id), loadCredits(team.id), teamMissions(team.id), getLang(), loadPace(), teamLists(team.id), jury ? [] : listSiteLogins(team.id), jury ? juryAuditsLeft(user.id, team.id) : null]);
+  const [card, credits, missions, lang, pace, lists, logins, juryLeft] = await Promise.all([cardView(team.id), loadCredits(team.id), teamMissions(team.id), getLang(), loadPace(), teamLists(team.id), listSiteLogins(team.id), jury ? loadJuryLeft(user.id, team.id) : null]);
   // Test accounts offered to the payment test: name and masked login only, never a password (it stays in H's vault).
   const accounts = logins.map((l) => ({ id: l.id, label: l.label, hint: l.login_hint, domain: l.sites.domain }));
   // Same default as /api/audits: the first FORM_MISSIONS missions (5, or 3 on demo day) come ticked.
@@ -65,9 +66,10 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
         <Note icon="info">
           <span className="font-semibold">{t("Démo jury", "Jury demo")}</span>
           {" · "}
-          {juryLeft
-            ? t(`il te reste ${juryLeft} audit${juryLeft > 1 ? "s" : ""}. Un site déjà audité cette semaine (waterdrop.fr, nike.com) rouvre son rapport sans rien relancer. Le test de paiement réel est désactivé.`, `${juryLeft} audit${juryLeft > 1 ? "s" : ""} left. A site already audited this week (waterdrop.fr, nike.com) reopens its report without a new run. The real payment test is turned off.`)
-            : t("tu as utilisé tes 2 audits. Les rapports d'exemple et leurs replays restent ouverts.", "you have used your 2 audits. The sample reports and their replays stay open.")}
+          {t(
+            `audits restants : ${juryLeft.audits} · test de paiement réel : ${juryLeft.payments}. Un site déjà audité cette semaine (waterdrop.fr, nike.com) rouvre son rapport sans rien relancer. La carte de démo n'a pas de solde : le paiement s'arrête toujours à la banque.`,
+            `audits left: ${juryLeft.audits} · real payment test: ${juryLeft.payments}. A site already audited this week (waterdrop.fr, nike.com) reopens its report without a new run. The demo card has no balance: the payment always stops at the bank.`,
+          )}
         </Note>
       )}
       {/* Soft limit: past the month's credits the team is told, never blocked (payment is not open yet). */}

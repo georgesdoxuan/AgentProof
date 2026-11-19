@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { currentUser } from "@/lib/auth";
-import { isJury, JURY_AUDITS } from "@/lib/jury";
+import { isJury, JURY_AUDITS, JURY_PAYMENTS } from "@/lib/jury";
 import { getT } from "@/lib/lang";
 
 export async function generateMetadata() {
@@ -28,8 +28,8 @@ export default async function Demo({ searchParams }: { searchParams: Promise<{ e
     [
       t("Ouvre un rapport d'exemple", "Open a sample report"),
       t(
-        "Dans Rapports : waterdrop.fr où l'agent réussit ses 5 missions, nike.com où un anti-bot l'arrête, promod.fr en version précise. Score, blocages, captures et recommandations.",
-        "In Reports: waterdrop.fr where the agent passes its 5 missions, nike.com where an anti-bot stops it, promod.fr on the precise agent. Score, blockers, screenshots and recommendations.",
+        "Dans Rapports, tous nos audits : par exemple waterdrop.fr où l'agent réussit ses 5 missions et pousse le paiement jusqu'au 3D Secure, nike.com où un anti-bot l'arrête, promod.fr en version précise. Score, blocages, captures et recommandations.",
+        "In Reports, all our audits: for example waterdrop.fr where the agent passes its 5 missions and takes payment up to 3D Secure, nike.com where an anti-bot stops it, promod.fr on the precise agent. Score, blockers, screenshots and recommendations.",
       ),
     ],
     [
@@ -42,8 +42,8 @@ export default async function Demo({ searchParams }: { searchParams: Promise<{ e
     [
       t("Lance ton propre audit", "Run your own audit"),
       t(
-        `« Lancer un audit » sur la boutique de ton choix : ${JURY_AUDITS} audits par juge, 5 à 10 minutes chacun. L'agent s'arrête toujours avant le paiement et ne saisit aucune donnée personnelle.`,
-        `“Run an audit” on the store of your choice: ${JURY_AUDITS} audits per judge, 5 to 10 minutes each. The agent always stops before payment and enters no personal data.`,
+        `« Lancer un audit » sur la boutique de ton choix : ${JURY_AUDITS} audits par juge, 5 à 10 minutes chacun, sans paiement ni donnée personnelle. En plus, ${JURY_PAYMENTS} test de paiement réel par juge avec la carte de démo, à solde nul : l'agent va jusqu'à la banque, qui refuse. Un compte de test (Réglages › Comptes de test) lui permet de se connecter avant de payer.`,
+        `“Run an audit” on the store of your choice: ${JURY_AUDITS} audits per judge, 5 to 10 minutes each, with no payment and no personal data. On top, ${JURY_PAYMENTS} real payment test per judge with the zero-balance demo card: the agent goes as far as the bank, which declines. A test account (Settings › Test accounts) lets it sign in before paying.`,
       ),
     ],
   ];
@@ -55,8 +55,8 @@ export default async function Demo({ searchParams }: { searchParams: Promise<{ e
         <h1 className="type-h1 mt-2">{t("Testez AgentProof en direct.", "Try AgentProof live.")}</h1>
         <p className="type-intro mt-5 text-ink-2">
           {t(
-            "Un espace de démonstration rien que pour le jury, déjà rempli de vrais rapports. Aucun e-mail ni mot de passe : un clic et vous y êtes.",
-            "A demo space for the jury only, already filled with real reports. No e-mail, no password: one click and you are in.",
+            "Un espace de démonstration rien que pour le jury, avec une copie de tous nos rapports. Aucun e-mail ni mot de passe : un clic et vous y êtes.",
+            "A demo space for the jury only, with a copy of all our reports. No e-mail, no password: one click and you are in.",
           )}
         </p>
 
@@ -83,8 +83,8 @@ export default async function Demo({ searchParams }: { searchParams: Promise<{ e
         </form>
         <p className="type-small mt-4 text-ink-2">
           {t(
-            "Carte de paiement, comptes de test, membres, automatisations et corbeille sont désactivés dans la démo. Le classement public reste ouvert à tous : ",
-            "Payment card, test accounts, members, automations and trash are turned off in the demo. The public ranking stays open to all: ",
+            "Dans la démo, la carte, les membres, les automatisations et la corbeille ne se modifient pas. Le classement public reste ouvert à tous : ",
+            "In the demo, the card, members, automations and trash cannot be changed. The public ranking stays open to all: ",
           )}
           <Link href="/classement" className="text-link hover:underline">{t("voir le classement", "see the ranking")}</Link>.
         </p>

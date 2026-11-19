@@ -158,7 +158,7 @@ function JuryBanner({ t }: { t: (fr: string, en: string) => string }) {
           {" · "}
           {t("2. Regarde un replay", "2. Watch a replay")}
           {" · "}
-          <Link href="/espace/nouveau" className="text-link hover:underline">{t("3. Lance un audit (2 par juge)", "3. Run an audit (2 per judge)")}</Link>
+          <Link href="/espace/nouveau" className="text-link hover:underline">{t("3. Lance un audit ou un test de paiement", "3. Run an audit or a payment test")}</Link>
         </span>
         <Link href="/demo" className="ml-auto text-link hover:underline">{t("Le guide", "The guide")}</Link>
       </p>

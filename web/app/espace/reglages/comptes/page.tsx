@@ -1,5 +1,4 @@
 import { isJury } from "@/lib/jury";
-import { JuryLockedPage } from "../../jury-locked";
 import { redirect } from "next/navigation";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { listSiteLogins } from "@/lib/engine";
@@ -18,12 +17,12 @@ export default async function Comptes({ searchParams }: { searchParams: Promise<
   const ctx = await teamContext();
   if (!ctx) redirect("/connexion?next=/espace/reglages/comptes");
   if (!ctx.team) redirect("/espace");
-  if (isJury(ctx.user.email)) return <JuryLockedPage />;
   const { team } = ctx;
   const logins = await listSiteLogins(team.id);
   // From the launch form's "Add an account": the site being audited, already filled in.
   const site = String((await searchParams).site ?? "").slice(0, 200);
   const admin = canLaunch(team.role);
+  const jury = isJury(ctx.user.email);
   const t = await getT();
 
   return (
@@ -56,7 +55,8 @@ export default async function Comptes({ searchParams }: { searchParams: Promise<
                 {l.label && <span className="font-semibold">{l.label} · </span>}
                 <span className="text-ink-2">{l.login_hint}</span>
               </span>
-              {admin && (
+              {/* Jury demo: a judge removes only the accounts they added. */}
+              {admin && (!jury || l.created_by === ctx.user.id) && (
                 <form action="/api/logins" method="post">
                   <input type="hidden" name="action" value="delete" />
                   <input type="hidden" name="id" value={l.id} />
@@ -98,6 +98,14 @@ export default async function Comptes({ searchParams }: { searchParams: Promise<
                 "This account is mine and is used only for tests. The agent can sign in to it and place an order with the team's card.",
               )}
             </label>
+            {jury && (
+              <p className="type-small text-ink-2">
+                {t(
+                  "Démo jury : prends un compte créé pour l'occasion, jamais ton compte personnel. Les autres juges voient l'identifiant masqué et peuvent l'utiliser pour leur test ; tu peux le supprimer à tout moment, eux non.",
+                  "Jury demo: use an account made for the occasion, never your personal one. Other judges see the masked login and can use it for their test; you can delete it at any time, they cannot.",
+                )}
+              </p>
+            )}
             <div>
               <button className="btn">{t("Enregistrer le compte", "Save the account")}</button>
             </div>

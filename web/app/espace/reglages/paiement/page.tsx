@@ -1,5 +1,4 @@
 import { isJury } from "@/lib/jury";
-import { JuryLockedPage } from "../../jury-locked";
 import { redirect } from "next/navigation";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { cardView } from "@/lib/cards";
@@ -17,10 +16,10 @@ export default async function Paiement() {
   const ctx = await teamContext();
   if (!ctx) redirect("/connexion?next=/espace/reglages/paiement");
   if (!ctx.team) redirect("/espace");
-  if (isJury(ctx.user.email)) return <JuryLockedPage />;
   const { team } = ctx;
   const card = await cardView(team.id);
-  const admin = canLaunch(team.role);
+  // Jury demo: the judges see the demo card (last 4 digits) but only an admin changes it.
+  const admin = canLaunch(team.role) && !isJury(ctx.user.email);
   const t = await getT();
 
   return (
