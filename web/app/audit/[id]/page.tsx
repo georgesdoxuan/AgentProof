@@ -1,3 +1,4 @@
+import { isJury } from "@/lib/jury";
 import { canLaunch, staffUser, teamContext } from "@/lib/auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -786,7 +787,9 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                 </Link>
               )}
               <Note icon="mobile" className="mt-4">
-                {t("Garde ton téléphone à portée pour valider le 3D Secure.", "Keep your phone at hand to approve 3D Secure.")}
+                {isJury(ctx?.user.email)
+                  ? t("Démo jury : la carte n'a pas de solde. Si la banque demande le 3D Secure, personne ne le valide : le test s'arrête là, et c'est le verdict attendu.", "Jury demo: the card has no balance. If the bank asks for 3D Secure, nobody approves it: the test stops there, which is the expected verdict.")
+                  : t("Garde ton téléphone à portée pour valider le 3D Secure.", "Keep your phone at hand to approve 3D Secure.")}
               </Note>
               </>
             )}
