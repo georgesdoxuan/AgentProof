@@ -1,6 +1,6 @@
 import "server-only";
 import { createAudit, db, normalizeUrl } from "./engine";
-import { sendMail } from "./auth";
+import { sendAlert } from "./optout";
 
 // Daily watch of a team's pages, without AI: fetch the HTML, keep what matters to a shopping agent
 // (title, third-party scripts, forms, buttons, fields, iframes), and compare with yesterday's list.
@@ -153,7 +153,7 @@ export async function checkAutomation(a: Automation) {
   }).catch(() => false);
   if (email) {
     const link = `${process.env.PUBLIC_URL ?? ""}${auditId ? `/audit/${auditId}` : "/espace/automations"}`;
-    await sendMail(
+    await sendAlert(
       email,
       `AgentProof : ${normalizeUrl(a.url).domain} a changé`,
       `La page ${a.url} a changé depuis la dernière vérification.\n\n${lines.slice(0, 20).join("\n")}\n\n` +

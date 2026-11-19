@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { cardView } from "@/lib/cards";
@@ -129,6 +130,16 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
           </details>
 
           <button className="btn min-h-[52px] w-full rounded-[12px]">{t("Lancer l’audit", "Run the audit")}</button>
+          <p className="type-small text-center text-ink-2">
+            {t(
+              "En lançant l’audit, tu confirmes gérer ce site ou être autorisé à le tester. Un concurrent n’est visité que sur ses pages publiques, sans payer :",
+              "By running the audit, you confirm you run this site or are allowed to test it. A competitor is only visited on its public pages, without paying:",
+            )}{" "}
+            <Link href="/conditions" className="text-link hover:underline">
+              {t("conditions", "terms")}
+            </Link>
+            .
+          </p>
         </form>
       </Group>
     </SpaceShell>

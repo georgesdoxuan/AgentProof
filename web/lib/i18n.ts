@@ -21,6 +21,10 @@ const fr = {
     credits: "Agent : Holo, H Company. Juge visuel : Hugging Face.",
     method: "Méthode",
     privacy: "Confidentialité et mentions légales",
+    legal: "Informations légales",
+    cookies: "Ce site n’utilise que des cookies nécessaires à son fonctionnement (session, équipe, langue) : aucun traceur, aucune publicité.",
+    cookiesMore: "En savoir plus",
+    cookiesOk: "OK",
   },
   space: {
     label: "Espace",
@@ -116,6 +120,10 @@ const en: Dict = {
     credits: "Agent: Holo, H Company. Visual judge: Hugging Face.",
     method: "Method",
     privacy: "Privacy and legal notice",
+    legal: "Legal information",
+    cookies: "This site only uses cookies it needs to work (session, team, language): no tracker, no advertising.",
+    cookiesMore: "Learn more",
+    cookiesOk: "OK",
   },
   space: {
     label: "Space",

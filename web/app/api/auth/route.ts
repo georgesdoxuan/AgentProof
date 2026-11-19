@@ -20,11 +20,14 @@ export async function POST(req: Request) {
   if (action === "login") {
     const email = normalizeEmail(form.get("email"));
     if (!email) return back(req, { erreur: "email", next });
+    if (form.get("accept") !== "1") return back(req, { erreur: "accord", next, email });
     const since = new Date(Date.now() - 15 * 60_000).toISOString();
     const { count } = await db.from("login_tokens").select("token_hash", { count: "exact", head: true }).eq("email", email).gte("created_at", since);
     if ((count ?? 0) >= 3) return back(req, { erreur: "trop", next });
     const token = newToken();
     await db.from("login_tokens").insert({ token_hash: hashToken(token), email, next });
+    // Proof of consent, on the account when it exists (a new account gets it at verify). Ignored until the 20261119 migration is applied.
+    await db.from("users").update({ terms_accepted_at: new Date().toISOString() }).eq("email", email).then(() => null, () => null);
     const link = `${baseUrl(req)}/connexion?token=${token}`;
     const sent = await sendMail(
       email,
@@ -52,6 +55,8 @@ export async function POST(req: Request) {
       .maybeSingle();
     if (!tok) return back(req, { erreur: "lien" });
     await db.from("users").upsert({ email: tok.email }, { onConflict: "email", ignoreDuplicates: true });
+    // The sign-in form requires the consent box: record it on new accounts too. Ignored until the 20261119 migration is applied.
+    await db.from("users").update({ terms_accepted_at: new Date().toISOString() }).eq("email", tok.email).is("terms_accepted_at", null).then(() => null, () => null);
     const { data: user } = await db.from("users").select("id").eq("email", tok.email).single();
     await startSession(user!.id);
     // First login with no team and no pending invitation: give them their own space right away.
