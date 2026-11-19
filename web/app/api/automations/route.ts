@@ -1,6 +1,7 @@
 import { canLaunch, teamContext } from "@/lib/auth";
 import { db, normalizeUrl } from "@/lib/engine";
 import { INTERVALS, SCORE_DROPS, checkAutomation, postWebhook, webhookOk } from "@/lib/automations";
+import { MAIL_KINDS, setMailPref, type MailKind } from "@/lib/optout";
 
 // Every answer goes back to the page with a short code: ?ok=… shows "Saved", ?err=… shows what to fix (no plain-text page).
 // The page itself reopens at the reader's scroll position (controls.tsx KeepScroll). back=abonnement for forms kept there.
@@ -16,6 +17,13 @@ export async function POST(req: Request) {
   if (!ctx) return Response.redirect(new URL(`/connexion?next=${PAGE}`, req.url), 303);
   const form = await req.formData();
   const back = String(form.get("back") ?? "");
+  // Own e-mail preferences: every member chooses for themself, whatever their role.
+  if (form.get("action") === "mail") {
+    const kind = String(form.get("kind") ?? "") as MailKind;
+    if (kind !== "all" && !MAIL_KINDS.includes(kind as any)) return go(req, "err=value", back);
+    const saved = await setMailPref(ctx.user.email, kind, form.get("on") === "1").catch(() => false);
+    return go(req, saved ? "ok=saved" : "err=server", back);
+  }
   if (!ctx.team || !canLaunch(ctx.team.role)) return go(req, "err=role", back);
   const teamId = ctx.team.id;
   const action = form.get("action");

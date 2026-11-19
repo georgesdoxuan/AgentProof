@@ -946,7 +946,8 @@ export async function notifyDone(auditId: string) {
       ok,
       blockers,
       recommendations: a.recommendations ?? "",
-      email: a.email ?? null,
+      // n8n e-mails the report only when this is set: left empty when the person turned report e-mails off.
+      email: a.email && (await import("./optout").then((o) => o.mailAllowed(a.email, "report")).catch(() => true)) ? a.email : null,
       url: `${process.env.PUBLIC_URL ?? ""}/audit/${a.id}`,
     }),
   }).catch(() => {});

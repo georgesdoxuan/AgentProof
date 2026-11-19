@@ -471,12 +471,12 @@ export const FAQ: Faq[] = [
   {
     id: "desabonner",
     cat: "automations",
-    q: { fr: "Comment ne plus recevoir les e-mails d'alerte ?", en: "How do I stop alert e-mails?" },
+    q: { fr: "Comment ne plus recevoir les e-mails ?", en: "How do I stop e-mails?" },
     a: {
-      fr: "Chaque e-mail d'alerte a un lien de désinscription en un clic, sans connexion. Les liens de connexion et les rapports demandés continuent d'arriver.",
-      en: "Every alert e-mail has a one-click unsubscribe link, no sign-in needed. Sign-in links and reports you asked for still arrive.",
+      fr: "Dans Automations, carte Alertes, coupe ce que tu ne veux plus : alertes, rapport prêt, bilan mensuel, ou tout d'un coup. Chacun règle ses propres e-mails. Chaque alerte a aussi un lien de désinscription en un clic. Les liens de connexion et les invitations partent toujours, et les audits comme les notifications dans l'app continuent.",
+      en: "In Automations, Alerts card, switch off what you no longer want: alerts, report ready, monthly summary, or all at once. Everyone sets their own e-mails. Each alert also has a one-click unsubscribe link. Sign-in links and invitations always go out, and audits and in-app notifications carry on.",
     },
-    keys: "desinscription desabonner arreter spam mails trop notifications unsubscribe stop emails",
+    keys: "desinscription desabonner arreter desactiver couper spam mails trop notifications rapport bilan unsubscribe stop emails disable",
   },
 
   // ---------- Équipe ----------
