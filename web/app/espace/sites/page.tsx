@@ -35,7 +35,8 @@ export default async function Sites() {
       <SitesTabs current="all" />
       {sites.length ? (
         <div className="space-y-3">
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {/* A card needs ~20rem for "À corriger" and the ranking line: three columns only when they fit (not at 1280 with the sidebar). */}
+          <div className="grid gap-5 sm:grid-cols-[repeat(auto-fill,minmax(20rem,1fr))]">
             {sites.map((s) => (
               <SiteCard key={s.key} site={s} manage={canLaunch(team.role)} />
             ))}

@@ -36,7 +36,7 @@ import { SiteLogo } from "../../site-logo";
 const usd = (n: number, digits: number, lang: Lang) => (lang === "en" ? `$${n.toFixed(digits)}` : `${n.toFixed(digits).replace(".", ",")} $`);
 
 const RUN_FIELDS =
-  "id, status, payment_verdict, with_login, session_id, success, reached_checkout, blocker_type, blocker_detail, screenshot_url, final_url, steps, duration_s, cost_usd, judge, agent_answer, attempts, first_attempt, missions(title, position)";
+  "id, status, payment_verdict, with_login, session_id, success, reached_checkout, blocker_type, blocker_detail, screenshot_url, final_url, steps, duration_s, cost_usd, judge, agent_answer, attempts, first_attempt, missions(title, position, team_id, base:base_id(title))";
 
 // Average duration and agent cost per finished mission: what a model comparison is about.
 function perMission(runs: any[]) {
@@ -50,6 +50,7 @@ function scopeText(runs: any[], s: ReturnType<typeof summarize>, device: string,
   const pl = (k: number) => (k > 1 ? "s" : "");
   const excluded = runs.filter((r) => r.status === "done" && r.success === false && EXCLUDED.includes(r.blocker_type));
   const reasons = [...new Set(excluded.map((r) => blockerLabel(r.blocker_type, lang).toLowerCase()))].join(", ");
+  const custom = runs.filter((r) => r.missions?.team_id).length;
   if (lang === "en")
     return [
       s.done
@@ -59,7 +60,8 @@ function scopeText(runs: any[], s: ReturnType<typeof summarize>, device: string,
       excluded.length ? `${n(excluded.length, "mission")} excluded from the score (${reasons}).` : "",
       s.unverified ? `${n(s.unverified, "mission")} unverified, outside the score.` : "",
       s.errors ? `${n(s.errors, "mission")} not played (technical error).` : "",
-      paymentTested ? "Payment tested separately, see below." : "Payment not tested.",
+      custom ? `Missions chosen by the team, ${custom} of them written or edited by it: compare this score only with an audit on the same missions.` : "",
+    paymentTested ? "Payment tested separately, see below." : "Payment not tested.",
     ].filter(Boolean).join(" ");
   return [
     s.done
@@ -69,6 +71,7 @@ function scopeText(runs: any[], s: ReturnType<typeof summarize>, device: string,
     excluded.length ? `${n(excluded.length, "mission")} exclue${excluded.length > 1 ? "s" : ""} du score (${reasons}).` : "",
     s.unverified ? `${n(s.unverified, "mission")} non vérifiée${s.unverified > 1 ? "s" : ""}, hors score.` : "",
     s.errors ? `${n(s.errors, "mission")} non jouée${s.errors > 1 ? "s" : ""} (erreur technique).` : "",
+    custom ? `Missions choisies par l'équipe, dont ${custom} écrite${custom > 1 ? "s" : ""} ou modifiée${custom > 1 ? "s" : ""} par elle : ce score ne se compare qu'à un audit sur les mêmes missions.` : "",
     paymentTested ? "Paiement testé à part, voir plus bas." : "Paiement non testé.",
   ].filter(Boolean).join(" ");
 }
@@ -252,6 +255,9 @@ async function trendOf(audit: any) {
   const prev = (prevQ.data ?? []).map((a: any) => ({ id: a.id as string, at: a.created_at as string, score: scoreOf(a.runs) })).find((a) => a.score != null) ?? null;
   return { rank: pos >= 0 ? { pos: pos + 1, of: ranked.length } : null, prev };
 }
+
+// The agent writes "unknown" in English when it could not tell: show "?" in both languages.
+const known = (v?: string | null) => (v && !/^unknown$/i.test(v.trim()) ? v : "?");
 
 async function loadAudit(id: string) {
   const { data } = await db.from("audits").select(`*, sites(domain, name, url), runs(${RUN_FIELDS})`).eq("id", id).maybeSingle();
@@ -492,7 +498,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                   <li key={r.id} className="border-t border-hairline first:border-0">
                     <a href={`#mission-${i + 1}`} className="flex min-h-[52px] items-center gap-3 px-7 py-2.5 transition-colors hover:bg-bg-2/70 max-[734px]:px-6 dark:hover:bg-white/5">
                       <span className="w-4 shrink-0 type-small text-ink-2 tnum">{i + 1}</span>
-                      <MissionIcon title={r.missions.title} />
+                      <MissionIcon title={r.missions.base?.title ?? r.missions.title} team={!!r.missions.team_id} />
                       <span className="min-w-0 flex-1 truncate">{missionTitle(r.missions.title, lang)}</span>
                       <span className="type-small shrink-0">
                         <StatusBadge run={r} />
@@ -580,7 +586,8 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
         )}
 
         {pays.map((pay) => (
-          <section key={pay.id} className="tile">
+          // The whole tile opens the replay (private, card masked), like a mission's "Watch the replay".
+          <section key={pay.id} className={`tile ${pay.session_id && pay.status !== "todo" ? "relative transition-colors duration-200 hover:bg-tile/80" : ""}`}>
             <div className="type-small flex flex-wrap items-center gap-x-3 gap-y-1">
               <span className="text-ink-2">
                 {t("Test de paiement réel", "Real payment test")}
@@ -600,22 +607,66 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                   </p>
                 )}
                 <p className="type-small mt-2 text-ink-2">
-                  3D Secure : {pay.agent_answer?.three_ds_seen ? t("demandé", "requested") : t("non", "no")} · {t("Prestataire", "Provider")} : {pay.agent_answer?.payment_provider || "?"} · {t("Moyens", "Methods")} :{" "}
-                  {pay.agent_answer?.payment_methods || "?"}
+                  3D Secure : {pay.agent_answer?.three_ds_seen ? t("demandé", "requested") : t("non", "no")} · {t("Prestataire", "Provider")} : {known(pay.agent_answer?.payment_provider)} · {t("Moyens", "Methods")} :{" "}
+                  {known(pay.agent_answer?.payment_methods)}
                 </p>
                 {pay.judge?.result && pay.judge.result !== pay.payment_verdict && (
                   <p className="type-small mt-2 text-warn">
                     {t("Juge visuel en désaccord", "Visual judge disagrees")} : {PAYMENT_VERDICTS[pay.judge.result] ?? pay.judge.result}. {pay.judge.reason}
                   </p>
                 )}
+                {pay.agent_answer?.steps_summary && (
+                  <details className="type-small group relative z-10 mt-4 text-ink-2">
+                    <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 text-link [&::-webkit-details-marker]:hidden">
+                      <Chevron className="h-2.5 w-2.5 transition-transform duration-200 group-open:rotate-90" />
+                      {t("Compte rendu de l’agent", "The agent's report")}
+                    </summary>
+                    <p className="mt-2">{pay.agent_answer.steps_summary}</p>
+                  </details>
+                )}
+                <div className="mt-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
+                  <dl className="flex gap-6 tnum">
+                    {(
+                      [
+                        [t("Étapes", "Steps"), pay.steps ?? "?"],
+                        [t("Durée", "Duration"), pay.duration_s ? `${Math.round(pay.duration_s)} s` : "?"],
+                        ...(pay.cost_usd != null ? [[t("Coût", "Cost"), usd(Number(pay.cost_usd), 3, lang)]] : []),
+                      ] as [string, string | number][]
+                    ).map(([k, v]) => (
+                      <div key={k}>
+                        <dt className="type-caption text-ink-2">{k}</dt>
+                        <dd className="type-small font-semibold">{v}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                  {pay.session_id && (
+                    <Link href={`/replay/${pay.id}?a=${audit.payment_test}`} className="no-print btn btn-dark min-h-[40px] px-[18px] text-[15px] after:absolute after:inset-0 after:content-['']">
+                      <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="currentColor" aria-hidden>
+                        <path d="M2.5 1.3v9.4L10.6 6z" />
+                      </svg>
+                      {t("Voir le replay", "Watch the replay")}
+                    </Link>
+                  )}
+                </div>
               </>
             ) : (
+              <>
+              {pay.status === "launched" && pay.session_id && (
+                <Link href={`/replay/${pay.id}?a=${audit.payment_test}`} className="no-print btn mt-4 min-h-[40px] gap-2 px-[18px] text-[15px] after:absolute after:inset-0 after:content-['']">
+                  <span className="relative flex h-2 w-2" aria-hidden>
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-70 motion-reduce:hidden" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+                  </span>
+                  {t("Suivre l’agent", "Follow the agent")}
+                </Link>
+              )}
               <p className="mt-3 text-ink-2">
                 {t(
                   "L’agent part au plus près du checkout, prend le premier article disponible et paie une fois. Garde ton téléphone à portée pour valider le 3D Secure.",
                   "The agent starts as close to checkout as it can, takes the first available item and pays once. Keep your phone at hand to approve 3D Secure.",
                 )}
               </p>
+              </>
             )}
           </section>
         ))}
@@ -719,9 +770,16 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                     <StatusBadge run={r} />
                   </div>
                   <h3 className="type-h3 mt-2 flex items-start gap-2.5">
-                    <MissionIcon title={r.missions.title} className="mt-[0.15em] h-[0.9em] w-[0.9em]" />
+                    <MissionIcon title={r.missions.base?.title ?? r.missions.title} team={!!r.missions.team_id} className="mt-[0.15em] h-[0.9em] w-[0.9em]" />
                     {missionTitle(r.missions.title, lang)}
                   </h3>
+                  {r.missions.team_id && (
+                    <p className="type-caption mt-1 text-ink-2">
+                      {r.missions.base
+                        ? t(`Mission modifiée par l’équipe (d’après « ${missionTitle(r.missions.base.title, lang)} »)`, `Mission edited by the team (from “${missionTitle(r.missions.base.title, lang)}”)`)
+                        : t("Mission personnalisée, écrite par l’équipe", "Custom mission, written by the team")}
+                    </p>
+                  )}
                   {r.status === "done" && (
                     <div className="mt-4">
                       {!r.success && r.success !== null && (

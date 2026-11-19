@@ -99,3 +99,11 @@ export async function staffUser() {
   const staff = (process.env.STAFF_EMAILS ?? "gdo@eugeniaschool.com").split(",").map((e) => e.trim().toLowerCase());
   return { user, isStaff: !!user && staff.includes(user.email.toLowerCase()) };
 }
+
+// A payment replay shows the team's card on screen: only that team sees it. A test without a team (staff R&D page) uses
+// AgentProof's own card: staff only.
+export async function canSeePayment(teamId: string | null) {
+  if (!teamId) return (await staffUser()).isStaff;
+  const ctx = await teamContext();
+  return !!ctx?.teams.some((t) => t.id === teamId);
+}

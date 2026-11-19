@@ -4,7 +4,7 @@ import { Bone, Line, SkSpace } from "../../skeleton";
 export default function Loading() {
   return (
     <SkSpace action>
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-5 sm:grid-cols-[repeat(auto-fill,minmax(20rem,1fr))]">
         {[0, 1, 2].map((i) => (
           <div key={i} className="tile flex flex-col gap-6 p-7!">
             <span>

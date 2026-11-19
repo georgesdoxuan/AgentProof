@@ -252,11 +252,14 @@ const MISSION_ICON: Record<string, string> = {
   "Test de paiement": ICON.payment,
 };
 export const MISSION_TYPES = Object.keys(MISSION_ICON);
+// Glyph path for a mission, for client components (they cannot import this file). A team's own mission gets the pencil.
+export const TEAM_MISSION_ICON = "M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4";
+export const missionIconPath = (title: string | null | undefined, team = false) => MISSION_ICON[title ?? ""] ?? (team ? TEAM_MISSION_ICON : ICON.other);
 
-export function MissionIcon({ title, className = "h-5 w-5" }: { title: string | null | undefined; className?: string }) {
+export function MissionIcon({ title, team, className = "h-5 w-5" }: { title: string | null | undefined; team?: boolean; className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={`shrink-0 text-ink-2 ${className}`} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d={MISSION_ICON[title ?? ""] ?? ICON.other} />
+      <path d={missionIconPath(title, team)} />
     </svg>
   );
 }
