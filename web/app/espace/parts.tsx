@@ -119,10 +119,13 @@ export async function SiteCard({ site, manage = false }: { site: SiteView; manag
             <button className="type-small flex w-full items-center rounded-[8px] px-3 py-2 text-left text-fail hover:bg-fill">{t("Mettre à la corbeille", "Move to trash")}</button>
           </form>
           <p className="type-caption px-3 pb-1 text-ink-2">
-            {t(
-              `Ses ${site.audits.length} rapport${site.audits.length > 1 ? "s" : ""} (${deviceLabel(site.device, lang).toLowerCase()}) partent avec lui. Tu peux le restaurer depuis la corbeille.`,
-              `Its ${site.audits.length} report${site.audits.length > 1 ? "s" : ""} (${deviceLabel(site.device, lang).toLowerCase()}) go with it. You can restore it from the trash.`,
-            )}
+            {(() => {
+              const n = site.audits.length;
+              const d = deviceLabel(site.device, lang).toLowerCase();
+              return n > 1
+                ? t(`Ses ${n} rapports (${d}) partent avec lui. Tu peux le restaurer depuis la corbeille.`, `Its ${n} reports (${d}) go with it. You can restore it from the trash.`)
+                : t(`Son rapport (${d}) part avec lui. Tu peux le restaurer depuis la corbeille.`, `Its report (${d}) goes with it. You can restore it from the trash.`);
+            })()}
           </p>
         </div>
       </details>
