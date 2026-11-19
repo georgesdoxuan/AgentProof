@@ -64,8 +64,10 @@ const G = {
   eye: "M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z",
   help: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM9.6 9.4a2.5 2.5 0 0 1 4.9.6c0 1.7-2.5 2.2-2.5 3.6M12 17h.01",
   book: "M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z",
+  done: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM8 12.5l2.7 2.7L16 9.5",
   chat: "M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 4v-4h0A1.5 1.5 0 0 1 4 14.5z",
 };
+const card = "block rounded-[10px] bg-tile px-3 py-2.5 shadow-[0_1px_3px_rgb(0_0_0/0.06)] transition-colors hover:bg-tile/70 dark:bg-[#2c2c2e]";
 const linkCls = "flex min-h-8 items-center gap-2.5 whitespace-nowrap rounded-[8px] px-3 text-[14px] text-ink-2 transition-colors duration-200 hover:bg-tile/60 hover:text-ink";
 
 // The main action, on every page of the space. Wide screens: a filled row under the team, aligned on the links below
@@ -185,13 +187,13 @@ export function NavBadge({ href, t, collapsed }: { href: string; t: T; collapsed
   const d = useSide();
   if (!d) return null;
   const [n, tone, label] =
-    href === "/espace" ? [d.open, "warn", `${d.open} ${d.open > 1 ? t.open : t.openOne}`] : href === "/espace/rapports" ? [d.running.length, "blue", `${d.running.length} ${t.running.toLowerCase()}`] : [0, "", ""];
+    href === "/espace" ? [d.open, "warn", `${d.open} ${d.open > 1 ? t.open : t.openOne}`] : href === "/espace/rapports" ? [d.running.length, "live", `${d.running.length} ${t.running.toLowerCase()}`] : [0, "", ""];
   if (!n) return null;
-  const color = tone === "warn" ? "bg-warn" : "bg-blue";
+  const color = tone === "warn" ? "bg-warn" : "bg-live-fill";
   if (collapsed) return <span className={`absolute right-2.5 top-1.5 h-2 w-2 rounded-full ring-2 ring-bg-2 ${color}`} aria-label={label} title={label} />;
   return (
-    <span className={`ml-auto inline-flex h-5 min-w-5 items-center justify-center gap-1 rounded-full px-1.5 text-[12px] font-semibold tabular-nums ${tone === "warn" ? "bg-warn/12 text-warn" : "bg-blue/12 text-blue"}`} title={label}>
-      {tone === "blue" && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue" aria-hidden />}
+    <span className={`ml-auto inline-flex h-5 min-w-5 items-center justify-center gap-1 rounded-full px-1.5 text-[12px] font-semibold tabular-nums ${tone === "warn" ? "bg-warn/12 text-warn" : "bg-live-fill/20 text-live"}`} title={label}>
+      {tone === "live" && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-live-fill" aria-hidden />}
       {n}
       <span className="sr-only">{label}</span>
     </span>
@@ -243,15 +245,16 @@ export function SideFooter({ t, lang, collapsed }: { t: T; lang: Lang; collapsed
   const d = useSide();
   return (
     <div className="space-y-3 border-t border-hairline pt-4 max-lg:hidden lg:mt-auto">
+      {/* Audit cards: yellow while running, green for half an hour once finished (same colors as Rapports). */}
       {d?.running.map((a) => {
         const pct = a.total ? Math.round((a.done / a.total) * 100) : 0;
         return collapsed ? (
-          <Link key={a.id} href={`/audit/${a.id}`} title={`${t.running} · ${a.label} · ${a.done}/${a.total}`} aria-label={`${t.running} · ${a.label}`} className="grid h-9 w-12 place-items-center rounded-[8px] text-blue hover:bg-tile/60">
+          <Link key={a.id} href={`/audit/${a.id}`} title={`${t.running} · ${a.label} · ${a.done}/${a.total}`} aria-label={`${t.running} · ${a.label}`} className="grid h-9 w-12 place-items-center rounded-[8px] text-live hover:bg-tile/60">
             <span className="ap-spin inline-block h-4 w-4 rounded-full border-2 border-current border-t-transparent" aria-hidden />
           </Link>
         ) : (
-          <Link key={a.id} href={`/audit/${a.id}`} className="block rounded-[10px] bg-tile px-3 py-2.5 shadow-[0_1px_3px_rgb(0_0_0/0.06)] transition-colors hover:bg-tile/70 dark:bg-[#2c2c2e]">
-            <span className="flex items-center gap-2 text-[13px] font-semibold text-blue">
+          <Link key={a.id} href={`/audit/${a.id}`} className={card}>
+            <span className="flex items-center gap-2 text-[13px] font-semibold text-live">
               <span className="ap-spin inline-block h-3 w-3 rounded-full border-2 border-current border-t-transparent" aria-hidden />
               {t.running}
               <span className="ml-auto tabular-nums text-ink-2">
@@ -260,11 +263,29 @@ export function SideFooter({ t, lang, collapsed }: { t: T; lang: Lang; collapsed
             </span>
             <span className="mt-1 block truncate text-[14px] text-ink">{a.label}</span>
             <span className="mt-2 block h-1 overflow-hidden rounded-full bg-fill">
-              <span className="block h-full rounded-full bg-blue transition-[width] duration-500" style={{ width: `${pct}%` }} />
+              <span className="block h-full rounded-full bg-live-fill transition-[width] duration-500" style={{ width: `${pct}%` }} />
             </span>
           </Link>
         );
       })}
+      {d?.finished.map((a) =>
+        collapsed ? (
+          <Link key={a.id} href={`/audit/${a.id}`} title={`${t.finished} · ${a.label}`} aria-label={`${t.finished} · ${a.label}`} className="grid h-9 w-12 place-items-center rounded-[8px] text-pass hover:bg-tile/60">
+            {glyph(G.done, "h-[18px] w-[18px]")}
+          </Link>
+        ) : (
+          <Link key={a.id} href={`/audit/${a.id}`} className={card}>
+            <span className="flex items-center gap-2 text-[13px] font-semibold text-pass">
+              {glyph(G.done, "h-3.5 w-3.5")}
+              {t.finished}
+              {a.score != null && <span className="ml-auto tabular-nums text-ink-2">{a.score} %</span>}
+            </span>
+            <span className="mt-1 block truncate text-[14px] text-ink">{a.label}</span>
+            {/* Same height as a running card: the bar fills green, nothing jumps when it turns. */}
+            <span className="mt-2 block h-1 overflow-hidden rounded-full bg-pass" />
+          </Link>
+        ),
+      )}
 
       <Watch t={t} lang={lang} collapsed={collapsed} />
       <Credits t={t} lang={lang} collapsed={collapsed} />

@@ -89,7 +89,7 @@ export async function StatusBadge({ run, secondTry = false }: { run: { status: s
   const t = await getT();
   if (run.status === "launched")
     return (
-      <span className="inline-flex items-center gap-1.5 font-semibold text-ink-2">
+      <span className="inline-flex items-center gap-1.5 font-semibold text-live">
         <Spinner />
         {t("En cours", "Running")}
       </span>
@@ -250,7 +250,7 @@ const ICON: Record<string, string> = {
 // ---------- chips and notes ----------
 // What used to be a grey sentence ("5 missions, a few minutes, the agent never pays") becomes a row of chips:
 // a line icon from the set above and two or three words, like the metadata pills in Linear, Vercel or Stripe.
-type ChipTone = "plain" | "blue" | "pass" | "warn" | "fail";
+type ChipTone = "plain" | "blue" | "pass" | "warn" | "fail" | "live";
 const CHIP_TONE: Record<ChipTone, string> = {
   plain: "bg-fill text-ink",
   blue: "bg-blue/12 text-link",
@@ -258,6 +258,8 @@ const CHIP_TONE: Record<ChipTone, string> = {
   // Light text darkened for 4.5:1 on the tinted pill, as the blocker state pills.
   warn: "bg-warn/15 text-[#9c4600] dark:text-warn",
   fail: "bg-fail/10 text-fail",
+  // An audit still running (yellow); a finished one uses pass. 4.6:1 at least on the tint, light and dark.
+  live: "bg-live-fill/20 text-live",
 };
 export function Chip({ icon, tone = "plain", children, className = "" }: { icon?: string; tone?: ChipTone; children: React.ReactNode; className?: string }) {
   return (

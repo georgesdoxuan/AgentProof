@@ -59,7 +59,7 @@ export default async function Accueil() {
   const status = audits.length ? (
     <Chips>
       <Chip icon="layers">{plural(sites.length, "site")}</Chip>
-      {running.length > 0 && <Chip icon="live" tone="blue">{running.length} {t("en cours", "running")}</Chip>}
+      {running.length > 0 && <Chip icon="live" tone="live">{running.length} {t("en cours", "running")}</Chip>}
       {open.length > 0 ? (
         <Chip icon="wrench" tone="warn">
           {plural(open.length, t("blocage", "blocker"))} · {plural(lost, "mission")} {t(lost > 1 ? "perdues" : "perdue", "lost")}
@@ -203,7 +203,7 @@ export default async function Accueil() {
       )}
 
       {running.length > 0 && (
-        <Group title={t("En cours", "Running")} aside={<Chip icon="live" tone="blue">{t("Direct", "Live")}</Chip>}>
+        <Group title={t("En cours", "Running")} aside={<Chip icon="live" tone="live">{t("Direct", "Live")}</Chip>}>
           {running.map((a) => (
             <Link key={a.id} href={`/audit/${a.id}`} className="block border-b border-hairline last:border-0 hover:bg-bg-2/60">
               <div className="grid min-h-[68px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-5 px-5 py-3 sm:grid-cols-[minmax(0,1fr)_10rem_7rem_1rem]">

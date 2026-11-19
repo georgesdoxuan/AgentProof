@@ -432,6 +432,12 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             <time dateTime={audit.created_at}>
               {new Date(audit.created_at).toLocaleString(locale(lang), { timeZone: "Europe/Paris", dateStyle: "long", timeStyle: "short" })}
             </time>
+            {/* The audit's state, like the sidebar: yellow while it runs (below), green once finished. */}
+            {!running && !paymentOnly && (
+              <span className="no-print">
+                <Chip icon="none" tone="pass">{t("Terminé", "Finished")}</Chip>
+              </span>
+            )}
             {!running && !paymentOnly && <PrintButton label={t("Télécharger en PDF", "Download as PDF")} />}
             {!running && !paymentOnly && (
               <span className="no-print inline-flex gap-3">
@@ -495,13 +501,13 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
           )}
           {running && !paymentOnly && (
             <p className="mt-6 inline-flex items-center gap-2.5 rounded-full bg-tile px-4 py-2 type-small" role="status">
-              <Spinner className="h-3.5 w-3.5 text-ink-2" />
+              <Spinner className="h-3.5 w-3.5 text-live" />
               <span>
-                <span className="font-semibold tnum">
+                <span className="font-semibold tnum text-live">
                   {t(`${s.finished}/${s.total} missions terminées`, `${s.finished}/${s.total} missions finished`)}
                 </span>
               </span>
-              <Chip icon="live" tone="blue">{t("Direct", "Live")}</Chip>
+              <Chip icon="live" tone="live">{t("Direct", "Live")}</Chip>
             </p>
           )}
           {canCancel && (

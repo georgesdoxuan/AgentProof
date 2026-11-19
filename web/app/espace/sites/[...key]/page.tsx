@@ -60,13 +60,13 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
       {site.running && <AutoRefresh />}
       {site.running && (
         <Link href={`/audit/${site.running.id}`} className="tile flex items-center gap-3 p-5! hover:bg-tile/80" role="status">
-          <Spinner className="h-4 w-4 text-ink-2" />
+          <Spinner className="h-4 w-4 text-live" />
           <span className="flex-1">
-            <span className="font-semibold">
+            <span className="font-semibold text-live">
               {t(`Audit en cours · ${site.running.s.finished}/${site.running.s.total}`, `Audit running · ${site.running.s.finished}/${site.running.s.total}`)}
             </span>
           </span>
-          <Chip icon="live" tone="blue">{t("Direct", "Live")}</Chip>
+          <Chip icon="live" tone="live">{t("Direct", "Live")}</Chip>
           <Chevron className="h-3 w-3 text-ink-2" />
         </Link>
       )}
