@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { GLYPH } from "@/lib/glyphs";
 import type { Dict, Lang } from "@/lib/i18n";
 import type { SideData } from "@/lib/sidebar";
@@ -336,14 +336,24 @@ export function CopyButton({ value, label, done }: { value: string; label: strin
 // Rapports › "Liste" or "Par site". The server renders both views and the toggle; this only hides one. The choice lives
 // in a cookie (read in rapports/list.tsx), like the sidebar, so the server renders the right view: no jump on load.
 const REPORTS_LAYOUT_COOKIE = "ap_rapports_vue"; // read in rapports/list.tsx
+// The audit type chips (Parcours, Paiement seul…) also live in a cookie, but filter on the server (counts, groups):
+// a change saves the cookie and refreshes the page data, the list dims meanwhile.
+const REPORTS_TYPE_COOKIE = "ap_rapports_type"; // read in rapports/list.tsx
 export function ReportsLayout({ initial, toolbar, list, bySite }: { initial: boolean; toolbar: React.ReactNode; list: React.ReactNode; bySite: React.ReactNode }) {
   const [bySiteOn, setBySite] = useState(initial);
+  const router = useRouter();
+  const [pending, start] = useTransition();
   return (
     <>
       <div
         className="mb-3 flex flex-wrap items-center justify-between gap-3 px-1"
         onChange={(e) => {
           const input = e.target as HTMLInputElement;
+          if (input.name === REPORTS_TYPE_COOKIE) {
+            document.cookie = `${REPORTS_TYPE_COOKIE}=${input.value}; path=/; max-age=31536000; samesite=lax`;
+            start(() => router.refresh());
+            return;
+          }
           if (input.name !== REPORTS_LAYOUT_COOKIE) return;
           setBySite(input.value === "site");
           document.cookie = `${REPORTS_LAYOUT_COOKIE}=${input.value}; path=/; max-age=31536000; samesite=lax`;
@@ -351,8 +361,10 @@ export function ReportsLayout({ initial, toolbar, list, bySite }: { initial: boo
       >
         {toolbar}
       </div>
-      <div hidden={bySiteOn}>{list}</div>
-      <div hidden={!bySiteOn}>{bySite}</div>
+      <div aria-busy={pending || undefined} className={`transition-opacity ${pending ? "opacity-60" : ""}`}>
+        <div hidden={bySiteOn}>{list}</div>
+        <div hidden={!bySiteOn}>{bySite}</div>
+      </div>
     </>
   );
 }

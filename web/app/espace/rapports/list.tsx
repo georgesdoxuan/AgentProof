@@ -18,12 +18,38 @@ export type View = "all" | "favorites" | "trash";
 const PATH: Record<View, string> = { all: "/espace/rapports", favorites: "/espace/rapports/favoris", trash: "/espace/reglages/corbeille/rapports" };
 const STATUS = ["tous", "en-cours", "termines"] as const;
 
+// Audit type, derived from what the audit holds (no column of its own): shopping missions, a real payment test, both,
+// or a fix check (proof audit). Shown as a badge on every row and filterable with the chips above the list.
+export type AuditType = "journey" | "payment" | "both" | "proof";
+const TYPES: AuditType[] = ["journey", "both", "payment", "proof"];
+const TYPE_ICONS: Record<AuditType, string[]> = { journey: ["cart"], payment: ["payment"], both: ["cart", "payment"], proof: ["shield"] };
+export function auditType(a: Pick<SpaceAudit, "proof_of" | "payment_test" | "runs">): AuditType {
+  if (a.proof_of) return "proof";
+  if (a.payment_test) return a.runs.length ? "both" : "payment";
+  return "journey";
+}
+const TYPE_TONE: Record<AuditType, string> = {
+  journey: "bg-fill text-ink-2",
+  proof: "bg-fill text-ink-2",
+  payment: "bg-blue/12 text-link",
+  both: "bg-blue/12 text-link",
+};
+// The badge: icon(s) + label, beside the name on wide screens, on its own line under the row on phones.
+function TypeBadge({ type, t, className = "" }: { type: AuditType; t: Dict["reports"]["types"]; className?: string }) {
+  return (
+    <span title={t.tip[type]} className={`type-caption inline-flex h-[22px] shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2 font-semibold ${TYPE_TONE[type]} ${className}`}>
+      {TYPE_ICONS[type].map((i) => <Icon key={i} name={i} className="h-[13px] w-[13px]" />)}
+      {t[type]}
+    </span>
+  );
+}
+
 const dateFmt = (lang: Lang) => (d: string) =>
   new Date(d).toLocaleDateString(locale(lang), { timeZone: "Europe/Paris", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
 // One quiet line for the real payment tests linked to an audit: grey like the date line, green only when the
 // payment reached the bank. Identical verdicts (without account, then signed in) are merged: "captcha (no account, signed in)".
-function PayLine({ pays, lang }: { pays: { status: string; verdict: string | null; with_login: boolean }[]; lang: Lang }) {
+function PayLine({ pays, lang, className = "" }: { pays: { status: string; verdict: string | null; with_login: boolean }[]; lang: Lang; className?: string }) {
   const t = tr(lang);
   const PAYMENT_VERDICTS = paymentVerdicts(lang);
   const multi = pays.length > 1;
@@ -43,7 +69,7 @@ function PayLine({ pays, lang }: { pays: { status: string; verdict: string | nul
     groups.set(text, g);
   }
   return (
-    <span className="type-small mt-0.5 flex min-w-0 items-start gap-1.5 text-ink-2">
+    <span className={`type-small mt-0.5 flex min-w-0 items-start gap-1.5 text-ink-2 ${className}`}>
       <Icon name="payment" className="mt-[2px] h-[1.05em] w-[1.05em] shrink-0" />
       <span className="min-w-0">
         {t("Paiement", "Payment")} ·{" "}
@@ -172,6 +198,7 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
   const date = dateFmt(lang);
   const [{ audits, trash, trashedSites }, jar] = await Promise.all([loadSpace(team.id), cookies()]);
   const bySite = jar.get("ap_rapports_vue")?.value === "site"; // set by ReportsLayout
+  const typeCookie = jar.get("ap_rapports_type")?.value; // set by ReportsLayout
   const manage = canLaunch(team.role);
 
   const scoped = view === "trash" ? trash : view === "favorites" ? audits.filter((a) => a.favorite) : audits;
@@ -179,7 +206,12 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
   const running = scoped.filter((a) => a.status !== "done");
   const query = fold(q.trim().slice(0, 80));
   const byStatus = status === "en-cours" ? running : status === "termines" ? scoped.filter((a) => a.status === "done") : scoped;
-  const shown = query ? byStatus.filter((a) => fold(`${a.label ?? ""} ${a.title ?? ""} ${a.sites?.domain ?? ""}`).includes(query)) : byStatus;
+  const searched = query ? byStatus.filter((a) => fold(`${a.label ?? ""} ${a.title ?? ""} ${a.sites?.domain ?? ""}`).includes(query)) : byStatus;
+  // Type chips: only the types this scope holds, and only when there are two or more. A saved type absent here = all.
+  const present = view === "trash" ? [] : TYPES.filter((ty) => scoped.some((a) => auditType(a) === ty));
+  const type = present.length > 1 && present.includes(typeCookie as AuditType) ? (typeCookie as AuditType) : "all";
+  const typeCount = (ty: AuditType) => searched.filter((a) => auditType(a) === ty).length;
+  const shown = type === "all" ? searched : searched.filter((a) => auditType(a) === type);
   const back = status === "tous" ? PATH[view] : `${PATH[view]}?vue=${status}`;
 
   const intro =
@@ -199,33 +231,13 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
     a.title && a.sites?.domain,
     view === "trash" && a.deleted_at ? r.trashedOn(date(a.deleted_at)) : date(a.created_at),
   ].filter(Boolean);
-  return (
-    <div key={a.id} className={`flex items-center ${view === "trash" ? "max-sm:flex-wrap" : ""} border-b border-hairline first:rounded-t-[18px] last:rounded-b-[18px] last:border-0 hover:bg-bg-2/60`}>
-      <Link href={`/audit/${a.id}`} className={`block min-w-0 flex-1 ${view === "trash" ? "max-sm:basis-full" : ""}`}>
-        <div className={`grid min-h-[68px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 py-3 md:gap-x-5 pl-5 pr-2 ${view === "trash" ? "md:grid-cols-[minmax(0,1fr)_8rem_6.5rem_1rem]" : "md:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_8rem_6.5rem_1rem]"}`}>
-          <span className="flex min-w-0 items-start gap-3">
-          {logo && <SiteLogo domain={a.sites?.domain} name={a.sites?.domain} className="mt-0.5" />}
-          <span className="min-w-0">
-            <span className="block truncate font-semibold">
-              {name}
-              {a.devices ? <span className="font-normal text-ink-2"> · {r.vsDevices}</span> : a.compare_to && <span className="font-normal text-ink-2"> · {a.model ? r.vsModels : r.vsCompetitor}</span>}
-            </span>
-            <span className="type-small block text-ink-2">
-              {sub.join(" · ")} · <DeviceTag device={a.device} lang={lang} />
-            </span>
-            {a.pay.length > 0 && <PayLine pays={a.pay} lang={lang} />}
-          </span>
-          </span>
-          {view !== "trash" && <span className="type-small hidden truncate text-ink-2 md:block">{a.users?.email === user.email ? r.you : a.users?.email ?? "—"}</span>}
-          <span className="hidden md:block">
-            <MissionBar ok={a.s.ok} done={a.s.done} total={a.s.total} size="sm" />
-          </span>
-          <span className="flex items-center justify-end gap-2 whitespace-nowrap tnum">
-            {a.status === "done" && a.s.score == null ? (
+  // Score or progress: its own column on wide screens, on the line under the row on phones (the name keeps the width).
+  const score =
+    a.status === "done" && a.s.score == null ? (
               // Nothing counted (anti-bot, stock, agent errors): say so instead of an unexplained "— %".
               <span className="type-small flex items-center gap-1.5 font-semibold text-ink-2">
                 <StatusGlyph tone="unsure" className="h-4 w-4" />
-                <span className="max-md:sr-only">{lang === "en" ? "No score" : "Sans score"}</span>
+                <span>{lang === "en" ? "No score" : "Sans score"}</span>
               </span>
             ) : a.status === "done" ? (
               // "hors paiement" goes under the score, never beside it: the column keeps its width and the
@@ -234,23 +246,48 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
                 <span className="flex items-center gap-2">
                   <StatusGlyph tone={scoreTone(a.s.score)} className="h-4 w-4" />
                   <span className="font-semibold">{a.s.score} %</span>
-                  {a.s.exPay && <ExPay lang={lang} short className="md:hidden" />}
                 </span>
-                {a.s.exPay && <ExPay lang={lang} className="type-small leading-tight max-md:hidden" />}
+                {a.s.exPay && <ExPay lang={lang} className="type-small leading-tight" />}
               </span>
             ) : (
               <span className="type-small flex items-center gap-2 font-semibold text-live">
                 <Spinner className="h-3.5 w-3.5" />
                 {r.progress(a.s.finished, a.s.total)}
               </span>
-            )}
+            );
+  return (
+    <div key={a.id} className={`flex items-center max-md:flex-wrap border-b border-hairline first:rounded-t-[18px] last:rounded-b-[18px] last:border-0 hover:bg-bg-2/60`}>
+      <Link href={`/audit/${a.id}`} className={`block min-w-0 flex-1 ${view === "trash" ? "max-sm:basis-full" : ""}`}>
+        <div className={`grid min-h-[68px] grid-cols-[minmax(0,1fr)] items-center gap-x-3 py-3 md:gap-x-5 pl-5 pr-2 ${view === "trash" ? "md:grid-cols-[minmax(0,1fr)_8rem_6.5rem_1rem]" : "md:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_8rem_6.5rem_1rem]"}`}>
+          <span className="flex min-w-0 items-start gap-3">
+          {logo && <SiteLogo domain={a.sites?.domain} name={a.sites?.domain} className="mt-0.5" />}
+          <span className="min-w-0">
+            <span className="flex min-w-0 items-center gap-2">
+              <span className="truncate font-semibold">
+                {name}
+                {a.devices ? <span className="font-normal text-ink-2"> · {r.vsDevices}</span> : a.compare_to && <span className="font-normal text-ink-2"> · {a.model ? r.vsModels : r.vsCompetitor}</span>}
+              </span>
+              <TypeBadge type={auditType(a)} t={r.types} className="max-md:hidden" />
+            </span>
+            <span className="type-small block text-ink-2">
+              {sub.join(" · ")} · <DeviceTag device={a.device} lang={lang} />
+            </span>
+            {a.pay.length > 0 && <PayLine pays={a.pay} lang={lang} className="max-md:hidden" />}
+          </span>
+          </span>
+          {view !== "trash" && <span className="type-small hidden truncate text-ink-2 md:block">{a.users?.email === user.email ? r.you : a.users?.email ?? "—"}</span>}
+          <span className="hidden md:block">
+            <MissionBar ok={a.s.ok} done={a.s.done} total={a.s.total} size="sm" />
+          </span>
+          <span className="flex items-center justify-end gap-2 whitespace-nowrap tnum max-md:hidden">
+            {score}
           </span>
           <Chevron className="hidden h-3 w-3 text-ink-2 md:block" />
         </div>
       </Link>
       {manage ? (
         // Phones: in the trash, Restore and Delete go under the report so its name and date keep the width.
-        <div className={`shrink-0 pr-3 ${view === "trash" ? "max-sm:flex max-sm:basis-full max-sm:justify-end max-sm:pb-3" : ""}`}>
+        <div className={`shrink-0 pr-3 ${view === "trash" ? "max-sm:order-2 max-sm:flex max-sm:basis-full max-sm:justify-end max-sm:pb-3" : ""}`}>
           <RowActions a={a} view={view} back={back} t={r} />
         </div>
       ) : (
@@ -260,6 +297,19 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
           </span>
         )
       )}
+      {/* Phones: the type and the payment result take a full-width line under the row, so the name keeps its width
+          and the payment verdict stays on one or two lines. Aligned with the name (logo 32 px + 12 px gap). */}
+      <Link
+        href={`/audit/${a.id}`}
+        tabIndex={-1}
+        className={`-mt-1.5 grid basis-full gap-1 pb-3 pr-5 md:hidden max-sm:order-1 ${logo ? "pl-16" : "pl-5"}`}
+      >
+        <span className="flex items-start justify-between gap-3">
+          <TypeBadge type={auditType(a)} t={r.types} />
+          <span className="flex items-center gap-2 whitespace-nowrap tnum">{score}</span>
+        </span>
+        {a.pay.length > 0 && <PayLine pays={a.pay} lang={lang} />}
+      </Link>
     </div>
   );
   };
@@ -387,6 +437,22 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
                 className="h-10 w-full rounded-[10px] bg-tile px-3.5 text-[15px] outline-none ring-blue focus-visible:ring-2 dark:bg-[#2c2c2e]"
               />
             </form>
+          )}
+          {present.length > 1 && (
+            // Audit type: radios styled as chips, with the count under the current tab and search. ReportsLayout saves the choice.
+            <fieldset className="flex w-full flex-wrap items-center gap-2">
+              <legend className="sr-only">{r.types.label}</legend>
+              {(["all", ...present] as const).map((v) => (
+                <label key={v} className="cursor-pointer" title={v === "all" ? undefined : r.types.tip[v]}>
+                  <input type="radio" name="ap_rapports_type" value={v} defaultChecked={type === v} className="peer sr-only" />
+                  <span className="type-caption inline-flex min-h-[30px] items-center gap-1.5 whitespace-nowrap rounded-full bg-fill px-3 font-semibold text-ink-2 transition-colors hover:text-ink peer-checked:bg-ink peer-checked:text-bg peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue">
+                    {v !== "all" && TYPE_ICONS[v].map((i) => <Icon key={i} name={i} className="h-[14px] w-[14px]" />)}
+                    {v === "all" ? r.types.all : r.types[v]}
+                    <span className="tnum font-normal opacity-70">{v === "all" ? searched.length : typeCount(v)}</span>
+                  </span>
+                </label>
+              ))}
+            </fieldset>
           )}
           </>}
           list={shown.length ? <div className="rounded-[18px] bg-tile">{shown.map((a) => row(a, true))}</div> : empty}
