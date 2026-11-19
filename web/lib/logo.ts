@@ -150,6 +150,110 @@ const SERVICES = [
   (d: string) => ["duckduckgo", `https://icons.duckduckgo.com/ip3/${encodeURIComponent(d)}.ico`],
 ] as const;
 
+// ---------- cutout ----------
+// Removes the background (and a solid plate behind the mark, like an app-icon square) so the logo sits on the page
+// itself, then writes two variants: one for light pages, one for dark pages (dark ink turned light).
+const lum = (r: number, g: number, b: number) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
+const sat = (r: number, g: number, b: number) => (Math.max(r, g, b) - Math.min(r, g, b)) / 255;
+
+// Flood fill from the edges of the box: pixels close to the border's median color become transparent (soft edge).
+function peel(px: Buffer, W: number, box: [number, number, number, number]) {
+  const [x0, y0, x1, y1] = box;
+  const border: number[][] = [];
+  for (let x = x0; x <= x1; x++) for (const y of [y0, y1]) border.push([x, y]);
+  for (let y = y0; y <= y1; y++) for (const x of [x0, x1]) border.push([x, y]);
+  const opaque = border.filter(([x, y]) => px[(y * W + x) * 4 + 3] > 200);
+  if (opaque.length < border.length * 0.6) return false; // already transparent around: nothing to peel
+  const med = [0, 1, 2].map((c) => opaque.map(([x, y]) => px[(y * W + x) * 4 + c]).sort((a, b) => a - b)[opaque.length >> 1]);
+  const dist = (i: number) => Math.hypot(px[i] - med[0], px[i + 1] - med[1], px[i + 2] - med[2]);
+  // The border must be one color (a plate), not the logo itself running off the edge.
+  if (opaque.filter(([x, y]) => dist((y * W + x) * 4) < 40).length < border.length * 0.85) return false;
+  // A pixel joins the background if it is close to the border color, or very close to the background pixel next to
+  // it (a soft gradient plate, like Nike's grey tile).
+  const T = 38, seen = new Uint8Array(px.length / 4), stack: [number, number][] = opaque.map(([x, y]) => [y * W + x, -1]);
+  const orig = Buffer.from(px);
+  while (stack.length) {
+    const [p, from] = stack.pop()!;
+    if (seen[p]) continue;
+    const i = p * 4, d = dist(i);
+    const smooth = from >= 0 && orig[i + 3] > 200 && Math.hypot(orig[i] - orig[from * 4], orig[i + 1] - orig[from * 4 + 1], orig[i + 2] - orig[from * 4 + 2]) < 6;
+    if (orig[i + 3] > 0 && d > T * 2 && !smooth) continue;
+    seen[p] = 1;
+    px[i + 3] = smooth && d > T ? 0 : Math.round(orig[i + 3] * Math.min(1, Math.max(0, (d - T) / T)));
+    const x = p % W, y = (p / W) | 0;
+    if (x > x0) stack.push([p - 1, p]);
+    if (x < x1) stack.push([p + 1, p]);
+    if (y > y0) stack.push([p - W, p]);
+    if (y < y1) stack.push([p + W, p]);
+  }
+  return true;
+}
+
+function bbox(px: Buffer, W: number, H: number): [number, number, number, number] | null {
+  let x0 = W, y0 = H, x1 = -1, y1 = -1;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (px[(y * W + x) * 4 + 3] > 24) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+  return x1 < 0 ? null : [x0, y0, x1, y1];
+}
+
+export async function cutout(png: Buffer): Promise<{ light: Buffer; dark: Buffer } | null> {
+  const N = 256;
+  const { data, info } = await sharp(png).resize(N, N, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const px = Buffer.from(data), W = info.width, H = info.height;
+  peel(px, W, [0, 0, W - 1, H - 1]);
+  // A plate left behind (square or rounded tile filling its box): peel it too, once.
+  const b = bbox(px, W, H);
+  if (!b) return null;
+  let filled = 0;
+  for (let y = b[1]; y <= b[3]; y++) for (let x = b[0]; x <= b[2]; x++) if (px[(y * W + x) * 4 + 3] > 200) filled++;
+  if (filled / ((b[2] - b[0] + 1) * (b[3] - b[1] + 1)) > 0.8) {
+    // rounded corners are transparent: inset the box a little so its edge lies on the plate
+    const k = Math.round(Math.min(b[2] - b[0], b[3] - b[1]) * 0.12);
+    const before = Buffer.from(px);
+    if (peel(px, W, [b[0] + k, b[1] + k, b[2] - k, b[3] - k])) {
+      // clear what is outside the inset box but still the plate's color (its rounded rim)
+      for (let y = b[1]; y <= b[3]; y++) for (let x = b[0]; x <= b[2]; x++) {
+        if (x >= b[0] + k && x <= b[2] - k && y >= b[1] + k && y <= b[3] - k) continue;
+        px[(y * W + x) * 4 + 3] = 0;
+      }
+      if (!bbox(px, W, H)) px.set(before); // the plate was the whole logo: keep it
+    }
+  }
+  // Ink: average color of what is left. Grey/white/black marks are recolored per theme (one-color logos).
+  let n = 0, s = 0, l = 0;
+  for (let i = 0; i < px.length; i += 4) if (px[i + 3] > 128) { n++; s += sat(px[i], px[i + 1], px[i + 2]); l += lum(px[i], px[i + 1], px[i + 2]); }
+  if (!n) return null;
+  const mono = s / n < 0.12;
+  const variant = (dark: boolean) => {
+    const out = Buffer.from(px);
+    for (let i = 0; i < out.length; i += 4) {
+      if (!out[i + 3]) continue;
+      const L = lum(out[i], out[i + 1], out[i + 2]);
+      if (mono) {
+        // one-color logo: ink = theme text color, inner details (white on black) stay as holes
+        const ink = l / n > 128 ? 255 - L : L; // white mark: its dark parts are the details
+        const a = 1 - ink / 255;
+        out[i + 3] = Math.round(out[i + 3] * Math.min(1, Math.max(0, (a - 0.08) / 0.84)));
+        out.fill(dark ? 245 : 29, i, i + 3);
+      } else if (dark && Math.max(out[i], out[i + 1], out[i + 2]) < 110) {
+        // dark parts of a colored logo would vanish on black: same hue, lighter
+        const f = (200 - L) / Math.max(1, L + 1);
+        for (let c = 0; c < 3; c++) out[i + c] = Math.min(255, Math.round(out[i + c] + (255 - out[i + c]) * Math.min(0.75, f / 8)));
+      }
+    }
+    return out;
+  };
+  const fit = async (raw: Buffer) => {
+    const t = await sharp(raw, { raw: { width: W, height: H, channels: 4 } }).trim({ threshold: 1 }).png().toBuffer().catch(() => null);
+    if (!t) return null;
+    const inner = Math.round(SIZE * 0.9), pad = (SIZE - inner) / 2, clear = { r: 0, g: 0, b: 0, alpha: 0 };
+    return sharp(t).resize(inner, inner, { fit: "contain", background: clear })
+      .extend({ top: Math.floor(pad), bottom: Math.ceil(pad), left: Math.floor(pad), right: Math.ceil(pad), background: clear })
+      .png({ palette: true, quality: 90, effort: 10 }).toBuffer();
+  };
+  const [light, dark] = await Promise.all([fit(variant(false)), fit(variant(true))]);
+  return light && dark ? { light, dark } : null;
+}
+
 export async function findLogo(domain: string, url: string): Promise<{ png: Buffer; source: string; from: string } | null> {
   const page = await get(url).catch(() => null);
   const html = page?.ok ? (await page.text()).slice(0, 1_500_000) : "";
@@ -180,10 +284,11 @@ export async function refreshLogo(domain: string, force = false) {
   if (!site || (site.logo_checked_at && !force)) return site?.logo_url ?? null;
   const found = await findLogo(site.domain, site.url).catch(() => null);
   let logo_url: string | null = null;
-  if (found) {
-    const path = `${domain}.png`;
-    const { error } = await db.storage.from("logos").upload(path, found.png, { contentType: "image/png", upsert: true, cacheControl: "86400" });
-    if (!error) logo_url = `${db.storage.from("logos").getPublicUrl(path).data.publicUrl}?v=${Date.now().toString(36)}`;
+  const cut = found ? await cutout(found.png).catch(() => null) : null;
+  if (cut) {
+    const up = (path: string, png: Buffer) => db.storage.from("logos").upload(path, png, { contentType: "image/png", upsert: true, cacheControl: "86400" });
+    const [a, b] = await Promise.all([up(`${domain}.png`, cut.light), up(`${domain}.dark.png`, cut.dark)]);
+    if (!a.error && !b.error) logo_url = `${db.storage.from("logos").getPublicUrl(`${domain}.png`).data.publicUrl}?v=${Date.now().toString(36)}`;
   }
   await db.from("sites").update({ logo_url, logo_source: found?.source ?? "initial", logo_checked_at: new Date().toISOString() }).eq("domain", domain);
   return logo_url;
