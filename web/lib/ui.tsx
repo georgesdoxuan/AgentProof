@@ -1,6 +1,7 @@
 import { EXCLUDED, blockerNames } from "./engine";
 import type { Lang } from "./i18n";
 import { getLang, getT } from "./lang";
+import { accountColor } from "./avatar";
 import { CopyButton } from "@/app/espace/controls";
 import { Hint } from "./hint";
 
@@ -400,9 +401,8 @@ export function Row({ children, className = "" }: { children: React.ReactNode; c
 
 // Initials in a circle: tells members apart at a glance without photos.
 export function Avatar({ email, className = "h-9 w-9" }: { email: string; className?: string }) {
-  const hue = [...email].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 0);
   return (
-    <span className={`grid shrink-0 place-items-center rounded-full type-small font-semibold text-white ${className}`} style={{ background: `hsl(${hue} 42% 40%)` }} aria-hidden>
+    <span className={`grid shrink-0 place-items-center rounded-full type-small font-semibold text-white ${className}`} style={{ background: accountColor(email) }} aria-hidden>
       {email[0]?.toUpperCase()}
     </span>
   );

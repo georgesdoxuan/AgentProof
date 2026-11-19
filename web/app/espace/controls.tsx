@@ -53,11 +53,23 @@ const GROUPS = [
 ] as const;
 
 // Sidebar on wide screens, segmented tabs on narrow ones (groups and icons drop out). Tabs navigate, they never act.
-export function SpaceNav({ t }: { t: Dict["space"] }) {
+// The signed-in account's round initial, in its own color (the header's avatar), in place of the generic person glyph.
+export type AccountBadge = { initial: string; color: string };
+const badge = (a: AccountBadge, cls = "") => (
+  <span
+    className={`grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full text-[10px] font-semibold leading-none text-white ${cls}`}
+    style={{ background: a.color }}
+    aria-hidden
+  >
+    {a.initial}
+  </span>
+);
+
+export function SpaceNav({ t, account }: { t: Dict["space"]; account?: AccountBadge }) {
   const path = usePathname();
   return (
     <>
-    <MobileNav t={t} path={path} />
+    <MobileNav t={t} path={path} account={account} />
     <nav aria-label={t.label} className="max-lg:hidden">
       <div className="lg:space-y-6 max-lg:inline-flex max-lg:gap-1 max-lg:rounded-[10px] max-lg:bg-fill max-lg:p-[3px]">
         {GROUPS.map(([group, items]) => (
@@ -79,7 +91,7 @@ export function SpaceNav({ t }: { t: Dict["space"] }) {
                       aria-current={current ? "page" : undefined}
                       className={`${itemCls(current)} ${inChild ? "max-lg:bg-tile max-lg:text-ink max-lg:shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:max-lg:bg-[#3a3a3c]" : ""}`}
                     >
-                      {glyph(icon, `h-[18px] w-[18px] shrink-0 max-lg:hidden ${current ? "text-blue" : ""}`)}
+                      {href === "/compte" && account ? badge(account, "max-lg:hidden") : glyph(icon, `h-[18px] w-[18px] shrink-0 max-lg:hidden ${current ? "text-blue" : ""}`)}
                       {t.sections[href as keyof typeof t.sections]}
                     </Link>
                     {children.length > 0 && (
@@ -112,7 +124,7 @@ export function SpaceNav({ t }: { t: Dict["space"] }) {
 // Narrow screens: three tabs a merchant uses every day, everything else behind "Plus", like a tab bar's More.
 // Nine sections in one scrolling strip hid the settings off screen with no hint they existed.
 const MAIN = ["/espace", "/espace/sites", "/espace/rapports"] as const;
-function MobileNav({ t, path }: { t: Dict["space"]; path: string }) {
+function MobileNav({ t, path, account }: { t: Dict["space"]; path: string; account?: AccountBadge }) {
   const isOn = (href: string) => (href === "/espace" ? path === href : path === href || path.startsWith(`${href}/`));
   const rest = GROUPS.flatMap(([, items]) => items as readonly (readonly [string, string])[]).filter(([href]) => !(MAIN as readonly string[]).includes(href));
   const inRest = rest.find(([href]) => isOn(href));
@@ -143,7 +155,7 @@ function MobileNav({ t, path }: { t: Dict["space"]; path: string }) {
                   aria-current={isOn(href) ? "page" : undefined}
                   className={`flex min-h-11 items-center gap-3 rounded-[8px] px-3 type-small ${isOn(href) ? "font-semibold text-ink" : "text-ink"} hover:bg-fill`}
                 >
-                  {glyph(icon, `h-[18px] w-[18px] shrink-0 ${isOn(href) ? "text-blue" : "text-ink-2"}`)}
+                  {href === "/compte" && account ? badge(account) : glyph(icon, `h-[18px] w-[18px] shrink-0 ${isOn(href) ? "text-blue" : "text-ink-2"}`)}
                   {t.sections[href as keyof typeof t.sections]}
                 </Link>
               </li>
