@@ -1,5 +1,5 @@
 import { getT } from "@/lib/lang";
-import { ReportsList } from "./list";
+import { ReportsList } from "../list";
 
 export async function generateMetadata() {
   const t = await getT();

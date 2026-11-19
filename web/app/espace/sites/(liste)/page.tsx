@@ -4,8 +4,8 @@ import { canLaunch, teamContext } from "@/lib/auth";
 import { loadSpace } from "@/lib/space";
 import { getT } from "@/lib/lang";
 import { Empty, MissionLegend } from "@/lib/ui";
-import { SpaceShell } from "../shell";
-import { SiteCard, SitesTabs } from "../parts";
+import { SpaceShell } from "../../shell";
+import { SiteCard, SitesTabs } from "../../parts";
 
 export const metadata = { title: "Sites · AgentProof" };
 

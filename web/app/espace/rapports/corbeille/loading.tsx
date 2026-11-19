@@ -1,4 +1,4 @@
-import { SkReports } from "../loading";
+import { SkReports } from "../skeleton";
 
 export default function Loading() {
   return <SkReports parent />;

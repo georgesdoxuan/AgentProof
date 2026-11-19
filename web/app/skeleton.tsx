@@ -45,7 +45,7 @@ export function SkSpace({
   action?: boolean;
   /** "chips": a row of Chips (26px), or the widths of each chip; "line": one line of text. Left out when the page has no intro. */
   intro?: "chips" | "line" | string[];
-  /** A sentence-long title (the space's home): two lines on phones, like the real one. */
+  /** A sentence-long title (the space's home): three lines on phones, like the real one. */
   long?: boolean;
   /** Child pages (a site, Favoris, Corbeille): the back link above the title. */
   parent?: boolean;
@@ -68,7 +68,8 @@ export function SkSpace({
             <>
               <Line w="min(30rem, 100%)" />
               <span className="block min-[735px]:hidden">
-                <Line w="60%" />
+                <Line w="100%" />
+                <Line w="55%" />
               </span>
             </>
           ) : (
