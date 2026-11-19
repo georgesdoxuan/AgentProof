@@ -8,6 +8,7 @@ import { BlockerIcon, Chevron, DeviceTag, Group, MissionBar, Recommendations, Sp
 import { AutoRefresh } from "../../../audit/[id]/refresh";
 import { SpaceShell } from "../../shell";
 import { BlockerItem, Delta, RelaunchForm, rankText } from "../../parts";
+import { SiteLogo } from "../../../site-logo";
 
 export const metadata = { title: "Site · AgentProof" };
 
@@ -36,7 +37,12 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
       team={team}
       teams={teams}
       parent={["/espace/sites", "Sites"]}
-      title={site.domain}
+      title={
+        <span className="flex min-w-0 items-center gap-4">
+          <SiteLogo domain={site.domain} name={site.domain} size="lg" eager />
+          <span className="min-w-0 break-words">{site.domain}</span>
+        </span>
+      }
       intro={
         <>
           <DeviceTag device={site.device} lang={lang} /> · {rankText(site.rank, lang)}
@@ -183,13 +189,16 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             {(
               [
-                [site.domain, s, true],
-                [c.sites?.domain ?? t("Concurrent", "Competitor"), c.s, false],
+                [site.domain, s, true, site.domain],
+                [c.sites?.domain ?? t("Concurrent", "Competitor"), c.s, false, c.sites?.domain],
               ] as const
-            ).map(([name, x, self]) => (
+            ).map(([name, x, self, domain]) => (
               <div key={name} className="space-y-2.5">
                 <div className="flex items-baseline justify-between gap-3">
-                  <span className={`truncate ${self ? "font-semibold" : "text-ink-2"}`}>{name}</span>
+                  <span className={`flex min-w-0 items-center gap-2.5 ${self ? "font-semibold" : "text-ink-2"}`}>
+                    <SiteLogo domain={domain} name={name} size="sm" />
+                    <span className="truncate">{name}</span>
+                  </span>
                   <span className="text-[21px] font-semibold tnum">{x.score ?? "—"} %</span>
                 </div>
                 <MissionBar ok={x.ok} done={x.done} total={x.total} />
