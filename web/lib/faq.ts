@@ -67,8 +67,8 @@ export const FAQ: Faq[] = [
     cat: "start",
     q: { fr: "Est-ce gratuit ?", en: "Is it free?" },
     a: {
-      fr: "Le classement public est gratuit, et chaque espace a 15 crédits par mois, soit 3 audits. Le paiement en ligne n'est pas encore ouvert : pendant l'essai, rien n'est bloqué ni facturé.",
-      en: "The public ranking is free, and every space gets 15 credits a month, that is 3 audits. Online payment is not open yet: during the trial, nothing is blocked or charged.",
+      fr: "Le classement public est gratuit, et chaque espace a 15 crédits par mois, soit jusqu'à 3 audits (une mission ratée rejouée utilise un crédit de plus). Le paiement en ligne n'est pas encore ouvert : pendant l'essai, rien n'est bloqué ni facturé.",
+      en: "The public ranking is free, and every space gets 15 credits a month, that is up to 3 audits (a failed mission replayed uses one more credit). Online payment is not open yet: during the trial, nothing is blocked or charged.",
     },
     link: { href: "/espace/reglages/abonnement", fr: "Abonnement et crédits", en: "Plan and credits" },
     keys: "prix tarif cout combien payer gratuitement essai offre free trial price cost how much",
@@ -269,8 +269,8 @@ export const FAQ: Faq[] = [
     cat: "credits",
     q: { fr: "Combien coûte un audit ?", en: "How much does an audit cost?" },
     a: {
-      fr: "Cinq crédits, un par mission. L'offre gratuite en donne 15 par mois, soit 3 audits. Pendant l'essai, rien n'est facturé.",
-      en: "Five credits, one per mission. The free plan gives 15 a month, that is 3 audits. During the trial, nothing is charged.",
+      fr: "Cinq crédits, un par mission. L'offre gratuite en donne 15 par mois, soit jusqu'à 3 audits. Pendant l'essai, rien n'est facturé.",
+      en: "Five credits, one per mission. The free plan gives 15 a month, that is up to 3 audits. During the trial, nothing is charged.",
     },
     link: { href: "/espace/reglages/abonnement", fr: "Abonnement et crédits", en: "Plan and credits" },
     keys: "prix cout combien tarif payer facture audit price cost how much pay",
@@ -291,8 +291,8 @@ export const FAQ: Faq[] = [
     cat: "credits",
     q: { fr: "Quelles sont les offres ?", en: "What are the plans?" },
     a: {
-      fr: "Gratuit : le classement public et 15 crédits par mois, soit 3 audits. Audit complet : 490 € par site, un rapport ponctuel. Suivi mensuel : 149 € par mois, avec un audit complet automatique chaque mois, tes pages relues chaque jour sans agent ni crédit, et 150 crédits pour relancer des audits quand tu veux (5 crédits par audit, l'audit automatique compris : environ 30 audits par mois). Agences : 600 crédits pour plusieurs sites clients. Rien n'est facturé tant que le paiement en ligne n'est pas ouvert.",
-      en: "Free: the public ranking and 15 credits a month, that is 3 audits. Full audit: €490 per site, a one-off report. Monthly tracking: €149 a month, with an automatic full audit every month, your pages read daily without the agent and without credits, and 150 credits to rerun audits whenever you want (5 credits per audit, the automatic one included: about 30 audits a month). Agencies: 600 credits for several client sites. Nothing is charged while online payment is closed.",
+      fr: "Gratuit : le classement public et 15 crédits par mois, soit jusqu'à 3 audits (une mission ratée rejouée utilise un crédit de plus). Audit complet : 490 € par site, un rapport ponctuel. Suivi mensuel : 149 € par mois, avec un audit complet automatique chaque mois, tes pages relues chaque jour sans agent ni crédit, et 150 crédits pour relancer des audits quand tu veux (5 crédits par audit, l'audit automatique compris : jusqu'à 30 audits par mois, moins s'il y a des missions rejouées). Agences : 600 crédits pour plusieurs sites clients. Rien n'est facturé tant que le paiement en ligne n'est pas ouvert.",
+      en: "Free: the public ranking and 15 credits a month, that is up to 3 audits (a failed mission replayed uses one more credit). Full audit: €490 per site, a one-off report. Monthly tracking: €149 a month, with an automatic full audit every month, your pages read daily without the agent and without credits, and 150 credits to rerun audits whenever you want (5 credits per audit, the automatic one included: up to 30 audits a month, fewer when missions are replayed). Agencies: 600 credits for several client sites. Nothing is charged while online payment is closed.",
     },
     link: { href: "/espace/reglages/abonnement", fr: "Abonnement et crédits", en: "Plan and credits" },
     keys: "abonnement forfait plan tarifs prix offre agence mensuel subscription pricing price agency monthly",

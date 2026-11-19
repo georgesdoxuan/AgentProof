@@ -85,7 +85,7 @@ export async function MissionLegend({ className = "" }: { className?: string }) 
 }
 
 // ---------- runs ----------
-export async function StatusBadge({ run }: { run: { status: string; success: boolean | null; blocker_type?: string | null } }) {
+export async function StatusBadge({ run, secondTry = false }: { run: { status: string; success: boolean | null; blocker_type?: string | null }; secondTry?: boolean }) {
   const t = await getT();
   if (run.status === "launched")
     return (
@@ -100,7 +100,7 @@ export async function StatusBadge({ run }: { run: { status: string; success: boo
       : run.status === "error" || run.success === null
         ? [t("Non vérifiée", "Unverified"), "unsure"]
         : run.success
-          ? [t("Réussie", "Passed"), "pass"]
+          ? [secondTry ? t("Réussie au 2ᵉ essai", "Passed on 2nd try") : t("Réussie", "Passed"), "pass"]
           : EXCLUDED.includes(run.blocker_type ?? "")
             ? [t("Hors score", "Out of score"), "none"]
             : [t("Bloquée", "Blocked"), "fail"];

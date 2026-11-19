@@ -53,12 +53,14 @@ function scopeText(runs: any[], s: ReturnType<typeof summarize>, device: string,
   const excluded = runs.filter((r) => r.status === "done" && r.success === false && EXCLUDED.includes(r.blocker_type));
   const reasons = [...new Set(excluded.map((r) => blockerLabel(r.blocker_type, lang).toLowerCase()))].join(", ");
   const custom = runs.filter((r) => r.missions?.team_id).length;
+  const second = secondTry(runs).length;
   if (lang === "en")
     return [
       s.done
         ? `Score based on ${s.done} journey${pl(s.done)} on ${device === "mobile" ? "mobile" : "desktop"}, from the home page to the checkout entrance.`
         : `No journey counted on ${device === "mobile" ? "mobile" : "desktop"}: no score for this site until a new audit.`,
       s.done && s.done < 5 ? `Short sample: one result more or less moves the score by ${Math.round(100 / s.done)} points.` : "",
+      second ? `${n(second, "mission")} passed only on the second try: unstable result.` : "",
       excluded.length ? `${n(excluded.length, "mission")} excluded from the score (${reasons}).` : "",
       s.unverified ? `${n(s.unverified, "mission")} unverified, outside the score.` : "",
       s.errors ? `${n(s.errors, "mission")} not played (technical error).` : "",
@@ -70,12 +72,23 @@ function scopeText(runs: any[], s: ReturnType<typeof summarize>, device: string,
       ? `Score calculé sur ${n(s.done, "parcours")} sur ${device === "mobile" ? "mobile" : "ordinateur"}, de l'accueil jusqu'à l'entrée du checkout.`
       : `Aucun parcours compté sur ${device === "mobile" ? "mobile" : "ordinateur"} : pas de score pour ce site avant un nouvel audit.`,
     s.done && s.done < 5 ? `Échantillon court : un résultat de plus ou de moins déplace le score de ${Math.round(100 / s.done)} points.` : "",
+    second ? `${n(second, "mission")} réussie${second > 1 ? "s" : ""} au 2ᵉ essai seulement : résultat instable.` : "",
     excluded.length ? `${n(excluded.length, "mission")} exclue${excluded.length > 1 ? "s" : ""} du score (${reasons}).` : "",
     s.unverified ? `${n(s.unverified, "mission")} non vérifiée${s.unverified > 1 ? "s" : ""}, hors score.` : "",
     s.errors ? `${n(s.errors, "mission")} non jouée${s.errors > 1 ? "s" : ""} (erreur technique).` : "",
     custom ? `Missions choisies par l'équipe, dont ${custom} écrite${custom > 1 ? "s" : ""} ou modifiée${custom > 1 ? "s" : ""} par elle : ce score ne se compare qu'à un audit sur les mêmes missions.` : "",
     paymentTested ? "Paiement testé à part, voir plus bas." : "Paiement non testé.",
   ].filter(Boolean).join(" ");
+}
+
+// Missions that failed, were replayed and passed: they count as passed, but the result is unstable and the report says so.
+const secondTry = (runs: any[]) => runs.filter((r) => r.status === "done" && r.success === true && r.first_attempt);
+
+// Raw success rate: excluded outcomes (anti-bot, out of stock…) counted as failures, as a real customer's agent would live them.
+// Unverified missions stay out: nobody knows whether they passed.
+function rawRate(s: ReturnType<typeof summarize>) {
+  const n = s.done + s.excluded;
+  return n ? { ok: s.ok, n, pct: Math.round((100 * s.ok) / n) } : null;
 }
 
 // Mission conclusion in the reader's language, built from the verdict (not the agent's free text, which may be in English).
@@ -314,6 +327,8 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   const maxBlock = s.blockers[0]?.[1] ?? 1;
   const got = hurdles(runs, lang);
   const aside = s.excluded + s.unverified + s.errors;
+  const raw = s.excluded ? rawRate(s) : null;
+  const unstable = secondTry(runs).length;
   const scope = scopeText(runs, s, audit.device, pays.some((p) => p.status === "done"), lang);
 
   const paymentOnly = runs.length === 0 && pays.length > 0;
@@ -482,6 +497,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                 <li className="flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-pass" aria-hidden />
                   {s.ok} {t(`réussie${s.ok > 1 ? "s" : ""}`, "passed")}
+                  {unstable > 0 && <span>({t(`dont ${unstable} au 2ᵉ essai`, `${unstable} on the 2nd try`)})</span>}
                 </li>
                 <li className="flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-fail" aria-hidden />
@@ -494,7 +510,15 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                   </li>
                 )}
               </ul>
-              <p className="type-small mt-5 border-t border-hairline pt-4 text-ink-2">{scope}</p>
+              {raw && (
+                <p className="type-small mt-5 flex flex-wrap items-baseline gap-x-2 border-t border-hairline pt-4 text-ink-2">
+                  <span className="font-semibold text-ink tnum">
+                    {t("Taux réel", "Real rate")} · {raw.pct} % ({raw.ok}/{raw.n})
+                  </span>
+                  {t("missions hors score comptées comme échecs, comme pour l’agent d’un vrai client", "out-of-score missions counted as failures, as a real customer's agent would live them")}
+                </p>
+              )}
+              <p className={`type-small text-ink-2 ${raw ? "mt-3" : "mt-5 border-t border-hairline pt-4"}`}>{scope}</p>
               {trend && (trend.rank || trend.prev) && s.score != null && (
                 <p className="type-small mt-3 flex flex-wrap gap-x-4 gap-y-1 text-ink-2 tnum">
                   {trend.prev && (
@@ -528,7 +552,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                       <MissionIcon title={r.missions.base?.title ?? r.missions.title} team={!!r.missions.team_id} />
                       <span className="min-w-0 flex-1 truncate">{missionTitle(r.missions.title, lang)}</span>
                       <span className="type-small shrink-0">
-                        <StatusBadge run={r} />
+                        <StatusBadge run={r} secondTry={!!r.first_attempt} />
                       </span>
                     </a>
                   </li>
@@ -817,7 +841,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                 <div className="flex min-w-0 flex-col">
                   <div className="type-small flex flex-wrap items-center gap-x-3 gap-y-1">
                     <span className="text-ink-2 tnum">Mission {i + 1}</span>
-                    <StatusBadge run={r} />
+                    <StatusBadge run={r} secondTry={!!r.first_attempt} />
                   </div>
                   <h3 className="type-h3 mt-2 flex items-start gap-2.5">
                     <MissionIcon title={r.missions.base?.title ?? r.missions.title} team={!!r.missions.team_id} className="mt-[0.15em] h-[0.9em] w-[0.9em]" />
