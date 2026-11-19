@@ -38,12 +38,15 @@ export function SkSpace({
   intro,
   parent,
   logo,
+  long,
   children,
 }: {
   narrow?: boolean;
   action?: boolean;
-  /** "chips": a row of Chips (26px); "line": one line of text. Left out when the page has no intro. */
-  intro?: "chips" | "line";
+  /** "chips": a row of Chips (26px), or the widths of each chip; "line": one line of text. Left out when the page has no intro. */
+  intro?: "chips" | "line" | string[];
+  /** A sentence-long title (the space's home): two lines on phones, like the real one. */
+  long?: boolean;
   /** Child pages (a site, Favoris, Corbeille): the back link above the title. */
   parent?: boolean;
   /** Site page: the site's 48px logo beside the title. */
@@ -61,11 +64,18 @@ export function SkSpace({
               <Bone className="h-12 w-12 shrink-0 rounded-[12px]" />
               <Line w="min(18rem, 70%)" />
             </span>
+          ) : long ? (
+            <>
+              <Line w="min(30rem, 100%)" />
+              <span className="min-[735px]:hidden">
+                <Line w="60%" />
+              </span>
+            </>
           ) : (
             <Line w="min(24rem, 85%)" />
           )
         }
-        intro={intro === "chips" ? <SkChips /> : intro === "line" ? <Line w="min(36rem, 100%)" /> : undefined}
+        intro={Array.isArray(intro) ? <SkChips w={intro} /> : intro === "chips" ? <SkChips /> : intro === "line" ? <Line w="min(36rem, 100%)" /> : undefined}
         actions={action ? <Bone className="h-12 w-44 rounded-full" /> : undefined}
       >
         {children}
@@ -75,11 +85,11 @@ export function SkSpace({
 }
 
 // Same height as lib/ui Chips (26px pills).
-function SkChips() {
+function SkChips({ w = ["5.5rem", "7rem", "6rem"] }: { w?: string[] }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {["5.5rem", "7rem", "6rem"].map((w) => (
-        <Bone key={w} className="h-[26px] rounded-full" w={w} />
+      {w.map((w, i) => (
+        <Bone key={i} className="h-[26px] rounded-full" w={w} />
       ))}
     </div>
   );
@@ -185,10 +195,12 @@ export function SkHeader({ eyebrow = true, intro = 2 }: { eyebrow?: boolean; int
 export function SkBoard({ rows = 8 }: { rows?: number }) {
   return (
     <>
-      <p className="type-small mt-8">
-        <Line w="18rem" />
-      </p>
-      <div className="mt-4 overflow-hidden rounded-[18px] bg-tile">
+      {/* Leaderboard's device switch (42px) and date chip. */}
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+        <Bone className="h-[42px] w-[246px] rounded-[10px]" />
+        <Bone className="h-[26px] w-64 max-w-full rounded-full" />
+      </div>
+      <div className="mt-6 overflow-hidden rounded-[18px] bg-tile">
         <div className="hidden h-[41px] border-b border-hairline md:block" />
         {Array.from({ length: rows }, (_, i) => (
           <div key={i} className="grid min-h-[86px] grid-cols-[1.75rem_1fr_auto] items-center gap-x-4 border-b border-hairline px-6 py-5 last:border-0 max-[734px]:px-5 md:grid-cols-[1.75rem_minmax(0,1fr)_8rem_5rem]">
