@@ -233,24 +233,31 @@ export function SectionIcon() {
   );
 }
 
-// Narrow screens: the four sections as one segmented control.
+// Narrow screens: the five sections as one segmented control.
 function MobileNav({ t }: { t: Dict["space"] }) {
   const path = usePathname();
   return (
     <nav aria-label={t.label} className="min-w-0 flex-1">
       <div className="flex w-full gap-1 rounded-[10px] bg-fill p-[3px]">
-        {NAV.flat().map(([href]) => (
-          <Link
-            key={href}
-            href={href}
-            aria-current={isOn(path, href) ? "page" : undefined}
-            className={`flex h-[38px] min-w-0 flex-auto items-center justify-center whitespace-nowrap rounded-[8px] px-2 type-small font-semibold transition-colors ${
-              isOn(path, href) ? "bg-tile text-ink shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#3a3a3c]" : "text-ink-2"
-            }`}
-          >
-            {t.sections[href]}
-          </Link>
-        ))}
+        {/* Five sections do not fit as words at 390 px: on phones the open one shows its name, the others their icon. */}
+        {NAV.flat().map(([href, icon]) => {
+          const on = isOn(path, href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              aria-current={on ? "page" : undefined}
+              aria-label={t.sections[href]}
+              title={t.sections[href]}
+              className={`flex h-[38px] min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-[8px] px-2 type-small font-semibold transition-colors sm:flex-auto ${on ? "flex-auto" : "max-sm:w-10 max-sm:shrink-0 max-sm:px-0"} ${
+                on ? "bg-tile text-ink shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#3a3a3c]" : "text-ink-2"
+              }`}
+            >
+              {glyph(icon, `h-[17px] w-[17px] shrink-0 ${on ? "text-blue" : ""} sm:hidden`)}
+              <span className={on ? "truncate" : "max-sm:sr-only"}>{t.sections[href]}</span>
+            </Link>
+          );
+        })}
       </div>
     </nav>
   );
