@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     if (form.get("accept") !== "1") return back(req, { erreur: "accord", next, email });
     const since = new Date(Date.now() - 15 * 60_000).toISOString();
     const { count } = await db.from("login_tokens").select("token_hash", { count: "exact", head: true }).eq("email", email).gte("created_at", since);
-    if ((count ?? 0) >= 3) return back(req, { erreur: "trop", next });
+    if ((count ?? 0) >= 3) return back(req, { erreur: "trop", next, email });
     const token = newToken();
     await db.from("login_tokens").insert({ token_hash: hashToken(token), email, next });
     // Proof of consent, on the account when it exists (a new account gets it at verify). Ignored until the 20261119 migration is applied.
@@ -40,8 +40,8 @@ export async function POST(req: Request) {
     );
     // Local dev without a mail sender: log in straight away.
     if (!sent && process.env.NODE_ENV !== "production") return go(req, `/connexion?token=${token}`);
-    if (!sent) return back(req, { erreur: "envoi", next });
-    return back(req, { envoye: email });
+    if (!sent) return back(req, { erreur: "envoi", next, email });
+    return back(req, { envoye: email, next });
   }
 
   if (action === "verify") {
@@ -53,7 +53,12 @@ export async function POST(req: Request) {
       .gt("expires_at", new Date().toISOString())
       .select("email, next")
       .maybeSingle();
-    if (!tok) return back(req, { erreur: "lien" });
+    if (!tok) {
+      // Expired or already used: keep the address and where it was going (the home form's site, device…), so a new
+      // link picks up the same launch instead of starting over. Read only: the token stays unusable.
+      const { data: old } = await db.from("login_tokens").select("email, next").eq("token_hash", hashToken(String(form.get("token") ?? ""))).maybeSingle();
+      return back(req, { erreur: "lien", ...(old ? { email: old.email, next: safeNext(old.next) } : {}) });
+    }
     await db.from("users").upsert({ email: tok.email }, { onConflict: "email", ignoreDuplicates: true });
     // The sign-in form requires the consent box: record it on new accounts too. Ignored until the 20261119 migration is applied.
     await db.from("users").update({ terms_accepted_at: new Date().toISOString() }).eq("email", tok.email).is("terms_accepted_at", null).then(() => null, () => null);

@@ -67,6 +67,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                 <span>{t.footer.credits}</span>
                 <Link href="/methode" className="hover:text-ink hover:underline">{t.footer.method}</Link>
                 <Link href="/faq" className="hover:text-ink hover:underline">{lang === "en" ? "Help" : "Aide"}</Link>
+                {/* A plain link, no embed: nothing from Instagram loads until the visitor clicks. */}
+                <a href="https://www.instagram.com/unstock.ai/" target="_blank" rel="noopener noreferrer" className="hover:text-ink hover:underline">
+                  Instagram — Unstock<span className="sr-only">{lang === "en" ? " (opens in a new tab)" : " (nouvel onglet)"}</span>
+                </a>
                 <LangSwitch lang={lang} />
               </div>
             </div>
