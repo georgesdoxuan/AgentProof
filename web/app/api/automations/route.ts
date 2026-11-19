@@ -3,7 +3,8 @@ import { db, normalizeUrl } from "@/lib/engine";
 import { INTERVALS, SCORE_DROPS, checkAutomation, postWebhook, webhookOk } from "@/lib/automations";
 import { msg } from "@/lib/lang";
 
-const go = (req: Request) => Response.redirect(new URL("/espace/reglages/automations", req.url), 303);
+// Back to Automations, or to Abonnement et crédits when the form came from there (per-site cap).
+const go = (req: Request, back?: string) => Response.redirect(new URL(back === "abonnement" ? "/espace/reglages/abonnement" : "/espace/reglages/automations", req.url), 303);
 const fail = (msg: string, status = 400) => new Response(msg, { status, headers: { "Content-Type": "text/plain; charset=utf-8" } });
 const MAX_PER_TEAM = 20;
 export const maxDuration = 60;
@@ -47,6 +48,14 @@ export async function POST(req: Request) {
         const ok = await postWebhook(url, { event: "test", domain: "agentproof", text: "message de test : les alertes arriveront ici.", link: "" }).catch(() => false);
         if (!ok) return fail(await msg("Webhook enregistré, mais le message de test a été refusé. Vérifie l'URL.", "Webhook saved, but the test message was refused. Check the URL."));
       }
+    } else if (action === "site_cap") {
+      // Monthly credit cap per site for automatic audits. Empty = no cap.
+      const raw = String(form.get("site_credit_cap") ?? "").trim();
+      const cap = raw === "" ? null : Number(raw);
+      if (cap !== null && (!Number.isInteger(cap) || cap < 1 || cap > 10000)) return fail(await msg("Le plafond est un nombre entier de crédits, de 1 à 10 000, ou vide pour aucun plafond.", "The cap is a whole number of credits, 1 to 10,000, or empty for no cap."));
+      const { error } = await db.from("teams").update({ site_credit_cap: cap }).eq("id", teamId);
+      if (error) throw error;
+      return go(req, "abonnement");
     } else if (action === "delete") {
       await db.from("automations").delete().eq("id", id).eq("team_id", teamId);
     } else if (action === "check") {

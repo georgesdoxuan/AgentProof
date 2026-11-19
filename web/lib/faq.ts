@@ -372,6 +372,17 @@ export const FAQ: Faq[] = [
     keys: "resilier annuler arreter changer offre abonnement upgrade cancel change plan stop subscription",
   },
   {
+    id: "plafond-site",
+    cat: "credits",
+    q: { fr: "Puis-je limiter les crédits dépensés sur un site ?", en: "Can I limit the credits spent on one site?" },
+    a: {
+      fr: "Oui : fixe un plafond de crédits par site et par mois dans Abonnement et crédits. Au-delà, les audits automatiques sur ce site s'arrêtent jusqu'au 1er du mois ; un audit lancé à la main passe toujours.",
+      en: "Yes: set a monthly credit cap per site in Plan and credits. Past it, automatic audits on that site stop until the 1st of the month; an audit launched by hand always goes through.",
+    },
+    link: { href: "/espace/reglages/abonnement", fr: "Abonnement et crédits", en: "Plan and credits" },
+    keys: "plafond limite budget maximum site credits depense automatique cap limit budget spending",
+  },
+  {
     id: "remboursement",
     cat: "credits",
     q: { fr: "Puis-je être remboursé ?", en: "Can I get a refund?" },

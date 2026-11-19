@@ -1,6 +1,7 @@
 import "server-only";
 import { createAudit, db, normalizeUrl } from "./engine";
 import { sendAlert } from "./optout";
+import { autoAuditAllowed } from "./credits";
 
 // Daily watch of a team's pages, without AI: fetch the HTML, keep what matters to a shopping agent
 // (title, third-party scripts, forms, buttons, fields, iframes), and compare with yesterday's list.
@@ -138,12 +139,14 @@ export async function checkAutomation(a: Automation) {
   const email = a.users?.email;
   // At most one automatic audit a day per page: a page that changes every hour must not spend the whole H budget.
   const auditToday = !!a.last_auto_audit_at && Date.now() - new Date(a.last_auto_audit_at).getTime() < DAY;
+  // The team's per-site monthly cap holds automatic audits back (teams.site_credit_cap).
+  const capped = a.mode === "audit" && !auditToday ? await autoAuditAllowed(a.team_id, normalizeUrl(a.url).domain, MISSIONS) : { ok: true as const };
   const auditId =
-    a.mode === "audit" && !auditToday
+    a.mode === "audit" && !auditToday && capped.ok
       ? await createAudit(a.url, { missions: MISSIONS, teamId: a.team_id, createdBy: a.created_by ?? undefined, email, auto: true }).catch(() => null)
       : null;
   await db.from("automations").update({ signature: sig, ...(auditId ? { last_auto_audit_at: new Date().toISOString() } : {}) }).eq("id", a.id);
-  const note = a.mode === "audit" && auditToday ? " (audit déjà relancé aujourd'hui)" : "";
+  const note = a.mode === "audit" && auditToday ? " (audit déjà relancé aujourd'hui)" : !capped.ok ? ` (audit non relancé, ${capped.note})` : "";
   // Same change already announced in the last 24 h (a page flipping back and forth, an A/B test): log it, alert once.
   const { data: last } = await db
     .from("automation_checks")
@@ -220,6 +223,12 @@ export async function runMonthlyAudits(log: string[]) {
     // Tracked competitor: the one this team last compared the site with is audited again, so the monthly report
     // says where the site stands against it now, not on the day of the first audit.
     const rival = await lastCompetitor(a.team_id, a.url).catch(() => null);
+    const capped = await autoAuditAllowed(a.team_id, normalizeUrl(a.url).domain, MISSIONS * (rival ? 2 : 1));
+    if (!capped.ok) {
+      await db.from("automation_checks").insert({ automation_id: a.id, status: "monthly", detail: `Audit mensuel non lancé : ${capped.note}.` });
+      log.push(`automation ${a.id}: monthly audit held back by the site cap`);
+      continue;
+    }
     const compareTo = rival ? await createAudit(rival, { missions: MISSIONS, teamId: a.team_id, createdBy: a.created_by ?? undefined, auto: true }).catch(() => undefined) : undefined;
     const auditId = await createAudit(a.url, { missions: MISSIONS, compareTo, teamId: a.team_id, createdBy: a.created_by ?? undefined, email: a.users?.email, auto: true }).catch(() => null);
     await db.from("automation_checks").insert({ automation_id: a.id, status: "monthly", detail: auditId ? (compareTo ? `Audit mensuel lancé, avec ${new URL(rival!).hostname}.` : "Audit mensuel lancé.") : "Audit mensuel impossible à lancer.", audit_id: auditId });
