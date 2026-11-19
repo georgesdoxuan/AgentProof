@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { accountColor } from "@/lib/avatar";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LANG_NAME, type Dict, type Lang } from "@/lib/i18n";
@@ -64,6 +65,17 @@ export function Sections({ t }: { t: Dict["sections"] }) {
 // A client-side link leaves the layout (and this popover) mounted: close it by hand.
 const hide = (e: React.MouseEvent<HTMLElement>) => (e.currentTarget.closest("[popover]") as HTMLElement | null)?.hidePopover();
 
+// "?" in the header, signed in or not: the help centre with its search. Same thin stroke as the sidebar icons.
+function Help({ label, path }: { label: string; path: string }) {
+  return (
+    <Link href="/faq" aria-label={label} title={label} aria-current={path === "/faq" ? "page" : undefined} className="grid h-11 w-9 shrink-0 place-items-center text-ink/80 transition-colors hover:text-ink aria-[current=page]:text-ink-2">
+      <svg viewBox="0 0 24 24" className="h-[21px] w-[21px]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM9.6 9.4a2.5 2.5 0 0 1 4.9.7c0 1.7-2.5 2.2-2.5 3.9M12 17.3h.01" />
+      </svg>
+    </Link>
+  );
+}
+
 // apple.com local nav. Signed out: the public pages and one blue pill. Signed in: the space and an account menu,
 // so the app keeps a single primary action ("Lancer un audit") and Classement lives in the space's sidebar.
 export function Nav({ email, t }: { email: string | null; t: Dict["nav"] }) {
@@ -75,6 +87,7 @@ export function Nav({ email, t }: { email: string | null; t: Dict["nav"] }) {
         {path !== "/" && <Link href="/classement" aria-current={path === "/classement" ? "page" : undefined} className={link}>
           {t.ranking}
         </Link>}
+        <Help label={t.help} path={path} />
         <Link href="/connexion" className={link}>
           {t.signIn}
         </Link>
@@ -89,8 +102,9 @@ export function Nav({ email, t }: { email: string | null; t: Dict["nav"] }) {
         <span className="max-[480px]:hidden">{t.mySpace}</span>
         <span className="min-[481px]:hidden">{t.space}</span>
       </Link>
+      <Help label={t.help} path={path} />
       <button type="button" popoverTarget="compte-menu" aria-label={`${t.account} : ${email}`} className="-mr-2 grid h-11 w-11 place-items-center rounded-full">
-        <span className="grid h-7 w-7 place-items-center rounded-full bg-ink font-semibold text-bg" aria-hidden>
+        <span className="grid h-7 w-7 place-items-center rounded-full font-semibold text-white" style={{ background: accountColor(email) }} aria-hidden>
           {email[0].toUpperCase()}
         </span>
       </button>

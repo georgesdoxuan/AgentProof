@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { cardSecret, type CardSecret } from "./cards";
 
 // ---------- clients ----------
@@ -153,7 +154,7 @@ export function normalizeUrl(input: string) {
   return { url: `${u.protocol}//${u.hostname}${u.pathname === "/" ? "" : u.pathname}`, domain: u.hostname.replace(/^www\./, "") };
 }
 
-export async function createAudit(input: string, opts: { device?: "desktop" | "mobile"; missions?: number; compareTo?: string; paymentTest?: string; model?: string; email?: string; ipHash?: string; teamId?: string; createdBy?: string; auto?: boolean; missionIds?: number[] } = {}) {
+export async function createAudit(input: string, opts: { device?: "desktop" | "mobile"; missions?: number; compareTo?: string; paymentTest?: string; model?: string; email?: string; ipHash?: string; teamId?: string; createdBy?: string; auto?: boolean; missionIds?: number[]; proofOf?: string } = {}) {
   const { url, domain } = normalizeUrl(input);
   const { data: created, error: e1 } = await db
     .from("sites")
@@ -163,7 +164,7 @@ export async function createAudit(input: string, opts: { device?: "desktop" | "m
   const site = created?.[0] ?? (await db.from("sites").select().eq("domain", domain).single()).data;
   const { data: audit, error: e2 } = await db
     .from("audits")
-    .insert({ site_id: site.id, device: opts.device ?? "desktop", compare_to: opts.compareTo ?? null, payment_test: opts.paymentTest ?? null, model: opts.model ?? null, email: opts.email ?? null, ip_hash: opts.ipHash ?? null, team_id: opts.teamId ?? null, created_by: opts.createdBy ?? null })
+    .insert({ site_id: site.id, device: opts.device ?? "desktop", compare_to: opts.compareTo ?? null, payment_test: opts.paymentTest ?? null, model: opts.model ?? null, email: opts.email ?? null, ip_hash: opts.ipHash ?? null, team_id: opts.teamId ?? null, created_by: opts.createdBy ?? null, proof_of: opts.proofOf ?? null })
     .select()
     .single();
   if (e2) throw e2;
@@ -191,6 +192,7 @@ export async function recentAudit(input: string, device: string, teamId: string)
     .eq("kind", "checkout")
     .eq("device", device)
     .is("deleted_at", null) // a report in the trash is never handed back
+    .is("proof_of", null) // a proof audit replays 1 to 3 missions: not a full report
     .or(`model.is.null,model.eq.${DEFAULT_MODEL}`)
     .gte("created_at", since)
     .order("created_at", { ascending: false })
@@ -328,6 +330,7 @@ export async function tick(loopMs = LOOP_MS) {
   if (process.env.AUTOMATIONS_PAUSED === "1") log.push("automations paused");
   else {
     await auto.runMonthlyAudits(log).catch((e) => log.push(`monthly audits error: ${e}`));
+    if (room() > 20_000) await auto.runMonthlyReports(log).catch((e) => log.push(`monthly reports error: ${e}`));
     await auto.runDueAutomations(log, room).catch((e) => log.push(`automations error: ${e}`));
   }
   return { log, budgetLeft: budget };
@@ -754,10 +757,10 @@ async function closeAudits(log: string[]) {
 async function scoreAlert(auditId: string) {
   const { data: a } = await db
     .from("audits")
-    .select("id, team_id, site_id, device, model, email, created_at, sites(domain), teams(score_drop), runs(status, success, blocker_type, mission_id)")
+    .select("id, team_id, site_id, device, model, email, created_at, proof_of, sites(domain), teams(score_drop), runs(status, success, blocker_type, mission_id)")
     .eq("id", auditId)
     .single();
-  if (!a?.team_id || !a.runs.length) return;
+  if (!a?.team_id || !a.runs.length || a.proof_of) return; // a proof audit plays a few missions: no score to compare
   const { data: prev } = await db
     .from("audits")
     .select("id, model, runs(status, success, blocker_type, mission_id)")
@@ -768,6 +771,7 @@ async function scoreAlert(auditId: string) {
     .eq("status", "done")
     .is("deleted_at", null)
     .neq("id", a.id)
+    .is("proof_of", null)
     .lt("created_at", a.created_at)
     .order("created_at", { ascending: false })
     .limit(5);
@@ -972,11 +976,16 @@ export async function getReplay(runId: number, live = false, first = false) {
   // Shared trajectories and their screenshots are public: no key, no rate limit.
   // The shared trajectory grows while the session runs: no cache for a live view.
   const t = await (await fetch(shareUrl, live ? { cache: "no-store" } : { next: { revalidate: 3600 } })).json();
+  return { objective: t.objective as string, answer: t.answer, steps: replaySteps((t.events ?? []).map((e: any) => e.data?.event)) };
+}
+
+// Shared trajectory events carry the observation in ev.observation; the private events API puts it on the event itself.
+function replaySteps(events: any[]) {
   const steps: ReplayStep[] = [];
-  for (const e of t.events ?? []) {
-    const ev = e.data?.event;
-    if (ev?.kind === "observation_event" && ev.observation?.image?.source) {
-      steps.push({ url: ev.observation.url, image: ev.observation.image.source, action: null, element: null, x: null, y: null, thought: null });
+  for (const ev of events) {
+    const obs = ev?.observation ?? ev;
+    if (ev?.kind === "observation_event" && obs?.image?.source) {
+      steps.push({ url: obs.url ?? obs.metadata?.url ?? "", image: obs.image.source, action: null, element: null, x: null, y: null, thought: null });
     } else if (ev?.kind === "policy_event" && steps.length) {
       const last = steps[steps.length - 1];
       const req = ev.tool_reqs?.[0];
@@ -987,7 +996,70 @@ export async function getReplay(runId: number, live = false, first = false) {
       last.thought = ev.message?.reasoning_content?.trim() || ev.message?.content?.trim() || null;
     }
   }
-  return { objective: t.objective as string, answer: t.answer, steps };
+  return steps;
+}
+
+// ---------- payment replay: private, never a public share link ----------
+// A payment trajectory holds the team's card (in the instructions, typed text and screenshots). It is read with our key,
+// card details are masked in every text, and screenshots go through /api/replay-shot, which checks the viewer again.
+const SHOT_SECRET = () => process.env.CARD_KEY || process.env.HAI_API_KEY || "";
+const shotSig = (runId: number, src: string) => createHmac("sha256", SHOT_SECRET()).update(`${runId}:${src}`).digest("base64url");
+export const shotUrl = (runId: number, src: string) => `/api/replay-shot?run=${runId}&src=${encodeURIComponent(src)}&sig=${shotSig(runId, src)}`;
+export function shotOk(runId: number, src: string, sig: string) {
+  const a = Buffer.from(shotSig(runId, src));
+  const b = Buffer.from(sig);
+  return !!SHOT_SECRET() && a.length === b.length && timingSafeEqual(a, b);
+}
+// Screenshots behind a signed link only come from H.
+export async function fetchShot(src: string) {
+  if (!src.startsWith("/") && new URL(src).origin !== new URL(H).origin) throw new Error("source refusée");
+  return h(src);
+}
+
+// Every way the card can show up in text: full number (with or without spaces), expiry, CVC, plus any long digit run.
+function cardMask(c: CardSecret | null) {
+  const pats: RegExp[] = [];
+  if (c) {
+    const digits = c.number.replace(/\D/g, "");
+    if (digits.length >= 12) pats.push(new RegExp(digits.split("").join("[\\s-]?"), "g"));
+    const [mm, yy] = c.expiry.split(/\D+/).filter(Boolean);
+    if (mm && yy) pats.push(new RegExp(`\\b${mm}\\s*[/-]?\\s*(?:20)?${yy.slice(-2)}\\b`, "g"));
+    if (/^\d{3,4}$/.test(c.cvc)) pats.push(new RegExp(`\\b${c.cvc}\\b`, "g"));
+  }
+  pats.push(/\d(?:[\s-]?\d){11,18}/g);
+  return (s: string | null) => (s ? pats.reduce((t, p) => t.replace(p, "•••"), s) : s);
+}
+
+// Events of a session, oldest first, page by page (a payment run can take 80 steps).
+async function sessionEvents(sessionId: string) {
+  const all: any[] = [];
+  for (let page = 1; page <= 10; page++) {
+    const res = await (await h(`/sessions/${sessionId}/events?sort=timestamp&size=200&page=${page}`)).json();
+    const items: any[] = res.items ?? [];
+    all.push(...items);
+    if (items.length < 200 || (res.pages && page >= res.pages)) break;
+  }
+  return all;
+}
+
+export async function getPaymentReplay(runId: number) {
+  const { data: run } = await db.from("runs").select("id, session_id, with_login, missions(slug), audits(team_id)").eq("id", runId).single();
+  if (!run || !isPayment(run) || !run.session_id) return null;
+  const card = await cardSecret((run as any).audits?.team_id ?? null).catch(() => null);
+  const mask = cardMask(card);
+  const items = await sessionEvents(run.session_id as string);
+  const steps = replaySteps(items.filter((e) => e.type === "AgentEvent").map((e) => e.data)).map((s) => ({
+    ...s,
+    image: shotUrl(runId, s.image),
+    element: mask(s.element),
+    thought: mask(s.thought),
+  }));
+  const objective =
+    "Mission : achète un article et paie par carte (une seule tentative).\n" +
+    (run.with_login ? "Connexion avec le compte de test enregistré si le site le demande. Ne crée jamais de compte.\n" : "") +
+    (card ? `Carte de test : •••• ${card.last4}, titulaire ${card.holder}. Numéro, expiration et CVC masqués.\n\n` : "\n") +
+    PAYMENT_INSTRUCTIONS;
+  return { objective, answer: null, steps };
 }
 
 // ---------- share link (1 H request, once per run) ----------

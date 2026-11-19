@@ -2,7 +2,10 @@ import { staffUser, teamContext } from "@/lib/auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { DEFAULT_MODEL, EXCLUDED, db, paymentStages, paymentVerdicts } from "@/lib/engine";
+import { DEFAULT_MODEL, EXCLUDED, db, paymentStages, paymentVerdicts, scoreOf } from "@/lib/engine";
+import { byRank } from "@/app/classement/board";
+import { rankText } from "@/app/espace/parts";
+import { reportSuffix } from "@/lib/space";
 import { locale, missionTitle, staticText, tr, type Lang, type T } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 import { BlockerIcon, BrowserFrame, Chip, Chips, MissionIcon, Chevron, Note, DeviceTag, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, hurdles, summarize } from "@/lib/ui";
@@ -233,6 +236,32 @@ function SectionHead({ title, intro, aside }: { title: string; intro?: React.Rea
   );
 }
 
+// Where the site stands over time: its public rank on this device, and the score of the same team's previous audit.
+// A subscriber's question each month is "better or worse than last time, and against whom".
+async function trendOf(audit: any) {
+  const [{ data: board }, prevQ] = await Promise.all([
+    db.from("site_scores").select("domain, name, score, runs_scored").eq("device", audit.device),
+    (audit.team_id ? db.from("audits").select("id, created_at, runs(status, success, blocker_type)").eq("team_id", audit.team_id) : db.from("audits").select("id, created_at, runs(status, success, blocker_type)").is("team_id", null))
+      .eq("site_id", audit.site_id)
+      .eq("device", audit.device)
+      .eq("kind", "checkout")
+      .eq("status", "done")
+      .is("deleted_at", null)
+      .is("proof_of", null)
+      .or(`model.is.null,model.eq.${DEFAULT_MODEL}`)
+      .lt("created_at", audit.created_at)
+      .order("created_at", { ascending: false })
+      .limit(5),
+  ]);
+  const ranked = (board ?? []).sort(byRank);
+  const pos = ranked.findIndex((b) => b.domain === audit.sites.domain);
+  const prev = (prevQ.data ?? []).map((a: any) => ({ id: a.id as string, at: a.created_at as string, score: scoreOf(a.runs) })).find((a) => a.score != null) ?? null;
+  return { rank: pos >= 0 ? { pos: pos + 1, of: ranked.length } : null, prev };
+}
+
+// The agent writes "unknown" in English when it could not tell: show "?" in both languages.
+const known = (v?: string | null) => (v && !/^unknown$/i.test(v.trim()) ? v : "?");
+
 async function loadAudit(id: string) {
   const { data } = await db.from("audits").select(`*, sites(domain, name, url), runs(${RUN_FIELDS})`).eq("id", id).maybeSingle();
   return data;
@@ -248,21 +277,28 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const audit = await loadAudit(id);
   if (!audit) notFound();
+  // Everything else the report needs, read in parallel (one round trip instead of four).
+  const [ctx, payAudit, competitor, { data: brand }, suffix] = await Promise.all([
+    audit.kind === "payment" || audit.payment_test ? teamContext() : null,
+    audit.payment_test ? loadAudit(audit.payment_test) : null,
+    audit.compare_to ? loadAudit(audit.compare_to) : null,
+    // Agency white label: their name and logo replace AgentProof's on this report.
+    audit.team_id ? db.from("teams").select("brand_name, brand_logo").eq("id", audit.team_id).maybeSingle() : { data: null },
+    // Same name as another report of the team: " (1)", " (2)"…, as in the reports list.
+    reportSuffix(audit),
+  ]);
   // Real payment tests: only the team that ran them, or AgentProof staff.
-  const ctx = audit.kind === "payment" || audit.payment_test ? await teamContext() : null;
   const inTeam = !!audit.team_id && !!ctx?.teams.some((t) => t.id === audit.team_id);
   if (audit.kind === "payment" && !inTeam && !(await staffUser()).isStaff) notFound();
   // One run without account, plus one signed in when the team saved a test account for the site.
-  const pays: any[] = inTeam && audit.payment_test ? [...((await loadAudit(audit.payment_test))?.runs ?? [])].sort((a: any, b: any) => +a.with_login - +b.with_login) : [];
-  const competitor = audit.compare_to ? await loadAudit(audit.compare_to) : null;
-  // Agency white label: their name and logo replace AgentProof's on this report.
-  const { data: brand } = audit.team_id ? await db.from("teams").select("brand_name, brand_logo").eq("id", audit.team_id).maybeSingle() : { data: null };
+  const pays: any[] = inTeam && payAudit ? [...(payAudit.runs ?? [])].sort((a: any, b: any) => +a.with_login - +b.with_login) : [];
   const branded = !!brand?.brand_name;
   const h = await headers();
   const base = process.env.PUBLIC_URL || `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
   const statik = audit.static_check as { items?: { key: string; label: string; tone: "pass" | "warn" | "fail" | "none"; detail: string }[]; agents?: AgentAccess[] | null } | null;
   const protocols = (statik?.items ?? []).filter((it) => ["ucp", "acp", "webmcp"].includes(it.key));
   const alert = audit.score_alert as { from: number; to: number; previous: string } | null;
+  const trend = audit.kind === "checkout" && audit.status === "done" && !audit.proof_of ? await trendOf(audit) : null;
 
   const runs = [...audit.runs].sort((a: any, b: any) => a.missions.position - b.missions.position);
   const s = summarize(runs);
@@ -349,7 +385,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
           </p>
           <h1 className="type-h1 mt-3 flex items-center gap-4 break-words">
             <SiteLogo domain={audit.sites.domain} name={audit.sites.name} size="lg" />
-            <span className="min-w-0">{audit.title || audit.sites.name}</span>
+            <span className="min-w-0">{(audit.title || audit.sites.name) + suffix}</span>
           </h1>
           <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-ink-2">
             <a href={audit.sites.url} className="text-link hover:underline" target="_blank" rel="noreferrer">
@@ -361,6 +397,15 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             </time>
             {!running && !paymentOnly && <PrintButton label={t("Télécharger en PDF", "Download as PDF")} />}
           </p>
+          {audit.proof_of && (
+            <p className="mt-6 rounded-[12px] bg-tile px-4 py-3 type-small">
+              <span className="font-semibold">{t("Audit de preuve", "Proof audit")}</span> :{" "}
+              {t(
+                `l'agent rejoue seulement les missions que « ${blockerLabel(audit.proof_of, lang)} » bloquait, pour vérifier la correction. Si elles passent, la correction est prouvée dans la checklist.`,
+                `the agent replays only the missions that “${blockerLabel(audit.proof_of, lang)}” stopped, to check the fix. If they pass, the fix is marked proven in the checklist.`,
+              )}
+            </p>
+          )}
           {audit.deleted_at && (
             <Note
               icon="trash"
@@ -436,6 +481,23 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                 )}
               </ul>
               <p className="type-small mt-5 border-t border-hairline pt-4 text-ink-2">{scope}</p>
+              {trend && (trend.rank || trend.prev) && s.score != null && (
+                <p className="type-small mt-3 flex flex-wrap gap-x-4 gap-y-1 text-ink-2 tnum">
+                  {trend.prev && (
+                    <Link href={`/audit/${trend.prev.id}`} className="hover:underline">
+                      <span className={`font-semibold ${s.score > trend.prev.score! ? "text-pass" : s.score < trend.prev.score! ? "text-fail" : "text-ink"}`}>
+                        {s.score === trend.prev.score ? t("Stable", "Steady") : `${s.score > trend.prev.score! ? "+" : "−"}${Math.abs(s.score - trend.prev.score!)} pts`}
+                      </span>{" "}
+                      {t("depuis l’audit du", "since the audit of")} {longDate(trend.prev.at, lang)}
+                    </Link>
+                  )}
+                  {trend.rank && (
+                    <Link href={audit.device === "mobile" ? "/classement?appareil=mobile" : "/classement"} className="hover:underline">
+                      <span className="font-semibold text-ink">{rankText(trend.rank, lang)}</span> {t("des sites mode", "of fashion sites")}
+                    </Link>
+                  )}
+                </p>
+              )}
             </div>
           </div>
 
@@ -537,7 +599,8 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
         )}
 
         {pays.map((pay) => (
-          <section key={pay.id} className="tile">
+          // The whole tile opens the replay (private, card masked), like a mission's "Watch the replay".
+          <section key={pay.id} className={`tile ${pay.session_id && pay.status !== "todo" ? "relative transition-colors duration-200 hover:bg-tile/80" : ""}`}>
             <div className="type-small flex flex-wrap items-center gap-x-3 gap-y-1">
               <span className="text-ink-2">
                 {t("Test de paiement réel", "Real payment test")}
@@ -558,19 +621,63 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                 )}
                 <Chips className="mt-3">
                   <Chip icon="lock">3D Secure · {pay.agent_answer?.three_ds_seen ? t("demandé", "requested") : t("non", "no")}</Chip>
-                  <Chip icon="shield">{t("Prestataire", "Provider")} · {pay.agent_answer?.payment_provider || "?"}</Chip>
-                  <Chip icon="payment">{pay.agent_answer?.payment_methods || "?"}</Chip>
+                  <Chip icon="shield">{t("Prestataire", "Provider")} · {known(pay.agent_answer?.payment_provider)}</Chip>
+                  <Chip icon="payment">{known(pay.agent_answer?.payment_methods)}</Chip>
                 </Chips>
                 {pay.judge?.result && pay.judge.result !== pay.payment_verdict && (
                   <p className="type-small mt-2 text-warn">
                     {t("Juge visuel en désaccord", "Visual judge disagrees")} : {PAYMENT_VERDICTS[pay.judge.result] ?? pay.judge.result}. {pay.judge.reason}
                   </p>
                 )}
+                {pay.agent_answer?.steps_summary && (
+                  <details className="type-small group relative z-10 mt-4 text-ink-2">
+                    <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 text-link [&::-webkit-details-marker]:hidden">
+                      <Chevron className="h-2.5 w-2.5 transition-transform duration-200 group-open:rotate-90" />
+                      {t("Compte rendu de l’agent", "The agent's report")}
+                    </summary>
+                    <p className="mt-2">{pay.agent_answer.steps_summary}</p>
+                  </details>
+                )}
+                <div className="mt-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
+                  <dl className="flex gap-6 tnum">
+                    {(
+                      [
+                        [t("Étapes", "Steps"), pay.steps ?? "?"],
+                        [t("Durée", "Duration"), pay.duration_s ? `${Math.round(pay.duration_s)} s` : "?"],
+                        ...(pay.cost_usd != null ? [[t("Coût", "Cost"), usd(Number(pay.cost_usd), 3, lang)]] : []),
+                      ] as [string, string | number][]
+                    ).map(([k, v]) => (
+                      <div key={k}>
+                        <dt className="type-caption text-ink-2">{k}</dt>
+                        <dd className="type-small font-semibold">{v}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                  {pay.session_id && (
+                    <Link href={`/replay/${pay.id}?a=${audit.payment_test}`} className="no-print btn btn-dark min-h-[40px] px-[18px] text-[15px] after:absolute after:inset-0 after:content-['']">
+                      <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="currentColor" aria-hidden>
+                        <path d="M2.5 1.3v9.4L10.6 6z" />
+                      </svg>
+                      {t("Voir le replay", "Watch the replay")}
+                    </Link>
+                  )}
+                </div>
               </>
             ) : (
+              <>
+              {pay.status === "launched" && pay.session_id && (
+                <Link href={`/replay/${pay.id}?a=${audit.payment_test}`} className="no-print btn mt-4 min-h-[40px] gap-2 px-[18px] text-[15px] after:absolute after:inset-0 after:content-['']">
+                  <span className="relative flex h-2 w-2" aria-hidden>
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-70 motion-reduce:hidden" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+                  </span>
+                  {t("Suivre l’agent", "Follow the agent")}
+                </Link>
+              )}
               <Note icon="mobile" className="mt-4">
                 {t("Garde ton téléphone à portée pour valider le 3D Secure.", "Keep your phone at hand to approve 3D Secure.")}
               </Note>
+              </>
             )}
           </section>
         ))}
@@ -787,7 +894,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                   <a href={r.screenshot_url} target="_blank" rel="noreferrer" className="block rounded-[12px]" aria-label={`${t("Ouvrir la capture", "Open the screenshot")} : ${missionTitle(r.missions.title, lang)}`}>
                     <BrowserFrame url={r.final_url}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={r.screenshot_url} alt={`${t("Dernier écran vu par l'agent", "Last screen the agent saw")} : ${missionTitle(r.missions.title, lang)}`} className="block w-full" />
+                      <img src={r.screenshot_url} alt={`${t("Dernier écran vu par l'agent", "Last screen the agent saw")} : ${missionTitle(r.missions.title, lang)}`} className="block w-full" loading="lazy" decoding="async" />
                       {r.status === "done" && r.success !== null && (
                         <Verdict success={!!r.success} label={r.success ? undefined : missionBlocker(r, lang)} className="no-print absolute bottom-3 left-3" />
                       )}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Hint } from "@/lib/hint";
 import { notFound, redirect } from "next/navigation";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { deviceLabel, loadSpace, shortDate } from "@/lib/space";
@@ -40,7 +41,7 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
       title={
         <span className="flex min-w-0 items-center gap-4">
           <SiteLogo domain={site.domain} name={site.domain} size="lg" />
-          <span className="min-w-0 break-words">{site.domain}</span>
+          <span className="min-w-0 break-words">{site.label}</span>
         </span>
       }
       intro={
@@ -146,14 +147,16 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
         {site.blockers.some((b) => b.state === "check") && edit && (
           <div className="tile mt-5 flex flex-wrap items-center justify-between gap-4 p-7!">
             <p className="flex items-center gap-3 font-semibold">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-blue/12 text-link" aria-hidden><Icon name="refresh" className="h-5 w-5" /></span>
-              {t("Corrections à vérifier : relance l’audit.", "Fixes to check: rerun the audit.")}
+              <Icon name="refresh" className="h-5 w-5 shrink-0 text-blue" />
+              <Hint tip={t("« Prouver la correction » rejoue seulement les missions bloquées ; ou relance l’audit complet.", "“Prove the fix” replays only the blocked missions; or rerun the full audit.")}>
+                {t("Corrections à vérifier", "Fixes to check")}
+              </Hint>
             </p>
             <RelaunchForm site={site} />
           </div>
         )}
         {site.verified.length > 0 && (
-          <Group title={t("Corrections vérifiées", "Verified fixes")} footer={t("Marquées corrigées, puis absentes de l'audit suivant.", "Marked fixed, then absent from the next audit.")}>
+          <Group title={t("Corrections prouvées", "Proven fixes")} footer={t("Marquées corrigées, puis absentes de l'audit suivant ou réussies au rejeu de preuve.", "Marked fixed, then absent from the next audit or passed in the proof replay.")}>
             {site.verified.map((v) => (
               <div key={v} className="flex min-h-[56px] items-center gap-3 border-b border-hairline px-5 last:border-0">
                 <BlockerIcon type={v} />
@@ -182,7 +185,7 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             {(
               [
-                [site.domain, s, true, site.domain],
+                [site.label, s, true, site.domain],
                 [c.sites?.domain ?? t("Concurrent", "Competitor"), c.s, false, c.sites?.domain],
               ] as const
             ).map(([name, x, self, domain]) => (

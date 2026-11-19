@@ -4,6 +4,7 @@ import { teamContext } from "@/lib/auth";
 import { LANGS, LANG_NAME } from "@/lib/i18n";
 import { getDict, getLang, getT } from "@/lib/lang";
 import { Avatar, Field, Group, Icon, Row } from "@/lib/ui";
+import { spaceColor } from "@/lib/avatar";
 import { AutoSubmitSelect } from "../espace/controls";
 import { SpaceShell } from "../espace/shell";
 
@@ -43,7 +44,7 @@ export default async function Compte({ searchParams }: { searchParams: Promise<{
       <Group title={a.myTeams}>
         {teams.map((t) => (
           <Row key={t.id}>
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[9px] bg-ink type-small font-semibold text-bg" aria-hidden>
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[9px] type-small font-semibold text-white" style={{ background: spaceColor(t.id) }} aria-hidden>
               {t.name[0]?.toUpperCase()}
             </span>
             <span className="min-w-0 flex-1">

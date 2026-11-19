@@ -14,7 +14,7 @@ const fr = {
   navLabel: "Navigation principale",
   home: "AgentProof, accueil",
   sections: { label: "Sections de la page", pourquoi: "Pourquoi", "ce-que-tu-recois": "Ce que tu reçois", tester: "Tester", classement: "Classement", tarifs: "Tarifs" },
-  nav: { ranking: "Classement", mySpace: "Mon espace", space: "Espace", signIn: "Connexion", test: "Tester", testMySite: "mon site", team: "Équipe", account: "Compte", signOut: "Se déconnecter" },
+  nav: { ranking: "Classement", mySpace: "Mon espace", space: "Espace", signIn: "Connexion", test: "Tester", testMySite: "mon site", team: "Équipe", account: "Compte", signOut: "Se déconnecter", help: "Aide et questions fréquentes" },
   footer: {
     rules: "Audit : arrêt à la première page du checkout, sans paiement, sans donnée personnelle, sans captcha. Test de paiement à part, facultatif, avec la carte de ton équipe uniquement.",
     event: "AgentProof · Hackathon H Company × Hugging Face, novembre 2026.",
@@ -115,7 +115,7 @@ const en: Dict = {
   navLabel: "Main navigation",
   home: "AgentProof, home",
   sections: { label: "Page sections", pourquoi: "Why", "ce-que-tu-recois": "What you get", tester: "Test", classement: "Ranking", tarifs: "Pricing" },
-  nav: { ranking: "Ranking", mySpace: "My space", space: "Space", signIn: "Sign in", test: "Try", testMySite: "my site", team: "Team", account: "Account", signOut: "Sign out" },
+  nav: { ranking: "Ranking", mySpace: "My space", space: "Space", signIn: "Sign in", test: "Try", testMySite: "my site", team: "Team", account: "Account", signOut: "Sign out", help: "Help and FAQ" },
   footer: {
     rules: "Audit: stops at the first checkout page, no payment, no personal data, no captcha. Payment test is separate, optional, and only uses your team's card.",
     event: "AgentProof · H Company × Hugging Face hackathon, November 2026.",

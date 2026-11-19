@@ -78,7 +78,7 @@ export default async function SitesCorbeille() {
                 <div className="flex min-h-[68px] min-w-0 flex-1 items-start gap-3 py-3 pl-5 pr-2">
                   <SiteLogo domain={s.domain} name={s.domain} className="mt-0.5" />
                   <span className="min-w-0">
-                    <span className="block truncate font-semibold">{s.domain}</span>
+                    <span className="block truncate font-semibold">{s.label}</span>
                     <span className="type-small block text-ink-2">
                       <DeviceTag device={s.device} lang={lang} /> · {reportsOf(s.audits.length)} · <span className="inline-flex items-center gap-1 align-[-2px]" title={t("Mis à la corbeille", "Moved to trash")}><Icon name="trash" className="h-3.5 w-3.5" />{date(s.deleted_at)}</span>
                     </span>
@@ -101,8 +101,8 @@ export default async function SitesCorbeille() {
                       <Act action="purge" site={s}>
                         <ConfirmButton
                           message={t(
-                            `Supprimer ${s.domain} définitivement ? Ses ${reportsOf(s.audits.length)}, missions, captures et replays seront effacés. Cette action est irréversible.`,
-                            `Delete ${s.domain} permanently? Its ${reportsOf(s.audits.length)}, missions, screenshots and replays will be erased. This cannot be undone.`,
+                            `Supprimer ${s.label} définitivement ? Ses ${reportsOf(s.audits.length)}, missions, captures et replays seront effacés. Cette action est irréversible.`,
+                            `Delete ${s.label} permanently? Its ${reportsOf(s.audits.length)}, missions, screenshots and replays will be erased. This cannot be undone.`,
                           )}
                           label={t("Supprimer définitivement", "Delete permanently")}
                           className="grid h-9 w-9 place-items-center rounded-full text-fail transition-colors hover:bg-fill focus-visible:outline-2 focus-visible:outline-blue"

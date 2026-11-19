@@ -5,10 +5,12 @@ import { refreshLogo } from "@/lib/logo";
 // Served from Vercel's CDN after the first hit: one request, a few KB, from the edge.
 const CACHE = "public, max-age=86400, s-maxage=31536000, stale-while-revalidate=604800";
 
-export async function GET(_: Request, { params }: { params: Promise<{ domain: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ domain: string }> }) {
   const domain = decodeURIComponent((await params).domain).toLowerCase();
   const url = /^[a-z0-9.-]+$/.test(domain) ? await refreshLogo(domain).catch(() => null) : null;
-  const img = url ? await fetch(url).catch(() => null) : null;
+  // ?theme=dark: the version for dark pages (stored next to it as <domain>.dark.png).
+  const dark = new URL(req.url).searchParams.get("theme") === "dark";
+  const img = url ? await fetch(dark ? url.replace(`/${domain}.png`, `/${domain}.dark.png`) : url).catch(() => null) : null;
   if (!img?.ok) return new Response(null, { status: 404, headers: { "cache-control": "public, max-age=3600, s-maxage=86400" } });
   return new Response(img.body, { headers: { "content-type": "image/png", "cache-control": CACHE } });
 }
