@@ -37,7 +37,7 @@ export const BLOCKERS: Record<string, string> = {
   popup: "Pop-up",
   search_failed: "Recherche inutilisable",
   filter_failed: "Filtres inutilisables",
-  size_selector: "Sélecteur de taille / variante",
+  size_selector: "Sélecteur de variante (taille, couleur…)",
   button_unresponsive: "Bouton qui ne réagit pas",
   captcha_or_bot_block: "Captcha / blocage anti-bot",
   login_required: "Compte obligatoire",
@@ -54,7 +54,7 @@ export const BLOCKERS_EN: Record<string, string> = {
   popup: "Pop-up",
   search_failed: "Unusable search",
   filter_failed: "Unusable filters",
-  size_selector: "Size / variant selector",
+  size_selector: "Variant selector (size, colour…)",
   button_unresponsive: "Unresponsive button",
   captcha_or_bot_block: "Captcha / anti-bot block",
   login_required: "Account required",
@@ -452,13 +452,32 @@ async function sessionRequest(run: { id: number; missions: { instruction: string
   if (run.audits.model) overrides["agent.model"] = run.audits.model;
   return {
     agent: AGENT,
-    messages: `Site à tester : ${url}\nMission : ${run.missions.instruction}${run.missions.team_id ? TEAM_MISSION_NOTE : ""}`,
+    messages: `Site à tester : ${url}\nMission : ${run.missions.team_id ? run.missions.instruction + TEAM_MISSION_NOTE : missionText(run.missions)}`,
     overrides,
     max_steps: MISSION_STEPS,
     max_time_s: 480,
     group_id: `agentproof-${run.id}`,
   };
 }
+
+// AgentProof's default missions, for any site that sells physical products online (clothes, home, beauty, electronics…).
+// They override the text stored in the missions table, which keeps the first, fashion-only wording: slugs, titles,
+// success and score stay the same, so fashion results remain comparable. A step that does not apply (a product
+// without size or colour) is skipped, not failed; only the variant mission needs variants, else mission_not_applicable.
+const OPTION = "s'il propose des options (taille, couleur, contenance, modèle…), choisis-en une disponible ; sinon passe à l'étape suivante";
+const CHECKOUT = "puis va jusqu'à la première page du checkout.";
+export const DEFAULT_MISSIONS: Record<string, string> = {
+  "recherche-pull": `Avec la barre de recherche du site, cherche « pull noir » si le site vend des vêtements, sinon un produit qu'il vend (un mot vu dans son menu). Choisis un article : ${OPTION} (taille M pour un vêtement). Ajoute-le au panier, ${CHECKOUT}`,
+  "menu-jean": `Sans utiliser la recherche, ouvre une catégorie de produits via le menu du site, filtre-la si le site le permet (taille, couleur, prix, marque…), choisis un article : ${OPTION} (taille M de préférence pour un vêtement). Ajoute-le au panier, ${CHECKOUT}`,
+  "filtre-prix": `Trouve un article à moins de 30 € en utilisant le tri ou le filtre de prix du site. ${OPTION[0].toUpperCase() + OPTION.slice(1)}. Ajoute-le au panier, ${CHECKOUT}`,
+  "variante-couleur": `Trouve un produit proposé en plusieurs variantes (couleur, taille, contenance, modèle…) et choisis une autre variante que celle affichée par défaut : une autre couleur si le produit en propose (et une taille disponible, L de préférence, pour un vêtement). Ajoute-le au panier, ${CHECKOUT} Si aucun produit du site ne propose de variante, arrête-toi et signale mission_not_applicable.`,
+  promo: `Trouve la rubrique soldes ou promotions et choisis un article remisé : ${OPTION}. Ajoute-le au panier, ${CHECKOUT}`,
+  "deux-articles": `Ajoute deux articles différents au panier (chez une marque de vêtements, par exemple un haut et un bas). Pour chacun, ${OPTION}. Va ensuite jusqu'à la première page du checkout.`,
+  quantite: `Ajoute un article au panier (${OPTION}), ouvre le panier, passe la quantité à 2, ${CHECKOUT}`,
+  "faute-frappe": `Dans la barre de recherche, cherche « pul noir » (avec la faute de frappe) si le site vend des vêtements, sinon le nom d'un produit qu'il vend avec une lettre en moins. Choisis un article correspondant dans les résultats : ${OPTION}. Ajoute-le au panier, ${CHECKOUT}`,
+  "accueil-tshirt": `Depuis la page d'accueil et sans utiliser la recherche, trouve un produit blanc ou de couleur claire (pour un vêtement : un haut, t-shirt, top ou chemise, taille L de préférence) : ${OPTION}. Ajoute-le au panier, ${CHECKOUT}`,
+};
+export const missionText = (m: { slug: string; instruction: string }) => DEFAULT_MISSIONS[m.slug] ?? m.instruction;
 
 // A mission a team wrote or edited: same agent, same judge, same success rule; the hard rules stay on top.
 const TEAM_MISSION_NOTE =
@@ -536,7 +555,7 @@ async function paymentStart(siteId: number, url: string): Promise<PaymentStart> 
 
 const START_HINT: Record<PaymentStart["how"], string> = {
   checkout: "La page de départ est déjà le checkout avec un article dans le panier : passe directement aux coordonnées, à la livraison et au paiement.",
-  product: "Tu démarres sur une page produit : choisis une taille disponible, ajoute au panier, puis passe commande.",
+  product: "Tu démarres sur une page produit : choisis une option disponible si le produit en propose (taille, couleur…), ajoute au panier, puis passe commande.",
   home: "Prends le premier article disponible, n'importe lequel : le prix n'a aucune importance.",
 };
 

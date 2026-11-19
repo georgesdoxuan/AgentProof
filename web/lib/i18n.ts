@@ -295,10 +295,10 @@ export const locale = (lang: Lang) => (lang === "en" ? "en-GB" : "fr-FR");
 
 // Mission titles live in the database in French; their English names, keyed by the French title.
 const MISSION_EN: Record<string, string> = {
-  "Recherche + taille": "Search + size",
-  "Menu + filtre taille": "Menu + size filter",
+  "Recherche + taille": "Search + variant",
+  "Menu + filtre taille": "Menu + filter",
   "Filtre de prix": "Price filter",
-  "Variante couleur": "Colour variant",
+  "Variante couleur": "Other variant",
   "Article en promo": "Item on sale",
   "Deux articles": "Two items",
   "Quantité dans le panier": "Quantity in the cart",
@@ -307,7 +307,13 @@ const MISSION_EN: Record<string, string> = {
   "Parcours depuis l'accueil": "Journey from the home page",
   "Test de paiement": "Payment test",
 };
-export const missionTitle = (title: string | null | undefined, lang: Lang) => (lang === "en" ? MISSION_EN[title ?? ""] ?? title ?? "" : title ?? "");
+// The first titles said "size" and "colour" (fashion only); every shop now reads a generic name. The stored title stays the key.
+const MISSION_FR: Record<string, string> = {
+  "Recherche + taille": "Recherche + variante",
+  "Menu + filtre taille": "Menu + filtre",
+  "Variante couleur": "Autre variante",
+};
+export const missionTitle = (title: string | null | undefined, lang: Lang) => (lang === "en" ? MISSION_EN : MISSION_FR)[title ?? ""] ?? title ?? "";
 
 // The free static check (lib/automations.ts) stores French sentences; English versions by pattern, for the report page.
 const STATIC_EN: [RegExp, string][] = [

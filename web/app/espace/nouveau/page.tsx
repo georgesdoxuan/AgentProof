@@ -49,8 +49,8 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
     <SpaceShell narrow
       title={t("Lancer un audit", "Run an audit")}
       hint={t(
-        "Un agent IA essaie d'acheter sur ton site, comme un vrai client. Les missions s'arrêtent avant le paiement et ne saisissent aucune donnée personnelle.",
-        "An AI agent tries to buy on your site, like a real customer. Missions stop before payment and enter no personal data.",
+        "Un agent IA essaie d'acheter sur ton site, comme un vrai client : tout site qui vend des produits physiques (mode, maison, beauté, high-tech…). Les missions s'arrêtent avant le paiement et ne saisissent aucune donnée personnelle.",
+        "An AI agent tries to buy on your site, like a real customer: any site that sells physical products (fashion, home, beauty, electronics…). Missions stop before payment and enter no personal data.",
       )}
     >
       {/* Soft limit: past the month's credits the team is told, never blocked (payment is not open yet). */}

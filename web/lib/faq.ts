@@ -41,6 +41,16 @@ export const FAQ: Faq[] = [
     keys: "presentation produit principe fonctionnement concept a quoi sert what is about overview how it works",
   },
   {
+    id: "quels-sites",
+    cat: "start",
+    q: { fr: "Quels sites puis-je tester ?", en: "Which sites can I test?" },
+    a: {
+      fr: "Tout site e-commerce qui vend des produits physiques en ligne : mode, maison, beauté, high-tech, sport… L'agent choisit une taille, une couleur ou une contenance quand le produit en propose, et saute l'étape sinon. Le classement public a commencé par 10 marques mode françaises.",
+      en: "Any e-commerce site that sells physical products online: fashion, home, beauty, electronics, sport… The agent picks a size, colour or capacity when the product offers one, and skips the step otherwise. The public ranking started with 10 French fashion brands.",
+    },
+    keys: "secteur type boutique site compatible mode vetement deco maison beaute cosmetique electromenager high tech produit physique sector shop store compatible fashion home beauty electronics physical products",
+  },
+  {
     id: "tester-mon-site",
     cat: "start",
     q: { fr: "Comment tester mon site ?", en: "How do I test my site?" },
@@ -101,10 +111,10 @@ export const FAQ: Faq[] = [
     cat: "audits",
     q: { fr: "Quelles missions l'agent joue-t-il ?", en: "Which missions does the agent play?" },
     a: {
-      fr: "Des achats réalistes : recherche et taille, navigation par le menu, filtre de prix, variante de couleur, article en promotion. Elles restent neutres sur le type de produit, pour ne jamais demander un article que le site ne vend pas.",
-      en: "Realistic purchases: search and size, browsing through the menu, price filter, colour variant, item on sale. They stay neutral on the product type, so they never ask for an item the site does not sell.",
+      fr: "Des achats réalistes : recherche, navigation par le menu, filtre de prix, choix d'une variante (taille, couleur, contenance…), article en promotion. Elles restent neutres sur le type de produit, pour ne jamais demander un article que le site ne vend pas.",
+      en: "Realistic purchases: search, browsing through the menu, price filter, picking a variant (size, colour, capacity…), item on sale. They stay neutral on the product type, so they never ask for an item the site does not sell.",
     },
-    keys: "scenario parcours taches consigne recherche filtre taille couleur promo tasks journey scenarios",
+    keys: "scenario parcours taches consigne recherche filtre taille couleur variante contenance promo tasks journey scenarios variant",
   },
   {
     id: "missions-perso",
@@ -206,8 +216,8 @@ export const FAQ: Faq[] = [
     cat: "audits",
     q: { fr: "Que vérifie l'audit ?", en: "What does the audit check?" },
     a: {
-      fr: "Qu'un agent IA peut acheter chez toi comme un client : sur chaque mission (recherche et taille, menu, filtre de prix, variante, promotion), il doit atteindre la première page du checkout. Il ne paie pas, ne crée pas de compte et ne saisit aucune donnée personnelle. L'audit ne mesure ni la vitesse ni le référencement, et le paiement se teste à part, seulement si ton équipe le lance.",
-      en: "That an AI agent can buy from you like a customer: on each mission (search and size, menu, price filter, variant, sale item), it must reach the first checkout page. It does not pay, creates no account and enters no personal data. The audit does not measure speed or SEO, and payment is tested separately, only if your team runs it.",
+      fr: "Qu'un agent IA peut acheter chez toi comme un client : sur chaque mission (recherche, menu, filtre de prix, variante, promotion), il doit atteindre la première page du checkout. Il ne paie pas, ne crée pas de compte et ne saisit aucune donnée personnelle. L'audit ne mesure ni la vitesse ni le référencement, et le paiement se teste à part, seulement si ton équipe le lance.",
+      en: "That an AI agent can buy from you like a customer: on each mission (search, menu, price filter, variant, sale item), it must reach the first checkout page. It does not pay, creates no account and enters no personal data. The audit does not measure speed or SEO, and payment is tested separately, only if your team runs it.",
     },
     link: { href: "/methode", fr: "Méthode", en: "Method" },
     keys: "verifie teste controle mesure perimetre portee checks tests measures scope covers",
@@ -247,8 +257,8 @@ export const FAQ: Faq[] = [
     cat: "score",
     q: { fr: "Comment savoir quoi corriger ?", en: "How do I know what to fix?" },
     a: {
-      fr: "Le rapport classe les blocages par impact (bandeau cookies, pop-up, sélecteur de taille…), avec la capture du moment où l'agent abandonne et une correction proposée.",
-      en: "The report ranks blockers by impact (cookie banner, pop-up, size selector…), with a screenshot of the moment the agent gives up and a suggested fix.",
+      fr: "Le rapport classe les blocages par impact (bandeau cookies, pop-up, sélecteur de taille ou de couleur…), avec la capture du moment où l'agent abandonne et une correction proposée.",
+      en: "The report ranks blockers by impact (cookie banner, pop-up, size or colour picker…), with a screenshot of the moment the agent gives up and a suggested fix.",
     },
     keys: "corrections recommandations blocage probleme bug ameliorer plan conseils fix issues blockers improve recommendations",
   },

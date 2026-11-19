@@ -64,8 +64,8 @@ export default async function Home() {
           <h1 className="type-hero ap-fade">{t("Vérifie qu’un agent IA peut acheter sur ta boutique.", "Check that an AI agent can buy from your store.")}</h1>
           <p className="type-subhead ap-fade mx-auto mt-5 max-w-[640px] text-ink-2 [animation-delay:0.2s]">
             {t(
-              "Cookies, pop-up, sélecteur de taille : on te montre où il bloque, captures à l’appui, et quoi corriger. Gratuit, aucun achat réel.",
-              "Cookies, pop-ups, size selector: we show you where it gets stuck, with screenshots, and what to fix. Free, no real purchase.",
+              "Cookies, pop-up, choix de taille ou de couleur : on te montre où il bloque, captures à l’appui, et quoi corriger. Gratuit, aucun achat réel.",
+              "Cookies, pop-ups, size or colour picker: we show you where it gets stuck, with screenshots, and what to fix. Free, no real purchase.",
             )}
           </p>
           <div className="ap-fade mt-8 flex flex-wrap items-center justify-center gap-x-[17px] gap-y-2 [animation-delay:0.4s]">
@@ -118,12 +118,12 @@ export default async function Home() {
             {t(
               <>
                 Demain, des agents IA feront les courses à la place de tes clients.{" "}
-                <span className="text-ink">Un bandeau cookies, une pop-up ou un sélecteur de taille suffit à les arrêter.</span> Ils achètent alors ailleurs. Et{" "}
+                <span className="text-ink">Un bandeau cookies, une pop-up ou un sélecteur d’options suffit à les arrêter.</span> Ils achètent alors ailleurs. Et{" "}
                 <span className="text-ink">63 % des responsables e-commerce</span> pensent que leur tunnel d&apos;achat ne passerait pas le test.
               </>,
               <>
                 Tomorrow, AI agents will shop on behalf of your customers.{" "}
-                <span className="text-ink">A cookie banner, a pop-up or a size selector is enough to stop them.</span> Then they buy elsewhere. And{" "}
+                <span className="text-ink">A cookie banner, a pop-up or an option picker is enough to stop them.</span> Then they buy elsewhere. And{" "}
                 <span className="text-ink">63 % of e-commerce managers</span> think their checkout funnel would not pass the test.
               </>,
             )}
@@ -149,8 +149,8 @@ export default async function Home() {
                 <h3 className="type-h2 mt-3">{t("Cinq parcours d’achat testés, sans paiement.", "Five purchase journeys tested, no payment.")}</h3>
                 <p className="mt-4 max-w-[440px] text-ink-2">
                   {t(
-                    "L’agent cherche, filtre, choisit une taille et remplit le panier, comme un client. Il s’arrête à la première page du checkout.",
-                    "The agent searches, filters, picks a size and fills the cart, like a customer. It stops at the first checkout page.",
+                    "L’agent cherche, filtre, choisit une variante (taille, couleur, contenance…) et remplit le panier, comme un client. Il s’arrête à la première page du checkout.",
+                    "The agent searches, filters, picks a variant (size, colour, capacity…) and fills the cart, like a customer. It stops at the first checkout page.",
                   )}
                 </p>
               </div>
@@ -558,9 +558,9 @@ function Team({ t }: { t: T }) {
 function MissionsVisual({ t }: { t: T }) {
   const MISSIONS: [string, boolean, string?][] = [
     [t("Recherche « pull noir », taille M", "Search “black sweater”, size M"), true],
-    [t("Menu, puis filtre de taille", "Menu, then size filter"), true],
+    [t("Menu, puis filtre", "Menu, then filter"), true],
     [t("Filtre de prix, moins de 60 €", "Price filter, under €60"), false, "Pop-up"],
-    [t("Variante couleur", "Colour variant"), true],
+    [t("Autre variante", "Other variant"), true],
     [t("Article en promotion", "Item on sale"), true],
   ];
   return (
@@ -588,7 +588,7 @@ function MissionsVisual({ t }: { t: T }) {
 function FixesVisual({ t }: { t: T }) {
   const rows: [string, number, string][] = [
     [t("Bandeau cookies", "Cookie banner"), 3, t("Le bouton « Tout accepter » doit rester visible sans défiler.", "The “Accept all” button must stay visible without scrolling.")],
-    [t("Sélecteur de taille", "Size selector"), 2, t("Les tailles doivent être des boutons, pas des images.", "Sizes must be buttons, not images.")],
+    [t("Sélecteur de variante", "Variant selector"), 2, t("Les tailles et couleurs doivent être des boutons, pas des images.", "Sizes and colours must be buttons, not images.")],
   ];
   return (
     <div className="mt-8 space-y-3" aria-hidden>
@@ -688,13 +688,13 @@ function ProductMock({ t }: { t: T }) {
 type Plan = { icon: string; name: string; price: string; per?: string; pitch: string; items: string[]; cta: [string, string]; featured?: boolean };
 const PLANS: Record<Lang, Plan[]> = {
   fr: [
-    { icon: "ranking", name: "Classement", price: "Gratuit", pitch: "Ton site dans le classement public des sites mode.", items: ["Score sur ordinateur", "Captures et replays des missions", "Mis à jour après chaque audit", "Pendant l’essai : 15 crédits par mois, soit jusqu’à 3 audits complets offerts"], cta: ["Voir le classement", "/classement"] },
+    { icon: "ranking", name: "Classement", price: "Gratuit", pitch: "Ton site dans le classement public.", items: ["Score sur ordinateur", "Captures et replays des missions", "Mis à jour après chaque audit", "Pendant l’essai : 15 crédits par mois, soit jusqu’à 3 audits complets offerts"], cta: ["Voir le classement", "/classement"] },
     { icon: "audit", name: "Audit complet", price: "490 €", per: "par site", pitch: "Le rapport pour savoir où l’agent bloque et quoi corriger.", items: ["Cinq missions d’achat, ordinateur ou mobile", "Preuves : capture et replay de chaque mission", "Comparaison avec un concurrent", "Plan de corrections classé par impact, en PDF"], cta: ["Lancer un audit", "#tester"] },
     { icon: "monthly", name: "Suivi mensuel", price: "149 €", per: "par mois", pitch: "La preuve, chaque mois, que les agents achètent encore chez toi.", items: ["Un audit complet automatique chaque mois, et ton rang face aux autres sites", "150 crédits par mois pour relancer des audits quand tu veux (5 crédits par audit, l’audit automatique compris)", "Pages relues chaque jour et après chaque mise en ligne, sans agent ni crédit", "Suivi de robots.txt, de l’anti-bot et des protocoles UCP, ACP, WebMCP", "Alerte Slack et e-mail quand une page change ou que le score baisse", "Le bilan du mois : vérifications, alertes, corrections prouvées"], cta: ["Lancer un audit", "#tester"], featured: true },
     { icon: "agency", name: "Agences", price: "30 %", per: "de commission", pitch: "Revends l’audit à tes clients, sous ta marque.", items: ["Rapports et PDF en marque blanche", "Un espace d’équipe pour tous tes clients", "30 % de commission sur chaque audit revendu"], cta: ["Nous contacter", `mailto:${LEGAL.contact}?subject=AgentProof%20%E2%80%93%20agence`] },
   ],
   en: [
-    { icon: "ranking", name: "Ranking", price: "Free", pitch: "Your site in the public ranking of fashion sites.", items: ["Desktop score", "Mission screenshots and replays", "Updated after every audit", "During the trial: 15 credits a month, that is up to 3 full audits free"], cta: ["See the ranking", "/classement"] },
+    { icon: "ranking", name: "Ranking", price: "Free", pitch: "Your site in the public ranking.", items: ["Desktop score", "Mission screenshots and replays", "Updated after every audit", "During the trial: 15 credits a month, that is up to 3 full audits free"], cta: ["See the ranking", "/classement"] },
     { icon: "audit", name: "Full audit", price: "€490", per: "per site", pitch: "The report that shows where the agent gets stuck and what to fix.", items: ["Five shopping missions, desktop or mobile", "Proof: screenshot and replay of every mission", "Comparison with a competitor", "Fix plan ranked by impact, as a PDF"], cta: ["Run an audit", "#tester"] },
     { icon: "monthly", name: "Monthly tracking", price: "€149", per: "per month", pitch: "Proof, every month, that agents can still buy from you.", items: ["An automatic full audit every month, and your rank against other sites", "150 credits a month to rerun audits whenever you want (5 credits per audit, the automatic one included)", "Pages read daily and after every release, without the agent and without credits", "Tracking of robots.txt, anti-bot and the UCP, ACP, WebMCP protocols", "Slack and e-mail alert when a page changes or the score drops", "The month in review: checks, alerts, proven fixes"], cta: ["Run an audit", "#tester"], featured: true },
     { icon: "agency", name: "Agencies", price: "30 %", per: "commission", pitch: "Resell the audit to your clients, under your brand.", items: ["White-label reports and PDFs", "One team space for all your clients", "30 % commission on every audit you resell"], cta: ["Contact us", `mailto:${LEGAL.contact}?subject=AgentProof%20%E2%80%93%20agency`] },

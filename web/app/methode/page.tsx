@@ -149,8 +149,8 @@ export default async function Methode() {
         <Section title={t("Les missions", "The missions")}>
           <p>
             {t(
-              "Les mêmes missions d’achat à chaque audit, neutres sur le type de produit : jamais un article que le site ne vend pas.",
-              "The same shopping missions on every audit, neutral on the product type: never an item the site does not sell.",
+              "Les mêmes missions d’achat à chaque audit, pour tout site qui vend des produits physiques (mode, maison, beauté, high-tech…) : jamais un article que le site ne vend pas. Une étape sans objet, comme choisir une taille sur un produit qui n’en a pas, est sautée sans compter comme un échec.",
+              "The same shopping missions on every audit, for any site that sells physical products (fashion, home, beauty, electronics…): never an item the site does not sell. A step that does not apply, like picking a size on a product without one, is skipped and does not count as a failure.",
             )}
           </p>
           <p>
