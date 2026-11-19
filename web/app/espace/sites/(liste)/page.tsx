@@ -1,11 +1,14 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { loadSpace } from "@/lib/space";
 import { getT } from "@/lib/lang";
-import { Empty, Icon, MissionLegend } from "@/lib/ui";
+import { Chip, Chips, Empty, Icon, MissionLegend } from "@/lib/ui";
+import { domainExt } from "@/lib/tld";
 import { SpaceShell } from "../../shell";
 import { SiteCard } from "../../parts";
+import { SitesByExt } from "../../controls";
 
 export const metadata = { title: "Sites · AgentProof" };
 
@@ -16,6 +19,15 @@ export default async function Sites() {
   const { team } = ctx;
   const { sites, trashedSites } = await loadSpace(team.id);
   const t = await getT();
+  // Extensions come from the account's own sites, so a new domain shows up after its first audit, no setup.
+  const counts = new Map<string, number>();
+  for (const s of sites) {
+    const e = domainExt(s.domain);
+    if (e) counts.set(e, (counts.get(e) ?? 0) + 1);
+  }
+  const exts = [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  const saved = (await cookies()).get("ap_sites_ext")?.value ?? ""; // set by SitesByExt
+  const initial = [...counts.keys()].find((e) => encodeURIComponent(e) === saved) ?? "all"; // gone extension: back to "Tous"
 
   return (
     <SpaceShell
@@ -38,12 +50,26 @@ export default async function Sites() {
       <div>
       {sites.length ? (
         <div className="space-y-3">
-          {/* A card needs ~20rem for "À corriger" and the ranking line: three columns only when they fit (not at 1280 with the sidebar). */}
-          <div className="grid gap-5 sm:grid-cols-[repeat(auto-fill,minmax(20rem,1fr))]">
-            {sites.map((s) => (
-              <SiteCard key={s.key} site={s} manage={canLaunch(team.role)} />
-            ))}
-          </div>
+          <SitesByExt
+            initial={initial}
+            chips={
+              <fieldset>
+                <legend className="sr-only">{t("Extension du domaine", "Domain extension")}</legend>
+                <Chips>
+                  {([["all", t("Tous", "All"), sites.length], ...exts.map(([e, n]) => [e, e, n])] as [string, string, number][]).map(([v, label, n]) => (
+                    <label key={v} className="cursor-pointer">
+                      <input type="radio" name="ap_sites_ext" value={v} defaultChecked={v === initial} className="peer sr-only" />
+                      <Chip className="transition-colors hover:bg-line/60 peer-checked:bg-blue/12 peer-checked:text-link peer-focus-visible:outline-2 peer-focus-visible:outline-blue">
+                        {label}
+                        <span className="tabular-nums opacity-60">{n}</span>
+                      </Chip>
+                    </label>
+                  ))}
+                </Chips>
+              </fieldset>
+            }
+            cards={sites.map((s) => ({ key: s.key, ext: domainExt(s.domain), card: <SiteCard site={s} manage={canLaunch(team.role)} /> }))}
+          />
           <MissionLegend className="px-1" />
         </div>
       ) : (

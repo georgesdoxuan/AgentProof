@@ -6,7 +6,7 @@ export async function generateMetadata() {
   return { title: `${(await getLang()) === "en" ? "Cookies" : "Politique cookies"} · AgentProof` };
 }
 
-// Every cookie and browser storage key the site sets. Keep in line with lib/auth.ts (ap_session, ap_team), lib/i18n.ts (ap_lang), app/espace/controls.tsx (ap_nav)
+// Every cookie and browser storage key the site sets. Keep in line with lib/auth.ts (ap_session, ap_team), lib/i18n.ts (ap_lang), app/espace/controls.tsx (ap_nav, ap_sites_ext)
 // and app/cookie-notice.tsx. Adding a non-essential cookie (analytics, ads) requires a consent banner with a "Refuse" button first.
 export default async function Cookies() {
   const lang = await getLang();
@@ -17,6 +17,7 @@ export default async function Cookies() {
         ["ap_team", "Remembers the team you opened", "30 days", "Strictly necessary"],
         ["ap_lang", "Remembers the interface language you chose", "1 year", "Strictly necessary"],
         ["ap_nav", "Remembers whether the team space sidebar is collapsed", "1 year", "Strictly necessary"],
+        ["ap_sites_ext", "Remembers the domain extension picked on the Sites page", "1 year", "Strictly necessary"],
         ["ap_cookie_notice (browser storage)", "Hides this notice once read", "Until you clear it", "Strictly necessary"],
       ]
     : [
@@ -24,6 +25,7 @@ export default async function Cookies() {
         ["ap_team", "Retient l’équipe que tu as ouverte", "30 jours", "Strictement nécessaire"],
         ["ap_lang", "Retient la langue d’interface choisie", "1 an", "Strictement nécessaire"],
         ["ap_nav", "Retient si la barre latérale de l’espace est repliée", "1 an", "Strictement nécessaire"],
+        ["ap_sites_ext", "Retient l’extension de domaine choisie sur la page Sites", "1 an", "Strictement nécessaire"],
         ["ap_cookie_notice (stockage du navigateur)", "Masque l’information cookies une fois lue", "Jusqu’à ce que tu l’effaces", "Strictement nécessaire"],
       ];
   return (

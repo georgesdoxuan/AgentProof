@@ -325,3 +325,33 @@ export function ReportsLayout({ initial, toolbar, list, bySite }: { initial: boo
     </>
   );
 }
+
+// Sites › extension chips (".com", ".fr"…). The server renders the chips and every card; this only hides the cards of
+// other extensions. The choice lives in a cookie (read in sites/(liste)/page.tsx), so the server renders it: no jump on load.
+const SITES_EXT_COOKIE = "ap_sites_ext";
+export function SitesByExt({ initial, chips, cards }: { initial: string; chips: React.ReactNode; cards: { key: string; ext: string; card: React.ReactNode }[] }) {
+  const [ext, setExt] = useState(initial);
+  return (
+    <>
+      <div
+        className="mb-4"
+        onChange={(e) => {
+          const input = e.target as HTMLInputElement;
+          if (input.name !== SITES_EXT_COOKIE) return;
+          setExt(input.value);
+          document.cookie = `${SITES_EXT_COOKIE}=${encodeURIComponent(input.value)}; path=/; max-age=31536000; samesite=lax`;
+        }}
+      >
+        {chips}
+      </div>
+      {/* A card needs ~20rem for "À corriger" and the ranking line: three columns only when they fit (not at 1280 with the sidebar). */}
+      <div className="grid gap-5 sm:grid-cols-[repeat(auto-fill,minmax(20rem,1fr))]">
+        {cards.map((c) => (
+          <div key={c.key} hidden={ext !== "all" && c.ext !== ext} className="grid">
+            {c.card}
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
