@@ -13,7 +13,7 @@ import { Hint } from "@/lib/hint";
 import { headers } from "next/headers";
 import { CopyField } from "@/app/espace/controls";
 import { Mark, Wordmark, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
-import { AutoRefresh, PrintButton } from "./refresh";
+import { AutoRefresh, HashLanding, PrintButton } from "./refresh";
 import type { AgentAccess } from "@/lib/automations";
 
 // One line per AI assistant, from the static check's per-agent reading (lib/automations.ts agentAccess).
@@ -353,6 +353,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   return (
     <div className="bg-bg-2 pb-24 pt-16 max-[734px]:pt-10 print:bg-bg print:p-0">
       {running && <AutoRefresh />}
+      <HashLanding />
       {branded && <style>{"body > header, body > footer { display: none; }"}</style>}
       {!paymentOnly && (
         <>
