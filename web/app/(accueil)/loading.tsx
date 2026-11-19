@@ -1,10 +1,9 @@
 import { Bone, Line, Loading as Busy } from "../skeleton";
 
-// Home: the section bar, then the hero (title, subtitle, actions) above the browser frame.
+// Home: the hero (title, subtitle, actions) above the browser frame.
 export default function Loading() {
   return (
     <Busy>
-      <div className="sticky top-[52px] z-30 h-11 border-b border-hairline bg-[var(--nav)] backdrop-blur-[20px]" />
       <section className="overflow-hidden pt-[88px] text-center max-[734px]:pt-14">
         <div className="wrap">
           <p className="type-hero">

@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { LANG_NAME, type Dict, type Lang } from "@/lib/i18n";
 
 const link =
@@ -22,6 +23,44 @@ export function LangSwitch({ lang }: { lang: Lang }) {
   );
 }
 
+// Home only: the page's sections, in the site header (one bar, not two). Centered beside the logo on wide screens,
+// a second row under it below 1024 px. The section crossing the middle of the window is marked current.
+export function Sections({ t }: { t: Dict["sections"] }) {
+  const path = usePathname();
+  const [current, setCurrent] = useState<string | null>(null);
+  const { label, ...items } = t;
+  const ids = Object.keys(items);
+  useEffect(() => {
+    if (path !== "/") return;
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => e.isIntersecting ? setCurrent(e.target.id) : setCurrent((c) => (c === e.target.id ? null : c))),
+      { rootMargin: "-50% 0px -50% 0px" },
+    );
+    ids.forEach((id) => { const el = document.getElementById(id); if (el) io.observe(el); });
+    return () => io.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [path]);
+  if (path !== "/") return null;
+  return (
+    <ul
+      aria-label={label}
+      className="type-caption order-last flex w-full gap-x-5 overflow-x-auto [scrollbar-width:none] max-[400px]:gap-x-3 lg:absolute lg:left-1/2 lg:w-auto lg:-translate-x-1/2 lg:gap-x-7"
+    >
+      {ids.map((id) => (
+        <li key={id}>
+          <a
+            href={`#${id}`}
+            aria-current={current === id ? "location" : undefined}
+            className="relative inline-flex h-11 items-center whitespace-nowrap text-ink/80 transition-colors after:absolute after:inset-x-0 after:bottom-2 after:h-px after:origin-center after:scale-x-0 after:bg-ink after:transition-transform hover:text-ink aria-[current=location]:text-ink aria-[current=location]:after:scale-x-100 lg:h-[52px] lg:after:bottom-3"
+          >
+            {items[id as keyof typeof items]}
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 // A client-side link leaves the layout (and this popover) mounted: close it by hand.
 const hide = (e: React.MouseEvent<HTMLElement>) => (e.currentTarget.closest("[popover]") as HTMLElement | null)?.hidePopover();
 
@@ -31,10 +70,11 @@ export function Nav({ email, t }: { email: string | null; t: Dict["nav"] }) {
   const path = usePathname();
   if (!email)
     return (
-      <div className="flex items-center gap-1 type-caption max-[400px]:gap-0 sm:gap-3">
-        <Link href="/classement" aria-current={path === "/classement" ? "page" : undefined} className={link}>
+      <div className="flex h-[52px] items-center gap-1 type-caption max-[400px]:gap-0 sm:gap-3">
+        {/* On the home page the ranking is one of the sections: no second "Classement" in the same bar. */}
+        {path !== "/" && <Link href="/classement" aria-current={path === "/classement" ? "page" : undefined} className={link}>
           {t.ranking}
-        </Link>
+        </Link>}
         <Link href="/connexion" className={link}>
           {t.signIn}
         </Link>
@@ -44,7 +84,7 @@ export function Nav({ email, t }: { email: string | null; t: Dict["nav"] }) {
       </div>
     );
   return (
-    <div className="flex items-center gap-1 type-caption sm:gap-2">
+    <div className="flex h-[52px] items-center gap-1 type-caption sm:gap-2">
       <Link href="/espace" aria-current={/^\/(espace|equipe|compte)(\/|$)/.test(path) ? "page" : undefined} className={link}>
         <span className="max-[480px]:hidden">{t.mySpace}</span>
         <span className="min-[481px]:hidden">{t.space}</span>
