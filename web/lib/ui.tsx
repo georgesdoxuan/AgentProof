@@ -440,15 +440,16 @@ export function Field({ label, name, required, type = "url", defaultValue }: { l
 // ---------- controls shared by the team space ----------
 // Segmented control (radio group): one look for every short exclusive choice, as on the home form.
 // An option may carry a line icon (third item), drawn before its label.
-export function Segmented({ name, options, value, label }: { name: string; options: ([string, string] | [string, string, string])[]; value: string; label: string }) {
+// On phones the icons drop out and the padding tightens, so three choices fit a card at 390 px.
+export function Segmented({ name, options, value, label }: { name: string; options: ([string, React.ReactNode] | [string, React.ReactNode, string])[]; value: string; label: string }) {
   return (
     <fieldset className="inline-grid auto-cols-fr grid-flow-col rounded-[10px] bg-fill p-[3px]">
       <legend className="sr-only">{label}</legend>
       {options.map(([v, l, icon]) => (
         <label key={v} className="relative cursor-pointer">
           <input type="radio" name={name} value={v} defaultChecked={v === value} className="peer sr-only" />
-          <span className="type-small flex h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-[8px] px-4 font-semibold text-ink-2 transition-colors duration-200 peer-checked:bg-tile peer-checked:text-ink peer-checked:shadow-[0_1px_3px_rgb(0_0_0/0.12)] peer-focus-visible:outline-2 peer-focus-visible:outline-blue dark:peer-checked:bg-[#636366]">
-            {icon && <Icon name={icon} className="h-[17px] w-[17px]" />}
+          <span className="type-small flex h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-[8px] px-4 font-semibold max-sm:px-3 text-ink-2 transition-colors duration-200 peer-checked:bg-tile peer-checked:text-ink peer-checked:shadow-[0_1px_3px_rgb(0_0_0/0.12)] peer-focus-visible:outline-2 peer-focus-visible:outline-blue dark:peer-checked:bg-[#636366]">
+            {icon && <Icon name={icon} className="h-[17px] w-[17px] max-sm:hidden" />}
             {l}
           </span>
         </label>

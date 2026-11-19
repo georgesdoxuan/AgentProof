@@ -72,7 +72,14 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
               options={[
                 ["desktop", t("Ordinateur", "Desktop"), "desktop"],
                 ["mobile", "Mobile", "mobile"],
-                ["both", t("Ordinateur + Mobile", "Desktop + Mobile"), "both"],
+                [
+                  "both",
+                  <>
+                    <span className="max-sm:hidden">{t("Ordinateur + Mobile", "Desktop + Mobile")}</span>
+                    <span className="sm:hidden">{t("Les deux", "Both")}</span>
+                  </>,
+                  "both",
+                ],
               ]}
             />
           </div>
