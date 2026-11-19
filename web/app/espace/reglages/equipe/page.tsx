@@ -1,3 +1,5 @@
+import { isJury } from "@/lib/jury";
+import { JuryLockedPage } from "../../jury-locked";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/engine";
@@ -29,6 +31,7 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
   const ctx = await teamContext();
   if (!ctx) redirect("/connexion?next=/espace/reglages/equipe");
   if (!ctx.team) redirect("/espace");
+  if (isJury(ctx.user.email)) return <JuryLockedPage />;
   const { user, team } = ctx;
   const isOwner = team.role === "owner";
   // Members (invite, remove, roles): owner and admins. Everything else on this page: editors too.

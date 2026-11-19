@@ -1,3 +1,4 @@
+import { isJury, juryLocked } from "@/lib/jury";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { addSiteLogin, deleteSiteLogin } from "@/lib/engine";
 import { msg } from "@/lib/lang";
@@ -10,6 +11,7 @@ const fail = (msg: string, status = 400) => new Response(msg, { status, headers:
 export async function POST(req: Request) {
   const ctx = await teamContext();
   if (!ctx) return go(req, "/connexion?next=/espace/reglages/comptes");
+  if (isJury(ctx.user.email)) return juryLocked();
   if (!ctx.team || !canLaunch(ctx.team.role)) return fail(await msg("Ton rôle (lecteur) ne permet pas de gérer les comptes de test.", "Your role (viewer) cannot manage test accounts."), 403);
   const form = await req.formData();
   try {

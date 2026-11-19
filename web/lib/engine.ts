@@ -169,8 +169,12 @@ export function normalizeUrl(input: string) {
   return { url: `${u.protocol}//${u.hostname}${u.pathname === "/" ? "" : u.pathname}`, domain: u.hostname.replace(/^www\./, "") };
 }
 
+export const JURY_FULL = "Démo jury : plus d'audit possible aujourd'hui.";
+
 export async function createAudit(input: string, opts: { device?: "desktop" | "mobile"; missions?: number; compareTo?: string; paymentTest?: string; model?: string; email?: string; ipHash?: string; teamId?: string; createdBy?: string; auto?: boolean; missionIds?: number[]; proofOf?: string } = {}) {
   const { url, domain } = normalizeUrl(input);
+  // Jury demo space: a daily cap on every launch path, so judges can never run up the H bill (lib/jury.ts).
+  if (opts.teamId && (await import("./jury").then((j) => j.juryTeamFull(opts.teamId!)))) throw new Error(JURY_FULL);
   const { data: created, error: e1 } = await db
     .from("sites")
     .upsert({ domain, name: domain, url }, { onConflict: "domain", ignoreDuplicates: true })
@@ -959,7 +963,7 @@ export async function notifyDone(auditId: string) {
       blockers,
       recommendations: a.recommendations ?? "",
       // n8n e-mails the report only when this is set: left empty when the person turned report e-mails off.
-      email: a.email && (await import("./optout").then((o) => o.mailAllowed(a.email, "report")).catch(() => true)) ? a.email : null,
+      email: a.email && !/\.test$/i.test(a.email) && (await import("./optout").then((o) => o.mailAllowed(a.email, "report")).catch(() => true)) ? a.email : null,
       url: `${process.env.PUBLIC_URL ?? ""}/audit/${a.id}`,
     }),
   }).catch(() => {});
@@ -1212,7 +1216,8 @@ export async function shareRun(runId: number, first = false) {
   }
   if (!run.session_id) return null;
   if (run.share_url) return run.share_url as string;
-  const { share_url } = await (await h(`/sessions/${run.session_id}/share`, { method: "POST" })).json();
+  // Jury demo copies (supabase/demo/jury_seed.sql) keep the original session as "jury:<id>" (session_id is unique).
+  const { share_url } = await (await h(`/sessions/${String(run.session_id).replace(/^jury:/, "")}/share`, { method: "POST" })).json();
   const full = `${H}${share_url}`;
   await db.from("runs").update({ share_url: full }).eq("id", run.id);
   return full;

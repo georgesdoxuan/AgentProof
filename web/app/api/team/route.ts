@@ -1,3 +1,4 @@
+import { isJury, juryLocked } from "@/lib/jury";
 import { db } from "@/lib/engine";
 import { baseUrl, canLaunch, canManageMembers, createTeam, hashToken, newToken, normalizeEmail, sendMail, setTeam, teamContext } from "@/lib/auth";
 import { msg } from "@/lib/lang";
@@ -14,6 +15,8 @@ export async function POST(req: Request) {
   const form = await req.formData();
   const action = form.get("action");
   const str = (k: string) => String(form.get(k) ?? "").trim();
+  // Jury demo: no new team (it would escape the audit quota), no members, no rename: only the switch, a no-op there.
+  if (isJury(user.email) && action !== "switch") return juryLocked();
 
   if (action === "create") {
     const name = str("name");

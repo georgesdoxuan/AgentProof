@@ -1,4 +1,5 @@
-import { getDict, getLang } from "@/lib/lang";
+import { getDict, getLang, getT } from "@/lib/lang";
+import { isJury } from "@/lib/jury";
 import { loadSidebar } from "@/lib/sidebar";
 import Link from "next/link";
 import { Chevron } from "@/lib/ui";
@@ -65,6 +66,7 @@ export async function SpaceFrame({ children }: { children: React.ReactNode }) {
         </div>
       }
     >
+      {isJury(user.email) && <JuryBanner t={await getT()} />}
       {children}
     </Frame>
   );
@@ -141,6 +143,25 @@ export async function SpaceShell({
           {children}
         </div>
       </div>
+    </div>
+  );
+}
+
+// Jury demo (lib/jury.ts): the three things to try, above every page of the space, on the page column's gutter.
+function JuryBanner({ t }: { t: (fr: string, en: string) => string }) {
+  return (
+    <div className="px-6 pt-4 sm:px-8 lg:px-12 xl:px-16">
+      <p className="type-small mx-auto flex w-full max-w-[1200px] flex-wrap items-center gap-x-3 gap-y-1 rounded-[12px] bg-tile px-4 py-2.5 text-ink-2 shadow-[inset_0_0_0_0.5px_var(--line)]">
+        <span className="font-semibold text-ink">{t("Démo jury", "Jury demo")}</span>
+        <span>
+          <Link href="/espace/rapports" className="text-link hover:underline">{t("1. Ouvre un rapport", "1. Open a report")}</Link>
+          {" · "}
+          {t("2. Regarde un replay", "2. Watch a replay")}
+          {" · "}
+          <Link href="/espace/nouveau" className="text-link hover:underline">{t("3. Lance un audit (2 par juge)", "3. Run an audit (2 per judge)")}</Link>
+        </span>
+        <Link href="/demo" className="ml-auto text-link hover:underline">{t("Le guide", "The guide")}</Link>
+      </p>
     </div>
   );
 }

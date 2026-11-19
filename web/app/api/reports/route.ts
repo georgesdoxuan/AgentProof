@@ -1,3 +1,4 @@
+import { isJury, juryLocked } from "@/lib/jury";
 import { cancelAudit, db } from "@/lib/engine";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { msg } from "@/lib/lang";
@@ -22,6 +23,8 @@ export async function POST(req: Request) {
   if (!canLaunch(ctx.team.role)) return fail(await msg("Ton rôle (lecteur) permet de consulter les rapports, pas de les modifier.", "Your role (viewer) lets you read reports, not change them."), 403);
 
   const action = String(form.get("action") ?? "") as Action;
+  // Jury demo: the sample reports are shared by every judge, so only the favourite star (harmless) changes them.
+  if (isJury(ctx.user.email) && action !== "favorite" && action !== "unfavorite") return juryLocked();
   if (!ACTIONS.includes(action)) return fail(await msg("Action inconnue.", "Unknown action."));
   const teamId = ctx.team.id;
 

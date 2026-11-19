@@ -1,3 +1,5 @@
+import { isJury } from "@/lib/jury";
+import { JuryLockedPage } from "../../jury-locked";
 import { redirect } from "next/navigation";
 import { Hint } from "@/lib/hint";
 import { teamContext } from "@/lib/auth";
@@ -19,6 +21,7 @@ export default async function Compte({ searchParams }: { searchParams: Promise<{
   const ctx = await teamContext();
   if (!ctx) redirect("/connexion?next=/espace/reglages/compte");
   if (!ctx.team) redirect("/espace");
+  if (isJury(ctx.user.email)) return <JuryLockedPage />;
   const { user, teams, team } = ctx;
   const lang = await getLang();
   const t = await getDict();

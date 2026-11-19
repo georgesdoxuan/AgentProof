@@ -1,3 +1,4 @@
+import { isJury, juryLocked } from "@/lib/jury";
 import { canLaunch, normalizeEmail, teamContext } from "@/lib/auth";
 import { luhn, seal } from "@/lib/cards";
 import { db } from "@/lib/engine";
@@ -10,6 +11,7 @@ const fail = (msg: string, status = 400) => new Response(msg, { status, headers:
 export async function POST(req: Request) {
   const ctx = await teamContext();
   if (!ctx) return go(req, "/connexion?next=/espace/reglages/paiement");
+  if (isJury(ctx.user.email)) return juryLocked();
   if (!ctx.team || !canLaunch(ctx.team.role)) return fail(await msg("Ton rôle (lecteur) ne permet pas de gérer la carte.", "Your role (viewer) cannot manage the card."), 403);
   const form = await req.formData();
   const str = (k: string) => String(form.get(k) ?? "").trim();

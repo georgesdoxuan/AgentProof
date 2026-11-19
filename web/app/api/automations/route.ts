@@ -1,3 +1,4 @@
+import { isJury, juryLocked } from "@/lib/jury";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { db, normalizeUrl } from "@/lib/engine";
 import { INTERVALS, SCORE_DROPS, checkAutomation, postWebhook, webhookOk } from "@/lib/automations";
@@ -15,6 +16,7 @@ export const maxDuration = 60;
 export async function POST(req: Request) {
   const ctx = await teamContext();
   if (!ctx) return Response.redirect(new URL(`/connexion?next=${PAGE}`, req.url), 303);
+  if (isJury(ctx.user.email)) return juryLocked();
   const form = await req.formData();
   const back = String(form.get("back") ?? "");
   // Own e-mail preferences: every member chooses for themself, whatever their role.
