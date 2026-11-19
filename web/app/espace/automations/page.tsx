@@ -132,7 +132,6 @@ export default async function Automations({ searchParams }: { searchParams: Prom
   const hookUrl = settings?.hook_token ? `${process.env.PUBLIC_URL ?? ""}/api/hooks/${settings.hook_token}` : null;
   const cap = (settings?.site_credit_cap as number | null | undefined) ?? null;
   const auditCost = AUTO_AUDIT_MISSIONS * RATES.automation;
-  const active = items.filter((a: any) => a.enabled).length;
   const cr = (n: number) => t(`${n} crédit${n > 1 ? "s" : ""}`, `${n} credit${n > 1 ? "s" : ""}`);
   const credit = (n: number) => (
     <Chip icon="credit">{cr(n)}</Chip>
@@ -173,24 +172,6 @@ export default async function Automations({ searchParams }: { searchParams: Prom
       narrow
       bare
       title={t("Automations", "Automations")}
-      intro={
-          <Chips>
-            <Chip icon="eye" tone={active ? "pass" : "plain"}>
-              {items.length
-                ? t(`${active} page${active > 1 ? "s" : ""} surveillée${active > 1 ? "s" : ""} sur ${items.length}`, `${active} of ${items.length} page${items.length > 1 ? "s" : ""} monitored`)
-                : t("Aucune page surveillée", "No page monitored")}
-            </Chip>
-            <Chip icon="mail">
-              {t("Alertes : ", "Alerts: ")}
-              {[mail.all && mail.alerts && "e-mail", onSlack ? "Slack" : settings?.webhook_url ? "webhook" : null].filter(Boolean).join(t(" et ", " and ")) || t("dans l'app", "in the app")}
-            </Chip>
-            <Chip icon="credit">{t("Vérifications gratuites", "Checks are free")}</Chip>
-          </Chips>
-      }
-      hint={t(
-        "AgentProof relit tes pages comme un agent d'achat (bandeau cookies, captcha, boutons, formulaires, robots.txt). Si quelque chose change, tu es prévenu, et un audit peut repartir tout seul. Les prix et les produits ne comptent pas.",
-        "AgentProof rereads your pages as a shopping agent would (cookie banner, captcha, buttons, forms, robots.txt). When something changes, you are told, and an audit can start on its own. Prices and products do not count.",
-      )}
     >
       {!admin && <Note icon="lock">{t("Lecture seule : un admin gère les automations.", "Read-only: an admin manages automations.")}</Note>}
 
