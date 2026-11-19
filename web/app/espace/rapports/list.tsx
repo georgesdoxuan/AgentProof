@@ -202,7 +202,7 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
   return (
     <div key={a.id} className={`flex items-center ${view === "trash" ? "max-sm:flex-wrap" : ""} border-b border-hairline first:rounded-t-[18px] last:rounded-b-[18px] last:border-0 hover:bg-bg-2/60`}>
       <Link href={`/audit/${a.id}`} className={`block min-w-0 flex-1 ${view === "trash" ? "max-sm:basis-full" : ""}`}>
-        <div className={`grid min-h-[68px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 py-3 md:gap-x-5 pl-5 pr-2 ${view === "trash" ? "md:grid-cols-[minmax(0,1fr)_8rem_5.5rem_1rem]" : "md:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_8rem_5.5rem_1rem]"}`}>
+        <div className={`grid min-h-[68px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 py-3 md:gap-x-5 pl-5 pr-2 ${view === "trash" ? "md:grid-cols-[minmax(0,1fr)_8rem_6.5rem_1rem]" : "md:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_8rem_6.5rem_1rem]"}`}>
           <span className="flex min-w-0 items-start gap-3">
           {logo && <SiteLogo domain={a.sites?.domain} name={a.sites?.domain} className="mt-0.5" />}
           <span className="min-w-0">
@@ -228,16 +228,16 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
                 <span className="max-md:sr-only">{lang === "en" ? "No score" : "Sans score"}</span>
               </span>
             ) : a.status === "done" ? (
-              <>
-                <StatusGlyph tone={scoreTone(a.s.score)} className="h-4 w-4" />
-                <span className="font-semibold">{a.s.score} %</span>
-                {a.s.exPay && (
-                                <>
-                                  <ExPay lang={lang} short className="md:hidden" />
-                                  <ExPay lang={lang} className="type-small max-md:hidden" />
-                                </>
-                              )}
-              </>
+              // "hors paiement" goes under the score, never beside it: the column keeps its width and the
+              // score never runs over the mission bar.
+              <span className="flex flex-col items-end">
+                <span className="flex items-center gap-2">
+                  <StatusGlyph tone={scoreTone(a.s.score)} className="h-4 w-4" />
+                  <span className="font-semibold">{a.s.score} %</span>
+                  {a.s.exPay && <ExPay lang={lang} short className="md:hidden" />}
+                </span>
+                {a.s.exPay && <ExPay lang={lang} className="type-small leading-tight max-md:hidden" />}
+              </span>
             ) : (
               <span className="type-small flex items-center gap-2 font-semibold text-live">
                 <Spinner className="h-3.5 w-3.5" />
