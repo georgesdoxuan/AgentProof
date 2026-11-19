@@ -1,6 +1,6 @@
 import { locale, type Lang } from "./i18n";
 import "server-only";
-import { AGENT_ONLY, db } from "./engine";
+import { AGENT_ONLY, EXCLUDED, db } from "./engine";
 import { summarize } from "./ui";
 
 // Everything the team space shows comes from one read: the team's audits, grouped by site.
@@ -30,6 +30,7 @@ export type SpaceAudit = {
   users: { email: string } | null;
   runs: SpaceRun[];
   payment_test: string | null;
+  proof_of: string | null; // proof audit: replays only the missions this blocker stopped
   pay: { status: string; verdict: string | null; with_login: boolean }[]; // real payment test runs linked to this audit
   s: ReturnType<typeof summarize>;
   label: string; // name shown everywhere: title or domain, plus " (1)", " (2)"… when another report has the same name
@@ -60,6 +61,7 @@ export type SiteView = {
   verified: string[]; // marked fixed, then gone in a later audit
   competitor: SpaceAudit | undefined;
   rank: { pos: number; of: number } | null; // public leaderboard
+  proofs: SpaceAudit[]; // proof audits of a fix, newest first (kept out of audits, latest and previous)
 };
 
 // A site in the trash: every report of that site and device is in the trash. Restoring it brings back the reports trashed with it.
@@ -120,7 +122,7 @@ export async function loadSpace(teamId: string) {
     db
       .from("audits")
       .select(
-        "id, created_at, device, status, compare_to, model, title, favorite, deleted_at, recommendations, site_id, payment_test, sites(domain, name, url), users:created_by(email), runs(id, status, success, blocker_type, blocker_detail, screenshot_url, final_url)",
+        "id, created_at, device, status, compare_to, model, title, favorite, deleted_at, recommendations, site_id, payment_test, proof_of, sites(domain, name, url), users:created_by(email), runs(id, status, success, blocker_type, blocker_detail, screenshot_url, final_url)",
       )
       .eq("team_id", teamId)
       .eq("kind", "checkout")
@@ -181,8 +183,13 @@ export async function loadSpace(teamId: string) {
         verified: [],
         competitor: undefined,
         rank: pos >= 0 ? { pos: pos + 1, of: ranked.length } : null,
+        proofs: [],
       };
       sites.set(key, v);
+    }
+    if (a.proof_of) {
+      v.proofs.push(a);
+      continue;
     }
     v.audits.push(a);
     if (a.status !== "done") v.running ??= a;
@@ -198,17 +205,29 @@ export async function loadSpace(teamId: string) {
     const latestAt = Date.parse(v.latest.created_at);
     const siteFixes = (fixes ?? []).filter((f) => f.site_id === v.site_id && f.device === v.device);
     // Agent-only outcomes (catalogue, step count) are nothing the site can fix: kept in the report, out of the checklist.
-    v.blockers = v.latest.s.blockers.filter(([type]) => !AGENT_ONLY.includes(type)).map(([type, missions]) => {
+    // A proof audit after the fix decides: every counted mission passes = proven, one still blocked = back.
+    const proofOf = (type: string, fixedAt: string) => {
+      const p = v.proofs.find((x) => x.proof_of === type && x.status === "done" && Date.parse(x.created_at) > Date.parse(fixedAt));
+      const counted = (p?.runs ?? []).filter((r) => r.status === "done" && r.success !== null && !EXCLUDED.includes(r.blocker_type ?? ""));
+      return !counted.length ? null : counted.every((r) => r.success) ? "proven" : "failed";
+    };
+    const proven: string[] = [];
+    v.blockers = v.latest.s.blockers.filter(([type]) => !AGENT_ONLY.includes(type)).flatMap(([type, missions]): Blocker[] => {
       const fix = siteFixes.find((f) => f.blocker_type === type);
-      return {
+      const proof = fix && Date.parse(fix.fixed_at) > latestAt ? proofOf(type, fix.fixed_at) : null;
+      if (proof === "proven") {
+        proven.push(type);
+        return [];
+      }
+      return [{
         type,
         missions,
         run: v.latest!.runs.find((r) => r.success === false && r.blocker_type === type && r.screenshot_url) ?? v.latest!.runs.find((r) => r.blocker_type === type),
-        state: !fix ? "todo" : Date.parse(fix.fixed_at) > latestAt ? "check" : "back",
-      };
+        state: !fix ? "todo" : proof === "failed" ? "back" : Date.parse(fix.fixed_at) > latestAt ? "check" : "back",
+      }];
     });
     const present = new Set(v.blockers.map((b) => b.type));
-    v.verified = siteFixes.filter((f) => Date.parse(f.fixed_at) < latestAt && !present.has(f.blocker_type)).map((f) => f.blocker_type);
+    v.verified = [...proven, ...siteFixes.filter((f) => Date.parse(f.fixed_at) < latestAt && !present.has(f.blocker_type)).map((f) => f.blocker_type)];
   }
 
   // Sites with nothing left outside the trash show in Sites › Corbeille.

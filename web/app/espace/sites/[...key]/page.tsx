@@ -154,13 +154,13 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
           <div className="tile mt-5 flex flex-wrap items-center justify-between gap-4 p-7!">
             <p className="max-w-[560px]">
               <span className="font-semibold">{t("Tu as marqué des blocages comme corrigés.", "You marked blockers as fixed.")}</span>{" "}
-              <span className="text-ink-2">{t("Relance l’audit : l’agent repasse et confirme si la correction tient.", "Rerun the audit: the agent goes through again and confirms whether the fix holds.")}</span>
+              <span className="text-ink-2">{t("« Prouver la correction » rejoue seulement les missions bloquées ; ou relance l’audit complet.", "“Prove the fix” replays only the blocked missions; or rerun the full audit.")}</span>
             </p>
             <RelaunchForm site={site} />
           </div>
         )}
         {site.verified.length > 0 && (
-          <Group title={t("Corrections vérifiées", "Verified fixes")} footer={t("Marquées corrigées, puis absentes de l'audit suivant.", "Marked fixed, then absent from the next audit.")}>
+          <Group title={t("Corrections prouvées", "Proven fixes")} footer={t("Marquées corrigées, puis absentes de l'audit suivant ou réussies au rejeu de preuve.", "Marked fixed, then absent from the next audit or passed in the proof replay.")}>
             {site.verified.map((v) => (
               <div key={v} className="flex min-h-[56px] items-center gap-3 border-b border-hairline px-5 last:border-0">
                 <BlockerIcon type={v} />

@@ -49,7 +49,7 @@ export default async function SitesCorbeille() {
       teams={teams}
       title={t("Sites · Corbeille", "Sites · Trash")}
       parent={["/espace/sites", "Sites"]}
-      intro={t(
+      hint={t(
         "Un site mis à la corbeille disparaît des sites et de l'accueil avec ses rapports. Restaure-le, ou supprime-le définitivement.",
         "A site in the trash leaves the sites and the home page with its reports. Restore it, or delete it for good.",
       )}

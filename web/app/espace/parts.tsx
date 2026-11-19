@@ -181,10 +181,16 @@ export async function BlockerItem({ site, b, canEdit, compact = false }: { site:
                 <input type="hidden" name="device" value={site.device} />
                 <input type="hidden" name="blocker" value={b.type} />
                 <input type="hidden" name="back" value={`${sitePath(site)}#corrections`} />
-                {b.state === "check" ? (
-                  <button name="action" value="undo" className="btn btn-secondary min-h-[40px] px-[18px] text-[15px]">
-                    {t("Annuler", "Undo")}
-                  </button>
+                {b.state !== "todo" ? (
+                  <span className="flex flex-wrap gap-3">
+                    {/* Replays only the missions this blocker stopped (1 to 3): the fix is then proven by the agent. */}
+                    <button name="action" value="prove" className="btn btn-dark min-h-[40px] px-[18px] text-[15px]">
+                      {t("Prouver la correction", "Prove the fix")}
+                    </button>
+                    <button name="action" value="undo" className="btn btn-secondary min-h-[40px] px-[18px] text-[15px]">
+                      {t("Annuler", "Undo")}
+                    </button>
+                  </span>
                 ) : (
                   <button className="btn btn-dark min-h-[40px] px-[18px] text-[15px]">{t("Marquer comme corrigé", "Mark as fixed")}</button>
                 )}

@@ -22,14 +22,17 @@ export async function Leaderboard({ device = "desktop", base }: { device?: Devic
   const { data: rows } = await db.from("site_scores").select("*").eq("device", device);
   const scores = (rows ?? []).sort(byRank);
   const auditIds = (scores ?? []).map((s) => s.audit_id);
-  const { data: fails } = await db.from("runs").select("audit_id, blocker_type").in("audit_id", auditIds).eq("success", false);
+  // Main blocker and main hurdle per audit: both reads go out together.
+  const [{ data: fails }, { data: wins }] = await Promise.all([
+    db.from("runs").select("audit_id, blocker_type").in("audit_id", auditIds).eq("success", false),
+    db.from("runs").select("audit_id, success, steps, agent_answer").in("audit_id", auditIds).eq("success", true),
+  ]);
   const topBlocker = (id: string) => {
     const c: Record<string, number> = {};
     for (const f of fails ?? []) if (f.audit_id === id && f.blocker_type && !EXCLUDED.includes(f.blocker_type)) c[f.blocker_type] = (c[f.blocker_type] ?? 0) + 1;
     return Object.entries(c).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
   };
   // No blocker does not mean no friction: the main obstacle the agent got past on that audit.
-  const { data: wins } = await db.from("runs").select("audit_id, success, steps, agent_answer").in("audit_id", auditIds).eq("success", true);
   const topHurdle = (id: string) => hurdles((wins ?? []).filter((w) => w.audit_id === id), lang).items[0]?.[0] ?? null;
 
   // Reference period: when the audits behind the scores ended (view: the 2 latest public audits per site and device).

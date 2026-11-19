@@ -1,7 +1,9 @@
 import { EXCLUDED, blockerNames } from "./engine";
 import type { Lang } from "./i18n";
 import { getLang, getT } from "./lang";
+import { accountColor } from "./avatar";
 import { CopyButton } from "@/app/espace/controls";
+import { Hint } from "./hint";
 
 // ---------- score ----------
 // Never color alone: every tone has a word and a glyph.
@@ -382,12 +384,13 @@ export function Group({ title, footer, aside, children }: { title?: string; foot
     <section>
       {(title || aside) && (
         <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-1">
-          {title && <h2 className="type-headline">{title}</h2>}
+          {title && <h2 className="type-headline">{footer ? <Hint tip={footer}>{title}</Hint> : title}</h2>}
           {aside}
         </div>
       )}
       <div className="overflow-hidden rounded-[18px] bg-tile">{children}</div>
-      {footer && <p className="type-small mt-2.5 px-1 text-ink-2">{footer}</p>}
+      {/* A titled group keeps its explanation on the title, shown on hover; an untitled one has nowhere else to put it. */}
+      {footer && !title && <p className="type-small mt-2.5 px-1 text-ink-2">{footer}</p>}
     </section>
   );
 }
@@ -398,9 +401,8 @@ export function Row({ children, className = "" }: { children: React.ReactNode; c
 
 // Initials in a circle: tells members apart at a glance without photos.
 export function Avatar({ email, className = "h-9 w-9" }: { email: string; className?: string }) {
-  const hue = [...email].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 0);
   return (
-    <span className={`grid shrink-0 place-items-center rounded-full type-small font-semibold text-white ${className}`} style={{ background: `hsl(${hue} 42% 40%)` }} aria-hidden>
+    <span className={`grid shrink-0 place-items-center rounded-full type-small font-semibold text-white ${className}`} style={{ background: accountColor(email) }} aria-hidden>
       {email[0]?.toUpperCase()}
     </span>
   );

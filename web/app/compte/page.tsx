@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
+import { Hint } from "@/lib/hint";
 import { teamContext } from "@/lib/auth";
 import { LANGS, LANG_NAME } from "@/lib/i18n";
 import { getDict, getLang, getT } from "@/lib/lang";
 import { Avatar, Field, Group, Row } from "@/lib/ui";
+import { spaceColor } from "@/lib/avatar";
 import { AutoSubmitSelect } from "../espace/controls";
 import { SpaceShell } from "../espace/shell";
 
@@ -25,11 +27,13 @@ export default async function Compte({ searchParams }: { searchParams: Promise<{
 
   return (
     <SpaceShell narrow team={team} teams={teams} title={a.title}>
-      <Group footer={a.loginNote}>
+      <Group>
         <Row className="min-h-[76px]">
           <Avatar email={user.email} className="h-11 w-11" />
           <span className="min-w-0 flex-1">
-            <span className="type-headline block truncate">{user.email}</span>
+            <Hint tip={a.loginNote} className="block">
+              <span className="type-headline block truncate">{user.email}</span>
+            </Hint>
             <span className="type-small text-ink-2">
               {a.teams(teams.length)}
             </span>
@@ -40,7 +44,7 @@ export default async function Compte({ searchParams }: { searchParams: Promise<{
       <Group title={a.myTeams}>
         {teams.map((t) => (
           <Row key={t.id}>
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[9px] bg-ink type-small font-semibold text-bg" aria-hidden>
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[9px] type-small font-semibold text-white" style={{ background: spaceColor(t.id) }} aria-hidden>
               {t.name[0]?.toUpperCase()}
             </span>
             <span className="min-w-0 flex-1">

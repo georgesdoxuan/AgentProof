@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Hint } from "@/lib/hint";
 import { redirect } from "next/navigation";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { paymentVerdicts } from "@/lib/engine";
@@ -112,7 +113,9 @@ function RowActions({ a, view, back, t }: { a: SpaceAudit; view: View; back: str
             back={back}
             extra={
               <label className="block px-3 pt-1">
-                <span className="type-caption font-semibold text-ink-2">{t.renameField}</span>
+                <span className="type-caption font-semibold text-ink-2">
+                  <Hint focusable={false} tip={t.renameHint}>{t.renameField}</Hint>
+                </span>
                 <input
                   name="title"
                   defaultValue={a.title ?? ""}
@@ -120,7 +123,6 @@ function RowActions({ a, view, back, t }: { a: SpaceAudit; view: View; back: str
                   maxLength={120}
                   className="mt-1 h-9 w-full rounded-[8px] bg-bg-2 px-3 type-small text-ink outline-none focus-visible:outline-2 focus-visible:outline-blue dark:bg-[#3a3a3c]"
                 />
-                <span className="type-caption mt-1 block text-ink-2">{t.renameHint}</span>
               </label>
             }
           >
@@ -158,7 +160,7 @@ export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
   const back = status === "tous" ? PATH[view] : `${PATH[view]}?vue=${status}`;
 
   const intro =
-    view === "trash" ? r.trashIntro : view === "favorites" ? r.favCount(scoped.length) || undefined : scoped.length ? r.count(scoped.length, running.length) : undefined;
+    view === "trash" ? undefined : view === "favorites" ? r.favCount(scoped.length) || undefined : scoped.length ? r.count(scoped.length, running.length) : undefined;
   const title = view === "all" ? r.title : `${r.title} · ${r.sections[view]}`;
   const tab = "type-small flex h-8 items-center rounded-[8px] px-3.5 font-semibold text-ink-2 transition-colors aria-[current=true]:bg-tile aria-[current=true]:text-ink aria-[current=true]:shadow-[0_1px_3px_rgb(0_0_0/0.12)] dark:aria-[current=true]:bg-[#636366]";
 
@@ -169,6 +171,7 @@ export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
       title={title}
       parent={view === "all" ? undefined : [PATH.all, r.title]}
       intro={intro}
+      hint={view === "trash" ? r.trashIntro : undefined}
       actions={
         view === "trash" && manage && trash.some((a) => a.status === "done") ? (
           <Act action="empty" back={back}>
