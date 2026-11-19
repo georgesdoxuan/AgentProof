@@ -267,7 +267,7 @@ export default async function Automations({ searchParams }: { searchParams: Prom
               <input type="checkbox" name="monthly" value="1" className="mt-0.5 h-4 w-4 shrink-0 accent-blue" />
               <span>
                 <span className="font-semibold">{t("Suivi mensuel", "Monthly tracking")}</span>
-                <span className="block text-ink-2">{t("Un audit complet tous les 30 jours, et une alerte par e-mail si le score baisse de 10 points ou plus.", "A full audit every 30 days, and an e-mail alert if the score drops by 10 points or more.")}</span>
+                <span className="block text-ink-2">{t("Un audit complet tous les 30 jours, et une alerte (e-mail et Slack) si le score baisse plus que le seuil choisi.", "A full audit every 30 days, and an alert (e-mail and Slack) if the score drops more than the chosen threshold.")}</span>
               </span>
             </label>
             <div>
