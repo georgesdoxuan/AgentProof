@@ -8,6 +8,10 @@ const nextConfig: NextConfig = {
     const moved = { "/equipe": "equipe", "/compte": "compte", "/espace/abonnement": "abonnement", "/espace/paiement": "paiement", "/espace/comptes": "comptes", "/espace/automations": "automations" };
     return [
       { source: "/espace/reglages", destination: "/espace/reglages/equipe", permanent: false },
+      // The trash moved from the sidebar (Sites › Corbeille, Rapports › Corbeille) to Réglages › Corbeille.
+      { source: "/espace/reglages/corbeille", destination: "/espace/reglages/corbeille/sites", permanent: false },
+      { source: "/espace/sites/corbeille", destination: "/espace/reglages/corbeille/sites", permanent: true },
+      { source: "/espace/rapports/corbeille", destination: "/espace/reglages/corbeille/rapports", permanent: true },
       ...Object.entries(moved).map(([source, tab]) => ({ source, destination: `/espace/reglages/${tab}`, permanent: true })),
     ];
   },

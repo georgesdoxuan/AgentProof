@@ -287,10 +287,10 @@ export const FAQ: Faq[] = [
     cat: "score",
     q: { fr: "Comment supprimer un rapport ?", en: "How do I delete a report?" },
     a: {
-      fr: "Mets-le à la corbeille depuis Rapports. Tu peux le restaurer ou le supprimer définitivement. Un site entier se met à la corbeille depuis Sites.",
-      en: "Move it to the trash from Reports. You can restore it or delete it for good. A whole site goes to the trash from Sites.",
+      fr: "Mets-le à la corbeille depuis Rapports (un site entier, depuis Sites). La corbeille est dans Réglages › Corbeille, rangée en Sites et Rapports : tu peux y restaurer un élément ou le supprimer définitivement.",
+      en: "Move it to the trash from Reports (a whole site, from Sites). The trash is in Settings › Trash, split into Sites and Reports: restore an item there or delete it for good.",
     },
-    link: { href: "/espace/rapports", fr: "Rapports", en: "Reports" },
+    link: { href: "/espace/reglages/corbeille/rapports", fr: "Corbeille", en: "Trash" },
     keys: "supprimer effacer corbeille restaurer retirer favori renommer delete remove trash restore rename favourite",
   },
   {

@@ -4,7 +4,7 @@ import { msg } from "@/lib/lang";
 import { purgeAudit as purge } from "@/lib/purge";
 
 // Report management in the team space: favourite, rename, trash, restore, delete for good. Owner and admin only.
-// Every action is scoped to the current team; the form sends back where to land (a /espace/rapports page).
+// Every action is scoped to the current team; the form sends back where to land (a /espace/rapports page or the trash in Réglages).
 const ACTIONS = ["favorite", "unfavorite", "rename", "trash", "restore", "purge", "empty", "cancel"] as const;
 type Action = (typeof ACTIONS)[number];
 const TITLE_MAX = 120;
@@ -18,7 +18,7 @@ export async function POST(req: Request) {
   const form = await req.formData();
   const back = String(form.get("back") ?? "");
   // Back to a reports page, or to the report itself (cancel from the report header).
-  const next = new URL(/^\/espace\/rapports[\w/-]*(\?[\w=&-]*)?$/.test(back) || /^\/audit\/[0-9a-f-]{36}$/.test(back) ? back : "/espace/rapports", req.url);
+  const next = new URL(/^\/espace\/(rapports|reglages\/corbeille\/rapports)[\w/-]*(\?[\w=&-]*)?$/.test(back) || /^\/audit\/[0-9a-f-]{36}$/.test(back) ? back : "/espace/rapports", req.url);
   if (!canLaunch(ctx.team.role)) return fail(await msg("Ton rôle (lecteur) permet de consulter les rapports, pas de les modifier.", "Your role (viewer) lets you read reports, not change them."), 403);
 
   const action = String(form.get("action") ?? "") as Action;

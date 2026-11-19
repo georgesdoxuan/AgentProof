@@ -458,7 +458,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
               icon="trash"
               className="mt-6 max-w-[560px] print:hidden"
               action={
-                <Link href="/espace/rapports/corbeille" className="text-link hover:underline">
+                <Link href="/espace/reglages/corbeille/rapports" className="text-link hover:underline">
                   {t("Corbeille", "Trash")}
                 </Link>
               }

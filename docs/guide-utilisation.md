@@ -83,7 +83,7 @@ AgentProof commence par la **mode** : les missions sont pensées pour des boutiq
 2. Entrez votre adresse e-mail. Vous recevez un **lien de connexion valable 15 minutes**. Il n'y a pas de mot de passe.
 3. À la première connexion, un **espace d'équipe** est créé pour vous. Vous en êtes le propriétaire.
 
-Votre espace se trouve sous **Mon espace**. La barre de gauche donne accès à Accueil, Sites, Rapports et Réglages ; le bouton en bas de la barre la replie en icônes. **Réglages** regroupe en onglets Équipe, Abonnement, Paiement, Comptes de test, Automations et Compte. Le **Classement** s’ouvre depuis la page Sites.
+Votre espace se trouve sous **Mon espace**. La barre de gauche donne accès à Accueil, Sites, Rapports et Réglages ; le bouton en bas de la barre la replie en icônes. **Réglages** regroupe en onglets Équipe, Abonnement, Paiement, Comptes de test, Automations, Corbeille et Compte. Le **Classement** s’ouvre depuis la page Sites.
 
 L'interface existe en **français et en anglais** : la langue se règle dans **Compte**. Les rapports d'audit restent en français pour l'instant.
 
@@ -219,12 +219,12 @@ La page de chaque site, dans **Sites**, montre le dernier score, la courbe de sc
 
 ## 9. Ranger ses rapports : favoris, renommage, corbeille
 
-Tout se passe dans **Rapports**, qui a trois rubriques : **Tous**, **Favoris** et **Corbeille**. Vous pouvez filtrer l'historique entre les audits en cours et terminés, et **chercher** un rapport par nom de site ou de rapport.
+Le rangement se fait dans **Rapports**, qui a deux rubriques : **Tous** et **Favoris**. Vous pouvez filtrer l'historique entre les audits en cours et terminés, et **chercher** un rapport par nom de site ou de rapport.
 
 - **Favoris** : cliquez sur l'étoile ★ d'un rapport pour le retrouver dans Favoris.
 - **Renommer** : depuis le menu d'actions du rapport. Laissez le champ vide pour reprendre le nom du site.
-- **Corbeille** : « Mettre à la corbeille » retire le rapport des sites et de l'accueil de l'espace. Depuis la corbeille, vous pouvez le **restaurer** ou le **supprimer définitivement** (missions, captures et replays sont alors effacés). Un audit en cours ne peut être supprimé qu'une fois terminé.
-- **Un site entier** se met à la corbeille depuis **Sites**.
+- **Corbeille** : « Mettre à la corbeille » retire le rapport des sites et de l'accueil de l'espace. La corbeille se trouve uniquement dans **Réglages › Corbeille**, rangée en deux catégories, **Sites** et **Rapports**. Depuis la corbeille, vous pouvez le **restaurer** ou le **supprimer définitivement** (missions, captures et replays sont alors effacés). Un audit en cours ne peut être supprimé qu'une fois terminé.
+- **Un site entier** se met à la corbeille depuis **Sites** ; il apparaît alors dans **Réglages › Corbeille › Sites**.
 
 ## 10. Suivre son site : automations, Slack, suivi mensuel
 

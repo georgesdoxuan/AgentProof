@@ -5,17 +5,17 @@ import { locale } from "@/lib/i18n";
 import { getLang, getT } from "@/lib/lang";
 import { loadSpace } from "@/lib/space";
 import { DeviceTag, Icon, Spinner } from "@/lib/ui";
-import { ConfirmButton } from "../../controls";
-import { SpaceShell } from "../../shell";
-import { SitesTabs } from "../../parts";
-import { SiteLogo } from "../../../site-logo";
+import { ConfirmButton } from "../../../controls";
+import { SpaceShell } from "../../../shell";
+import { TrashTabs } from "../../../parts";
+import { SiteLogo } from "../../../../site-logo";
 
 export async function generateMetadata() {
   const t = await getT();
   return { title: `${t("Corbeille · Sites", "Trash · Sites")} · AgentProof` };
 }
 
-const BACK = "/espace/sites/corbeille";
+const BACK = "/espace/reglages/corbeille/sites";
 
 // A small form posting one action on one site (or the whole trash), then landing back here.
 function Act({ action, site, children }: { action: string; site?: { site_id: number; device: string }; children: React.ReactNode }) {
@@ -30,14 +30,14 @@ function Act({ action, site, children }: { action: string; site?: { site_id: num
   );
 }
 
-// Sites › Corbeille: sites whose reports are all in the trash, to restore or delete for good.
+// Réglages › Corbeille › Sites: sites whose reports are all in the trash, to restore or delete for good.
 export default async function SitesCorbeille() {
   const ctx = await teamContext();
   if (!ctx) redirect(`/connexion?next=${BACK}`);
   if (!ctx.team) redirect("/espace");
   const { team } = ctx;
   const [t, lang] = await Promise.all([getT(), getLang()]);
-  const { trashedSites } = await loadSpace(team.id);
+  const { trashedSites, trash } = await loadSpace(team.id);
   const manage = canLaunch(team.role);
   const date = (d: string) => new Date(d).toLocaleDateString(locale(lang), { timeZone: "Europe/Paris", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
   const purgeable = trashedSites.filter((s) => !s.running);
@@ -45,30 +45,33 @@ export default async function SitesCorbeille() {
 
   return (
     <SpaceShell
-      title={t("Sites · Corbeille", "Sites · Trash")}
-      parent={["/espace/sites", "Sites"]}
+      narrow
+      settings
       hint={t(
         "Un site mis à la corbeille disparaît des sites et de l'accueil avec ses rapports. Restaure-le, ou supprime-le définitivement.",
         "A site in the trash leaves the sites and the home page with its reports. Restore it, or delete it for good.",
       )}
-      actions={
-        manage && purgeable.length ? (
-          <Act action="empty">
-            <ConfirmButton
-              message={t(
-                `Supprimer définitivement ${purgeable.length} site${purgeable.length > 1 ? "s" : ""} et tous leurs rapports ? Cette action est irréversible.`,
-                `Permanently delete ${purgeable.length} site${purgeable.length > 1 ? "s" : ""} and all their reports? This cannot be undone.`,
-              )}
-              className="btn btn-secondary min-h-9 px-4 text-[14px] text-fail shadow-[inset_0_0_0_1px_currentColor] hover:bg-fail hover:text-white"
-            >
-              {t("Vider la corbeille", "Empty trash")}
-            </ConfirmButton>
-          </Act>
-        ) : undefined
-      }
     >
       <section>
-        <SitesTabs current="trash" />
+        <TrashTabs
+          current="sites"
+          counts={{ sites: trashedSites.length, rapports: trash.length }}
+          action={
+            manage && purgeable.length ? (
+              <Act action="empty">
+                <ConfirmButton
+                  message={t(
+                    `Supprimer définitivement ${purgeable.length} site${purgeable.length > 1 ? "s" : ""} et tous leurs rapports ? Cette action est irréversible.`,
+                    `Permanently delete ${purgeable.length} site${purgeable.length > 1 ? "s" : ""} and all their reports? This cannot be undone.`,
+                  )}
+                  className="btn btn-secondary min-h-9 px-4 text-[14px] text-fail shadow-[inset_0_0_0_1px_currentColor] hover:bg-fail hover:text-white"
+                >
+                  {t("Vider la corbeille", "Empty trash")}
+                </ConfirmButton>
+              </Act>
+            ) : undefined
+          }
+        />
         <div className="rounded-[18px] bg-tile">
           {trashedSites.length ? (
             trashedSites.map((s) => (

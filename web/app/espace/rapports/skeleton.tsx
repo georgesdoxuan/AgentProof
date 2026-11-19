@@ -1,7 +1,7 @@
 import { Bone, Line, SkSpace } from "../../skeleton";
 
-// Reports (and its Favorites and Trash sub-sections): filters, then one row per audit.
-// Loading state of Rapports (chips), Favoris (back link, chips) and Corbeille (back link, no chips).
+// Reports (and its Favorites sub-section): filters, then one row per audit.
+// Loading state of Rapports (chips) and Favoris (back link, chips).
 export function SkReports({ intro, parent }: { intro?: "chips"; parent?: boolean }) {
   return (
     <SkSpace intro={intro} parent={parent}>

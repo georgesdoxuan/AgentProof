@@ -27,10 +27,10 @@ const ICON = {
   trash: "M4 6.5h16M9.5 6.5V4.5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2M6 6.5l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M10 10.5v6M14 10.5v6",
 };
 
-// Sub-sections shown under their parent in the sidebar (Rapports › Favoris, Corbeille). On narrow screens the page shows them as tabs.
+// Sub-sections shown under their parent in the sidebar (Rapports › Favoris). On narrow screens the page shows them as tabs.
+// The trash is not one: it lives in Réglages › Corbeille only.
 const CHILDREN: Record<string, readonly (readonly [string, string])[]> = {
-  "/espace/sites": [["/espace/sites/corbeille", ICON.trash]],
-  "/espace/rapports": [["/espace/rapports/favoris", ICON.star], ["/espace/rapports/corbeille", ICON.trash]],
+  "/espace/rapports": [["/espace/rapports/favoris", ICON.star]],
 };
 // Pages reached from a section without their own entry: the ranking opens from Sites, so Sites stays lit on it.
 const ALSO: Record<string, string> = { "/espace/classement": "/espace/sites" };
@@ -45,7 +45,7 @@ const itemCls = (current: boolean) =>
     current ? "bg-tile font-semibold text-ink shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#3a3a3c]" : "text-ink-2 hover:bg-tile/60 hover:text-ink"
   }`;
 
-// The daily sections, then Réglages: every setting (team, plan, payment, test accounts, automations, account) is a tab of that one page.
+// The daily sections, then Réglages: every setting (team, plan, payment, test accounts, automations, trash, account) is a tab of that one page.
 const NAV = [
   [["/espace", ICON.home], ["/espace/sites", ICON.globe], ["/espace/rapports", ICON.doc]],
   [["/espace/reglages", ICON.sliders]],
@@ -139,7 +139,7 @@ function SideNav({ t, collapsed, reserve }: { t: Dict["space"]; collapsed: boole
                   {!collapsed && label}
                   <NavBadge href={href} t={t.side} collapsed={collapsed} />
                 </Link>
-                {children.length > 0 && !collapsed && (
+                {(children.length > 0 || href === "/espace/sites") && !collapsed && (
                   <ul className="mt-0.5 flex flex-col gap-0.5 pl-7">
                     {href === "/espace/sites" && <RecentSites reserve={reserve} />}
                     {children.map(([c, cIcon]) => {
@@ -165,7 +165,7 @@ function SideNav({ t, collapsed, reserve }: { t: Dict["space"]; collapsed: boole
 }
 
 // Réglages: one page, one tab per setting. Each tab is its own URL (/espace/reglages/<tab>), so links and the back button work.
-const SETTINGS = ["equipe", "abonnement", "paiement", "comptes", "automations", "compte"] as const;
+const SETTINGS = ["equipe", "abonnement", "paiement", "comptes", "automations", "corbeille", "compte"] as const;
 export function SettingsTabs({ t }: { t: Dict["space"] }) {
   const path = usePathname();
   return (

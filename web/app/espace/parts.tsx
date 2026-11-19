@@ -268,18 +268,22 @@ export async function PriorityCard({ site, b }: { site: SiteView; b: Blocker }) 
   );
 }
 
-// Sites › Tous / Corbeille as tabs on narrow screens; the sidebar shows the sub-section on wide ones.
-export async function SitesTabs({ current }: { current: "all" | "trash" }) {
+// Réglages › Corbeille: Sites and Rapports as one segmented control, with the counts, and the page's « Vider » on the right.
+export async function TrashTabs({ current, counts, action }: { current: "sites" | "rapports"; counts: { sites: number; rapports: number }; action?: React.ReactNode }) {
   const t = await getT();
   const tab =
-    "type-small flex h-8 items-center rounded-[8px] px-3.5 font-semibold text-ink-2 transition-colors aria-[current=true]:bg-tile aria-[current=true]:text-ink aria-[current=true]:shadow-[0_1px_3px_rgb(0_0_0/0.12)] dark:aria-[current=true]:bg-[#636366]";
+    "type-small flex h-8 items-center gap-1.5 rounded-[8px] px-3.5 font-semibold text-ink-2 transition-colors aria-[current=true]:bg-tile aria-[current=true]:text-ink aria-[current=true]:shadow-[0_1px_3px_rgb(0_0_0/0.12)] dark:aria-[current=true]:bg-[#636366]";
   return (
-    <nav aria-label={t("Rubriques des sites", "Site sections")} className="mb-3 inline-flex rounded-[10px] bg-fill p-[3px] lg:hidden">
-      {([["all", "/espace/sites", t("Tous", "All")], ["trash", "/espace/sites/corbeille", t("Corbeille", "Trash")]] as const).map(([v, href, label]) => (
-        <Link key={v} href={href} aria-current={current === v ? "true" : undefined} className={tab}>
-          {label}
-        </Link>
-      ))}
-    </nav>
+    <div className="mb-3 flex min-h-9 flex-wrap items-center justify-between gap-3">
+      <nav aria-label={t("Catégories de la corbeille", "Trash categories")} className="inline-flex rounded-[10px] bg-fill p-[3px]">
+        {([["sites", "/espace/reglages/corbeille/sites", "Sites", "Sites"], ["rapports", "/espace/reglages/corbeille/rapports", "Rapports", "Reports"]] as const).map(([v, href, fr, en]) => (
+          <Link key={v} href={href} aria-current={current === v ? "true" : undefined} className={tab}>
+            {t(fr, en)}
+            <span className="font-normal text-ink-2 tnum">{counts[v]}</span>
+          </Link>
+        ))}
+      </nav>
+      {action}
+    </div>
   );
 }
