@@ -47,9 +47,10 @@ const itemCls = (current: boolean) =>
     current ? "bg-tile font-semibold text-ink shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#3a3a3c]" : "text-ink-2 hover:bg-tile/60 hover:text-ink"
   }`;
 
-// The daily sections, then Réglages: every setting (team, plan, payment, test accounts, automations, trash, account) is a tab of that one page.
+// The daily sections (Automations included: page watch, automatic audits, alerts), then Réglages: every other setting
+// (team, plan, payment, test accounts, trash, account) is a tab of that one page.
 const NAV = [
-  [["/espace", ICON.home], ["/espace/sites", ICON.globe], ["/espace/rapports", ICON.doc]],
+  [["/espace", ICON.home], ["/espace/sites", ICON.globe], ["/espace/rapports", ICON.doc], ["/espace/automations", GLYPH.bolt]],
   [["/espace/reglages", ICON.sliders]],
 ] as const;
 type Section = keyof Dict["space"]["sections"];
@@ -172,13 +173,12 @@ function SideNav({ t, collapsed, reserve }: { t: Dict["space"]; collapsed: boole
 
 // Réglages: one page, one tab per setting. Each tab is its own URL (/espace/reglages/<tab>), so links and the back button work.
 // Each tab carries its glyph (the sidebar's trash for Corbeille). On phones the row scrolls sideways and the open tab
-// is scrolled into view. Tighter padding below 64rem of page width, so all seven fit beside an open sidebar on a laptop.
+// is scrolled into view. Tighter padding below 64rem of page width, so all six fit beside an open sidebar on a laptop.
 const SETTINGS = [
   ["equipe", GLYPH.team],
   ["abonnement", GLYPH.credit],
   ["paiement", GLYPH.card],
   ["comptes", GLYPH.key],
-  ["automations", GLYPH.bolt],
   ["corbeille", ICON.trash],
   ["compte", GLYPH.person],
 ] as const;

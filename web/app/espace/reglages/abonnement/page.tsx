@@ -224,7 +224,7 @@ export default async function Abonnement() {
               {cap ? crIcon(cap) : t("Aucun plafond", "No cap")}
             </Hint>
           </span>
-          <Link href="/espace/reglages/automations#plafond" className="more">
+          <Link href="/espace/automations#plafond" className="more">
             {t("Régler", "Set up")}
           </Link>
         </Row>
@@ -243,7 +243,7 @@ export default async function Abonnement() {
               {t(`À ${ALERTS.join(" % et ")} %`, `At ${ALERTS.join("% and ")}%`)}
             </Hint>
           </span>
-          <Link href="/espace/reglages/automations" className="more">
+          <Link href="/espace/automations" className="more">
             {t("Régler", "Set up")}
           </Link>
         </Row>
