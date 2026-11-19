@@ -234,7 +234,7 @@ export default async function Automations({ searchParams }: { searchParams: Prom
                   </span>
                 </span>
                 {admin ? (
-                  <span className="flex shrink-0 items-center gap-3">
+                  <span className="flex shrink-0 items-center gap-3 max-sm:w-full max-sm:justify-between">
                     <form action="/api/automations" method="post">
                       {hiddenForm("interval", a.id)}
                       <AutoSubmitSelect name="interval" defaultValue={String(a.interval_hours ?? 24)} label={t(`Fréquence pour ${site(a.url)}`, `Frequency for ${site(a.url)}`)} options={INTERVALS} />
