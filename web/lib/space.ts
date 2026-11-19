@@ -1,5 +1,6 @@
 import { locale, type Lang } from "./i18n";
 import "server-only";
+import { cache } from "react";
 import { AGENT_ONLY, EXCLUDED, db } from "./engine";
 import { summarize } from "./ui";
 
@@ -126,7 +127,9 @@ export async function reportSuffix(audit: { id: string; team_id: string | null; 
   return label.slice(reportName(row).length);
 }
 
-export async function loadSpace(teamId: string) {
+// cache(): the sidebar (layout) and the page both read the space in one request; the database is read once.
+export const loadSpace = cache(loadSpaceOnce);
+async function loadSpaceOnce(teamId: string) {
   const [{ data }, { data: fixes }, { data: board }] = await Promise.all([
     db
       .from("audits")

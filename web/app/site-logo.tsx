@@ -8,7 +8,7 @@ import { useState } from "react";
 // Decorative (alt=""): the site's name is always written next to it, a screen reader would otherwise read it twice.
 // Logos belong to their owners; nominative use only.
 // Loaded eagerly, no fade: a few KB each from the CDN, so they show with the page.
-const PX = { sm: 24, md: 32, lg: 48 } as const;
+const PX = { xs: 18, sm: 24, md: 32, lg: 48 } as const;
 const V = 3;
 
 export function SiteLogo({ domain, name, size = "md", className = "" }: { domain?: string | null; name?: string | null; size?: keyof typeof PX; className?: string }) {
