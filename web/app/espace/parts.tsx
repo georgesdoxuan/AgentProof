@@ -65,8 +65,8 @@ export async function SiteCard({ site, manage = false }: { site: SiteView; manag
         </span>
         {manage ? <span className="h-9 w-9 shrink-0" aria-hidden /> : <Chevron className="mt-2 h-3 w-3 text-ink-2" />}
       </div>
-      <div className="flex items-end justify-between gap-4">
-        <span className="flex items-center gap-2.5 text-[48px] font-semibold leading-none tracking-[-0.01em] tnum">
+      <div className="flex min-w-0 flex-wrap items-end justify-between gap-x-4 gap-y-2">
+        <span className="flex min-w-0 flex-wrap items-center gap-x-2.5 text-[48px] font-semibold leading-none tracking-[-0.01em] tnum">
           <StatusGlyph tone={scoreTone(s?.score ?? null)} className="h-6 w-6" />
           {s?.score ?? "—"}
           <span className="-ml-1.5 text-[24px] text-ink-2">%</span>

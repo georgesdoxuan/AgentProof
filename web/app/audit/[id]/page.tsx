@@ -771,7 +771,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                 <Chips className="mt-3">
                   <Chip icon="lock">3D Secure · {pay.agent_answer?.three_ds_seen ? t("demandé", "requested") : t("non", "no")}</Chip>
                   <Chip icon="shield">{t("Prestataire", "Provider")} · {known(pay.agent_answer?.payment_provider)}</Chip>
-                  <Chip icon="payment">{known(pay.agent_answer?.payment_methods)}</Chip>
+                  <Chip icon="payment" className="max-w-full whitespace-normal!">{known(pay.agent_answer?.payment_methods)}</Chip>
                 </Chips>
                 {pay.payment_verdict === "three_ds_timeout" && pay.judge?.earlier_screenshot ? (
                   <p className="type-small mt-2 text-ink-2">
