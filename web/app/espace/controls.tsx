@@ -33,7 +33,8 @@ const CHILDREN: Record<string, readonly (readonly [string, string])[]> = {
   "/espace/rapports": [["/espace/rapports/favoris", ICON.star]],
 };
 // Pages reached from a section without their own entry: the ranking opens from Sites, so Sites stays lit on it.
-const ALSO: Record<string, string> = { "/espace/classement": "/espace/sites" };
+// A report and its replays belong to Rapports: that entry stays lit while one is open.
+const ALSO: Record<string, string> = { "/espace/classement": "/espace/sites", "/audit/": "/espace/rapports", "/replay/": "/espace/rapports" };
 
 const glyph = (d: string, cls: string) => (
   <svg viewBox="0 0 24 24" className={cls} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
