@@ -15,7 +15,9 @@ import { FORM_FAQ } from "@/lib/faq";
 // Report opened by "Voir un exemple de rapport": real counted blockers, captures, replays and a plan. Env var to swap it without code.
 const EXAMPLE_AUDIT = process.env.EXAMPLE_AUDIT_ID ?? "8c843d3f-3d95-4834-aace-21880a85f499"; // Promod, 78 %
 // The "Preuves" tile shows one chosen blocked mission, not the latest failure: a new audit must never swap in an unreadable capture.
-const PROOF_RUN = Number(process.env.PROOF_RUN_ID ?? 228); // Promod, product page with no size selector
+// A desktop capture (1024 px wide, about 510 px on screen): sharp on a Retina screen. A mobile capture is only 390 px
+// wide; stretched to the tile it looked pixelated (run 228), so a mobile one is never shown wider than its own pixels.
+const PROOF_RUN = Number(process.env.PROOF_RUN_ID ?? 194); // Promod, desktop product page, size selector out of reach
 // The demo on the home page: one blocked mission of EXAMPLE_AUDIT, its screenshot and the fix the report gives for it.
 // Read from the database at render: a recording, never a live agent session (no H call).
 const DEMO_RUN = Number(process.env.DEMO_RUN_ID ?? 19); // Promod, mission 2 « Menu + filtre taille », size selector
@@ -28,7 +30,7 @@ export default async function Home() {
     currentUser(),
     db.from("site_scores").select("*"),
     // A real blocked mission for the "Preuves" tile: evidence over illustration.
-    db.from("runs").select("screenshot_url, final_url, blocker_type").eq("id", PROOF_RUN).maybeSingle(),
+    db.from("runs").select("screenshot_url, final_url, blocker_type, audits(device)").eq("id", PROOF_RUN).maybeSingle(),
     // Time of a 5-mission audit, measured on the latest audits (queue left out: it changes by the minute).
     loadPace(),
     db.from("runs").select("id, audit_id, success, blocker_type, screenshot_url, final_url, agent_answer, missions(title, position)").eq("id", DEMO_RUN).maybeSingle(),
@@ -167,7 +169,7 @@ export default async function Home() {
                 )}
               </p>
               <div className="mt-8 -mb-16 translate-x-6 max-[734px]:-mb-10 max-[734px]:translate-x-4">
-                <BrowserFrame url={proof?.final_url}>
+                <BrowserFrame url={proof?.final_url} className={(proof?.audits as { device?: string } | null)?.device === "mobile" ? "max-w-[390px]" : ""}>
                   {proof?.screenshot_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={proof.screenshot_url} alt={`${t("Capture réelle d'une mission bloquée", "Real screenshot of a blocked mission")} : ${blockerLabel(proof.blocker_type, lang)}`} className="block w-full" loading="lazy" />
