@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LEGAL } from "@/lib/legal";
+import { LEGAL, LEGAL_EN } from "@/lib/legal";
 import { getLang } from "@/lib/lang";
 
 export async function generateMetadata() {
@@ -11,6 +11,50 @@ const Section = ({ title, id, children }: { title: string; id?: string; children
     <h2 className="type-h3">{title}</h2>
     <div className="mt-3 space-y-3 text-ink-2">{children}</div>
   </section>
+);
+
+const lk = "text-link hover:underline";
+// FAQ and team (retours Adonaï, 18 nov). Prénoms only, no surnames or photos.
+const FAQ = {
+  fr: [
+    ["Est-ce légal de tester un site sans son accord ?", <>L&apos;agent visite des pages publiques comme un client : sans créer de compte, sans payer et sans contourner de protection. Si un site le bloque, la mission est notée « anti-bot » et sort du score.</>],
+    ["Quelles données collectez-vous ?", <>Ton e-mail si tu te connectes ou demandes un rapport, l&apos;adresse du site testé et les captures de l&apos;agent. L&apos;agent ne saisit aucune donnée personnelle sur les sites ; le détail est sur la page <Link href="/confidentialite" className={lk}>confidentialité</Link>.</>],
+    ["L’agent paie-t-il ?", <>Jamais pendant un audit : il s&apos;arrête à la première page du checkout, donc le paiement n&apos;est pas dans le score. On le mesure à part, voir <a href="#paiement" className={lk}>la suite</a>.</>],
+    ["Le score est-il fiable ?", <>Un juge visuel indépendant relit chaque mission, chaque échec est rejoué une fois, et le classement fait la moyenne de 2 passages. Chaque mission a sa capture et son replay pour le vérifier.</>],
+    ["Mon site est dans le classement : je peux contester ?", <>Oui : écris à <a href={`mailto:${LEGAL.contact}`} className={lk}>{LEGAL.contact}</a> avec le lien du rapport. On vérifie la capture et le replay à la main, puis on corrige ou on relance la mission.</>],
+  ],
+  en: [
+    ["Is it legal to test a site without its consent?", <>The agent visits public pages like a customer: it creates no account, never pays and bypasses no protection. If a site blocks it, the mission is marked “anti-bot” and left out of the score.</>],
+    ["What data do you collect?", <>Your e-mail if you sign in or ask for a report, the address of the tested site and the agent&apos;s screenshots. The agent enters no personal data on sites; details are on the <Link href="/confidentialite" className={lk}>privacy</Link> page.</>],
+    ["Does the agent pay?", <>Never during an audit: it stops at the first checkout page, so payment is not in the score. We measure it separately, see <a href="#paiement" className={lk}>what comes next</a>.</>],
+    ["Is the score reliable?", <>An independent visual judge reviews every mission, every failure is replayed once, and the ranking averages 2 runs. Each mission has its screenshot and replay so you can check.</>],
+    ["My site is in the ranking: can I dispute it?", <>Yes: write to <a href={`mailto:${LEGAL.contact}`} className={lk}>{LEGAL.contact}</a> with the report link. We check the screenshot and the replay by hand, then fix or rerun the mission.</>],
+  ],
+} as const;
+const TEAM = {
+  fr: [["Thomas", "CEO : projet, business et pitch"], ["Georges", "CPO et CTO : produit, application et architecture"], ["Alexandre", "CAIO : agent IA, juge visuel et corrections"], ["Mehdi", "CAO : automatisations n8n (e-mails, suivi, alertes)"], ["Adonaï", "CDO : données, métriques, éthique et conformité"]],
+  en: [["Thomas", "CEO: project, business and pitch"], ["Georges", "CPO and CTO: product, app and architecture"], ["Alexandre", "CAIO: AI agent, visual judge and fixes"], ["Mehdi", "CAO: n8n automations (e-mails, monitoring, alerts)"], ["Adonaï", "CDO: data, metrics, ethics and compliance"]],
+};
+
+const FaqTeam = ({ lang }: { lang: "fr" | "en" }) => (
+  <>
+    <Section title={lang === "en" ? "Questions" : "Questions fréquentes"} id="faq">
+      {FAQ[lang].map(([q, a]) => (
+        <details key={q} className="group border-t border-line pt-3">
+          <summary className="cursor-pointer list-none font-medium text-ink [&::-webkit-details-marker]:hidden">{q}</summary>
+          <p className="mt-2">{a}</p>
+        </details>
+      ))}
+    </Section>
+    <Section title={lang === "en" ? "The team" : "L’équipe"} id="equipe">
+      <ul className="space-y-1">
+        {TEAM[lang].map(([n, r]) => (
+          <li key={n}><b className="text-ink">{n}</b>, {r}</li>
+        ))}
+      </ul>
+      <p className="type-small">{lang === "en" ? LEGAL_EN.project : LEGAL.project}.</p>
+    </Section>
+  </>
 );
 
 export default async function Methode() {
@@ -98,6 +142,7 @@ export default async function Methode() {
             with the report link. We check the screenshot and the replay by hand, then fix or rerun the mission.
           </p>
         </Section>
+        <FaqTeam lang="en" />
           </>
         ) : (
           <>
@@ -181,6 +226,7 @@ export default async function Methode() {
             avec le lien du rapport. On vérifie la capture et le replay à la main, puis on corrige ou on relance la mission.
           </p>
         </Section>
+        <FaqTeam lang="fr" />
           </>
         )}
       </article>
