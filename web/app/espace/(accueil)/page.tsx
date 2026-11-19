@@ -74,18 +74,20 @@ export default async function Accueil() {
   const when = period === choices[0] ? t("ce mois-ci", "this month") : t("sur la période", "over this period");
 
   // Facts as chips, like a dashboard's header: count, live work, what is left to fix, freshness.
+  // Large chips (36px) in the 40px row the button already sets: the sections below stay where they were. With no button
+  // (read-only), a -5px margin keeps the row at the old 26px.
   const status = audits.length ? (
-    <Chips>
-      <Chip icon="layers">{plural(sites.length, "site")}</Chip>
-      {running.length > 0 && <Chip icon="live" tone="live">{running.length} {t("en cours", "running")}</Chip>}
+    <Chips className={launch ? "" : "-my-[5px]"}>
+      <Chip size="lg" icon="layers">{plural(sites.length, "site")}</Chip>
+      {running.length > 0 && <Chip size="lg" icon="live" tone="live">{running.length} {t("en cours", "running")}</Chip>}
       {open.length > 0 ? (
-        <Chip icon="wrench" tone="warn">
+        <Chip size="lg" icon="wrench" tone="warn">
           {plural(open.length, t("blocage", "blocker"))} · {plural(lost, "mission")} {t(lost > 1 ? "perdues" : "perdue", "lost")}
         </Chip>
       ) : (
-        sites.some((s) => s.latest) && <Chip icon="none" tone="pass">{t("Aucun blocage", "No blocker")}</Chip>
+        sites.some((s) => s.latest) && <Chip size="lg" icon="none" tone="pass">{t("Aucun blocage", "No blocker")}</Chip>
       )}
-      {last && <Chip icon="clock">{shortDate(last.created_at, lang)}</Chip>}
+      {last && <Chip size="lg" icon="clock">{shortDate(last.created_at, lang)}</Chip>}
     </Chips>
   ) : undefined;
 
