@@ -238,10 +238,14 @@ function Credits({ t, lang, collapsed }: { t: T; lang: Lang; collapsed: boolean 
     const len = 2 * Math.PI * r;
     return (
       <Link href="/espace/reglages/abonnement" title={c ? `${t.credits} · ${c.used} / ${c.included}` : t.credits} aria-label={t.credits} className="grid h-12 w-12 place-items-center rounded-[8px] hover:bg-tile/60">
-        <svg viewBox="0 0 36 36" className="h-9 w-9 -rotate-90" aria-hidden>
-          <circle cx="18" cy="18" r={r} fill="none" stroke="currentColor" strokeWidth="3" className="text-fill" />
-          <circle cx="18" cy="18" r={r} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className={ring} strokeDasharray={len} strokeDashoffset={len * (1 - pct / 100)} />
-        </svg>
+        {/* The used share written inside: a nearly empty ring alone would read as a loading spinner. */}
+        <span className="relative grid h-9 w-9 place-items-center">
+          <svg viewBox="0 0 36 36" className="absolute inset-0 h-9 w-9 -rotate-90" aria-hidden>
+            <circle cx="18" cy="18" r={r} fill="none" stroke="currentColor" strokeWidth="3" className="text-fill" />
+            {pct > 0 && <circle cx="18" cy="18" r={r} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className={ring} strokeDasharray={len} strokeDashoffset={len * (1 - Math.max(pct, 4) / 100)} />}
+          </svg>
+          <span className="text-[10px] font-semibold tabular-nums text-ink-2" aria-hidden>{c ? `${pct}%` : ""}</span>
+        </span>
       </Link>
     );
   }
