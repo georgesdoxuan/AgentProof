@@ -75,7 +75,7 @@ AgentProof fonctionne pour **tout site e-commerce qui vend des produits physique
 | **Blocage** | La raison de l'échec : bandeau cookies, pop-up, recherche ou filtre qui échoue, sélecteur de variante (taille, couleur…), bouton qui ne réagit pas, compte obligatoire, erreur de page, etc. |
 | **Score** | Missions réussies ÷ missions comptées. |
 | **Hors score** | Une mission sans lien avec l'interface du site : rupture de stock, anti-bot ou captcha, article absent du catalogue, erreur de l'agent, ou résultat que le juge n'a pas pu vérifier. Elle est affichée à part et ne compte ni pour ni contre le site. |
-| **Crédit** | L'unité de consommation : une mission jouée sur un site = un crédit. |
+| **Crédit** | L'unité de consommation : une mission jouée sur un site = un crédit (1,5 avec l'agent précis). |
 
 ## 4. Créer son compte
 
@@ -130,7 +130,8 @@ Quelle que soit la consigne, l'agent s'arrête toujours à la première page du 
 
 ### Options avancées
 
-- **Comparer les deux agents** : les mêmes missions jouées par l'agent rapide et l'agent précis, avec réussite, durée et coût côte à côte. Double le coût de l'audit et se fait sans concurrent.
+- **Agent** : rapide (1 crédit par mission) ou précis, le modèle le plus capable de H (1,5 crédit par mission, le total arrondi au crédit supérieur : 8 crédits pour 5 missions). Même durée mesurée.
+- **Comparer les deux agents** : les mêmes missions jouées par l'agent rapide et l'agent précis, avec réussite, durée et coût côte à côte. Coûte un audit rapide plus un audit précis (13 crédits pour 5 missions) et se fait sans concurrent.
 - **Type de test** : audit complet, ou paiement seulement (voir [le test de paiement](#11-le-test-de-paiement-facultatif)).
 
 ### Avant de valider
@@ -317,14 +318,16 @@ Dans **Équipe**, indiquez le nom et le logo à afficher : ils **remplacent Agen
 
 ### Les crédits
 
-**Une mission jouée par l'agent sur un site = un crédit.**
+**Une mission jouée par l'agent rapide sur un site = un crédit. Avec l'agent précis, 1,5 crédit par mission, le total d'un audit arrondi au crédit supérieur.**
 
 | Action | Crédits |
 |---|---|
-| Audit complet (5 missions) | 5 |
+| Audit complet (5 missions), agent rapide | 5 |
+| Audit complet (5 missions), agent précis | 8 (7,5 arrondi) |
+| Comparer les deux agents (5 missions) | 13 (5 + 8) |
 | Audit avec concurrent | 5 de plus pour le concurrent (compté mission par mission) |
 | Ordinateur + Mobile | 10 |
-| Mission ratée rejouée | 1 |
+| Mission ratée rejouée | 1 (1,5 avec l'agent précis) |
 | Mission d'un audit automatique | 1 |
 | Test de paiement | 2 |
 | Vérification de page (automations) | 0, gratuit |

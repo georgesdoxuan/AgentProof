@@ -172,10 +172,10 @@ export const FAQ: Faq[] = [
     cat: "audits",
     q: { fr: "À quoi sert la comparaison de deux modèles ?", en: "What is the two-model comparison for?" },
     a: {
-      fr: "Elle fait jouer les mêmes missions par l'agent rapide et l'agent précis : réussite, durée et coût côte à côte. Elle double le coût de l'audit et se fait sans concurrent.",
-      en: "It has the fast and the precise agent play the same missions: success, duration and cost side by side. It doubles the audit cost and runs without a competitor.",
+      fr: "Elle fait jouer les mêmes missions par l'agent rapide et l'agent précis : réussite, durée et coût côte à côte. Elle coûte un audit rapide plus un audit précis (13 crédits pour cinq missions) et se fait sans concurrent.",
+      en: "It has the fast and the precise agent play the same missions: success, duration and cost side by side. It costs a fast audit plus a precise audit (13 credits for five missions) and runs without a competitor.",
     },
-    keys: "modeles rapide precis flash pro comparer agents fast precise models",
+    keys: "modeles rapide precis flash pro comparer agents fast precise models credits cout",
   },
   {
     id: "autorisation",
@@ -321,8 +321,8 @@ export const FAQ: Faq[] = [
     cat: "credits",
     q: { fr: "Combien coûte un audit ?", en: "How much does an audit cost?" },
     a: {
-      fr: "Cinq crédits, un par mission. L'offre gratuite en donne 15 par mois, soit jusqu'à 3 audits. Pendant l'essai, rien n'est facturé.",
-      en: "Five credits, one per mission. The free plan gives 15 a month, that is up to 3 audits. During the trial, nothing is charged.",
+      fr: "Cinq crédits avec l'agent rapide, un par mission. Avec l'agent précis, 1,5 crédit par mission, arrondi au crédit supérieur : huit crédits pour cinq missions. L'offre gratuite en donne 15 par mois, soit jusqu'à 3 audits rapides. Pendant l'essai, rien n'est facturé.",
+      en: "Five credits with the fast agent, one per mission. With the precise agent, 1.5 credits per mission, rounded up: eight credits for five missions. The free plan gives 15 a month, that is up to 3 fast audits. During the trial, nothing is charged.",
     },
     link: { href: "/espace/reglages/abonnement", fr: "Abonnement et crédits", en: "Plan and credits" },
     keys: "prix cout combien tarif payer facture audit price cost how much pay",
@@ -332,8 +332,8 @@ export const FAQ: Faq[] = [
     cat: "credits",
     q: { fr: "C'est quoi un crédit ?", en: "What is a credit?" },
     a: {
-      fr: "Une mission jouée par l'agent sur un site. Un audit complet de cinq missions utilise cinq crédits, concurrent compris mission par mission : Ordinateur + Mobile en utilise donc dix. Un test de paiement en utilise deux.",
-      en: "One mission the agent runs on a site. A full five-mission audit uses five credits, the competitor counted mission by mission: Desktop + Mobile therefore uses ten. A payment test uses two.",
+      fr: "Une mission jouée par l'agent rapide sur un site. Un audit complet de cinq missions utilise cinq crédits, concurrent compris mission par mission : Ordinateur + Mobile en utilise donc dix. L'agent précis compte 1,5 crédit par mission, le total d'un audit arrondi au crédit supérieur (huit pour cinq missions). Un test de paiement en utilise deux.",
+      en: "One mission the fast agent runs on a site. A full five-mission audit uses five credits, the competitor counted mission by mission: Desktop + Mobile therefore uses ten. The precise agent counts 1.5 credits per mission, an audit's total rounded up (eight for five missions). A payment test uses two.",
     },
     link: { href: "/espace/reglages/abonnement", fr: "Abonnement et crédits", en: "Plan and credits" },
     keys: "credits consommation cout prix combien bareme decompte usage cost price how much",
@@ -343,8 +343,8 @@ export const FAQ: Faq[] = [
     cat: "credits",
     q: { fr: "Quelles sont les offres ?", en: "What are the plans?" },
     a: {
-      fr: "Gratuit : le classement public et 15 crédits par mois, soit jusqu'à 3 audits (une mission ratée rejouée utilise un crédit de plus). Audit complet : 490 € par site, un rapport ponctuel. Suivi mensuel : 149 € par mois, avec un audit complet automatique chaque mois, tes pages relues chaque jour sans agent ni crédit, et 150 crédits pour relancer des audits quand tu veux (5 crédits par audit, l'audit automatique compris : jusqu'à 30 audits par mois, moins s'il y a des missions rejouées). Agences : 600 crédits pour plusieurs sites clients. Rien n'est facturé tant que le paiement en ligne n'est pas ouvert.",
-      en: "Free: the public ranking and 15 credits a month, that is up to 3 audits (a failed mission replayed uses one more credit). Full audit: €490 per site, a one-off report. Monthly tracking: €149 a month, with an automatic full audit every month, your pages read daily without the agent and without credits, and 150 credits to rerun audits whenever you want (5 credits per audit, the automatic one included: up to 30 audits a month, fewer when missions are replayed). Agencies: 600 credits for several client sites. Nothing is charged while online payment is closed.",
+      fr: "Gratuit : le classement public et 15 crédits par mois, soit jusqu'à 3 audits (une mission ratée rejouée utilise un crédit de plus). Audit complet : 490 € par site, un rapport ponctuel. Suivi mensuel : 149 € par mois, avec un audit complet automatique chaque mois, tes pages relues chaque jour sans agent ni crédit, et 150 crédits pour relancer des audits quand tu veux (5 crédits par audit avec l'agent rapide, 8 avec l'agent précis, l'audit automatique compris : jusqu'à 30 audits par mois, moins s'il y a des missions rejouées). Agences : 600 crédits pour plusieurs sites clients. Rien n'est facturé tant que le paiement en ligne n'est pas ouvert.",
+      en: "Free: the public ranking and 15 credits a month, that is up to 3 audits (a failed mission replayed uses one more credit). Full audit: €490 per site, a one-off report. Monthly tracking: €149 a month, with an automatic full audit every month, your pages read daily without the agent and without credits, and 150 credits to rerun audits whenever you want (5 credits per audit with the fast agent, 8 with the precise agent, the automatic one included: up to 30 audits a month, fewer when missions are replayed). Agencies: 600 credits for several client sites. Nothing is charged while online payment is closed.",
     },
     link: { href: "/espace/reglages/abonnement", fr: "Abonnement et crédits", en: "Plan and credits" },
     keys: "abonnement forfait plan tarifs prix offre agence mensuel subscription pricing price agency monthly",
@@ -408,8 +408,8 @@ export const FAQ: Faq[] = [
     cat: "credits",
     q: { fr: "Les missions rejouées sont-elles comptées ?", en: "Do replayed missions count?" },
     a: {
-      fr: "Oui, une mission ratée rejouée utilise un crédit, comme une mission d'audit automatique. Les vérifications de pages des automations, elles, sont gratuites.",
-      en: "Yes, a replayed failed mission uses one credit, like a mission of an automatic audit. Page checks by automations are free.",
+      fr: "Oui, une mission ratée rejouée utilise un crédit (1,5 avec l'agent précis), comme une mission d'audit automatique. Les vérifications de pages des automations, elles, sont gratuites.",
+      en: "Yes, a replayed failed mission uses one credit (1.5 with the precise agent), like a mission of an automatic audit. Page checks by automations are free.",
     },
     keys: "rejoue relance automatique compte facture gratuit replay rerun automatic charged free",
   },

@@ -167,9 +167,9 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
               />
             )}
             <div className="flex flex-wrap items-center justify-between gap-3">
-              {/* Same credits (1 per mission, whatever the model: lib/credits.ts) and, measured on 17/11/2026, the same pace
-                  (median 87 s per mission vs 90 s): the estimate above does not change with the agent, so the tip must not promise it. */}
-              <Hint tip={t(`Rapide : ${DEFAULT_MODEL}. Précis : ${COMPARE_MODEL}, le plus capable de H. Mêmes crédits (un par mission) et, mesuré, même durée.`, `Fast: ${DEFAULT_MODEL}. Precise: ${COMPARE_MODEL}, H's most capable. Same credits (one per mission) and, as measured, the same duration.`)}>
+              {/* Precise costs 1.5 credits per mission, an audit rounded up (lib/credits-shared.ts); measured on 17/11/2026, the
+                  same pace (median 87 s per mission vs 90 s): the time estimate above does not change with the agent. */}
+              <Hint tip={t(`Rapide : ${DEFAULT_MODEL}, 1 crédit par mission. Précis : ${COMPARE_MODEL}, le plus capable de H, 1,5 crédit par mission (8 crédits pour 5 missions, arrondi au crédit supérieur). Même durée, mesurée.`, `Fast: ${DEFAULT_MODEL}, 1 credit per mission. Precise: ${COMPARE_MODEL}, H's most capable, 1.5 credits per mission (8 credits for 5 missions, rounded up). Same duration, as measured.`)}>
                 <span className="type-small text-ink-2">{t("Agent", "Agent")}</span>
               </Hint>
               <Segmented
@@ -187,8 +187,8 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
               <Hint
                 focusable={false}
                 tip={t(
-                  "Les mêmes missions jouées par l'agent rapide et l'agent précis : réussite, durée et coût côte à côte. Double le coût de l’audit, sans concurrent.",
-                  "The same missions played by the fast and the precise agent: success, duration and cost side by side. Doubles the audit cost, no competitor.",
+                  "Les mêmes missions jouées par l'agent rapide et l'agent précis : réussite, durée et coût côte à côte. Un audit rapide plus un audit précis (13 crédits pour 5 missions), sans concurrent.",
+                  "The same missions played by the fast and the precise agent: success, duration and cost side by side. A fast audit plus a precise audit (13 credits for 5 missions), no competitor.",
                 )}
               >
                 <span className="font-semibold">{t("Comparer les deux agents", "Compare both agents")}</span>

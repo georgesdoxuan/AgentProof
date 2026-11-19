@@ -5,6 +5,7 @@ import type { PickItem } from "@/lib/missions";
 import { Hint } from "@/lib/hint";
 import { GLYPH, Glyph } from "@/lib/glyphs";
 import { estimateMinutes, minutesLabel, type PaceRange } from "@/lib/estimate-shared";
+import { auditCredits } from "@/lib/credits-shared";
 
 // Mission picker of the launch form: tick defaults, edit one for this audit or for the team, add the team's own.
 // Sends the pick as JSON in a hidden "missions" field; /api/audits checks every id and every text again.
@@ -15,20 +16,30 @@ const EDIT_ICON = "M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4";
 type Pace = { desktop: PaceRange; mobile: PaceRange; queued: number };
 
 // What the rest of the form multiplies: both devices, a competitor or the model comparison each play the missions twice.
+// The agent sets the price per audit (lib/credits-shared.ts): the precise one 1.5 credits per mission, rounded up.
+type Shape = { device: string; devices: number; competitor: boolean; models: boolean; precise: boolean; pay: number };
 function useLaunchShape(ref: RefObject<HTMLElement | null>) {
-  const [shape, setShape] = useState({ device: "desktop", times: 1, pay: 0 });
+  const [shape, setShape] = useState<Shape>({ device: "desktop", devices: 1, competitor: false, models: false, precise: false, pay: 0 });
   useEffect(() => {
     const form = ref.current?.closest("form");
     if (!form) return;
     const sync = () => {
       const f = new FormData(form);
       const device = String(f.get("device") ?? "desktop");
-      const linked = String(f.get("competitor") ?? "").trim() !== "" || f.get("models") === "1";
+      const models = f.get("models") === "1";
       // A real payment test costs 2 credits on top (lib/credits.ts RATES.payment).
       const pay = f.get("mode") === "payment" || f.get("payment") === "1" ? 2 : 0;
-      const next = { device, times: f.get("mode") === "payment" ? 0 : (device === "both" ? 2 : 1) * (linked ? 2 : 1), pay };
+      const next: Shape = {
+        device,
+        devices: f.get("mode") === "payment" ? 0 : device === "both" ? 2 : 1,
+        competitor: String(f.get("competitor") ?? "").trim() !== "",
+        models,
+        // Compare both agents ignores the Agent choice (/api/audits): one fast audit and one precise audit.
+        precise: !models && f.get("model") === "precise",
+        pay,
+      };
       // Same shape, same state: a fresh object on every keystroke re-renders before React's onChange and undoes the typing.
-      setShape((s) => (s.device === next.device && s.times === next.times && s.pay === next.pay ? s : next));
+      setShape((s) => ((Object.keys(next) as (keyof Shape)[]).every((k) => s[k] === next[k]) ? s : next));
     };
     sync();
     form.addEventListener("input", sync);
@@ -75,8 +86,11 @@ export function MissionPicker({ items: initial, lists: initialLists, lang, max, 
   const picked = items.filter((m) => m.checked);
   const n = picked.length;
   const shape = useLaunchShape(boxRef);
-  const runs = n * shape.times;
-  const credits = runs + shape.pay;
+  const runs = n * shape.devices * (shape.competitor || shape.models ? 2 : 1);
+  // Credits of one device's audits for k missions each (k = 2n: every mission replayed once, the most it can cost).
+  const perDevice = (k: number) => (shape.models ? auditCredits(k, false) + auditCredits(k, true) : (shape.competitor ? 2 : 1) * auditCredits(k, shape.precise));
+  const credits = shape.devices * perDevice(n) + shape.pay;
+  const most = shape.devices * perDevice(2 * n) + shape.pay;
   // The slower device sets the pace when both play.
   const minutes = estimateMinutes(runs, shape.device === "desktop" ? pace.desktop : pace.mobile, pace.queued);
 
@@ -177,7 +191,7 @@ export function MissionPicker({ items: initial, lists: initialLists, lang, max, 
               </span>
               <span
                 className="inline-flex items-center gap-1"
-                title={t(`${credits} crédits, jusqu’à ${credits + runs} si des missions ratées sont rejouées`, `${credits} credits, up to ${credits + runs} if failed missions are replayed`)}
+                title={t(`${credits} crédits, jusqu’à ${most} si des missions ratées sont rejouées`, `${credits} credits, up to ${most} if failed missions are replayed`)}
               >
                 <Glyph d={GLYPH.credit} className="h-[15px] w-[15px]" />
                 {t(`${credits} crédit${credits > 1 ? "s" : ""}`, `${credits} credit${credits > 1 ? "s" : ""}`)}
