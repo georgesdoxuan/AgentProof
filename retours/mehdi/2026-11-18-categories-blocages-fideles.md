@@ -18,4 +18,5 @@ Sur ce cas, le rapport n’affirme plus qu’un bouton ne fonctionne pas sans pr
 2026-11-18 — Proposition validée par Mehdi pour transmission à Georges avant la démonstration de vendredi 11 h. web/lib/engine.ts et web/app/audit/[id]/page.tsx, règles de classification à coordonner avec Alexandre. Effort estimé : une demi-journée. Demande distincte des hypothèses de causes : elle concerne l’incohérence entre catégorie et observation.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait en partie. Quand l'agent classe en « bouton qui ne réagit pas » un produit qu'il décrit comme seulement réservable en magasin, le rapport affiche « Achat en ligne indisponible (à vérifier) ». Affichage seul : verdict stocké et score inchangés. Une vraie catégorie dans l'agent et le juge viendra après la démo (elle demande un nouveau benchmark).
+- Commit : 37f407c (PR feat/chantiers-audit)

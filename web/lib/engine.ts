@@ -13,8 +13,13 @@ const JUDGE_MODEL = process.env.HF_MODEL ?? "Qwen/Qwen3.5-9B";
 
 export class RateLimited extends Error {}
 
+// Every external call has a deadline, so one slow provider never eats the whole tick (route limit: 60 s).
+const H_TIMEOUT_MS = 20_000;
+const HF_TIMEOUT_MS = 25_000;
+
 async function h(path: string, init: RequestInit = {}) {
   const res = await fetch(path.startsWith("http") ? path : `${H}/api/v2${path}`, {
+    signal: AbortSignal.timeout(H_TIMEOUT_MS),
     ...init,
     headers: { Authorization: `Bearer ${process.env.HAI_API_KEY}`, "Content-Type": "application/json", ...init.headers },
     cache: "no-store",
@@ -282,6 +287,7 @@ async function loginVault(teamId: string | null, siteId: number) {
 const MAX_ACTIVE = 3; // H Free plan: 3 concurrent sessions
 const BUDGET_PER_PASS = Number(process.env.H_BUDGET_PER_TICK ?? 20);
 const LOOP_MS = 45_000; // the route allows 60 s
+const ROUTE_MS = 57_000; // what a tick may use in total, a margin under the route's 60 s
 const PASS_EVERY_MS = 10_000;
 const MISSION_STEPS = 30;
 const STALE_MIN = 20;
@@ -293,7 +299,8 @@ const TERMINAL = new Set(["completed", "idle", "failed", "timed_out", "interrupt
 // loopMs = 0: one pass only (used right after an audit is created, so it starts without waiting for the cron).
 export async function tick(loopMs = LOOP_MS) {
   const log: string[] = [];
-  const end = Date.now() + loopMs;
+  const started = Date.now();
+  const end = started + loopMs;
   let budget = 0;
   for (;;) {
     budget = BUDGET_PER_PASS;
@@ -307,10 +314,15 @@ export async function tick(loopMs = LOOP_MS) {
   }
 
   // 4. Daily site watch (no H request; an audit it starts is launched by a later pass).
+  // Audits come first: watch tasks only start when the route still has room for them, otherwise they stay due
+  // in the database and the next tick (or the first one with an empty queue) does them.
+  const room = () => started + ROUTE_MS - Date.now();
   const auto = await import("./automations");
-  await auto.runStaticChecks(log).catch((e) => log.push(`static check error: ${e}`));
+  if (room() > 25_000) await auto.runStaticChecks(log).catch((e) => log.push(`static check error: ${e}`));
+  else log.push("static check postponed");
   await auto.runMonthlyAudits(log).catch((e) => log.push(`monthly audits error: ${e}`));
-  await auto.runDueAutomations(log).catch((e) => log.push(`automations error: ${e}`));
+  if (room() > 15_000) await auto.runDueAutomations(log).catch((e) => log.push(`automations error: ${e}`));
+  else log.push("automations postponed");
   return { log, budgetLeft: budget };
 }
 
@@ -384,7 +396,10 @@ async function pass(log: string[], left: () => number, spend: (n: number) => voi
         spend(1);
         try {
           // One key per reservation: a retried request never starts a second paid session, and a run reset to todo can launch again.
-          const s = await (await h("/sessions", { method: "POST", body: JSON.stringify(await sessionRequest(run)), headers: { "Idempotency-Key": `agentproof-run-${run.id}-${launchedAt}` } })).json();
+          const body = JSON.stringify(await sessionRequest(run));
+          const create = () => h("/sessions", { method: "POST", body, headers: { "Idempotency-Key": `agentproof-run-${run.id}-${launchedAt}` } });
+          // A timeout does not prove the session was not created: retry once with the same key, H returns the same session.
+          const s = await (await create().catch((e) => (e?.name === "TimeoutError" ? create() : Promise.reject(e)))).json();
           await db.from("runs").update({ session_id: s.id, agent_view_url: s.agent_view_url }).eq("id", run.id);
           log.push(`launched run ${run.id}`);
         } catch (e) {
@@ -779,6 +794,7 @@ export async function notifyDone(auditId: string) {
     .slice(0, 3)
     .map(([k, n]) => `${BLOCKERS[k] ?? k} (${n} mission${n > 1 ? "s" : ""})`);
   await fetch(process.env.N8N_NOTIFY_URL, {
+    signal: AbortSignal.timeout(10_000),
     method: "POST",
     headers: { "Content-Type": "application/json", "x-agentproof-secret": process.env.TICK_SECRET ?? "" },
     body: JSON.stringify({
@@ -814,6 +830,7 @@ async function hf(messages: unknown[], max_tokens = 400) {
       const res = await fetch("https://router.huggingface.co/v1/chat/completions", {
         method: "POST",
         headers: { Authorization: `Bearer ${process.env.HF_TOKEN}`, "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(HF_TIMEOUT_MS),
         body: JSON.stringify({
           model: provider ? `${JUDGE_MODEL}:${provider}` : JUDGE_MODEL,
           messages,

@@ -82,6 +82,7 @@ export async function createTeam(name: string, ownerId: string) {
 export async function sendMail(to: string, subject: string, text: string, link: string) {
   if (!process.env.N8N_MAIL_URL) return false;
   const res = await fetch(process.env.N8N_MAIL_URL, {
+    signal: AbortSignal.timeout(15_000),
     method: "POST",
     // n8n drops calls without this secret: the webhook can only send mail on AgentProof's behalf.
     headers: { "Content-Type": "application/json", "x-agentproof-secret": process.env.TICK_SECRET ?? "" },

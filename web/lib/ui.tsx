@@ -1,6 +1,7 @@
 import { EXCLUDED, blockerNames } from "./engine";
 import type { Lang } from "./i18n";
 import { getLang, getT } from "./lang";
+import { CopyButton } from "@/app/espace/controls";
 
 // ---------- score ----------
 // Never color alone: every tone has a word and a glyph.
@@ -386,7 +387,23 @@ export function Avatar({ email, className = "h-9 w-9" }: { email: string; classN
 const TAGGED = /^(Observé|Hypothèse|À vérifier|Correction possible) :\u00a0/;
 
 // The LLM writes "1. Problème : … / Correction : …". Show each pair as a card; fall back to plain text.
-export async function Recommendations({ text }: { text: string }) {
+// Evidence for each fix: the missions it names (by title), so the reader jumps to the screenshot and replay,
+// and a ready-to-paste ticket for the merchant's developer. Both optional (the team space reuses this card without them).
+export type FixMission = { n: number; title: string; shot: string | null; replay: string };
+export type FixTicket = { report: string; site: string; device: string; date: string };
+
+function ticketText(problem: string, lines: string[], ms: FixMission[], k: FixTicket) {
+  return [
+    `[AgentProof] ${k.site} : ${problem}`,
+    `Rapport : ${k.report}`,
+    `Appareil : ${k.device} · audit du ${k.date}`,
+    ...lines.map((l) => l.replace(/\u00a0/g, " ")),
+    ...ms.map((m) => `Mission ${m.n} « ${m.title} » · replay : ${m.replay}${m.shot ? ` · capture : ${m.shot}` : ""}`),
+    "Les hypothèses et corrections sont générées par IA : à vérifier avant d'agir.",
+  ].join("\n");
+}
+
+export async function Recommendations({ text, missions = [], ticket }: { text: string; missions?: FixMission[]; ticket?: FixTicket }) {
   const t = await getT();
   const TAG_EN: Record<string, string> = { Observé: "Observed", Hypothèse: "Hypothesis", "À vérifier": "To check", "Correction possible": "Possible fix" };
   const intro: string[] = [];
@@ -421,7 +438,10 @@ export async function Recommendations({ text }: { text: string }) {
     <div className="space-y-6">
       {intro.length > 0 && <p className="max-w-[720px] text-ink-2">{intro.join(" ")}</p>}
       <ol className={`grid gap-4 md:grid-cols-2 print:grid-cols-1 print:gap-[3mm] ${items.length > 2 ? "lg:grid-cols-3" : ""}`}>
-        {items.map((it, i) => (
+        {items.map((it, i) => {
+          const named = [...it.problem.matchAll(/«\s*(.+?)\s*»/g)].map((m) => m[1]);
+          const ms = missions.filter((m) => named.includes(m.title));
+          return (
           <li key={i} className="tile flex flex-col p-7! print:p-[5mm]!">
             <span className="type-small text-ink-2">{it.fix.some((l) => TAGGED.test(l)) ? t("Blocage", "Blocker") : t("Correction", "Fix")} {i + 1}</span>
             <p className="mt-3 font-semibold">{it.problem}</p>
@@ -445,8 +465,19 @@ export async function Recommendations({ text }: { text: string }) {
                 <span>{it.fix.join(" ")}</span>
               </p>
             )}
+            {(ms.length > 0 || ticket) && (
+              <div className="no-print mt-auto flex flex-wrap items-center gap-x-4 gap-y-2 pt-5 type-small">
+                {ms.map((m) => (
+                  <a key={m.n} href={`#mission-${m.n}`} className="text-link hover:underline">
+                    {t(`Voir la mission ${m.n}`, `See mission ${m.n}`)}
+                  </a>
+                ))}
+                {ticket && <CopyButton value={ticketText(it.problem, it.fix, ms, ticket)} label={t("Copier pour mon développeur", "Copy for my developer")} done={t("Copié", "Copied")} />}
+              </div>
+            )}
           </li>
-        ))}
+          );
+        })}
       </ol>
     </div>
   );

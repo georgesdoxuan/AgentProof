@@ -18,4 +18,5 @@ Coller le résultat dans un éditeur : tous les liens pointent vers la bonne mis
 2026-11-18 — Proposition validée par Mehdi pour transmission à Georges avant la démonstration de vendredi 11 h. web/app/audit/[id]/page.tsx et composant de copie. Effort estimé : deux à quatre heures. N’inclure aucun secret ou donnée personnelle et ne pas élargir les droits d’accès du rapport. Le contenu copié doit respecter la langue de l’interface.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait. Bouton « Copier pour mon développeur » sur chaque bloc du plan de corrections : lien du rapport, site, appareil, date, constats et hypothèses (mentions conservées), replay et capture de chaque mission liée, rappel que les hypothèses sont générées par IA.
+- Commit : 37f407c (PR feat/chantiers-audit)

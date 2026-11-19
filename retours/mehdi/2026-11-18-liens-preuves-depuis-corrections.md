@@ -18,4 +18,5 @@ Depuis chaque correction du rapport Promod, le lien atteint la bonne mission et 
 2026-11-18 — Proposition validée par Mehdi pour transmission à Georges avant la démonstration de vendredi 11 h. web/app/audit/[id]/page.tsx et structure des recommandations si le lien aux identifiants manque. Effort estimé : une à deux heures si les identifiants sont disponibles. Préserver le lien structuré aux missions plutôt qu’une correspondance fragile sur leur seul titre.
 
 ## Réponse de Georges
-- Statut : nouveau
+- Statut : fait. Chaque bloc du plan de corrections affiche « Voir la mission N » pour chaque mission qu'il cite (reconnue par son titre), vers son ancre ; la capture et le replay sont dans la mission et dans le ticket copié. Aucun appel à l'agent.
+- Commit : 37f407c (PR feat/chantiers-audit)

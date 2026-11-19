@@ -5,9 +5,16 @@ import { MARK_ACCENT, MARK_DOTS, MARK_SIZE } from "@/lib/ui";
 // By audit id, not by domain: a team's audits stay private unless the team shares the report link.
 const COLORS = { pass: "#00792e", warn: "#b25000", fail: "#d70015", none: "#6e6e73" };
 
-function badgeSvg(score: number | null) {
-  const tone = score == null ? "none" : score >= 70 ? "pass" : score >= 40 ? "warn" : "fail";
-  const right = score == null ? "en cours" : `${{ pass: "agent-ready", warn: "fragile", fail: "bloquant", none: "" }[tone]} ${score} %`;
+// The audit month is printed on the badge, and a badge older than STALE_DAYS turns grey: a score is a dated fact,
+// not a lasting label that survives a regression.
+const STALE_DAYS = 90;
+
+function badgeSvg(score: number | null, finished: string | null) {
+  const stale = !!finished && Date.now() - new Date(finished).getTime() > STALE_DAYS * 86400_000;
+  const level = score == null ? "none" : score >= 70 ? "pass" : score >= 40 ? "warn" : "fail";
+  const tone = stale ? "none" : level;
+  const month = finished ? new Date(finished).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris", month: "2-digit", year: "numeric" }) : "";
+  const right = score == null ? "en cours" : `${{ pass: "agent-ready", warn: "fragile", fail: "bloquant", none: "" }[level]} ${score} % · ${month}`;
   const lw = 98; // mark + "AgentProof"
   const rw = 14 + right.length * 6.6;
   const w = Math.round(lw + rw);
@@ -24,9 +31,9 @@ function badgeSvg(score: number | null) {
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const id = (await params).id.replace(/\.svg$/, "");
   if (!/^[0-9a-f-]{36}$/.test(id)) return new Response("Not found", { status: 404 });
-  const { data: a } = await db.from("audits").select("status, kind, runs(status, success, blocker_type)").eq("id", id).maybeSingle();
+  const { data: a } = await db.from("audits").select("status, kind, finished_at, runs(status, success, blocker_type)").eq("id", id).maybeSingle();
   if (!a || a.kind !== "checkout") return new Response("Not found", { status: 404 });
-  return new Response(badgeSvg(a.status === "done" ? scoreOf(a.runs) : null), {
+  return new Response(badgeSvg(a.status === "done" ? scoreOf(a.runs) : null, a.finished_at), {
     headers: { "Content-Type": "image/svg+xml; charset=utf-8", "Cache-Control": "public, max-age=3600, s-maxage=3600" },
   });
 }

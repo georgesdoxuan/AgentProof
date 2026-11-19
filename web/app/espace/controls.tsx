@@ -152,6 +152,21 @@ export function CopyField({ value, label, lang = "fr" }: { value: string; label:
   );
 }
 
+// One click copies a longer text (a developer ticket) that is not worth showing in a field.
+export function CopyButton({ value, label, done }: { value: string; label: string; done: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={() => navigator.clipboard.writeText(value).then(() => (setCopied(true), setTimeout(() => setCopied(false), 2000))).catch(() => {})}
+      className="text-link hover:underline"
+      aria-live="polite"
+    >
+      {copied ? done : label}
+    </button>
+  );
+}
+
 // Back / forward, like a browser toolbar. Uses the Navigation API when available to grey out a dead end.
 export function HistoryButtons({ back, forward }: { back: string; forward: string }) {
   const router = useRouter();
@@ -159,6 +174,7 @@ export function HistoryButtons({ back, forward }: { back: string; forward: strin
   const [can, setCan] = useState({ back: true, forward: true });
   useEffect(() => {
     const nav = (window as unknown as { navigation?: { canGoBack: boolean; canGoForward: boolean } }).navigation;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reads browser history state once per route change
     if (nav) setCan({ back: nav.canGoBack, forward: nav.canGoForward });
   }, [path]);
   const btn =
