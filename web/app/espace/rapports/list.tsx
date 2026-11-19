@@ -159,7 +159,7 @@ export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
   const ctx = await teamContext();
   if (!ctx) redirect(`/connexion?next=${PATH[view]}`);
   if (!ctx.team) redirect("/espace");
-  const { user, teams, team } = ctx;
+  const { user, team } = ctx;
   const [t, lang] = await Promise.all([getDict(), getLang()]);
   const r = t.reports;
   const date = dateFmt(lang);
@@ -184,8 +184,6 @@ export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
 
   return (
     <SpaceShell
-      team={team}
-      teams={teams}
       title={title}
       parent={view === "all" ? undefined : [PATH.all, r.title]}
       intro={intro}

@@ -100,6 +100,9 @@
 
 html {
   background: var(--bg);
+  /* Room for the scroll bar is kept even on a short page (a loading placeholder): with a classic scroll bar
+     (Windows, macOS with a mouse) the page would otherwise slide sideways when it comes and goes. */
+  scrollbar-gutter: stable;
   -webkit-text-size-adjust: 100%;
 }
 

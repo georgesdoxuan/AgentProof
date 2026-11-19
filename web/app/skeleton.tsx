@@ -29,19 +29,59 @@ export async function Loading({ children, className }: { children: React.ReactNo
 
 const W = ["46%", "62%", "38%", "54%", "70%", "42%", "58%", "34%"];
 
-// Team space page: the real sidebar and header, placeholders for the title, intro and main action.
-export function SkSpace({ narrow, action, children }: { narrow?: boolean; action?: boolean; children: React.ReactNode }) {
+// Team space page: the sidebar is the layout's (already on screen); this fills the page column with placeholders for
+// the title and, only where the real page has them, the back link, the facts under the title and the main action.
+// A placeholder the page does not have pushes everything below it down for a moment: the page then jumps up.
+export function SkSpace({
+  narrow,
+  action,
+  intro,
+  parent,
+  logo,
+  children,
+}: {
+  narrow?: boolean;
+  action?: boolean;
+  /** "chips": a row of Chips (26px); "line": one line of text. Left out when the page has no intro. */
+  intro?: "chips" | "line";
+  /** Child pages (a site, Favoris, Corbeille): the back link above the title. */
+  parent?: boolean;
+  /** Site page: the site's 48px logo beside the title. */
+  logo?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <Loading>
       <SpaceShell
         narrow={narrow}
-        title={<Line w="min(24rem, 85%)" />}
-        intro={<Line w="min(36rem, 100%)" />}
+        parent={parent ? ["#", ""] : undefined}
+        title={
+          logo ? (
+            <span className="flex min-w-0 items-center gap-4">
+              <Bone className="h-12 w-12 shrink-0 rounded-[12px]" />
+              <Line w="min(18rem, 70%)" />
+            </span>
+          ) : (
+            <Line w="min(24rem, 85%)" />
+          )
+        }
+        intro={intro === "chips" ? <SkChips /> : intro === "line" ? <Line w="min(36rem, 100%)" /> : undefined}
         actions={action ? <Bone className="h-12 w-44 rounded-full" /> : undefined}
       >
         {children}
       </SpaceShell>
     </Loading>
+  );
+}
+
+// Same height as lib/ui Chips (26px pills).
+function SkChips() {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {["5.5rem", "7rem", "6rem"].map((w) => (
+        <Bone key={w} className="h-[26px] rounded-full" w={w} />
+      ))}
+    </div>
   );
 }
 

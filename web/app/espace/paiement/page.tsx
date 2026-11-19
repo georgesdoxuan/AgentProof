@@ -15,15 +15,13 @@ export default async function Paiement() {
   const ctx = await teamContext();
   if (!ctx) redirect("/connexion?next=/espace/paiement");
   if (!ctx.team) redirect("/espace");
-  const { team, teams } = ctx;
+  const { team } = ctx;
   const card = await cardView(team.id);
   const admin = canLaunch(team.role);
   const t = await getT();
 
   return (
     <SpaceShell narrow
-      team={team}
-      teams={teams}
       title={t("Moyen de paiement", "Payment method")}
       hint={t(
         "La carte que l'agent utilise pour le test de paiement réel. Il part au plus près du checkout, prend le premier article disponible et paie une seule fois. Avec une carte approvisionnée, la commande est réelle.",

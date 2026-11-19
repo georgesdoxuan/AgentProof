@@ -38,7 +38,7 @@ function headline(sites: SiteView[], t: T) {
 export default async function Accueil() {
   const ctx = await teamContext();
   if (!ctx) redirect("/connexion?next=/espace");
-  const { user, teams, team } = ctx;
+  const { user, team } = ctx;
   const lang = await getLang();
   const t = tr(lang);
   if (!team) return <NoTeam email={user.email} lang={lang} />;
@@ -70,8 +70,6 @@ export default async function Accueil() {
 
   return (
     <SpaceShell
-      team={team}
-      teams={teams}
       title={audits.length ? headline(sites, t) : t("Ton espace est prêt.", "Your space is ready.")}
       intro={status}
       actions={

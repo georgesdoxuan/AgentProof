@@ -19,7 +19,7 @@ export default async function Abonnement() {
   const ctx = await teamContext();
   if (!ctx) redirect("/connexion?next=/espace/abonnement");
   if (!ctx.team) redirect("/espace");
-  const { team, teams } = ctx;
+  const { team } = ctx;
   const lang = await getLang();
   const t = tr(lang);
   const loc = locale(lang);
@@ -41,8 +41,6 @@ export default async function Abonnement() {
   return (
     <SpaceShell
       narrow
-      team={team}
-      teams={teams}
       title={t("Abonnement et crédits", "Plan and credits")}
       hint={t(
         "Chaque mission qu'un agent fait sur un site utilise un crédit. Un audit complet, ce sont cinq missions, donc cinq crédits.",

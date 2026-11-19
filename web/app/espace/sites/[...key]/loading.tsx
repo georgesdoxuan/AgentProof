@@ -3,7 +3,7 @@ import { Bone, Line, SkGroup, SkHead, SkSpace } from "../../../skeleton";
 // One site: score and trend side by side, the fixes, then its audits.
 export default function Loading() {
   return (
-    <SkSpace action>
+    <SkSpace action parent intro="chips" logo>
       <section className="grid gap-5 lg:grid-cols-[1fr_1.4fr] [&>*]:min-w-0">
         <div className="tile flex flex-col">
           <p className="type-headline">

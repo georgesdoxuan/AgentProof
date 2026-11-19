@@ -20,8 +20,6 @@ export default async function EspaceClassement({ searchParams }: { searchParams:
   const t = await getT();
   return (
     <SpaceShell
-      team={ctx.team}
-      teams={ctx.teams}
       title={t("Classement", "Ranking")}
       hint={t(
         "Sites mode France : part des missions où l'agent atteint le checkout, vérifiée par un juge visuel, moyenne des 2 derniers passages.",

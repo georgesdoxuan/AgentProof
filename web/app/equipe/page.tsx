@@ -29,7 +29,7 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
   const ctx = await teamContext();
   if (!ctx) redirect("/connexion?next=/equipe");
   if (!ctx.team) redirect("/espace");
-  const { user, teams, team } = ctx;
+  const { user, team } = ctx;
   const isOwner = team.role === "owner";
   const sp = await searchParams;
   const lang = await getLang();
@@ -53,8 +53,6 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
 
   return (
     <SpaceShell narrow
-      team={team}
-      teams={teams}
       title={t("Équipe", "Team")}
       hint={t(
         "Admin : lance des audits et lit les rapports. Lecteur : lit les rapports. Seul le propriétaire gère les membres.",
