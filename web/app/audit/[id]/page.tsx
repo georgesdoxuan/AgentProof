@@ -2,7 +2,9 @@ import { staffUser, teamContext } from "@/lib/auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { DEFAULT_MODEL, EXCLUDED, db, paymentStages, paymentVerdicts } from "@/lib/engine";
+import { DEFAULT_MODEL, EXCLUDED, db, paymentStages, paymentVerdicts, scoreOf } from "@/lib/engine";
+import { byRank } from "@/app/classement/board";
+import { rankText } from "@/app/espace/parts";
 import { locale, missionTitle, staticText, tr, type Lang, type T } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 import { BlockerIcon, BrowserFrame, MissionIcon, Chevron, DeviceTag, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, hurdles, summarize } from "@/lib/ui";
@@ -228,6 +230,28 @@ function SectionHead({ title, intro, aside }: { title: string; intro?: string; a
   );
 }
 
+// Where the site stands over time: its public rank on this device, and the score of the same team's previous audit.
+// A subscriber's question each month is "better or worse than last time, and against whom".
+async function trendOf(audit: any) {
+  const [{ data: board }, prevQ] = await Promise.all([
+    db.from("site_scores").select("domain, name, score, runs_scored").eq("device", audit.device),
+    (audit.team_id ? db.from("audits").select("id, created_at, runs(status, success, blocker_type)").eq("team_id", audit.team_id) : db.from("audits").select("id, created_at, runs(status, success, blocker_type)").is("team_id", null))
+      .eq("site_id", audit.site_id)
+      .eq("device", audit.device)
+      .eq("kind", "checkout")
+      .eq("status", "done")
+      .is("deleted_at", null)
+      .or(`model.is.null,model.eq.${DEFAULT_MODEL}`)
+      .lt("created_at", audit.created_at)
+      .order("created_at", { ascending: false })
+      .limit(5),
+  ]);
+  const ranked = (board ?? []).sort(byRank);
+  const pos = ranked.findIndex((b) => b.domain === audit.sites.domain);
+  const prev = (prevQ.data ?? []).map((a: any) => ({ id: a.id as string, at: a.created_at as string, score: scoreOf(a.runs) })).find((a) => a.score != null) ?? null;
+  return { rank: pos >= 0 ? { pos: pos + 1, of: ranked.length } : null, prev };
+}
+
 async function loadAudit(id: string) {
   const { data } = await db.from("audits").select(`*, sites(domain, name, url), runs(${RUN_FIELDS})`).eq("id", id).maybeSingle();
   return data;
@@ -258,6 +282,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   const statik = audit.static_check as { items?: { key: string; label: string; tone: "pass" | "warn" | "fail" | "none"; detail: string }[]; agents?: AgentAccess[] | null } | null;
   const protocols = (statik?.items ?? []).filter((it) => ["ucp", "acp", "webmcp"].includes(it.key));
   const alert = audit.score_alert as { from: number; to: number; previous: string } | null;
+  const trend = audit.kind === "checkout" && audit.status === "done" ? await trendOf(audit) : null;
 
   const runs = [...audit.runs].sort((a: any, b: any) => a.missions.position - b.missions.position);
   const s = summarize(runs);
@@ -427,6 +452,23 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                 )}
               </ul>
               <p className="type-small mt-5 border-t border-hairline pt-4 text-ink-2">{scope}</p>
+              {trend && (trend.rank || trend.prev) && s.score != null && (
+                <p className="type-small mt-3 flex flex-wrap gap-x-4 gap-y-1 text-ink-2 tnum">
+                  {trend.prev && (
+                    <Link href={`/audit/${trend.prev.id}`} className="hover:underline">
+                      <span className={`font-semibold ${s.score > trend.prev.score! ? "text-pass" : s.score < trend.prev.score! ? "text-fail" : "text-ink"}`}>
+                        {s.score === trend.prev.score ? t("Stable", "Steady") : `${s.score > trend.prev.score! ? "+" : "−"}${Math.abs(s.score - trend.prev.score!)} pts`}
+                      </span>{" "}
+                      {t("depuis l’audit du", "since the audit of")} {longDate(trend.prev.at, lang)}
+                    </Link>
+                  )}
+                  {trend.rank && (
+                    <Link href={audit.device === "mobile" ? "/classement?appareil=mobile" : "/classement"} className="hover:underline">
+                      <span className="font-semibold text-ink">{rankText(trend.rank, lang)}</span> {t("des sites mode", "of fashion sites")}
+                    </Link>
+                  )}
+                </p>
+              )}
             </div>
           </div>
 
