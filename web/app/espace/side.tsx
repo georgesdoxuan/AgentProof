@@ -6,6 +6,7 @@ import type { Dict, Lang } from "@/lib/i18n";
 import type { SideData } from "@/lib/sidebar";
 import { LEGAL } from "@/lib/legal";
 import { SiteLogo } from "../site-logo";
+import { SEEN_COOKIE, markSeen, parseSeen } from "@/lib/seen";
 
 // The sidebar's live parts: counters on the links, recent sites, running audits, the watch, the month's credits.
 // The layout starts the read (a promise, streamed with the page); after that /api/sidebar refreshes it on each
@@ -16,13 +17,20 @@ export const useSide = () => useContext(Ctx);
 const RESERVE_COOKIE = "ap_ns"; // recent sites shown last time, read in shell.tsx to reserve their rows on first paint
 const POLL = 8000;
 
+// Cards already opened stay gone, even when the data was read before the click (a page from the browser's cache).
+function unseen(d: SideData): SideData {
+  const raw = document.cookie.split("; ").find((c) => c.startsWith(`${SEEN_COOKIE}=`))?.slice(SEEN_COOKIE.length + 1);
+  const seen = parseSeen(raw);
+  return { ...d, finished: d.finished.filter((a) => !seen.has(a.id)), more: (d.more ?? []).filter((id) => !seen.has(id)) };
+}
+
 export function SideProvider({ initial, children }: { initial: Promise<SideData | null>; children: React.ReactNode }) {
   const [data, setData] = useState<SideData | null>(null);
   const path = usePathname();
   const first = useRef(true);
   useEffect(() => {
     let live = true;
-    Promise.resolve(initial).then((d) => live && d && setData(d), () => {});
+    Promise.resolve(initial).then((d) => live && d && setData(unseen(d)), () => {});
     return () => {
       live = false;
     };
@@ -50,7 +58,7 @@ export function SideProvider({ initial, children }: { initial: Promise<SideData 
 function refresh(set: (d: SideData) => void) {
   fetch("/api/sidebar", { cache: "no-store" })
     .then((r) => (r.ok ? r.json() : null))
-    .then((d) => d && set(d))
+    .then((d) => d && set(unseen(d)))
     .catch(() => {});
 }
 
@@ -237,23 +245,42 @@ export function RecentSites({ reserve }: { reserve: number }) {
   });
 }
 
+// Folds a bottom card away (height and opacity) instead of making it vanish. Reduced motion: it simply goes.
+const FADE = 300;
+function Fade({ out, children }: { out: boolean; children: React.ReactNode }) {
+  return (
+    <div aria-hidden={out || undefined} className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none ${out ? "pointer-events-none grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"}`}>
+      <div className="min-h-0 overflow-hidden">{children}</div>
+    </div>
+  );
+}
+
 const fmt = (iso: string, lang: Lang, o: Intl.DateTimeFormatOptions) => new Date(iso).toLocaleString(lang === "en" ? "en-GB" : "fr-FR", o);
 
 // Pinned to the bottom of the bar: audits running, the watch, the month's credits, then help links.
 // It grows upward into the empty space, so a card that appears never pushes the links above.
 export function SideFooter({ t, lang, collapsed }: { t: T; lang: Lang; collapsed: boolean }) {
-  const d = useSide();
+  const side = useSide();
+  // A finished card once opened: remembered (lib/seen.ts), folded away softly, then dropped from the list.
+  const [going, setGoing] = useState<Set<string>>(new Set());
+  const [gone, setGone] = useState<Set<string>>(new Set());
+  const open = (ids: string[]) => {
+    ids.forEach(markSeen);
+    setGoing((s) => new Set([...s, ...ids]));
+    setTimeout(() => setGone((s) => new Set([...s, ...ids])), FADE);
+  };
+  const d = side && { ...side, finished: side.finished.filter((a) => !gone.has(a.id)), more: side.more.filter((id) => !gone.has(id)) };
   return (
     <div className="space-y-3 border-t border-hairline pt-4 max-lg:hidden lg:mt-auto">
       {/* Audit cards: yellow while running, green for half an hour once finished (same colors as Rapports). */}
       {d?.running.map((a) => {
         const pct = a.total ? Math.round((a.done / a.total) * 100) : 0;
         return collapsed ? (
-          <Link key={a.id} href={`/audit/${a.id}`} title={`${t.running} · ${a.label} · ${a.done}/${a.total}`} aria-label={`${t.running} · ${a.label}`} className="grid h-9 w-12 place-items-center rounded-[8px] text-live hover:bg-tile/60">
+          <Link key={a.id} href={`/audit/${a.id}`} onClick={() => markSeen(a.id)} title={`${t.running} · ${a.label} · ${a.done}/${a.total}`} aria-label={`${t.running} · ${a.label}`} className="grid h-9 w-12 place-items-center rounded-[8px] text-live hover:bg-tile/60">
             <span className="ap-spin inline-block h-4 w-4 rounded-full border-2 border-current border-t-transparent" aria-hidden />
           </Link>
         ) : (
-          <Link key={a.id} href={`/audit/${a.id}`} className={card}>
+          <Link key={a.id} href={`/audit/${a.id}`} onClick={() => markSeen(a.id)} className={card}>
             <span className="flex items-center gap-2 text-[13px] font-semibold text-live">
               <span className="ap-spin inline-block h-3 w-3 rounded-full border-2 border-current border-t-transparent" aria-hidden />
               {t.running}
@@ -268,23 +295,41 @@ export function SideFooter({ t, lang, collapsed }: { t: T; lang: Lang; collapsed
           </Link>
         );
       })}
-      {d?.finished.map((a) =>
-        collapsed ? (
-          <Link key={a.id} href={`/audit/${a.id}`} title={`${t.finished} · ${a.label}`} aria-label={`${t.finished} · ${a.label}`} className="grid h-9 w-12 place-items-center rounded-[8px] text-pass hover:bg-tile/60">
-            {glyph(G.done, "h-[18px] w-[18px]")}
-          </Link>
-        ) : (
-          <Link key={a.id} href={`/audit/${a.id}`} className={card}>
-            <span className="flex items-center gap-2 text-[13px] font-semibold text-pass">
+      {d?.finished.map((a) => (
+        <Fade key={a.id} out={going.has(a.id)}>
+          {collapsed ? (
+            <Link href={`/audit/${a.id}`} onClick={() => open([a.id])} title={`${t.finished} · ${a.label}`} aria-label={`${t.finished} · ${a.label}`} className="grid h-9 w-12 place-items-center rounded-[8px] text-pass hover:bg-tile/60">
+              {glyph(G.done, "h-[18px] w-[18px]")}
+            </Link>
+          ) : (
+            <Link href={`/audit/${a.id}`} onClick={() => open([a.id])} className={card}>
+              <span className="flex items-center gap-2 text-[13px] font-semibold text-pass">
+                {glyph(G.done, "h-3.5 w-3.5")}
+                {t.finished}
+                {a.score != null && <span className="ml-auto tabular-nums text-ink-2">{a.score} %</span>}
+              </span>
+              <span className="mt-1 block truncate text-[14px] text-ink">{a.label}</span>
+              {/* Same height as a running card: the bar fills green, nothing jumps when it turns. */}
+              <span className="mt-2 block h-1 overflow-hidden rounded-full bg-pass" />
+            </Link>
+          )}
+        </Fade>
+      ))}
+      {/* More finished audits than cards: one line to Rapports, never a stack. Following it counts as seeing them. */}
+      {!!d?.more.length && (
+        <Fade out={d.more.every((id) => going.has(id))}>
+          {collapsed ? (
+            <Link href="/espace/rapports" onClick={() => open(d.more)} title={`+${d.more.length} ${d.more.length > 1 ? t.moreFinished : t.moreFinishedOne}`} aria-label={`+${d.more.length} ${d.more.length > 1 ? t.moreFinished : t.moreFinishedOne}`} className="grid h-9 w-12 place-items-center rounded-[8px] text-[13px] font-semibold tabular-nums text-pass hover:bg-tile/60">
+              +{d.more.length}
+            </Link>
+          ) : (
+            <Link href="/espace/rapports" onClick={() => open(d.more)} className="flex min-h-8 items-center gap-2 rounded-[8px] px-3 text-[13px] font-semibold text-pass transition-colors hover:bg-tile/60">
               {glyph(G.done, "h-3.5 w-3.5")}
-              {t.finished}
-              {a.score != null && <span className="ml-auto tabular-nums text-ink-2">{a.score} %</span>}
-            </span>
-            <span className="mt-1 block truncate text-[14px] text-ink">{a.label}</span>
-            {/* Same height as a running card: the bar fills green, nothing jumps when it turns. */}
-            <span className="mt-2 block h-1 overflow-hidden rounded-full bg-pass" />
-          </Link>
-        ),
+              <span className="tabular-nums">+{d.more.length}</span>
+              <span className="truncate">{d.more.length > 1 ? t.moreFinished : t.moreFinishedOne}</span>
+            </Link>
+          )}
+        </Fade>
       )}
 
       <Watch t={t} lang={lang} collapsed={collapsed} />
