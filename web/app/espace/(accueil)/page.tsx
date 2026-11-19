@@ -78,12 +78,12 @@ export default async function Accueil() {
   const when = period === choices[0] ? t("ce mois-ci", "this month") : t("sur la période", "over this period");
 
   // Facts as chips, like a dashboard's header: count, live work, what is left to fix, freshness.
-  // Large chips (36px) in the 40px row the button already sets: the sections below stay where they were. With no button
-  // (read-only), a -5px margin keeps the row at the old 26px.
+  // Large chips: 36px (from 735px) then 48px (from 1280px) in a row the 40px button sets. Negative margins keep the row's
+  // box at 40px (26px with no button, read-only), so the sections below never move.
   // Each chip opens the page it sums up: Sites, Rapports (running), Corrections, the latest report.
   const go = "flex rounded-full transition-opacity hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue";
   const status = audits.length ? (
-    <Chips className={launch ? "" : "min-[735px]:-my-[5px]"}>
+    <Chips className={`xl:gap-3 ${launch ? "xl:-my-1" : "min-[735px]:-my-[5px] xl:-my-[11px]"}`}>
       <Link href="/espace/sites" className={go}>
         <Chip size="lg" icon="globe">{plural(sites.length, "site")}</Chip>
       </Link>
