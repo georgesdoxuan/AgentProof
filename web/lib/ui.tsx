@@ -179,70 +179,82 @@ export function Wordmark({ className = "" }: { className?: string }) {
 }
 
 // ---------- icons ----------
-// One outline set for blockers, hurdles and devices: SF Symbols-style, 24 grid, 1.8 stroke, round ends,
-// the same drawing rules as the team-space sidebar (app/espace/controls.tsx). Always next to a text label.
-const ICON: Record<string, string> = {
-  none: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM8 12.5l2.7 2.7L16 9.5",
-  cookie_banner: "M20.9 12.6A9 9 0 1 1 11.4 3.1a3 3 0 0 0 3.5 3.4 3 3 0 0 0 3.6 3.6 3 3 0 0 0 2.4 2.5zM8.5 10.5h.01M9.5 15.5h.01M14.5 15h.01",
-  popup: "M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM3 8h18M8 11.5h8v5H8z",
-  search_failed: "M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM20 20l-4.9-4.9M8.5 8.5l4 4M12.5 8.5l-4 4",
-  filter_failed: "M3.5 5h17l-6.5 8v6l-4-2v-4z",
-  size_selector: "M8.5 3.5 3 6.5l2 4.5 2.5-1.2v10.7h9V9.8L19 11l2-4.5-5.5-3a3.5 3.5 0 0 1-7 0z",
-  button_unresponsive: "M18 11.5V8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h6M13 12l8 3-3.5 1.2L16 20z",
-  captcha_or_bot_block: "M12 3l7.5 3v5.5c0 4.5-3.1 8.2-7.5 9.5-4.4-1.3-7.5-5-7.5-9.5V6zM9.5 9.5l5 5M14.5 9.5l-5 5",
-  login_required: "M12 4a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zM5 20.5a7 7 0 0 1 14 0",
-  out_of_stock: "M3.5 7.5 12 3l8.5 4.5v9L12 21l-8.5-4.5zM3.5 7.5 12 12l8.5-4.5M12 12v9",
-  page_error_or_timeout: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3.5 2",
-  mission_not_applicable: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM5.6 5.6l12.8 12.8",
-  agent_out_of_steps: "M3 20h5v-5h5v-5h5V5h3",
-  agent_tool_error: "M14.5 5.5a4.5 4.5 0 0 0-5.8 5.8L3.5 16.5a2.1 2.1 0 0 0 3 3l5.2-5.2a4.5 4.5 0 0 0 5.8-5.8l-2.7 2.7-2.6-.4-.4-2.6z",
-  other: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM8 12h.01M12 12h.01M16 12h.01",
-  payment: "M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM3 10h18M7 15h3",
-  desktop: "M4 4h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM8.5 20h7M12 16v4",
-  mobile: "M8 2.5h8a1.5 1.5 0 0 1 1.5 1.5v16a1.5 1.5 0 0 1-1.5 1.5H8A1.5 1.5 0 0 1 6.5 20V4A1.5 1.5 0 0 1 8 2.5zM11 18.5h2",
+// The AgentProof icon set is drawn like the mark: rounded square dots on a 7 by 7 grid (11-unit cells,
+// 9-unit dots, as in MARK_DOTS), in the text color, with one blue dot (*) on the detail that matters,
+// as the mark has its blue dot. Decorative everywhere: a text label always sits next to the icon.
+// Rows top to bottom: "#" dot, "*" blue dot, "." empty.
+type Dots = string[];
+const ICON: Record<string, Dots> = {
+  "cookie_banner": ["..###..", ".#...#.", "#.#...*", "#...#.#", "#.#...#", ".#..##.", "..###.."],
+  "popup": ["#######", "#.....#", "#.###.#", "#.##*.#", "#.###.#", "#.....#", "#######"],
+  "search_failed": [".###...", "#...#..", "#.*.#..", "#...#..", ".###...", "....#..", ".....#."],
+  "filter_failed": ["#######", ".#####.", "..###..", "...#...", "...#...", "...#...", "...*..."],
+  "size_selector": ["##...##", "#.###.#", "##...##", ".#...#.", ".#.*.#.", ".#...#.", ".#####."],
+  "button_unresponsive": ["#######", "#.....#", "#######", "...*...", "...##..", "...###.", "...#..."],
+  "captcha_or_bot_block": ["#######", "#.....#", "#.....#", "#..*..#", ".#...#.", "..#.#..", "...#..."],
+  "login_required": ["..###..", "..#*#..", "..###..", ".......", ".#####.", "#.....#", "#######"],
+  "out_of_stock": [".#####.", "#.....#", "#######", "#..*..#", "#.....#", "#.....#", "#######"],
+  "page_error_or_timeout": ["#######", ".#...#.", "..#.#..", "...*...", "..#.#..", ".#####.", "#######"],
+  "mission_not_applicable": ["..###..", ".#...#.", "#...#.#", "#..*..#", "#.#...#", ".#...#.", "..###.."],
+  "agent_out_of_steps": [".....#*", ".....#.", "...###.", "...#...", ".###...", ".#.....", "##....."],
+  "agent_tool_error": ["#######", "#..#..#", "#..#..#", "#..#..#", "#.....#", "#..*..#", "#######"],
+  "other": [".......", ".......", ".......", "#..#..*", ".......", ".......", "......."],
+  "none": [".......", "......*", ".....#.", "#...#..", ".#.#...", "..#....", "......."],
+  "payment": [".......", "#######", "#######", "#.....#", "#..#.*#", "#######", "......."],
+  "desktop": ["#####", "#...#", "#####", "..#..", ".###."],
+  "mobile": [".###.", ".#.#.", ".#.#.", ".#.#.", ".###."],
 };
 
-export function Icon({ name, className = "h-[1.1em] w-[1.1em]" }: { name: string; className?: string }) {
+// `quiet`: the blue dot goes grey too (blockers outside the score).
+export function Icon({ name, quiet, className = "h-[1.1em] w-[1.1em]" }: { name: string; quiet?: boolean; className?: string }) {
+  return <DotGlyph dots={ICON[name] ?? ICON.other} quiet={quiet} className={className} />;
+}
+
+function DotGlyph({ dots, quiet, className }: { dots: Dots; quiet?: boolean; className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" className={`shrink-0 ${className}`} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d={ICON[name] ?? ICON.other} />
+    <svg viewBox={`0 0 ${dots[0].length * 11} ${dots.length * 11}`} className={`shrink-0 ${className}`} aria-hidden>
+      {dots.flatMap((row, y) =>
+        [...row].map((c, x) =>
+          c === "." ? null : (
+            <rect key={`${x}-${y}`} x={x * 11 + 1} y={y * 11 + 1} width={MARK_SIZE} height={MARK_SIZE} rx="1.5" fill={c === "*" && !quiet ? "var(--blue)" : "currentColor"} />
+          ),
+        ),
+      )}
     </svg>
   );
 }
 
-// A blocker's icon on a rounded tile, like an iOS Settings row: blue when it counts against the site,
-// grey when it stays outside the score. Decorative: the blocker's name is always written beside it.
+// A blocker's icon on a rounded tile, like an iOS Settings row. Blue dot when it counts against the site;
+// all grey when it stays outside the score.
 export function BlockerIcon({ type, muted, className = "h-8 w-8 rounded-[9px]" }: { type: string | null; muted?: boolean; className?: string }) {
   const out = muted || !type || EXCLUDED.includes(type) || type === "other";
   return (
-    <span className={`grid shrink-0 place-items-center ${out ? "bg-fill text-ink-2" : "bg-blue/10 text-link dark:bg-blue/25"} ${className}`} aria-hidden>
-      <Icon name={type ?? "other"} className="h-[62%] w-[62%]" />
+    <span className={`grid shrink-0 place-items-center bg-fill ${out ? "text-ink-2" : "text-ink"} ${className}`} aria-hidden>
+      <Icon name={type ?? "other"} quiet={out} className="h-[72%] w-[72%]" />
     </span>
   );
 }
 
 // Mission types, keyed by the French title stored in the database. Neutral tile: a mission is a task, not a verdict.
-const MISSION_ICON: Record<string, string> = {
-  "Recherche + taille": "M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM20 20l-4.9-4.9",
-  "Menu + filtre taille": "M4 6h16M4 12h16M4 18h10",
-  "Filtre de prix": "M3.5 12.5v-8a1 1 0 0 1 1-1h8l8 8-9 9zM8 8h.01",
-  "Variante couleur": "M12 3.5s-6 6.4-6 10.5a6 6 0 0 0 12 0c0-4.1-6-10.5-6-10.5z",
-  "Article en promo": "M6 18 18 6M7.5 6a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM16.5 15a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z",
-  "Deux articles": "M5 8h14l-1 12.5H6zM9 8V6.5a3 3 0 0 1 6 0V8",
-  "Quantité dans le panier": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8v8M8 12h8",
-  "Frais de livraison": "M3 6h11v10H3zM14 9.5h4l3 3.5v3h-7M7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM17.5 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4z",
-  "Recherche avec faute": "M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM20 20l-4.9-4.9M7.5 11c1-1.3 2-1.3 3 0s2 1.3 3 0",
-  "Parcours depuis l'accueil": "M3.5 10.5 12 3.5l8.5 7V20a1 1 0 0 1-1 1H15v-6H9v6H4.5a1 1 0 0 1-1-1z",
-  "Test de paiement": ICON.payment,
+const MISSION_ICON: Record<string, Dots> = {
+  "Recherche + taille": [".###...", "#...#..", "#...#..", "#...#..", ".###...", "....#..", ".....*."],
+  "Menu + filtre taille": [".......", "#######", ".......", "#######", ".......", "####*..", "......."],
+  "Filtre de prix": ["...####", "..#...#", ".#..*.#", "#.....#", ".#...#.", "..#.#..", "...#..."],
+  "Variante couleur": ["###.###", "###.###", "###.###", ".......", "###.***", "###.***", "###.***"],
+  "Article en promo": ["##....#", "##...#.", "....#..", "...#...", "..#....", ".#...**", "#....**"],
+  "Deux articles": [".......", ".#...*.", "#.#.*.*", "###.***", "###.***", "###.***", "......."],
+  "Quantité dans le panier": ["...#...", "...#...", "...#...", "###*###", "...#...", "...#...", "...#..."],
+  "Frais de livraison": [".......", "####...", "#..#...", "#..####", "#....*#", "#######", ".#...#."],
+  "Recherche avec faute": [".###...", "#...#..", "#...#..", "#...#..", ".###...", "....#..", "*.*..#."],
+  "Parcours depuis l'accueil": ["...*...", "..###..", ".#####.", "#######", ".#...#.", ".#.#.#.", ".#.#.#."],
+  "Test de paiement": [".......", "#######", "#######", "#.....#", "#..#.*#", "#######", "......."],
 };
 export const MISSION_TYPES = Object.keys(MISSION_ICON);
 
 export function MissionIcon({ title, className = "h-8 w-8 rounded-[9px]" }: { title: string | null | undefined; className?: string }) {
   return (
     <span className={`grid shrink-0 place-items-center bg-fill text-ink ${className}`} aria-hidden>
-      <svg viewBox="0 0 24 24" className="h-[62%] w-[62%]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d={MISSION_ICON[title ?? ""] ?? ICON.other} />
-      </svg>
+      <DotGlyph dots={MISSION_ICON[title ?? ""] ?? ICON.other} className="h-[72%] w-[72%]" />
     </span>
   );
 }
@@ -252,7 +264,7 @@ export function DeviceTag({ device, lang = "fr" }: { device: string; lang?: Lang
   return (
     // Inline, not flex: keeps the text on the surrounding baseline.
     <span className="whitespace-nowrap">
-      <Icon name={device === "mobile" ? "mobile" : "desktop"} className="mr-1 inline-block h-[1.15em] w-[1.15em] align-[-0.2em]" />
+      <Icon name={device === "mobile" ? "mobile" : "desktop"} className="mr-1 inline-block h-[1.15em] w-[1.15em] align-[-0.22em]" />
       {device === "mobile" ? "Mobile" : lang === "en" ? "Desktop" : "Ordinateur"}
     </span>
   );

@@ -51,8 +51,8 @@ function Legend({ lang }: { lang: "fr" | "en" }) {
       </ul>
       <p className="pt-3">
         {en
-          ? "Each blocker has its icon. Blue: it counts against the site. Grey: it stays outside the score."
-          : "Chaque blocage a son icône. En bleu : il compte contre le site. En gris : il reste hors score."}
+          ? "Each blocker has its icon, drawn in square dots like our logo. With a blue dot, it counts against the site; all grey, it stays outside the score."
+          : "Chaque blocage a son icône, dessinée en points carrés comme notre logo. Avec un point bleu, il compte contre le site ; tout en gris, il reste hors score."}
       </p>
       <ul className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
         {Object.keys(BLOCKERS)

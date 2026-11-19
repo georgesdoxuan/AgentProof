@@ -390,7 +390,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                   <li key={r.id} className="border-t border-hairline first:border-0">
                     <a href={`#mission-${i + 1}`} className="flex min-h-[52px] items-center gap-3 px-7 py-2.5 transition-colors hover:bg-bg-2/70 max-[734px]:px-6 dark:hover:bg-white/5">
                       <span className="w-4 shrink-0 type-small text-ink-2 tnum">{i + 1}</span>
-                      <MissionIcon title={r.missions.title} className="h-7 w-7 rounded-[8px]" />
+                      <MissionIcon title={r.missions.title} className="h-8 w-8 rounded-[9px]" />
                       <span className="min-w-0 flex-1 truncate">{missionTitle(r.missions.title, lang)}</span>
                       <span className="type-small shrink-0">
                         <StatusBadge run={r} />
@@ -548,7 +548,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                     <div className="mt-4">
                       {!r.success && r.success !== null && (
                         <p className="mb-2 flex items-center gap-2.5 font-semibold">
-                          <BlockerIcon type={r.blocker_type} className="h-7 w-7 rounded-[8px]" />
+                          <BlockerIcon type={r.blocker_type} className="h-8 w-8 rounded-[9px]" />
                           {blockerLabel(r.blocker_type, lang)}
                         </p>
                       )}
