@@ -219,7 +219,7 @@ export default async function Accueil() {
                 <span className="hidden sm:block">
                   <MissionBar ok={a.s.ok} done={a.s.done} total={a.s.total} size="sm" />
                 </span>
-                <span className="type-small flex items-center justify-end gap-2 whitespace-nowrap text-ink-2 tnum">
+                <span className="type-small flex items-center justify-end gap-2 whitespace-nowrap font-semibold text-live tnum">
                   <Spinner className="h-3.5 w-3.5" />
                   {a.s.finished} {t("sur", "of")} {a.s.total}
                 </span>
