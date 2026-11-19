@@ -80,7 +80,8 @@ export function SpaceShell({
       <div className="mx-auto w-full max-w-[1200px]">
         <div className={`space-y-10 max-[734px]:space-y-8 ${narrow ? "max-w-[760px]" : ""}`}>
           <header className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
-            <div className="min-w-0 flex-1 basis-[min(100%,520px)]">
+            {/* At least as tall as the main action (48px): the title sits at the same height with or without a button. */}
+            <div className="min-h-12 min-w-0 flex-1 basis-[min(100%,520px)]">
               {parent && (
                 <Link href={parent[0]} className="type-small mb-3 inline-flex min-h-8 items-center gap-1 text-link hover:underline">
                   <Chevron dir="left" className="h-3 w-3" />

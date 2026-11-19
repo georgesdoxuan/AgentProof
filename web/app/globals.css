@@ -481,7 +481,9 @@ body {
   }
 }
 
-/* Home section links (#tester, #classement...): smooth scroll, unless the visitor asked for less motion. */
+/* Home section links (#tester, #classement...): smooth scroll, unless the visitor asked for less motion.
+   Page changes stay instant: <html data-scroll-behavior="smooth"> tells Next to switch it off while it scrolls a new
+   page to the top. Without it, the jump to the top was animated over a dozen frames and the sidebar slid down. */
 @media (prefers-reduced-motion: no-preference) {
   html { scroll-behavior: smooth; }
 }
