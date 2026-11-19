@@ -129,13 +129,13 @@ export function CorrectionsBoard({
   );
 
   const groups = f.group ? [...new Set(shown.map((m) => m.site))] : [null];
-  const tab = "type-small flex h-8 items-center gap-1.5 whitespace-nowrap rounded-[8px] px-3 font-semibold text-ink-2 transition-colors aria-[pressed=true]:bg-tile aria-[pressed=true]:text-ink aria-[pressed=true]:shadow-[0_1px_3px_rgb(0_0_0/0.12)] dark:aria-[pressed=true]:bg-[#636366]";
+  const tab = "type-small flex h-8 items-center justify-center gap-1 whitespace-nowrap rounded-[8px] px-3 max-sm:px-1.5 sm:gap-1.5 font-semibold text-ink-2 transition-colors aria-[pressed=true]:bg-tile aria-[pressed=true]:text-ink aria-[pressed=true]:shadow-[0_1px_3px_rgb(0_0_0/0.12)] dark:aria-[pressed=true]:bg-[#636366]";
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div role="group" aria-label={L.statusLabel} className="-mx-1 max-w-[calc(100%+0.5rem)] overflow-x-auto px-1 [scrollbar-width:none]">
-          <div className="inline-flex rounded-[10px] bg-fill p-[3px]">
+        <div role="group" aria-label={L.statusLabel} className="max-sm:w-full">
+          <div className="inline-flex rounded-[10px] bg-fill p-[3px] max-sm:grid max-sm:w-full max-sm:auto-cols-fr max-sm:grid-flow-col">
             {STATUSES.map((s) => (
               <button key={s} type="button" aria-pressed={f.status === s} onClick={() => set({ status: s })} className={tab}>
                 {L.status[s]}

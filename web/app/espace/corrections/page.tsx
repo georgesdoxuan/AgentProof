@@ -218,11 +218,22 @@ function Item({ m, t, lang, edit, base }: { m: Correction; t: T; lang: "fr" | "e
     .join("\n");
   const relaunch = `/espace/nouveau?url=${encodeURIComponent(m.site.url)}&device=${m.site.device}`;
 
+  const badges = (
+    <>
+      <span className="type-caption inline-flex h-[22px] items-center gap-1 whitespace-nowrap rounded-full bg-fill px-2 font-semibold text-ink-2">
+        <Icon name={KIND_ICON[m.kind]} className="h-[13px] w-[13px]" />
+        {kind}
+      </span>
+      {m.status !== "done" && <span className={`type-small whitespace-nowrap font-semibold md:w-[7.5rem] ${im[2]}`}>{t(im[0], im[1])}</span>}
+      <span className={`type-caption inline-flex h-[22px] items-center whitespace-nowrap rounded-full px-2 font-semibold ${st[2]}`}>{t(st[0], st[1])}</span>
+    </>
+  );
+
   return (
     <details id={m.id} name="corrections" className="group/c scroll-mt-24 border-b border-hairline last:border-0">
-      <summary className="flex cursor-pointer list-none items-center gap-3 px-5 py-3 transition-colors hover:bg-bg-2/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue max-sm:flex-wrap md:gap-5 [&::-webkit-details-marker]:hidden">
-        <span className="flex min-w-0 flex-1 items-center gap-3">
-          <SiteLogo domain={m.site.domain} name={m.site.domain} />
+      <summary className="flex cursor-pointer list-none items-center gap-3 px-5 py-3 transition-colors hover:bg-bg-2/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue md:gap-5 [&::-webkit-details-marker]:hidden">
+        <span className="flex min-w-0 flex-1 items-start gap-3 sm:items-center">
+          <SiteLogo domain={m.site.domain} name={m.site.domain} className="max-sm:mt-0.5" />
           <span className="min-w-0">
             <span className="flex min-w-0 items-center gap-2 font-semibold">
               {m.kind === "journey" ? <BlockerIcon type={m.type} className="h-4 w-4 shrink-0" /> : <Icon name="payment" className="h-4 w-4 shrink-0" />}
@@ -231,18 +242,12 @@ function Item({ m, t, lang, edit, base }: { m: Correction; t: T; lang: "fr" | "e
             <span className="type-small block truncate text-ink-2">
               {m.site.label} · <DeviceTag device={m.site.device} lang={lang} /> · {shortDate(m.at, lang)}
             </span>
+            {/* Phones: the badges go on a line of their own under the name; the chevron stays on the right. */}
+            <span className="mt-1.5 flex flex-wrap items-center gap-2 sm:hidden">{badges}</span>
           </span>
         </span>
-        {/* Phones: the badges take their own line under the name, aligned with it (logo 32px + 12px gap). */}
-        <span className="flex shrink-0 flex-wrap items-center gap-2 max-sm:basis-full max-sm:pl-11 md:gap-3">
-          <span className="type-caption inline-flex h-[22px] items-center gap-1 whitespace-nowrap rounded-full bg-fill px-2 font-semibold text-ink-2">
-            <Icon name={KIND_ICON[m.kind]} className="h-[13px] w-[13px]" />
-            {kind}
-          </span>
-          {m.status !== "done" && <span className={`type-small whitespace-nowrap font-semibold md:w-[7.5rem] ${im[2]}`}>{t(im[0], im[1])}</span>}
-          <span className={`type-caption inline-flex h-[22px] items-center whitespace-nowrap rounded-full px-2 font-semibold ${st[2]}`}>{t(st[0], st[1])}</span>
-          <Chevron className="h-3 w-3 text-ink-2 transition-transform duration-200 group-open/c:rotate-90 max-sm:ml-auto" />
-        </span>
+        <span className="flex shrink-0 items-center gap-2 max-sm:hidden md:gap-3">{badges}</span>
+        <Chevron className="h-3 w-3 shrink-0 text-ink-2 transition-transform duration-200 group-open/c:rotate-90" />
       </summary>
 
       <div className="grid gap-x-8 gap-y-6 border-t border-hairline bg-bg-2/40 px-5 py-6 md:grid-cols-[minmax(0,1fr)_minmax(0,340px)] md:px-6 dark:bg-white/[0.02]">
@@ -254,7 +259,10 @@ function Item({ m, t, lang, edit, base }: { m: Correction; t: T; lang: "fr" | "e
             </p>
           ) : (
             <Chips>
-              {m.kind === "journey" ? <Chip tone={m.impact ? "fail" : "plain"}>{lostText}</Chip> : <Chip icon="payment" tone="fail">{t("Paiement non transmis à la banque", "Payment never reached the bank")} · {lostText}</Chip>}
+              {m.kind === "journey" ? <Chip tone={m.impact ? "fail" : "plain"}>{lostText}</Chip> : <>
+                  <Chip icon="payment" tone="fail">{t("Paiement non transmis", "Payment not sent")}</Chip>
+                  <Chip icon="person">{lostText}</Chip>
+                </>}
               {m.impact === 0 && <Chip icon="mission_not_applicable">{t("Hors score", "Out of score")}</Chip>}
             </Chips>
           )}

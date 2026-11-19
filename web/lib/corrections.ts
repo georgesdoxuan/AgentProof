@@ -47,6 +47,14 @@ const PAY_HINT: Record<Lang, Record<string, string>> = {
 // Verdicts that say nothing about the site (the agent ran out of steps, a technical error): left out, as in the score.
 const PAY_AGENT = ["inconclusive", "technical_error"];
 
+// The payment verdicts that make a correction for this site (its latest audit with a real payment test), one per verdict.
+// Shared with the sidebar's counter (lib/sidebar.ts), so the badge and this page count the same corrections.
+const payFailed = (verdict: string | null) => !PAY_REACHED_BANK.includes(verdict ?? "") && !PAY_AGENT.includes(verdict ?? "technical_error");
+export function payIssues(site: SiteView) {
+  const a = site.audits.find((x) => x.status === "done" && x.payment_test);
+  return [...new Set((a?.pay ?? []).filter((p) => (p.status === "done" || p.status === "error") && payFailed(p.verdict)).map((p) => p.verdict ?? "other"))];
+}
+
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 const impactOf = (type: string, missions: number): Correction["impact"] => (EXCLUDED.includes(type) ? 0 : missions >= 3 ? 3 : missions === 2 ? 2 : 1);
 
@@ -129,7 +137,7 @@ export async function loadCorrections(teamId: string, lang: Lang) {
     const pay = payOf.get(site.key);
     if (!pay) continue;
     const mine = (payRuns ?? []).filter((r) => r.audit_id === pay.test && (r.status === "done" || r.status === "error"));
-    const failed = mine.filter((r) => !PAY_REACHED_BANK.includes(r.payment_verdict ?? "") && !PAY_AGENT.includes(r.payment_verdict ?? "technical_error"));
+    const failed = mine.filter((r) => payFailed(r.payment_verdict));
     const byVerdict = new Map<string, any[]>();
     for (const r of failed) byVerdict.set(r.payment_verdict ?? "other", [...(byVerdict.get(r.payment_verdict ?? "other") ?? []), r]);
     const audit = audits.find((a) => a.id === pay.audit)!;
