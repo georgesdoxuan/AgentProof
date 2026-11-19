@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { Hint } from "@/lib/hint";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { paymentVerdicts } from "@/lib/engine";
 import { locale, tr, type Dict, type Lang } from "@/lib/i18n";
 import { getDict, getLang } from "@/lib/lang";
-import { loadSpace, type SpaceAudit } from "@/lib/space";
+import { loadSpace, siteKey, type SpaceAudit } from "@/lib/space";
 import { Chevron, Chip, Chips, DeviceTag, Icon, MissionBar, Spinner, StatusGlyph, scoreTone } from "@/lib/ui";
-import { CloseMenu, ConfirmButton } from "../controls";
+import { CloseMenu, ConfirmButton, ReportsLayout } from "../controls";
 import { SpaceShell } from "../shell";
 import { SiteLogo } from "../../site-logo";
 
@@ -163,7 +164,8 @@ export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
   const [t, lang] = await Promise.all([getDict(), getLang()]);
   const r = t.reports;
   const date = dateFmt(lang);
-  const { audits, trash } = await loadSpace(team.id);
+  const [{ audits, trash }, jar] = await Promise.all([loadSpace(team.id), cookies()]);
+  const bySite = jar.get("ap_rapports_vue")?.value === "site"; // set by ReportsLayout
   const manage = canLaunch(team.role);
 
   const scoped = view === "trash" ? trash : view === "favorites" ? audits.filter((a) => a.favorite) : audits;
@@ -182,6 +184,105 @@ export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
   const title = view === "all" ? r.title : `${r.title} · ${r.sections[view]}`;
   const tab = "type-small flex h-8 items-center rounded-[8px] px-3.5 font-semibold text-ink-2 transition-colors aria-[current=true]:bg-tile aria-[current=true]:text-ink aria-[current=true]:shadow-[0_1px_3px_rgb(0_0_0/0.12)] dark:aria-[current=true]:bg-[#636366]";
 
+  // One report row; in the per-site view the group header already shows the logo.
+  const row = (a: SpaceAudit, logo: boolean) => {
+  const name = a.label || r.siteDeleted;
+  const sub = [
+    a.title && a.sites?.domain,
+    view === "trash" && a.deleted_at ? r.trashedOn(date(a.deleted_at)) : date(a.created_at),
+  ].filter(Boolean);
+  return (
+    <div key={a.id} className="flex items-center border-b border-hairline first:rounded-t-[18px] last:rounded-b-[18px] last:border-0 hover:bg-bg-2/60">
+      <Link href={`/audit/${a.id}`} className="block min-w-0 flex-1">
+        <div className="grid min-h-[68px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 py-3 md:gap-x-5 pl-5 pr-2 md:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_8rem_5.5rem_1rem]">
+          <span className="flex min-w-0 items-start gap-3">
+          {logo && <SiteLogo domain={a.sites?.domain} name={a.sites?.domain} className="mt-0.5" />}
+          <span className="min-w-0">
+            <span className="block truncate font-semibold">
+              {name}
+              {a.devices ? <span className="font-normal text-ink-2"> · {r.vsDevices}</span> : a.compare_to && <span className="font-normal text-ink-2"> · {a.model ? r.vsModels : r.vsCompetitor}</span>}
+            </span>
+            <span className="type-small block text-ink-2">
+              {sub.join(" · ")} · <DeviceTag device={a.device} lang={lang} />
+            </span>
+            {a.pay.length > 0 && <PayLine pays={a.pay} lang={lang} />}
+          </span>
+          </span>
+          <span className="type-small hidden truncate text-ink-2 md:block">{a.users?.email === user.email ? r.you : a.users?.email ?? "—"}</span>
+          <span className="hidden md:block">
+            <MissionBar ok={a.s.ok} done={a.s.done} total={a.s.total} size="sm" />
+          </span>
+          <span className="flex items-center justify-end gap-2 whitespace-nowrap tnum">
+            {a.status === "done" && a.s.score == null ? (
+              // Nothing counted (anti-bot, stock, agent errors): say so instead of an unexplained "— %".
+              <span className="type-small flex items-center gap-1.5 font-semibold text-ink-2">
+                <StatusGlyph tone="unsure" className="h-4 w-4" />
+                <span className="max-md:sr-only">{lang === "en" ? "No score" : "Sans score"}</span>
+              </span>
+            ) : a.status === "done" ? (
+              <>
+                <StatusGlyph tone={scoreTone(a.s.score)} className="h-4 w-4" />
+                <span className="font-semibold">{a.s.score} %</span>
+              </>
+            ) : (
+              <span className="type-small flex items-center gap-2 text-ink-2">
+                <Spinner className="h-3.5 w-3.5" />
+                {r.progress(a.s.finished, a.s.total)}
+              </span>
+            )}
+          </span>
+          <Chevron className="hidden h-3 w-3 text-ink-2 md:block" />
+        </div>
+      </Link>
+      {manage ? (
+        <div className="shrink-0 pr-3">
+          <RowActions a={a} view={view} back={back} t={r} />
+        </div>
+      ) : (
+        a.favorite && view !== "trash" && (
+          <span className="shrink-0 pr-5 text-ink-2" title={r.sections.favorites}>
+            <Star on />
+          </span>
+        )
+      )}
+    </div>
+  );
+  };
+  const empty = (
+    <div className="rounded-[18px] bg-tile">
+  <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
+    <span className="grid h-12 w-12 place-items-center rounded-full bg-fill text-ink-2" aria-hidden>
+      <Icon name={view === "trash" ? "trash" : view === "favorites" ? "star" : "doc"} className="h-6 w-6" />
+    </span>
+    <p className="type-headline">
+      {view === "trash" ? r.emptyTrash : view === "favorites" && !scoped.length ? r.emptyFavorites : scoped.length ? r.emptyView : r.emptyAll}
+    </p>
+    <p className="type-small text-ink-2">
+      {view === "favorites" && !scoped.length ? (
+        audits.length ? r.emptyFavoritesNote : null
+      ) : view !== "all" || scoped.length ? (
+        <Link href={PATH.all} className="text-link hover:underline">
+          {r.seeAll}
+        </Link>
+      ) : manage ? (
+        <Link href="/espace/nouveau" className="text-link hover:underline">
+          {r.launchFirst}
+        </Link>
+      ) : (
+        r.teamWillSee
+      )}
+    </p>
+  </div>
+    </div>
+  );
+  // Par site: one group per site (domain + device), newest report first inside; groups ordered by their newest report.
+  const bySiteMap = new Map<string, SpaceAudit[]>();
+  for (const a of [...shown].sort((x, y) => Date.parse(y.created_at) - Date.parse(x.created_at))) {
+    const key = a.sites ? siteKey(a.sites.domain, a.device) : "";
+    bySiteMap.set(key, [...(bySiteMap.get(key) ?? []), a]);
+  }
+  const groups = [...bySiteMap];
+
   return (
     <SpaceShell
       title={title}
@@ -199,7 +300,9 @@ export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
       }
     >
       <section>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3 px-1">
+        <ReportsLayout
+          initial={bySite}
+          toolbar={<>
           <h2 className="sr-only">{r.history}</h2>
           {/* Sub-sections as tabs on narrow screens; the sidebar shows them on wide ones. */}
           <nav aria-label={r.sectionsLabel} className="inline-flex rounded-[10px] bg-fill p-[3px] lg:hidden">
@@ -235,98 +338,59 @@ export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
               ))}
             </nav>
           )}
-        </div>
-        <div className="rounded-[18px] bg-tile">
-          {shown.length ? (
-            shown.map((a) => {
-              const name = a.label || r.siteDeleted;
-              const sub = [
-                a.title && a.sites?.domain,
-                view === "trash" && a.deleted_at ? r.trashedOn(date(a.deleted_at)) : date(a.created_at),
-              ].filter(Boolean);
-              return (
-                <div key={a.id} className="flex items-center border-b border-hairline first:rounded-t-[18px] last:rounded-b-[18px] last:border-0 hover:bg-bg-2/60">
-                  <Link href={`/audit/${a.id}`} className="block min-w-0 flex-1">
-                    <div className="grid min-h-[68px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 py-3 md:gap-x-5 pl-5 pr-2 md:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_8rem_5.5rem_1rem]">
-                      <span className="flex min-w-0 items-start gap-3">
-                      <SiteLogo domain={a.sites?.domain} name={a.sites?.domain} className="mt-0.5" />
-                      <span className="min-w-0">
-                        <span className="block truncate font-semibold">
-                          {name}
-                          {a.devices ? <span className="font-normal text-ink-2"> · {r.vsDevices}</span> : a.compare_to && <span className="font-normal text-ink-2"> · {a.model ? r.vsModels : r.vsCompetitor}</span>}
-                        </span>
-                        <span className="type-small block text-ink-2">
-                          {sub.join(" · ")} · <DeviceTag device={a.device} lang={lang} />
-                        </span>
-                        {a.pay.length > 0 && <PayLine pays={a.pay} lang={lang} />}
-                      </span>
-                      </span>
-                      <span className="type-small hidden truncate text-ink-2 md:block">{a.users?.email === user.email ? r.you : a.users?.email ?? "—"}</span>
-                      <span className="hidden md:block">
-                        <MissionBar ok={a.s.ok} done={a.s.done} total={a.s.total} size="sm" />
-                      </span>
-                      <span className="flex items-center justify-end gap-2 whitespace-nowrap tnum">
-                        {a.status === "done" && a.s.score == null ? (
-                          // Nothing counted (anti-bot, stock, agent errors): say so instead of an unexplained "— %".
-                          <span className="type-small flex items-center gap-1.5 font-semibold text-ink-2">
-                            <StatusGlyph tone="unsure" className="h-4 w-4" />
-                            <span className="max-md:sr-only">{lang === "en" ? "No score" : "Sans score"}</span>
-                          </span>
-                        ) : a.status === "done" ? (
-                          <>
-                            <StatusGlyph tone={scoreTone(a.s.score)} className="h-4 w-4" />
-                            <span className="font-semibold">{a.s.score} %</span>
-                          </>
-                        ) : (
-                          <span className="type-small flex items-center gap-2 text-ink-2">
-                            <Spinner className="h-3.5 w-3.5" />
-                            {r.progress(a.s.finished, a.s.total)}
-                          </span>
-                        )}
-                      </span>
-                      <Chevron className="hidden h-3 w-3 text-ink-2 md:block" />
-                    </div>
-                  </Link>
-                  {manage ? (
-                    <div className="shrink-0 pr-3">
-                      <RowActions a={a} view={view} back={back} t={r} />
-                    </div>
-                  ) : (
-                    a.favorite && view !== "trash" && (
-                      <span className="shrink-0 pr-5 text-ink-2" title={r.sections.favorites}>
-                        <Star on />
-                      </span>
-                    )
-                  )}
-                </div>
-              );
-            })
-          ) : (
-            <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
-              <span className="grid h-12 w-12 place-items-center rounded-full bg-fill text-ink-2" aria-hidden>
-                <Icon name={view === "trash" ? "trash" : view === "favorites" ? "star" : "doc"} className="h-6 w-6" />
-              </span>
-              <p className="type-headline">
-                {view === "trash" ? r.emptyTrash : view === "favorites" && !scoped.length ? r.emptyFavorites : scoped.length ? r.emptyView : r.emptyAll}
-              </p>
-              <p className="type-small text-ink-2">
-                {view === "favorites" && !scoped.length ? (
-                  audits.length ? r.emptyFavoritesNote : null
-                ) : view !== "all" || scoped.length ? (
-                  <Link href={PATH.all} className="text-link hover:underline">
-                    {r.seeAll}
-                  </Link>
-                ) : manage ? (
-                  <Link href="/espace/nouveau" className="text-link hover:underline">
-                    {r.launchFirst}
-                  </Link>
-                ) : (
-                  r.teamWillSee
-                )}
-              </p>
-            </div>
+          {scoped.length > 0 && (
+            // Liste / Par site: radios, so the choice works and reads as one control; ReportsLayout listens to them.
+            <fieldset className="inline-flex rounded-[10px] bg-fill p-[3px] max-lg:ml-auto">
+              <legend className="sr-only">{r.layout.label}</legend>
+              {([["liste", r.layout.list, false], ["site", r.layout.bySite, true]] as const).map(([v, l, on]) => (
+                <label key={v} className="cursor-pointer">
+                  <input type="radio" name="ap_rapports_vue" value={v} defaultChecked={bySite === on} className="peer sr-only" />
+                  <span className={`${tab} peer-checked:bg-tile peer-checked:text-ink peer-checked:shadow-[0_1px_3px_rgb(0_0_0/0.12)] peer-focus-visible:outline-2 peer-focus-visible:outline-blue dark:peer-checked:bg-[#636366]`}>{l}</span>
+                </label>
+              ))}
+            </fieldset>
           )}
-        </div>
+          </>}
+          list={shown.length ? <div className="rounded-[18px] bg-tile">{shown.map((a) => row(a, true))}</div> : empty}
+          bySite={shown.length ? (
+            <div className="space-y-3">
+              {groups.map(([key, list]) => {
+                const last = list.find((a) => a.status === "done");
+                const site = list[0].sites;
+                return (
+                  <details key={key} open className="group/site rounded-[18px] bg-tile">
+                    <summary className="flex min-h-[60px] cursor-pointer list-none items-center gap-3 rounded-[18px] py-3 pl-5 pr-5 hover:bg-bg-2/60 focus-visible:outline-2 focus-visible:outline-blue [&::-webkit-details-marker]:hidden group-open/site:rounded-b-none group-open/site:border-b group-open/site:border-hairline">
+                      <SiteLogo domain={site?.domain} name={site?.domain} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-semibold">{site?.domain ?? r.siteDeleted}</span>
+                        <span className="type-small block text-ink-2">
+                          {r.countOnly(list.length)} · <DeviceTag device={list[0].device} lang={lang} />
+                        </span>
+                      </span>
+                      {last && (
+                        <span className="flex items-center gap-2 whitespace-nowrap tnum">
+                          {last.s.score == null ? (
+                            <span className="type-small flex items-center gap-1.5 font-semibold text-ink-2">
+                              <StatusGlyph tone="unsure" className="h-4 w-4" />
+                              <span className="max-md:sr-only">{lang === "en" ? "No score" : "Sans score"}</span>
+                            </span>
+                          ) : (
+                            <>
+                              <StatusGlyph tone={scoreTone(last.s.score)} className="h-4 w-4" />
+                              <span className="font-semibold">{last.s.score} %</span>
+                            </>
+                          )}
+                        </span>
+                      )}
+                      <Chevron dir="down" className="h-3 w-3 text-ink-2 transition-transform group-open/site:rotate-180" />
+                    </summary>
+                    {list.map((a) => row(a, false))}
+                  </details>
+                );
+              })}
+            </div>
+          ) : empty}
+        />
       </section>
     </SpaceShell>
   );

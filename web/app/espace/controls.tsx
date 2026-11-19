@@ -268,3 +268,27 @@ export function CopyButton({ value, label, done }: { value: string; label: strin
 }
 
 // Back / forward, like a browser toolbar. Uses the Navigation API when available to grey out a dead end.
+
+// Rapports › "Liste" or "Par site". The server renders both views and the toggle; this only hides one. The choice lives
+// in a cookie (read in rapports/list.tsx), like the sidebar, so the server renders the right view: no jump on load.
+const REPORTS_LAYOUT_COOKIE = "ap_rapports_vue"; // read in rapports/list.tsx
+export function ReportsLayout({ initial, toolbar, list, bySite }: { initial: boolean; toolbar: React.ReactNode; list: React.ReactNode; bySite: React.ReactNode }) {
+  const [bySiteOn, setBySite] = useState(initial);
+  return (
+    <>
+      <div
+        className="mb-3 flex flex-wrap items-center justify-between gap-3 px-1"
+        onChange={(e) => {
+          const input = e.target as HTMLInputElement;
+          if (input.name !== REPORTS_LAYOUT_COOKIE) return;
+          setBySite(input.value === "site");
+          document.cookie = `${REPORTS_LAYOUT_COOKIE}=${input.value}; path=/; max-age=31536000; samesite=lax`;
+        }}
+      >
+        {toolbar}
+      </div>
+      <div hidden={bySiteOn}>{list}</div>
+      <div hidden={!bySiteOn}>{bySite}</div>
+    </>
+  );
+}
