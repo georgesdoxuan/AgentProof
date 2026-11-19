@@ -223,6 +223,7 @@ const ICON: Record<string, string> = {
   agent_out_of_steps: "M3 20h5v-5h5v-5h5V5h3",
   agent_tool_error: "M14.5 5.5a4.5 4.5 0 0 0-5.8 5.8L3.5 16.5a2.1 2.1 0 0 0 3 3l5.2-5.2a4.5 4.5 0 0 0 5.8-5.8l-2.7 2.7-2.6-.4-.4-2.6z",
   other: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM8 12h.01M12 12h.01M16 12h.01",
+  cart: "M3 4h2.2l2.3 11h10.3l2.2-7.5H6.4M9 19.5h.01M17 19.5h.01",
   payment: "M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM3 10h18M7 15h3",
   desktop: LINE.desktop,
   both: LINE.both,

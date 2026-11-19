@@ -18,6 +18,37 @@ export type View = "all" | "favorites" | "trash";
 const PATH: Record<View, string> = { all: "/espace/rapports", favorites: "/espace/rapports/favoris", trash: "/espace/reglages/corbeille/rapports" };
 const STATUS = ["tous", "en-cours", "termines"] as const;
 
+// Audit type, derived from what the audit holds (no column of its own): shopping missions, a real payment test, both,
+// or a fix check (proof audit). Shown as a badge on every row and filterable with the chips above the list.
+export type AuditType = "journey" | "payment" | "both" | "proof";
+const TYPES: AuditType[] = ["journey", "both", "payment", "proof"];
+const TYPE_ICONS: Record<AuditType, string[]> = { journey: ["cart"], payment: ["payment"], both: ["cart", "payment"], proof: ["shield"] };
+export function auditType(a: Pick<SpaceAudit, "proof_of" | "payment_test" | "runs">): AuditType {
+  if (a.proof_of) return "proof";
+  if (a.payment_test) return a.runs.length ? "both" : "payment";
+  return "journey";
+}
+const TYPE_TONE: Record<AuditType, string> = {
+  journey: "bg-fill text-ink-2",
+  proof: "bg-fill text-ink-2",
+  payment: "bg-blue/12 text-link",
+  both: "bg-blue/12 text-link",
+};
+// The badge: icon(s) + label; phones keep the icons only (the label stays for screen readers and on hover).
+function TypeBadge({ type, t }: { type: AuditType; t: Dict["reports"]["types"] }) {
+  return (
+    <span title={t.tip[type]} className={`type-caption inline-flex h-[22px] shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2 font-semibold ${TYPE_TONE[type]}`}>
+      {TYPE_ICONS[type].map((i, n) => (
+        <span key={i} className="flex items-center gap-1">
+          {n > 0 && <span className="sm:hidden" aria-hidden>+</span>}
+          <Icon name={i} className="h-[13px] w-[13px]" />
+        </span>
+      ))}
+      <span className="max-sm:sr-only">{t[type]}</span>
+    </span>
+  );
+}
+
 const dateFmt = (lang: Lang) => (d: string) =>
   new Date(d).toLocaleDateString(locale(lang), { timeZone: "Europe/Paris", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
@@ -172,6 +203,7 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
   const date = dateFmt(lang);
   const [{ audits, trash, trashedSites }, jar] = await Promise.all([loadSpace(team.id), cookies()]);
   const bySite = jar.get("ap_rapports_vue")?.value === "site"; // set by ReportsLayout
+  const typeCookie = jar.get("ap_rapports_type")?.value; // set by ReportsLayout
   const manage = canLaunch(team.role);
 
   const scoped = view === "trash" ? trash : view === "favorites" ? audits.filter((a) => a.favorite) : audits;
@@ -179,7 +211,12 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
   const running = scoped.filter((a) => a.status !== "done");
   const query = fold(q.trim().slice(0, 80));
   const byStatus = status === "en-cours" ? running : status === "termines" ? scoped.filter((a) => a.status === "done") : scoped;
-  const shown = query ? byStatus.filter((a) => fold(`${a.label ?? ""} ${a.title ?? ""} ${a.sites?.domain ?? ""}`).includes(query)) : byStatus;
+  const searched = query ? byStatus.filter((a) => fold(`${a.label ?? ""} ${a.title ?? ""} ${a.sites?.domain ?? ""}`).includes(query)) : byStatus;
+  // Type chips: only the types this scope holds, and only when there are two or more. A saved type absent here = all.
+  const present = view === "trash" ? [] : TYPES.filter((ty) => scoped.some((a) => auditType(a) === ty));
+  const type = present.length > 1 && present.includes(typeCookie as AuditType) ? (typeCookie as AuditType) : "all";
+  const typeCount = (ty: AuditType) => searched.filter((a) => auditType(a) === ty).length;
+  const shown = type === "all" ? searched : searched.filter((a) => auditType(a) === type);
   const back = status === "tous" ? PATH[view] : `${PATH[view]}?vue=${status}`;
 
   const intro =
@@ -206,9 +243,12 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
           <span className="flex min-w-0 items-start gap-3">
           {logo && <SiteLogo domain={a.sites?.domain} name={a.sites?.domain} className="mt-0.5" />}
           <span className="min-w-0">
-            <span className="block truncate font-semibold">
-              {name}
-              {a.devices ? <span className="font-normal text-ink-2"> · {r.vsDevices}</span> : a.compare_to && <span className="font-normal text-ink-2"> · {a.model ? r.vsModels : r.vsCompetitor}</span>}
+            <span className="flex min-w-0 items-center gap-2">
+              <span className="truncate font-semibold">
+                {name}
+                {a.devices ? <span className="font-normal text-ink-2"> · {r.vsDevices}</span> : a.compare_to && <span className="font-normal text-ink-2"> · {a.model ? r.vsModels : r.vsCompetitor}</span>}
+              </span>
+              <TypeBadge type={auditType(a)} t={r.types} />
             </span>
             <span className="type-small block text-ink-2">
               {sub.join(" · ")} · <DeviceTag device={a.device} lang={lang} />
@@ -387,6 +427,22 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
                 className="h-10 w-full rounded-[10px] bg-tile px-3.5 text-[15px] outline-none ring-blue focus-visible:ring-2 dark:bg-[#2c2c2e]"
               />
             </form>
+          )}
+          {present.length > 1 && (
+            // Audit type: radios styled as chips, with the count under the current tab and search. ReportsLayout saves the choice.
+            <fieldset className="flex w-full flex-wrap items-center gap-2">
+              <legend className="sr-only">{r.types.label}</legend>
+              {(["all", ...present] as const).map((v) => (
+                <label key={v} className="cursor-pointer" title={v === "all" ? undefined : r.types.tip[v]}>
+                  <input type="radio" name="ap_rapports_type" value={v} defaultChecked={type === v} className="peer sr-only" />
+                  <span className="type-caption inline-flex min-h-[30px] items-center gap-1.5 whitespace-nowrap rounded-full bg-fill px-3 font-semibold text-ink-2 transition-colors hover:text-ink peer-checked:bg-ink peer-checked:text-bg peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue">
+                    {v !== "all" && TYPE_ICONS[v].map((i) => <Icon key={i} name={i} className="h-[14px] w-[14px]" />)}
+                    {v === "all" ? r.types.all : r.types[v]}
+                    <span className="tnum font-normal opacity-70">{v === "all" ? searched.length : typeCount(v)}</span>
+                  </span>
+                </label>
+              ))}
+            </fieldset>
           )}
           </>}
           list={shown.length ? <div className="rounded-[18px] bg-tile">{shown.map((a) => row(a, true))}</div> : empty}
