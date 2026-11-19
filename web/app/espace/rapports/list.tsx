@@ -19,27 +19,38 @@ const STATUS = ["tous", "en-cours", "termines"] as const;
 const dateFmt = (lang: Lang) => (d: string) =>
   new Date(d).toLocaleDateString(locale(lang), { timeZone: "Europe/Paris", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
-// One line for the real payment test linked to an audit.
-function PayLine({ pay, multi, lang }: { pay: { status: string; verdict: string | null; with_login: boolean }; multi: boolean; lang: Lang }) {
+// One quiet line for the real payment tests linked to an audit: grey like the date line, green only when the
+// payment reached the bank. Identical verdicts (without account, then signed in) are merged: "captcha (no account, signed in)".
+function PayLine({ pays, lang }: { pays: { status: string; verdict: string | null; with_login: boolean }[]; lang: Lang }) {
   const t = tr(lang);
   const PAYMENT_VERDICTS = paymentVerdicts(lang);
-  const P = t("Paiement", "Payment");
-  const reached = pay.verdict === "bank_declined" || pay.verdict === "payment_accepted";
-  // A small chip, not a red line: the payment test is secondary to the report it hangs off.
-  const [text, tone] =
-    pay.status !== "done" && pay.status !== "error"
-      ? [t("test en cours", "test running"), "plain"]
-      : reached
-        ? [t("transmis à la banque", "sent to the bank"), "pass"]
-        : pay.verdict === "inconclusive" || pay.verdict === "three_ds_timeout"
-          ? [PAYMENT_VERDICTS[pay.verdict!].toLowerCase(), "warn"]
-          : [(PAYMENT_VERDICTS[pay.verdict ?? ""] ?? t("erreur", "error")).toLowerCase(), "plain"];
-  const who = multi || pay.with_login ? (pay.with_login ? t(" · connecté", " · signed in") : t(" · sans compte", " · no account")) : "";
+  const multi = pays.length > 1;
+  const groups = new Map<string, { reached: boolean; who: string[] }>();
+  for (const pay of pays) {
+    const reached = pay.verdict === "bank_declined" || pay.verdict === "payment_accepted";
+    const text =
+      pay.status !== "done" && pay.status !== "error"
+        ? t("test en cours", "test running")
+        : reached
+          ? t("transmis à la banque", "sent to the bank")
+          : (PAYMENT_VERDICTS[pay.verdict ?? ""] ?? t("erreur", "error")).toLowerCase();
+    const g = groups.get(text) ?? { reached, who: [] };
+    if (multi || pay.with_login) g.who.push(pay.with_login ? t("connecté", "signed in") : t("sans compte", "no account"));
+    groups.set(text, g);
+  }
   return (
-    <span title={`${P} : ${text}${who}`} className="min-w-0 max-w-full">
-      <Chip icon="payment" tone={tone as "plain" | "pass" | "warn"} className="max-w-full font-medium! [&>span]:truncate">
-        <span>{P} · {text}{who}</span>
-      </Chip>
+    <span className="type-small mt-0.5 flex min-w-0 items-start gap-1.5 text-ink-2">
+      <Icon name="payment" className="mt-[2px] h-[1.05em] w-[1.05em] shrink-0" />
+      <span className="min-w-0">
+        {t("Paiement", "Payment")} ·{" "}
+        {[...groups].map(([text, g], i) => (
+          <span key={text} className={g.reached ? "font-semibold text-pass" : undefined}>
+            {i > 0 && " · "}
+            {text}
+            {g.who.length > 0 && ` (${g.who.join(", ")})`}
+          </span>
+        ))}
+      </span>
     </span>
   );
 }
@@ -222,7 +233,7 @@ export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
               return (
                 <div key={a.id} className="flex items-center border-b border-hairline first:rounded-t-[18px] last:rounded-b-[18px] last:border-0 hover:bg-bg-2/60">
                   <Link href={`/audit/${a.id}`} className="block min-w-0 flex-1">
-                    <div className="grid min-h-[68px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-5 py-3 pl-5 pr-2 md:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_8rem_5.5rem_1rem]">
+                    <div className="grid min-h-[68px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 py-3 md:gap-x-5 pl-5 pr-2 md:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_8rem_5.5rem_1rem]">
                       <span className="flex min-w-0 items-start gap-3">
                       <SiteLogo domain={a.sites?.domain} name={a.sites?.domain} className="mt-0.5" />
                       <span className="min-w-0">
@@ -233,11 +244,7 @@ export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
                         <span className="type-small block text-ink-2">
                           {sub.join(" · ")} · <DeviceTag device={a.device} lang={lang} />
                         </span>
-                        {a.pay.length > 0 && (
-                          <span className="mt-1.5 flex flex-wrap gap-1.5">
-                            {a.pay.map((p, i) => <PayLine key={i} pay={p} multi={a.pay.length > 1} lang={lang} />)}
-                          </span>
-                        )}
+                        {a.pay.length > 0 && <PayLine pays={a.pay} lang={lang} />}
                       </span>
                       </span>
                       <span className="type-small hidden truncate text-ink-2 md:block">{a.users?.email === user.email ? r.you : a.users?.email ?? "—"}</span>
@@ -249,7 +256,7 @@ export async function ReportsList({ view, vue }: { view: View; vue?: string }) {
                           // Nothing counted (anti-bot, stock, agent errors): say so instead of an unexplained "— %".
                           <span className="type-small flex items-center gap-1.5 font-semibold text-ink-2">
                             <StatusGlyph tone="unsure" className="h-4 w-4" />
-                            {lang === "en" ? "No score" : "Sans score"}
+                            <span className="max-md:sr-only">{lang === "en" ? "No score" : "Sans score"}</span>
                           </span>
                         ) : a.status === "done" ? (
                           <>
