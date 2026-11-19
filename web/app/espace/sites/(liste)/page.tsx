@@ -29,31 +29,33 @@ export default async function Sites() {
   const saved = (await cookies()).get("ap_sites_ext")?.value ?? ""; // set by SitesByExt
   const initial = [...counts.keys()].find((e) => encodeURIComponent(e) === saved) ?? "all"; // gone extension: back to "Tous"
 
+  const actions = (
+    <div className="flex flex-wrap gap-3">
+      <Link href="/espace/classement" className="btn btn-secondary gap-2">
+        <Icon name="ranking" />
+        {t("Classement", "Ranking")}
+      </Link>
+      {canLaunch(team.role) && (
+        <Link href="/espace/nouveau" className="btn">
+          {t("Ajouter un site", "Add a site")}
+        </Link>
+      )}
+    </div>
+  );
+
   return (
     <SpaceShell
       title="Sites"
-      hint={t("Le dernier score de chaque site, son évolution et ce qu'il reste à corriger.", "The latest score of each site, its trend and what is left to fix.")}
-      actions={
-        <div className="flex flex-wrap gap-3">
-          <Link href="/espace/classement" className="btn btn-secondary gap-2">
-            <Icon name="ranking" />
-            {t("Classement", "Ranking")}
-          </Link>
-          {canLaunch(team.role) && (
-            <Link href="/espace/nouveau" className="btn">
-              {t("Ajouter un site", "Add a site")}
-            </Link>
-          )}
-        </div>
-      }
+      bare
     >
       <div>
       {sites.length ? (
         <div className="space-y-3">
           <SitesByExt
             initial={initial}
+            actions={actions}
             chips={
-              <fieldset>
+              <fieldset className="min-w-0">
                 <legend className="sr-only">{t("Extension du domaine", "Domain extension")}</legend>
                 <Chips>
                   {([["all", t("Tous", "All"), sites.length], ...exts.map(([e, n]) => [e, e, n])] as [string, string, number][]).map(([v, label, n]) => (
@@ -73,6 +75,8 @@ export default async function Sites() {
           <MissionLegend className="px-1" />
         </div>
       ) : (
+        <div className="space-y-4">
+        <div className="flex justify-end">{actions}</div>
         <Empty icon="layers" title={t("Aucun site", "No site yet")}>
           {trashedSites.length ? (
             <Link href="/espace/reglages/corbeille/sites" className="text-link hover:underline">
@@ -82,6 +86,7 @@ export default async function Sites() {
             t("Apparaît après le premier audit.", "Shows up after the first audit.")
           )}
         </Empty>
+        </div>
       )}
       </div>
     </SpaceShell>
