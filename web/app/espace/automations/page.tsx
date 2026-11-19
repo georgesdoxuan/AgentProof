@@ -174,7 +174,7 @@ export default async function Automations({ searchParams }: { searchParams: Prom
     >
       {!admin && <Note icon="lock">{t("Lecture seule : un admin gère les automations.", "Read-only: an admin manages automations.")}</Note>}
 
-      {/* Wide screens: what is watched and audited on the left, how the team is told and the limits on the right (as in Réglages). */}
+      {/* Wide screens: what is watched and audited and its credit cap on the left, how the team is told on the right (as in Réglages). */}
       <Columns
         main={
           <>
@@ -374,6 +374,43 @@ export default async function Automations({ searchParams }: { searchParams: Prom
                 })
               )}
             </Card>
+
+            {/* ---------- 5. Credit cap per site ---------- */}
+            <Card
+              id="plafond"
+              icon="credit"
+              title={t("Plafond de crédits", "Credit cap")}
+              tip={t(
+                "Crédits par site et par mois, tous appareils. Au-delà, les audits automatiques ne partent plus jusqu'au 1er du mois. Un audit lancé à la main passe toujours. Vide : aucun plafond.",
+                "Credits per site per month, all devices. Past it, automatic audits stop until the 1st of the month. An audit launched by hand always goes through. Empty: no cap.",
+              )}
+              aside={cap ? <Chip icon="credit">{t(`${cap} / site / mois`, `${cap} / site / month`)}</Chip> : <Chip>{t("Aucun plafond", "No cap")}</Chip>}
+            >
+              <Row>
+                <form action="/api/automations" method="post" className="flex w-full flex-wrap items-center gap-x-4 gap-y-3">
+                  <input type="hidden" name="action" value="site_cap" />
+                  <label htmlFor="site_credit_cap" className="min-w-0 flex-1 basis-[200px]">
+                    {t("Crédits par site et par mois", "Credits per site per month")}
+                  </label>
+                  <span className="flex items-center gap-2.5">
+                    <input
+                      id="site_credit_cap"
+                      name="site_credit_cap"
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      max={10000}
+                      step={1}
+                      defaultValue={cap ?? ""}
+                      placeholder={t("Aucun", "None")}
+                      disabled={!admin}
+                      className={`${input} w-28 text-right tabular-nums`}
+                    />
+                    {admin && <button className="btn-secondary min-h-10 rounded-full px-4 text-[15px] font-semibold">{t("Enregistrer", "Save")}</button>}
+                  </span>
+                </form>
+              </Row>
+            </Card>
           </>
         }
         side={
@@ -475,7 +512,7 @@ export default async function Automations({ searchParams }: { searchParams: Prom
                 <span className="flex min-w-0 flex-1 items-center gap-3">
                   <Icon name="trend" className="h-5 w-5 text-ink-2" />
                   <Hint tip={t("Comparé à l'audit précédent du même site, même appareil et même modèle.", "Compared with the previous audit of the same site, device and model.")}>
-                    {t("Alerte si le score baisse de", "Alert when the score drops by")}
+                    {t("Alerte si le score baisse\u00a0de", "Alert when the score drops\u00a0by")}
                   </Hint>
                 </span>
                 {admin ? (
@@ -511,43 +548,6 @@ export default async function Automations({ searchParams }: { searchParams: Prom
                 </div>
               </Card>
             )}
-
-            {/* ---------- 5. Credit cap per site ---------- */}
-            <Card
-              id="plafond"
-              icon="credit"
-              title={t("Plafond de crédits", "Credit cap")}
-              tip={t(
-                "Crédits par site et par mois, tous appareils. Au-delà, les audits automatiques ne partent plus jusqu'au 1er du mois. Un audit lancé à la main passe toujours. Vide : aucun plafond.",
-                "Credits per site per month, all devices. Past it, automatic audits stop until the 1st of the month. An audit launched by hand always goes through. Empty: no cap.",
-              )}
-              aside={cap ? <Chip icon="credit">{t(`${cap} / site / mois`, `${cap} / site / month`)}</Chip> : <Chip>{t("Aucun plafond", "No cap")}</Chip>}
-            >
-              <Row>
-                <form action="/api/automations" method="post" className="flex w-full flex-wrap items-center gap-x-4 gap-y-3">
-                  <input type="hidden" name="action" value="site_cap" />
-                  <label htmlFor="site_credit_cap" className="min-w-0 flex-1 basis-[200px]">
-                    {t("Crédits par site et par mois", "Credits per site per month")}
-                  </label>
-                  <span className="flex items-center gap-2.5">
-                    <input
-                      id="site_credit_cap"
-                      name="site_credit_cap"
-                      type="number"
-                      inputMode="numeric"
-                      min={1}
-                      max={10000}
-                      step={1}
-                      defaultValue={cap ?? ""}
-                      placeholder={t("Aucun", "None")}
-                      disabled={!admin}
-                      className={`${input} w-28 text-right tabular-nums`}
-                    />
-                    {admin && <button className="btn-secondary min-h-10 rounded-full px-4 text-[15px] font-semibold">{t("Enregistrer", "Save")}</button>}
-                  </span>
-                </form>
-              </Row>
-            </Card>
           </>
         }
       />
