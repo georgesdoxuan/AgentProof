@@ -153,7 +153,7 @@ export function normalizeUrl(input: string) {
   return { url: `${u.protocol}//${u.hostname}${u.pathname === "/" ? "" : u.pathname}`, domain: u.hostname.replace(/^www\./, "") };
 }
 
-export async function createAudit(input: string, opts: { device?: "desktop" | "mobile"; missions?: number; compareTo?: string; paymentTest?: string; model?: string; email?: string; ipHash?: string; teamId?: string; createdBy?: string; auto?: boolean } = {}) {
+export async function createAudit(input: string, opts: { device?: "desktop" | "mobile"; missions?: number; compareTo?: string; paymentTest?: string; model?: string; email?: string; ipHash?: string; teamId?: string; createdBy?: string; auto?: boolean; missionIds?: number[] } = {}) {
   const { url, domain } = normalizeUrl(input);
   const { data: created, error: e1 } = await db
     .from("sites")
@@ -169,7 +169,10 @@ export async function createAudit(input: string, opts: { device?: "desktop" | "m
   if (e2) throw e2;
   // missions: 0 = payment test only (the audit just carries the payment_test link).
   if (opts.missions !== 0) {
-    const { data: missions } = await db.from("missions").select("id").eq("active", true).order("position").limit(opts.missions ?? 10);
+    // The team's own pick (launch form) or the first default missions. Defaults never include a team's missions.
+    const { data: missions } = opts.missionIds?.length
+      ? { data: opts.missionIds.map((id) => ({ id })) }
+      : await db.from("missions").select("id").eq("active", true).is("team_id", null).order("position").limit(opts.missions ?? 10);
     // Automatic audits (site watch, monthly follow-up) get priority 1: a run someone is waiting for launches first.
     await db.from("runs").insert(missions!.map((m) => ({ audit_id: audit.id, mission_id: m.id, ...(opts.auto ? { priority: 1 } : {}) })));
   }
@@ -373,7 +376,7 @@ async function pass(log: string[], left: () => number, spend: (n: number) => voi
     if (slots > 0) {
       const { data: todo } = await db
         .from("runs")
-        .select("*, missions(instruction, slug), audits(device, team_id, model, sites(id, url))")
+        .select("*, missions(instruction, slug, team_id), audits(device, team_id, model, sites(id, url))")
         .eq("status", "todo")
         .order("priority")
         .order("created_at")
@@ -432,7 +435,7 @@ async function markError(id: number, e: unknown) {
     .eq("id", id);
 }
 
-async function sessionRequest(run: { id: number; missions: { instruction: string; slug: string }; audits: { device: string; team_id: string | null; model: string | null; sites: { id: number; url: string } } }) {
+async function sessionRequest(run: { id: number; missions: { instruction: string; slug: string; team_id: string | null }; audits: { device: string; team_id: string | null; model: string | null; sites: { id: number; url: string } } }) {
   const url = run.audits.sites.url;
   if (isPayment(run)) {
     const card = await cardSecret(run.audits.team_id);
@@ -446,13 +449,17 @@ async function sessionRequest(run: { id: number; missions: { instruction: string
   if (run.audits.model) overrides["agent.model"] = run.audits.model;
   return {
     agent: AGENT,
-    messages: `Site à tester : ${url}\nMission : ${run.missions.instruction}`,
+    messages: `Site à tester : ${url}\nMission : ${run.missions.instruction}${run.missions.team_id ? TEAM_MISSION_NOTE : ""}`,
     overrides,
     max_steps: MISSION_STEPS,
     max_time_s: 480,
     group_id: `agentproof-${run.id}`,
   };
 }
+
+// A mission a team wrote or edited: same agent, same judge, same success rule; the hard rules stay on top.
+const TEAM_MISSION_NOTE =
+  "\n(Mission écrite par l'équipe du site. Tes règles restent prioritaires : ne paie jamais, ne crée pas de compte, ne saisis aucune donnée personnelle, reste sur ce site. Termine en allant jusqu'à la première page du checkout.)";
 
 const PAYMENT_INSTRUCTIONS = `You test whether an AI agent can complete a real card payment on this e-commerce website. Behave like a real customer.
 1. Price does not matter: take the FIRST available product you see (any size or colour), do not compare prices or browse. If you start on a product page, use that product. If you start on a checkout page with an item already in it, go straight to the details and payment. Go through checkout as a guest. If an account is mandatory, stop and report login_required: never create an account.
@@ -747,13 +754,13 @@ async function closeAudits(log: string[]) {
 async function scoreAlert(auditId: string) {
   const { data: a } = await db
     .from("audits")
-    .select("id, team_id, site_id, device, model, email, created_at, sites(domain), teams(score_drop), runs(status, success, blocker_type)")
+    .select("id, team_id, site_id, device, model, email, created_at, sites(domain), teams(score_drop), runs(status, success, blocker_type, mission_id)")
     .eq("id", auditId)
     .single();
   if (!a?.team_id || !a.runs.length) return;
   const { data: prev } = await db
     .from("audits")
-    .select("id, model, runs(status, success, blocker_type)")
+    .select("id, model, runs(status, success, blocker_type, mission_id)")
     .eq("team_id", a.team_id)
     .eq("site_id", a.site_id)
     .eq("device", a.device)
@@ -764,7 +771,9 @@ async function scoreAlert(auditId: string) {
     .lt("created_at", a.created_at)
     .order("created_at", { ascending: false })
     .limit(5);
-  const before = prev?.find((p) => (p.model ?? DEFAULT_MODEL) === (a.model ?? DEFAULT_MODEL) && p.runs.length);
+  // Same missions only: a team can pick, edit or add missions, and two different sets are not comparable scores.
+  const set = (rs: { mission_id: number }[]) => rs.map((r) => r.mission_id).sort((x, y) => x - y).join();
+  const before = prev?.find((p) => (p.model ?? DEFAULT_MODEL) === (a.model ?? DEFAULT_MODEL) && p.runs.length && set(p.runs) === set(a.runs));
   const now = scoreOf(a.runs);
   const was = before ? scoreOf(before.runs) : null;
   const drop = (a.teams as any)?.score_drop ?? 10;
