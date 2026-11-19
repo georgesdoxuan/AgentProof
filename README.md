@@ -50,7 +50,7 @@ Les clés H du plan Free sont limitées à 3 sessions en parallèle. La page des
 ## Comment tester
 
 1. Ouvrir https://agentproof-iota-tawny.vercel.app, saisir un site e-commerce (et un concurrent si on veut), lancer l'audit.
-2. La page du rapport se met à jour toute seule : missions en cours, puis score, blocages, captures, replays et plan de corrections (compter 10 à 20 minutes pour 5 missions).
+2. La page du rapport se met à jour toute seule : missions en cours, puis score, blocages, captures, replays et plan de corrections (compter environ 5 minutes pour 5 missions sur ordinateur, un peu plus sur mobile, le double en Ordinateur + Mobile ou avec un concurrent, plus la file d'attente si d'autres audits tournent).
 3. Le classement compare les sites mode déjà audités.
 
 En local :

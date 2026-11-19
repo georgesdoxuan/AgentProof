@@ -248,7 +248,7 @@ const ICON: Record<string, string> = {
 };
 
 // ---------- chips and notes ----------
-// What used to be a grey sentence ("5 missions, 10 to 20 minutes, the agent never pays") becomes a row of chips:
+// What used to be a grey sentence ("5 missions, a few minutes, the agent never pays") becomes a row of chips:
 // a line icon from the set above and two or three words, like the metadata pills in Linear, Vercel or Stripe.
 type ChipTone = "plain" | "blue" | "pass" | "warn" | "fail";
 const CHIP_TONE: Record<ChipTone, string> = {
