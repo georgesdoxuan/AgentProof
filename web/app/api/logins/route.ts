@@ -9,7 +9,7 @@ const fail = (msg: string, status = 400) => new Response(msg, { status, headers:
 // The password is forwarded to the team's H-hosted vault and never stored or logged by AgentProof.
 export async function POST(req: Request) {
   const ctx = await teamContext();
-  if (!ctx) return go(req, "/connexion?next=/espace/comptes");
+  if (!ctx) return go(req, "/connexion?next=/espace/reglages/comptes");
   if (!ctx.team || !canLaunch(ctx.team.role)) return fail(await msg("Seuls le propriétaire et les admins de l'équipe gèrent les comptes de test.", "Only the team's owner and admins manage test accounts."), 403);
   const form = await req.formData();
   try {
@@ -21,5 +21,5 @@ export async function POST(req: Request) {
   } catch (e) {
     return fail(`${await msg("Erreur", "Error")} : ${(e as Error).message}`);
   }
-  return go(req, "/espace/comptes");
+  return go(req, "/espace/reglages/comptes");
 }

@@ -149,10 +149,10 @@ export async function checkAutomation(a: Automation) {
     event: "page_changed",
     domain: normalizeUrl(a.url).domain,
     text: `${a.url} a changé. ${lines.slice(0, 6).join(" · ")}${auditId ? " Un nouvel audit est lancé." : ""}`,
-    link: `${process.env.PUBLIC_URL ?? ""}${auditId ? `/audit/${auditId}` : "/espace/automations"}`,
+    link: `${process.env.PUBLIC_URL ?? ""}${auditId ? `/audit/${auditId}` : "/espace/reglages/automations"}`,
   }).catch(() => false);
   if (email) {
-    const link = `${process.env.PUBLIC_URL ?? ""}${auditId ? `/audit/${auditId}` : "/espace/automations"}`;
+    const link = `${process.env.PUBLIC_URL ?? ""}${auditId ? `/audit/${auditId}` : "/espace/reglages/automations"}`;
     await sendAlert(
       email,
       `AgentProof : ${normalizeUrl(a.url).domain} a changé`,

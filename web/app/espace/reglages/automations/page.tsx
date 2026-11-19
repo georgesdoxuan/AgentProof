@@ -5,8 +5,8 @@ import { canLaunch, teamContext } from "@/lib/auth";
 import { listAutomations } from "@/lib/automations";
 import { db } from "@/lib/engine";
 import { Chip, Empty, Group, Note, Row, Segmented, StatusGlyph, type Tone } from "@/lib/ui";
-import { AutoSubmitSelect, ConfirmButton } from "../controls";
-import { SpaceShell } from "../shell";
+import { AutoSubmitSelect, ConfirmButton } from "../../controls";
+import { SpaceShell } from "../../shell";
 import { shortDate } from "@/lib/space";
 import { tr, type Lang } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
@@ -49,7 +49,7 @@ const labels = (lang: Lang) => {
 
 export default async function Automations({ searchParams }: { searchParams: Promise<{ slack?: string }> }) {
   const ctx = await teamContext();
-  if (!ctx) redirect("/connexion?next=/espace/automations");
+  if (!ctx) redirect("/connexion?next=/espace/reglages/automations");
   if (!ctx.team) redirect("/espace");
   const { team } = ctx;
   const items = await listAutomations(team.id);
@@ -65,7 +65,7 @@ export default async function Automations({ searchParams }: { searchParams: Prom
 
   return (
     <SpaceShell narrow
-      title="Automations"
+      settings
       hint={t(
         "AgentProof relit tes pages (bandeau cookies, captcha, boutons, formulaires, robots.txt, UCP) à la fréquence choisie et après chaque mise en ligne. S'il y a un changement, tu es prévenu ici, par e-mail et sur Slack. Les prix et les produits ne comptent pas.",
         "AgentProof rereads your pages (cookie banner, captcha, buttons, forms, robots.txt, UCP) at the chosen frequency and after every release. When something changes, you are told here, by e-mail and on Slack. Prices and products do not count.",

@@ -39,6 +39,7 @@ export function SkSpace({
   parent,
   logo,
   long,
+  settings,
   children,
 }: {
   narrow?: boolean;
@@ -51,11 +52,14 @@ export function SkSpace({
   parent?: boolean;
   /** Site page: the site's 48px logo beside the title. */
   logo?: boolean;
+  /** A Réglages tab: the real « Réglages » title and tabs. */
+  settings?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <Loading>
       <SpaceShell
+        settings={settings}
         narrow={narrow}
         parent={parent ? ["#", ""] : undefined}
         title={
@@ -162,7 +166,7 @@ export function SkForm({ fields = 2, segmented }: { fields?: number; segmented?:
 // Settings-like pages of the space (payment, logins, automations, team, account): a list, then a form.
 export function SkSettings({ rows = 3, fields = 3 }: { rows?: number; fields?: number }) {
   return (
-    <SkSpace narrow>
+    <SkSpace narrow settings>
       <SkGroup rows={rows} footer />
       <SkGroup>
         <SkForm fields={fields} />

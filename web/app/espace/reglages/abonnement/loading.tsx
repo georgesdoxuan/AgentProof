@@ -1,9 +1,9 @@
-import { Bone, Line, SkGroup, SkSpace } from "../../skeleton";
+import { Bone, Line, SkGroup, SkSpace } from "../../../skeleton";
 
 // Same frame as the page: the meter tile, then the plan and usage lists.
 export default function Loading() {
   return (
-    <SkSpace narrow>
+    <SkSpace narrow settings>
       <SkGroup footer>
         <div className="grid gap-5 p-6 sm:p-8">
           <p className="type-title">

@@ -3,7 +3,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import type { Dict } from "@/lib/i18n";
-import { GLYPH } from "@/lib/glyphs";
 
 // lib/ui pulls in the server engine, so client controls keep their own styles.
 // Pop-up button look for native <select>: keeps the system menu, drops the default chrome.
@@ -19,14 +18,10 @@ const ICON = {
   home: "M3.5 10.5 12 3.5l8.5 7V20a1 1 0 0 1-1 1H15v-6H9v6H4.5a1 1 0 0 1-1-1z",
   globe: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.4 2.6 3.6 5.6 3.6 9s-1.2 6.4-3.6 9c-2.4-2.6-3.6-5.6-3.6-9S9.6 5.6 12 3z",
   doc: "M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM14 3v5h5M9 13h6M9 17h6",
-  podium: "M3 21h18M5 21v-6h4v6M10 21V8h4v13M15 21v-9h4v9",
-  card: "M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM3 10h18M7 15h3",
-  key: "M7.5 11a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9zM10.7 12.3 20 3M16.5 6.5l3 3M14 9l2.5 2.5",
-  cycle: "M20 11a8 8 0 0 0-14.6-4.5M4 3v4h4M4 13a8 8 0 0 0 14.6 4.5M20 21v-4h-4",
-  people: "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2.5 21a6.5 6.5 0 0 1 13 0M16 3.2a4 4 0 0 1 0 7.6M21.5 21a6.5 6.5 0 0 0-4-6",
-  person: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7.5a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM6.5 18.2a6.5 6.5 0 0 1 11 0",
+  podium: "M5 20V13M12 20V5M19 20v-9",
+  sliders: "M4 7h9M17 7h3M15 5v4M4 17h3M11 17h9M9 15v4",
+  sidebar: "M4.5 4h15a1.5 1.5 0 0 1 1.5 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5v-13A1.5 1.5 0 0 1 4.5 4zM9.5 4v16",
   star: "M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z",
-  credit: GLYPH.credit,
   trash: "M4 6.5h16M9.5 6.5V4.5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2M6 6.5l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M10 10.5v6M14 10.5v6",
 };
 
@@ -35,6 +30,8 @@ const CHILDREN: Record<string, readonly (readonly [string, string])[]> = {
   "/espace/sites": [["/espace/sites/corbeille", ICON.trash]],
   "/espace/rapports": [["/espace/rapports/favoris", ICON.star], ["/espace/rapports/corbeille", ICON.trash]],
 };
+// Pages reached from a section without their own entry: the ranking opens from Sites, so Sites stays lit on it.
+const ALSO: Record<string, string> = { "/espace/classement": "/espace/sites" };
 
 const glyph = (d: string, cls: string) => (
   <svg viewBox="0 0 24 24" className={cls} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -42,95 +39,138 @@ const glyph = (d: string, cls: string) => (
   </svg>
 );
 const itemCls = (current: boolean) =>
-  `flex items-center gap-2.5 whitespace-nowrap rounded-[8px] transition-colors duration-200 lg:min-h-9 lg:px-3 lg:text-[15px] max-lg:h-9 max-lg:px-4 max-lg:type-small max-lg:font-semibold ${
-    current ? "bg-tile font-semibold text-ink shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#3a3a3c]" : "text-ink-2 hover:bg-tile/60 hover:text-ink max-lg:hover:bg-transparent"
+  `flex min-h-9 items-center gap-2.5 whitespace-nowrap rounded-[8px] px-3 text-[15px] transition-colors duration-200 ${
+    current ? "bg-tile font-semibold text-ink shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#3a3a3c]" : "text-ink-2 hover:bg-tile/60 hover:text-ink"
   }`;
 
-// Three groups; their names and the section labels come from the dictionary (labels match each page's title).
-const GROUPS = [
-  ["track", [["/espace", ICON.home], ["/espace/sites", ICON.globe], ["/espace/rapports", ICON.doc], ["/espace/classement", ICON.podium]]],
-  ["agent", [["/espace/paiement", ICON.card], ["/espace/comptes", ICON.key], ["/espace/automations", ICON.cycle]]],
-  ["settings", [["/equipe", ICON.people], ["/espace/abonnement", ICON.credit], ["/compte", ICON.person]]],
+// The daily sections, then Réglages: every setting (team, plan, payment, test accounts, automations, account) is a tab of that one page.
+const NAV = [
+  [["/espace", ICON.home], ["/espace/sites", ICON.globe], ["/espace/rapports", ICON.doc]],
+  [["/espace/reglages", ICON.sliders]],
 ] as const;
+type Section = keyof Dict["space"]["sections"];
+const isOn = (path: string, href: string) =>
+  href === "/espace" ? path === href : path === href || path.startsWith(`${href}/`) || Object.entries(ALSO).some(([p, s]) => s === href && path.startsWith(p));
 
-// Sidebar on wide screens, segmented tabs on narrow ones (groups and icons drop out). Tabs navigate, they never act.
-// The signed-in account's round initial, in its own color (the header's avatar), in place of the generic person glyph.
-export type AccountBadge = { initial: string; color: string };
-const badge = (a: AccountBadge, cls = "") => (
-  <span
-    className={`grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full text-[10px] font-semibold leading-none text-white ${cls}`}
-    style={{ background: a.color }}
-    aria-hidden
-  >
-    {a.initial}
-  </span>
-);
+// Collapsed state lives in a cookie (not localStorage) so the server renders the right width: no jump on load.
+const NAV_COOKIE = "ap_nav"; // read in shell.tsx
 
-export function SpaceNav({ t, account }: { t: Dict["space"]; account?: AccountBadge }) {
+// The space's frame: sidebar on wide screens (collapsible to icons), tabs on narrow ones. `head` is the team switcher.
+export function Frame({ t, collapsed: initial, head, children }: { t: Dict["space"]; collapsed: boolean; head: React.ReactNode; children: React.ReactNode }) {
+  const [collapsed, setCollapsed] = useState(initial);
+  const toggle = () => {
+    setCollapsed(!collapsed);
+    document.cookie = `${NAV_COOKIE}=${collapsed ? 0 : 1}; path=/; max-age=31536000; samesite=lax`;
+  };
+  const label = collapsed ? t.expand : t.collapse;
+  return (
+    <div
+      data-app-shell
+      data-collapsed={collapsed ? "" : undefined}
+      className={`group/frame min-h-[70vh] bg-bg-2 lg:grid ${collapsed ? "lg:grid-cols-[72px_minmax(0,1fr)]" : "lg:grid-cols-[256px_minmax(0,1fr)]"}`}
+    >
+      <aside className="min-w-0 space-y-5 px-6 pt-6 sm:px-8 lg:sticky lg:top-[53px] lg:h-[calc(100dvh-53px)] lg:space-y-7 lg:self-start lg:overflow-y-auto lg:overflow-x-hidden lg:border-r lg:border-hairline lg:px-3 lg:py-6">
+        {/* Team switcher, then the fold button: beside it when open, under the team's initial when folded. */}
+        <div className="flex items-center gap-1 lg:group-data-collapsed/frame:flex-col lg:group-data-collapsed/frame:items-start lg:group-data-collapsed/frame:gap-4">
+          <div className="min-w-0 flex-1">{head}</div>
+          <button
+            type="button"
+            onClick={toggle}
+            aria-expanded={!collapsed}
+            aria-label={label}
+            title={label}
+            className={`grid h-9 shrink-0 place-items-center rounded-[8px] text-ink-2 transition-colors hover:bg-tile/60 hover:text-ink max-lg:hidden ${collapsed ? "w-12" : "w-8"}`}
+          >
+            {glyph(ICON.sidebar, "h-[18px] w-[18px]")}
+          </button>
+        </div>
+        <MobileNav t={t} />
+        <SideNav t={t} collapsed={collapsed} />
+      </aside>
+      <div className="min-w-0">{children}</div>
+    </div>
+  );
+}
+
+function SideNav({ t, collapsed }: { t: Dict["space"]; collapsed: boolean }) {
   const path = usePathname();
   return (
-    <>
-    <MobileNav t={t} path={path} account={account} />
-    <nav aria-label={t.label} className="max-lg:hidden">
-      <div className="lg:space-y-6 max-lg:inline-flex max-lg:gap-1 max-lg:rounded-[10px] max-lg:bg-fill max-lg:p-[3px]">
-        {GROUPS.map(([group, items]) => (
-          <div key={group} className="max-lg:contents">
-            <p id={`nav-${group}`} className="type-caption mb-1.5 px-3 font-semibold text-ink-2 max-lg:hidden">
-              {t.groups[group]}
-            </p>
-            <ul aria-labelledby={`nav-${group}`} className="flex flex-col gap-0.5 max-lg:contents">
-              {items.map(([href, icon]) => {
-                const children = CHILDREN[href] ?? [];
-                const inChild = children.some(([c]) => path === c || path.startsWith(`${c}/`));
-                // "Sites" stays lit on a site page; "Accueil" only on itself; a parent gives way to its lit sub-section.
-                const current = href === "/espace" ? path === href : !inChild && (path === href || path.startsWith(`${href}/`));
-                return (
-                  <li key={href}>
-                    {/* Narrow screens have no sub-sections in the tabs: the parent stays lit for them. */}
-                    <Link
-                      href={href}
-                      aria-current={current ? "page" : undefined}
-                      className={`${itemCls(current)} ${inChild ? "max-lg:bg-tile max-lg:text-ink max-lg:shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:max-lg:bg-[#3a3a3c]" : ""}`}
-                    >
-                      {href === "/compte" && account ? badge(account, "max-lg:hidden") : glyph(icon, `h-[18px] w-[18px] shrink-0 max-lg:hidden ${current ? "text-blue" : ""}`)}
-                      {t.sections[href as keyof typeof t.sections]}
-                    </Link>
-                    {children.length > 0 && (
-                      <ul className="mt-0.5 flex flex-col gap-0.5 pl-7 max-lg:hidden">
-                        {children.map(([c, cIcon]) => {
-                          const on = path === c || path.startsWith(`${c}/`);
-                          return (
-                            <li key={c}>
-                              <Link href={c} aria-current={on ? "page" : undefined} className={`${itemCls(on)} lg:min-h-8 lg:text-[14px]`}>
-                                {glyph(cIcon, `h-4 w-4 shrink-0 ${on ? "text-blue" : ""}`)}
-                                {t.sections[c as keyof typeof t.sections]}
-                              </Link>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
-      </div>
+    <nav aria-label={t.label} className="space-y-6 max-lg:hidden">
+      {NAV.map((items, i) => (
+        <ul key={i} className="flex flex-col gap-0.5">
+          {items.map(([href, icon]) => {
+            const label = t.sections[href];
+            const children = CHILDREN[href] ?? [];
+            const inChild = children.some(([c]) => path === c || path.startsWith(`${c}/`));
+            // "Sites" stays lit on a site page; "Accueil" only on itself; a parent gives way to its lit sub-section.
+            const current = !inChild && isOn(path, href);
+            return (
+              <li key={href}>
+                {/* Collapsed: the icon alone, its name in the native tooltip and for screen readers. */}
+                <Link href={href} aria-current={current ? "page" : undefined} aria-label={collapsed ? label : undefined} title={collapsed ? label : undefined} className={itemCls(current || (collapsed && inChild))}>
+                  {glyph(icon, `h-[18px] w-[18px] shrink-0 ${current || (collapsed && inChild) ? "text-blue" : ""}`)}
+                  {!collapsed && label}
+                </Link>
+                {children.length > 0 && !collapsed && (
+                  <ul className="mt-0.5 flex flex-col gap-0.5 pl-7">
+                    {children.map(([c, cIcon]) => {
+                      const on = path === c || path.startsWith(`${c}/`);
+                      return (
+                        <li key={c}>
+                          <Link href={c} aria-current={on ? "page" : undefined} className={`${itemCls(on)} min-h-8 text-[14px]`}>
+                            {glyph(cIcon, `h-4 w-4 shrink-0 ${on ? "text-blue" : ""}`)}
+                            {t.sections[c as Section]}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      ))}
     </nav>
-    </>
+  );
+}
+
+// Réglages: one page, one tab per setting. Each tab is its own URL (/espace/reglages/<tab>), so links and the back button work.
+const SETTINGS = ["equipe", "abonnement", "paiement", "comptes", "automations", "compte"] as const;
+export function SettingsTabs({ t }: { t: Dict["space"] }) {
+  const path = usePathname();
+  return (
+    <nav aria-label={t.settingsLabel} className="-mx-6 overflow-x-auto px-6 [scrollbar-width:none] sm:-mx-8 sm:px-8 lg:mx-0 lg:px-0">
+      <ul className="flex min-w-max gap-1 border-b border-hairline">
+        {SETTINGS.map((s) => {
+          const href = `/espace/reglages/${s}`;
+          const on = path === href || path.startsWith(`${href}/`);
+          return (
+            <li key={s}>
+              <Link
+                href={href}
+                aria-current={on ? "page" : undefined}
+                className={`relative -mb-px flex h-10 items-center whitespace-nowrap px-3 type-small font-semibold transition-colors ${
+                  on ? "text-ink after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-blue" : "text-ink-2 hover:text-ink"
+                }`}
+              >
+                {t.settings[s]}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
   );
 }
 
 // The section's own glyph before the page title: the sidebar entry's icon, at the title's size. Read from the path
 // so every page in the shell (and its loading skeleton) gets it with nothing to pass; a page that is not a sidebar
-// entry (a site, « Lancer un audit ») keeps a bare title. « Compte » takes the person glyph, not the avatar.
-const SECTION_ICON: Record<string, string> = Object.fromEntries([
-  ...GROUPS.flatMap(([, items]) => items as readonly (readonly [string, string])[]),
-  ...Object.values(CHILDREN).flat(),
-]);
+// entry (a site, « Lancer un audit ») keeps a bare title. Every Réglages tab shows the Réglages glyph.
+const SECTION_ICON: Record<string, string> = Object.fromEntries([...NAV.flat(), ...Object.values(CHILDREN).flat(), ["/espace/classement", ICON.podium]]);
 export function SectionIcon() {
-  const d = SECTION_ICON[usePathname().replace(/\/$/, "")];
+  const path = usePathname().replace(/\/$/, "");
+  const d = SECTION_ICON[path] ?? (path.startsWith("/espace/reglages/") ? ICON.sliders : undefined);
   if (!d) return null;
   // As tall as one line of the title, so it sits on the first line even when the title wraps.
   return (
@@ -140,51 +180,29 @@ export function SectionIcon() {
   );
 }
 
-// Narrow screens: three tabs a merchant uses every day, everything else behind "Plus", like a tab bar's More.
-// Nine sections in one scrolling strip hid the settings off screen with no hint they existed.
-const MAIN = ["/espace", "/espace/sites", "/espace/rapports"] as const;
-function MobileNav({ t, path, account }: { t: Dict["space"]; path: string; account?: AccountBadge }) {
-  const isOn = (href: string) => (href === "/espace" ? path === href : path === href || path.startsWith(`${href}/`));
-  const rest = GROUPS.flatMap(([, items]) => items as readonly (readonly [string, string])[]).filter(([href]) => !(MAIN as readonly string[]).includes(href));
-  const inRest = rest.find(([href]) => isOn(href));
-  const tab = (on: boolean) =>
-    `flex h-9 items-center whitespace-nowrap rounded-[8px] px-3.5 type-small font-semibold transition-colors ${on ? "bg-tile text-ink shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#3a3a3c]" : "text-ink-2"}`;
+// Narrow screens: the four sections as one segmented control.
+function MobileNav({ t }: { t: Dict["space"] }) {
+  const path = usePathname();
   return (
     <nav aria-label={t.label} className="lg:hidden">
       <div className="flex w-full gap-1 rounded-[10px] bg-fill p-[3px]">
-        {MAIN.map((href) => (
-          <Link key={href} href={href} aria-current={isOn(href) ? "page" : undefined} className={`${tab(isOn(href))} flex-auto justify-center`}>
+        {NAV.flat().map(([href]) => (
+          <Link
+            key={href}
+            href={href}
+            aria-current={isOn(path, href) ? "page" : undefined}
+            className={`flex h-9 flex-auto items-center justify-center whitespace-nowrap rounded-[8px] px-3 type-small font-semibold transition-colors ${
+              isOn(path, href) ? "bg-tile text-ink shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#3a3a3c]" : "text-ink-2"
+            }`}
+          >
             {t.sections[href]}
           </Link>
         ))}
-        <details className="group relative shrink-0">
-          <summary className={`${tab(!!inRest)} cursor-pointer list-none justify-center gap-1.5 [&::-webkit-details-marker]:hidden`} aria-current={inRest ? "page" : undefined}>
-            {/* Always « Plus »: a long section name would be cut to « M… ». It stays lit, and the page title says where you are. */}
-            <span className="truncate">{t.more}</span>
-            <svg viewBox="0 0 12 12" className="h-2.5 w-2.5 shrink-0 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M1.5 4L6 8.5 10.5 4" />
-            </svg>
-          </summary>
-          <ul className="absolute right-0 top-11 z-30 w-60 rounded-[14px] bg-tile p-1.5 shadow-[0_12px_40px_-12px_rgb(0_0_0/0.35)] ring-1 ring-hairline dark:bg-[#2c2c2e]">
-            {rest.map(([href, icon]) => (
-              <li key={href}>
-                <Link
-                  href={href}
-                  onClick={(e) => e.currentTarget.closest("details")?.removeAttribute("open")}
-                  aria-current={isOn(href) ? "page" : undefined}
-                  className={`flex min-h-11 items-center gap-3 rounded-[8px] px-3 type-small ${isOn(href) ? "font-semibold text-ink" : "text-ink"} hover:bg-fill`}
-                >
-                  {href === "/compte" && account ? badge(account) : glyph(icon, `h-[18px] w-[18px] shrink-0 ${isOn(href) ? "text-blue" : "text-ink-2"}`)}
-                  {t.sections[href as keyof typeof t.sections]}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </details>
       </div>
     </nav>
   );
 }
+
 
 // A pop-up that applies its choice right away, like a Settings row.
 export function AutoSubmitSelect({ name, defaultValue, label, options, className = "" }: { name: string; defaultValue: string; label: string; options: [string, string][]; className?: string }) {

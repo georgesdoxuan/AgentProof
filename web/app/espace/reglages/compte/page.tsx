@@ -5,8 +5,8 @@ import { LANGS, LANG_NAME } from "@/lib/i18n";
 import { getDict, getLang, getT } from "@/lib/lang";
 import { Avatar, Field, Group, Icon, Row } from "@/lib/ui";
 import { spaceColor } from "@/lib/avatar";
-import { AutoSubmitSelect } from "../espace/controls";
-import { SpaceShell } from "../espace/shell";
+import { AutoSubmitSelect } from "../../controls";
+import { SpaceShell } from "../../shell";
 
 export async function generateMetadata() {
   return { title: `${(await getDict()).account.title} · AgentProof` };
@@ -17,7 +17,7 @@ export default async function Compte({ searchParams }: { searchParams: Promise<{
   const sp = await searchParams;
   const tt = await getT();
   const ctx = await teamContext();
-  if (!ctx) redirect("/connexion?next=/compte");
+  if (!ctx) redirect("/connexion?next=/espace/reglages/compte");
   if (!ctx.team) redirect("/espace");
   const { user, teams, team } = ctx;
   const lang = await getLang();
@@ -26,7 +26,7 @@ export default async function Compte({ searchParams }: { searchParams: Promise<{
   const roles = t.roles;
 
   return (
-    <SpaceShell narrow title={a.title}>
+    <SpaceShell narrow settings>
       <Group>
         <Row className="min-h-[76px]">
           <Avatar email={user.email} className="h-11 w-11" />
@@ -78,7 +78,7 @@ export default async function Compte({ searchParams }: { searchParams: Promise<{
         <Row>
           <span className="min-w-0 flex-1 font-semibold">{a.language}</span>
           <form action="/api/lang" method="post">
-            <input type="hidden" name="next" value="/compte" />
+            <input type="hidden" name="next" value="/espace/reglages/compte" />
             <AutoSubmitSelect name="lang" defaultValue={lang} label={a.language} options={LANGS.map((l) => [l, LANG_NAME[l]])} />
           </form>
         </Row>

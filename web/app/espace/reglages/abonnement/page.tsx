@@ -7,7 +7,7 @@ import { db } from "@/lib/engine";
 import { locale, tr } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 import { Chip, DeviceTag, Group, Icon, Note, Row } from "@/lib/ui";
-import { SpaceShell } from "../shell";
+import { SpaceShell } from "../../shell";
 
 export async function generateMetadata() {
   return { title: `${(await getLang()) === "en" ? "Plan and credits" : "Abonnement et crédits"} · AgentProof` };
@@ -17,7 +17,7 @@ export async function generateMetadata() {
 // Visible to every role: a viewer can see why audits slow down. Payment is not wired, so "Change plan" says « Bientôt ».
 export default async function Abonnement() {
   const ctx = await teamContext();
-  if (!ctx) redirect("/connexion?next=/espace/abonnement");
+  if (!ctx) redirect("/connexion?next=/espace/reglages/abonnement");
   if (!ctx.team) redirect("/espace");
   const { team } = ctx;
   const lang = await getLang();
@@ -48,7 +48,7 @@ export default async function Abonnement() {
   return (
     <SpaceShell
       narrow
-      title={t("Abonnement et crédits", "Plan and credits")}
+      settings
       hint={t(
         "Chaque mission qu'un agent fait sur un site utilise un crédit. Un audit complet, ce sont cinq missions, donc cinq crédits.",
         "Every mission an agent runs on a site uses one credit. A full audit is five missions, so five credits.",
@@ -210,7 +210,7 @@ export default async function Abonnement() {
               {t(`À ${ALERTS.join(" % et ")} %`, `At ${ALERTS.join("% and ")}%`)}
             </Hint>
           </span>
-          <Link href="/espace/automations" className="more">
+          <Link href="/espace/reglages/automations" className="more">
             {t("Régler", "Set up")}
           </Link>
         </Row>

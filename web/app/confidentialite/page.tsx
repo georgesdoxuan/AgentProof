@@ -71,7 +71,7 @@ export default async function Confidentialite() {
         <Section title="Your rights">
           <p>
             You can access, correct, delete or download your data, restrict or object to its processing. Download and deletion are one click in{" "}
-            <Link href="/compte" className={a}>
+            <Link href="/espace/reglages/compte" className={a}>
               Account
             </Link>
             ; everything else by writing to <Mail />. You can withdraw a consent at any time (delete the card, unsubscribe from alerts). If you think your rights are not
@@ -157,7 +157,7 @@ export default async function Confidentialite() {
         <p>
           Tu peux accéder à tes données, les corriger, les supprimer, les télécharger, limiter leur traitement ou t’y opposer. Le téléchargement et la suppression se font en
           un clic dans{" "}
-          <Link href="/compte" className={a}>
+          <Link href="/espace/reglages/compte" className={a}>
             Compte
           </Link>
           ; le reste en écrivant à <Mail />. Tu peux retirer un consentement à tout moment (supprimer la carte, te désinscrire des alertes). Si tu estimes que tes droits ne

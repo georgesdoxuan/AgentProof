@@ -83,7 +83,7 @@ AgentProof commence par la **mode** : les missions sont pensées pour des boutiq
 2. Entrez votre adresse e-mail. Vous recevez un **lien de connexion valable 15 minutes**. Il n'y a pas de mot de passe.
 3. À la première connexion, un **espace d'équipe** est créé pour vous. Vous en êtes le propriétaire.
 
-Votre espace se trouve sous **Mon espace**. La barre de gauche donne accès à toutes les rubriques : Accueil, Sites, Rapports, Automations, Classement, Moyen de paiement, Comptes de test, Équipe, Abonnement et crédits, Compte.
+Votre espace se trouve sous **Mon espace**. La barre de gauche donne accès à Accueil, Sites, Rapports et Réglages ; le bouton en bas de la barre la replie en icônes. **Réglages** regroupe en onglets Équipe, Abonnement, Paiement, Comptes de test, Automations et Compte. Le **Classement** s’ouvre depuis la page Sites.
 
 L'interface existe en **français et en anglais** : la langue se règle dans **Compte**. Les rapports d'audit restent en français pour l'instant.
 

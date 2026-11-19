@@ -3,8 +3,8 @@ import { canLaunch, teamContext } from "@/lib/auth";
 import { cardView } from "@/lib/cards";
 import { Chip, Empty, Field, Group, Note, Row } from "@/lib/ui";
 import { getT } from "@/lib/lang";
-import { ConfirmButton } from "../controls";
-import { SpaceShell } from "../shell";
+import { ConfirmButton } from "../../controls";
+import { SpaceShell } from "../../shell";
 
 export async function generateMetadata() {
   const t = await getT();
@@ -13,7 +13,7 @@ export async function generateMetadata() {
 
 export default async function Paiement() {
   const ctx = await teamContext();
-  if (!ctx) redirect("/connexion?next=/espace/paiement");
+  if (!ctx) redirect("/connexion?next=/espace/reglages/paiement");
   if (!ctx.team) redirect("/espace");
   const { team } = ctx;
   const card = await cardView(team.id);
@@ -22,7 +22,7 @@ export default async function Paiement() {
 
   return (
     <SpaceShell narrow
-      title={t("Moyen de paiement", "Payment method")}
+      settings
       hint={t(
         "La carte que l'agent utilise pour le test de paiement réel. Il part au plus près du checkout, prend le premier article disponible et paie une seule fois. Avec une carte approvisionnée, la commande est réelle.",
         "The card the agent uses for the real payment test. It starts as close to checkout as it can, takes the first available item and pays only once. With a funded card, the order is real.",

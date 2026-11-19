@@ -2,7 +2,7 @@ import { SkBoard, SkSpace } from "../../skeleton";
 
 export default function Loading() {
   return (
-    <SkSpace>
+    <SkSpace parent>
       <div className="-mt-8">
         <SkBoard />
       </div>
