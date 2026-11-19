@@ -1,5 +1,5 @@
 "use client";
-import { type ReactNode, type RefObject, useEffect, useId, useMemo, useRef, useState } from "react";
+import { type RefObject, useEffect, useId, useMemo, useRef, useState } from "react";
 import type { Lang } from "@/lib/i18n";
 import type { PickItem } from "@/lib/missions";
 import { Hint } from "@/lib/hint";
@@ -26,7 +26,9 @@ function useLaunchShape(ref: RefObject<HTMLElement | null>) {
       const linked = String(f.get("competitor") ?? "").trim() !== "" || f.get("models") === "1";
       // A real payment test costs 2 credits on top (lib/credits.ts RATES.payment).
       const pay = f.get("mode") === "payment" || f.get("payment") === "1" ? 2 : 0;
-      setShape({ device, times: f.get("mode") === "payment" ? 0 : (device === "both" ? 2 : 1) * (linked ? 2 : 1), pay });
+      const next = { device, times: f.get("mode") === "payment" ? 0 : (device === "both" ? 2 : 1) * (linked ? 2 : 1), pay };
+      // Same shape, same state: a fresh object on every keystroke re-renders before React's onChange and undoes the typing.
+      setShape((s) => (s.device === next.device && s.times === next.times && s.pay === next.pay ? s : next));
     };
     sync();
     form.addEventListener("input", sync);
@@ -203,14 +205,6 @@ export function MissionPicker({ items: initial, lists: initialLists, lang, max, 
             if (id === undefined) apply(null);
             else setActive(id);
           }}
-          addButton={
-            <button type="button" onClick={add} disabled={editing !== null} className="type-small inline-flex min-h-9 items-center gap-1.5 rounded-[8px] px-2 font-semibold text-link hover:bg-tile disabled:opacity-40">
-              <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-              {t("Ajouter une mission", "Add a mission")}
-            </button>
-          }
         />
         {missing > 0 && (
           <p role="status" className="type-small px-2 text-ink-2">
@@ -221,6 +215,15 @@ export function MissionPicker({ items: initial, lists: initialLists, lang, max, 
           </p>
         )}
         <ul className="overflow-hidden rounded-[12px] bg-tile">
+          {/* First row of the list: the new mission's editor opens right under it. */}
+          <li className="border-b border-hairline px-1 py-1 sm:px-2">
+            <button type="button" onClick={add} disabled={editing !== null} className="type-small inline-flex min-h-10 items-center gap-2 rounded-[8px] px-2 font-semibold text-link hover:bg-fill disabled:opacity-40">
+              <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              {t("Ajouter une mission", "Add a mission")}
+            </button>
+          </li>
           {items.map((m, i) => (
             <li key={m.key} className="border-b border-hairline last:border-0">
               {editing === i ? (
@@ -266,7 +269,6 @@ function Lists({
   busy: editing,
   onApply,
   onChange,
-  addButton,
 }: {
   lang: Lang;
   lists: SavedList[];
@@ -275,7 +277,6 @@ function Lists({
   busy: boolean;
   onApply: (id: number | null) => void;
   onChange: (lists: SavedList[], id?: number) => void;
-  addButton: ReactNode;
 }) {
   const t = (fr: string, en: string) => (lang === "en" ? en : fr);
   const [mode, setMode] = useState<null | "new" | "rename" | "delete">(null);
@@ -310,8 +311,8 @@ function Lists({
 
   return (
     <div className="grid gap-2">
-      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-        <div className="flex min-w-0 flex-wrap items-center gap-1">
+      <div className="flex flex-wrap items-center gap-x-1 gap-y-1">
+        <div className="contents">
           <select
             aria-label={t("Liste de missions", "Mission list")}
             value={active ?? ""}
@@ -353,7 +354,6 @@ function Lists({
             </>
           )}
         </div>
-        {addButton}
       </div>
       {(mode === "new" || mode === "rename") && (
         <div className="flex flex-wrap items-end gap-2 rounded-[12px] bg-tile px-3 py-3 motion-safe:animate-[ap-fade_0.2s_ease-out] sm:px-4">
