@@ -316,7 +316,13 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   const base = process.env.PUBLIC_URL || `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
   const statik = audit.static_check as { items?: { key: string; label: string; tone: "pass" | "warn" | "fail" | "none"; detail: string }[]; agents?: AgentAccess[] | null } | null;
   const protocols = (statik?.items ?? []).filter((it) => ["ucp", "acp", "webmcp"].includes(it.key));
-  const alert = audit.score_alert as { from: number; to: number; previous: string } | null;
+  const alert = audit.score_alert as {
+    from: number;
+    to: number;
+    previous: string;
+    regressed?: { mission: string; blocker: string }[]; // alerts written before 19/11 have neither
+    changes?: { at: string; url: string; detail: string }[];
+  } | null;
   const trend = audit.kind === "checkout" && audit.status === "done" && !audit.proof_of ? await trendOf(audit) : null;
 
   const runs = [...audit.runs].sort((a: any, b: any) => a.missions.position - b.missions.position);
@@ -472,6 +478,18 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                 }
               >
                 <span className="font-semibold text-fail">{t("Score en baisse", "Score down")} · {alert.from} % → {alert.to} %</span>
+                {!!alert.regressed?.length && (
+                  <span className="mt-1 block">
+                    {t("Bloquent maintenant", "Now blocked")} :{" "}
+                    {alert.regressed.map((r) => `${missionTitle(r.mission, lang)} (${blockerLabel(r.blocker, lang)})`).join(", ")}
+                  </span>
+                )}
+                {!!alert.changes?.length && (
+                  <span className="mt-1 block">
+                    {t("Changements de page entre les deux audits", "Page changes between the two audits")} :{" "}
+                    {alert.changes.map((c) => `${c.url.replace(/^https?:\/\/(www\.)?/, "")} (${longDate(c.at, lang)})`).join(", ")}
+                  </span>
+                )}
               </Note>
             </div>
           )}

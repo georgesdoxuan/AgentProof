@@ -798,13 +798,13 @@ export async function cancelAudit(id: string) {
 async function scoreAlert(auditId: string) {
   const { data: a } = await db
     .from("audits")
-    .select("id, team_id, site_id, device, model, email, created_at, proof_of, sites(domain), teams(score_drop), runs(status, success, blocker_type, mission_id)")
+    .select("id, team_id, site_id, device, model, email, created_at, proof_of, sites(domain), teams(score_drop), runs(status, success, blocker_type, mission_id, missions(title))")
     .eq("id", auditId)
     .single();
   if (!a?.team_id || !a.runs.length || a.proof_of) return; // a proof audit plays a few missions: no score to compare
   const { data: prev } = await db
     .from("audits")
-    .select("id, model, runs(status, success, blocker_type, mission_id)")
+    .select("id, model, created_at, runs(status, success, blocker_type, mission_id)")
     .eq("team_id", a.team_id)
     .eq("site_id", a.site_id)
     .eq("device", a.device)
@@ -823,10 +823,38 @@ async function scoreAlert(auditId: string) {
   const was = before ? scoreOf(before.runs) : null;
   const drop = (a.teams as any)?.score_drop ?? 10;
   if (now == null || was == null || was - now < drop) return;
-  await db.from("audits").update({ score_alert: { from: was, to: now, previous: before!.id } }).eq("id", a.id);
   const domain = (a.sites as any).domain;
+  // Why it dropped: the missions that passed last time and fail now, and the page changes the automations saw in between.
+  const passedBefore = new Set(before!.runs.filter((r) => r.status === "done" && r.success === true).map((r) => r.mission_id));
+  const regressed = (a.runs as any[])
+    .filter((r) => passedBefore.has(r.mission_id) && r.status === "done" && r.success === false && !EXCLUDED.includes(r.blocker_type))
+    .map((r) => ({ mission: r.missions?.title ?? "", blocker: r.blocker_type as string }));
+  const { data: checks } = await db
+    .from("automation_checks")
+    .select("detail, created_at, automations!inner(team_id, url)")
+    .eq("automations.team_id", a.team_id)
+    .eq("status", "changed")
+    .gte("created_at", before!.created_at)
+    .lte("created_at", a.created_at)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  const changes = (checks ?? [])
+    .filter((c: any) => {
+      try {
+        return normalizeUrl(c.automations.url).domain === domain;
+      } catch {
+        return false;
+      }
+    })
+    .slice(0, 3)
+    .map((c: any) => ({ at: c.created_at as string, url: c.automations.url as string, detail: String(c.detail ?? "").slice(0, 300) }));
+  await db.from("audits").update({ score_alert: { from: was, to: now, previous: before!.id, regressed, changes } }).eq("id", a.id);
   const link = `${process.env.PUBLIC_URL ?? ""}/audit/${a.id}`;
-  const text = `Le dernier audit de ${domain} donne ${now} %, contre ${was} % au précédent. Un agent IA achète moins bien sur le site qu'avant.`;
+  const why = [
+    regressed.length ? `Missions qui passaient et bloquent maintenant : ${regressed.map((r) => `${r.mission} (${BLOCKERS[r.blocker] ?? r.blocker})`).join(", ")}.` : "",
+    changes.length ? `Changements de page vus entre les deux audits : ${changes.map((c) => `${c.url}, le ${new Date(c.at).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" })}`).join(" ; ")}.` : "",
+  ].filter(Boolean).join(" ");
+  const text = `Le dernier audit de ${domain} donne ${now} %, contre ${was} % au précédent. Un agent IA achète moins bien sur le site qu'avant.${why ? ` ${why}` : ""}`;
   const { notifyTeam } = await import("./automations");
   await notifyTeam(a.team_id, { event: "score_drop", domain, text, link }).catch(() => false);
   if (!a.email) return;
