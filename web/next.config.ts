@@ -21,6 +21,8 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [{ protocol: "https", hostname: "jlhmgsubvoqopvntzmvp.supabase.co", pathname: "/storage/v1/object/public/screenshots/**" }],
     formats: ["image/webp"],
+    // Screenshots hold small text: 85 keeps it crisp (Next only accepts the qualities listed here).
+    qualities: [75, 85],
   },
   experimental: {
     // Client cache for pages already visited: going back to a section within 30 s shows it at once, with no new
