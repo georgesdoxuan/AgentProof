@@ -69,6 +69,7 @@ export function Frame({
   side,
   reserve,
   launch,
+  account,
   children,
 }: {
   t: Dict["space"];
@@ -81,6 +82,8 @@ export function Frame({
   reserve: number;
   /** Owner or admin: the « Lancer un audit » button. */
   launch: boolean;
+  /** The signed-in account, pinned under the footer (side.tsx SideAccount). */
+  account: React.ReactNode;
   children: React.ReactNode;
 }) {
   const [collapsed, setCollapsed] = useState(initial);
@@ -96,7 +99,7 @@ export function Frame({
       data-collapsed={collapsed ? "" : undefined}
       className={`group/frame min-h-[70vh] bg-bg-2 lg:grid ${collapsed ? "lg:grid-cols-[72px_minmax(0,1fr)]" : "lg:grid-cols-[256px_minmax(0,1fr)]"}`}
     >
-      <aside className="min-w-0 space-y-5 px-6 pt-6 sm:px-8 lg:sticky lg:flex lg:flex-col lg:top-[53px] lg:h-[calc(100dvh-53px)] lg:space-y-7 lg:self-start lg:overflow-y-auto lg:overflow-x-hidden lg:border-r lg:border-hairline lg:px-3 lg:py-6">
+      <aside className="min-w-0 space-y-5 px-6 pt-6 sm:px-8 lg:sticky lg:flex lg:flex-col lg:*:shrink-0 lg:top-[53px] lg:h-[calc(100dvh-53px)] lg:space-y-7 lg:self-start lg:overflow-y-auto lg:overflow-x-hidden lg:border-r lg:border-hairline lg:px-3 lg:py-6">
         {/* Team switcher, then the fold button: beside it when open, under the team's initial when folded. */}
         <div className="flex items-center gap-1 lg:group-data-collapsed/frame:flex-col lg:group-data-collapsed/frame:items-start lg:group-data-collapsed/frame:gap-4">
           <div className="min-w-0 flex-1">{head}</div>
@@ -119,6 +122,7 @@ export function Frame({
         </div>
         <SideNav t={t} collapsed={collapsed} reserve={reserve} />
         <SideFooter t={t.side} lang={lang} collapsed={collapsed} />
+        {account}
       </aside>
       <div className="min-w-0">{children}</div>
     </div>
