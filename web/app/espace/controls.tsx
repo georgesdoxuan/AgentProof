@@ -48,8 +48,10 @@ const itemCls = (current: boolean) =>
   }`;
 
 // The daily sections, then Réglages: every setting (team, plan, payment, test accounts, automations, trash, account) is a tab of that one page.
+// Automations is also a tab of Réglages, but used often enough to get its own entry: Réglages gives way to it in the sidebar.
+const AUTOMATIONS = "/espace/reglages/automations";
 const NAV = [
-  [["/espace", ICON.home], ["/espace/sites", ICON.globe], ["/espace/rapports", ICON.doc]],
+  [["/espace", ICON.home], ["/espace/sites", ICON.globe], ["/espace/rapports", ICON.doc], [AUTOMATIONS, GLYPH.bolt]],
   [["/espace/reglages", ICON.sliders]],
 ] as const;
 type Section = keyof Dict["space"]["sections"];
@@ -136,7 +138,7 @@ function SideNav({ t, collapsed, reserve }: { t: Dict["space"]; collapsed: boole
             const children = CHILDREN[href] ?? [];
             const inChild = children.some(([c]) => path === c || path.startsWith(`${c}/`));
             // "Sites" stays lit on a site page; "Accueil" only on itself; a parent gives way to its lit sub-section.
-            const current = !inChild && isOn(path, href);
+            const current = !inChild && isOn(path, href) && !(href === "/espace/reglages" && isOn(path, AUTOMATIONS));
             return (
               <li key={href}>
                 {/* Collapsed: the icon alone, its name in the native tooltip and for screen readers. */}
@@ -233,13 +235,13 @@ export function SectionIcon() {
   );
 }
 
-// Narrow screens: the four sections as one segmented control.
+// Narrow screens: the four sections as one segmented control (Automations stays a tab of Réglages there).
 function MobileNav({ t }: { t: Dict["space"] }) {
   const path = usePathname();
   return (
     <nav aria-label={t.label} className="min-w-0 flex-1">
       <div className="flex w-full gap-1 rounded-[10px] bg-fill p-[3px]">
-        {NAV.flat().map(([href]) => (
+        {NAV.flat().filter(([href]) => href !== AUTOMATIONS).map(([href]) => (
           <Link
             key={href}
             href={href}
