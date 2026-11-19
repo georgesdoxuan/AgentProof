@@ -51,6 +51,9 @@ export default async function Home() {
   // The report e-mail goes through n8n: only announce it when that hook is configured.
   const mails = !!process.env.N8N_NOTIFY_URL;
 
+  // One desktop audit of 5 missions, queue left out; the same figure as the form's clock chip.
+  const duration = minutesLabel(estimateMinutes(5, pace.desktop));
+
   const sections = (await getDict()).sections;
   return (
     <>
@@ -80,8 +83,9 @@ export default async function Home() {
           {/* What the click costs and asks for, then what the agent never does: both were only under the form.
               "Gratuit" holds while online payment is closed (see Tarifs); the guarantees are CONTEXT.md § 7, enforced by the engine. */}
           <p className="type-small ap-fade mt-4 text-ink-2 [animation-delay:0.5s]">
-            {/* Each part stays whole, so a narrow screen breaks the line at a "·", never inside "10 à 20 min". */}
-            {(lang === "en" ? ["Free", "your URL and your e-mail", "report in 10 to 20 min"] : ["Gratuit", "ton URL et ton e-mail", "rapport en 10 à 20 min"]).map((part, i) => (
+            {/* Each part stays whole, so a narrow screen breaks the line at a "·", never inside "4 à 8 min".
+                The time is the measured one (lib/estimate.ts), same as the clock chip of the form below: no fixed promise. */}
+            {(lang === "en" ? ["Free", "your URL and your e-mail", `report in ${duration}`] : ["Gratuit", "ton URL et ton e-mail", `rapport en ${duration.replace("–", " à ")}`]).map((part, i) => (
               <span key={part} className="whitespace-nowrap">{i > 0 && " · "}{part}</span>
             ))}
           </p>
@@ -214,7 +218,7 @@ export default async function Home() {
           <h2 className="type-h1 text-center">{t("Teste ton site.", "Test your site.")}</h2>
           <Chips className="mt-5 justify-center">
             <Chip icon="audit">{t("5 missions", "5 missions")}</Chip>
-            <Chip icon="clock">{minutesLabel(estimateMinutes(5, pace.desktop))}</Chip>
+            <Chip icon="clock">{duration}</Chip>
           </Chips>
           <form action="/api/audits" method="post" className="mt-12 grid gap-4">
             <div className="grid gap-4 sm:grid-cols-2">

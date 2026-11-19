@@ -79,7 +79,7 @@ Synchros : 9 h 30, 14 h, 18 h (10 min).
 
 | Risque | Plan B |
 |---|---|
-| Limite H de 5 requêtes/min | Le tick la respecte ; un audit de 5 missions prend 10 à 20 min. Plan Builder (20 $) si besoin de plus. |
+| Limite H de 5 requêtes/min | Le tick la respecte ; un audit de 5 missions prend 4 à 8 min sans file d'attente (mesuré le 19/11). Plan Builder (20 $) si besoin de plus. |
 | Un site bloque les bots | C'est un résultat (`captcha_or_bot_block`). |
 | L'agent échoue à cause de lui-même | Vérification manuelle, relance de l'audit. |
 | Démo live qui plante | Vidéo + rapport déjà calculé. |
