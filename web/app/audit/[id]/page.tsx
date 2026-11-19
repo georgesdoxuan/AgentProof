@@ -531,7 +531,8 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
         )}
 
         {pays.map((pay) => (
-          <section key={pay.id} className="tile">
+          // The whole tile opens the replay (private, card masked), like a mission's "Watch the replay".
+          <section key={pay.id} className={`tile ${pay.session_id && pay.status !== "todo" ? "relative transition-colors duration-200 hover:bg-tile/80" : ""}`}>
             <div className="type-small flex flex-wrap items-center gap-x-3 gap-y-1">
               <span className="text-ink-2">
                 {t("Test de paiement réel", "Real payment test")}
@@ -559,14 +560,58 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                     {t("Juge visuel en désaccord", "Visual judge disagrees")} : {PAYMENT_VERDICTS[pay.judge.result] ?? pay.judge.result}. {pay.judge.reason}
                   </p>
                 )}
+                {pay.agent_answer?.steps_summary && (
+                  <details className="type-small group relative z-10 mt-4 text-ink-2">
+                    <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 text-link [&::-webkit-details-marker]:hidden">
+                      <Chevron className="h-2.5 w-2.5 transition-transform duration-200 group-open:rotate-90" />
+                      {t("Compte rendu de l’agent", "The agent's report")}
+                    </summary>
+                    <p className="mt-2">{pay.agent_answer.steps_summary}</p>
+                  </details>
+                )}
+                <div className="mt-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
+                  <dl className="flex gap-6 tnum">
+                    {(
+                      [
+                        [t("Étapes", "Steps"), pay.steps ?? "?"],
+                        [t("Durée", "Duration"), pay.duration_s ? `${Math.round(pay.duration_s)} s` : "?"],
+                        ...(pay.cost_usd != null ? [[t("Coût", "Cost"), usd(Number(pay.cost_usd), 3, lang)]] : []),
+                      ] as [string, string | number][]
+                    ).map(([k, v]) => (
+                      <div key={k}>
+                        <dt className="type-caption text-ink-2">{k}</dt>
+                        <dd className="type-small font-semibold">{v}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                  {pay.session_id && (
+                    <Link href={`/replay/${pay.id}?a=${audit.payment_test}`} className="no-print btn btn-dark min-h-[40px] px-[18px] text-[15px] after:absolute after:inset-0 after:content-['']">
+                      <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="currentColor" aria-hidden>
+                        <path d="M2.5 1.3v9.4L10.6 6z" />
+                      </svg>
+                      {t("Voir le replay", "Watch the replay")}
+                    </Link>
+                  )}
+                </div>
               </>
             ) : (
+              <>
+              {pay.status === "launched" && pay.session_id && (
+                <Link href={`/replay/${pay.id}?a=${audit.payment_test}`} className="no-print btn mt-4 min-h-[40px] gap-2 px-[18px] text-[15px] after:absolute after:inset-0 after:content-['']">
+                  <span className="relative flex h-2 w-2" aria-hidden>
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-70 motion-reduce:hidden" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+                  </span>
+                  {t("Suivre l’agent", "Follow the agent")}
+                </Link>
+              )}
               <p className="mt-3 text-ink-2">
                 {t(
                   "L’agent part au plus près du checkout, prend le premier article disponible et paie une fois. Garde ton téléphone à portée pour valider le 3D Secure.",
                   "The agent starts as close to checkout as it can, takes the first available item and pays once. Keep your phone at hand to approve 3D Secure.",
                 )}
               </p>
+              </>
             )}
           </section>
         ))}
