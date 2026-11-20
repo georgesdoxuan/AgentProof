@@ -122,21 +122,26 @@ export default async function Home() {
           <p className="type-h2 text-ink-2">
             {t(
               <>
-                Demain, des agents IA feront les courses à la place de tes clients.{" "}
-                <span className="text-ink">Un bandeau cookies, une pop-up ou un sélecteur d’options suffit à les arrêter.</span> Ils achètent alors ailleurs. Et{" "}
-                <span className="text-ink">63 % des responsables e‑commerce</span> pensent que leur tunnel d’achat ne passerait pas le test.
+                Tes clients choisissent déjà avec l’IA : <span className="text-ink">44 % des Français</span> l’utilisent pour préparer un achat.
+                <sup className="ml-0.5 align-super text-[0.4em]">
+                  <a href="#note-1" className="text-link" aria-label="Note 1">
+                    1
+                  </a>
+                </sup>{" "}
+                Demain, des agents IA feront les courses à leur place.{" "}
+                <span className="text-ink">Un bandeau cookies, une pop-up ou un sélecteur d’options suffit à les arrêter.</span> Ils achètent alors ailleurs.
               </>,
               <>
-                Tomorrow, AI agents will shop on behalf of your customers.{" "}
-                <span className="text-ink">A cookie banner, a pop-up or an option picker is enough to stop them.</span> Then they buy elsewhere. And{" "}
-                <span className="text-ink">63 % of e‑commerce managers</span> think their checkout funnel would not pass the test.
+                Your customers already choose with AI: <span className="text-ink">44 % of French shoppers</span> use it to prepare a purchase.
+                <sup className="ml-0.5 align-super text-[0.4em]">
+                  <a href="#note-1" className="text-link" aria-label="Note 1">
+                    1
+                  </a>
+                </sup>{" "}
+                Tomorrow, AI agents will shop on their behalf.{" "}
+                <span className="text-ink">A cookie banner, a pop-up or an option picker is enough to stop them.</span> Then they buy elsewhere.
               </>,
             )}
-            <sup className="ml-0.5 align-super text-[0.4em]">
-              <a href="#note-1" className="text-link" aria-label="Note 1">
-                1
-              </a>
-            </sup>
           </p>
         </div>
       </section>
