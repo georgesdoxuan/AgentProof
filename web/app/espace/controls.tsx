@@ -524,3 +524,29 @@ export function JurySteps({ labels: [open, watch, launch] }: { labels: [string, 
     </span>
   );
 }
+
+// Jury banner, second line: what the page on screen is for, in one sentence (first match wins).
+const PAGE_HINTS: [RegExp, string, string][] = [
+  [/^\/espace\/?$/, "Accueil : le résumé de l'équipe, scores des sites, derniers audits et corrections à faire.", "Home: the team at a glance, site scores, latest audits and fixes to make."],
+  [/^\/espace\/sites\/./, "Un site : son score dans le temps, ses rapports et ce qui bloque l'agent.", "A site: its score over time, its reports and what stops the agent."],
+  [/^\/espace\/sites/, "Sites : chaque boutique suivie, avec son dernier score d'achat par un agent IA.", "Sites: every store followed, with its latest AI-agent purchase score."],
+  [/^\/espace\/rapports\/favoris/, "Favoris : les rapports épinglés pour les retrouver vite.", "Favourites: reports pinned to find them fast."],
+  [/^\/espace\/rapports/, "Rapports : tous les audits ; ouvrez-en un pour voir score, blocages, captures et recommandations.", "Reports: every audit; open one to see score, blockers, screenshots and recommendations."],
+  [/^\/espace\/corrections/, "Corrections : ce qu'il faut réparer, site par site, avec l'impact de chaque correction ; cochez ce qui est fait.", "Fixes: what to repair, site by site, with the impact of each fix; tick what is done."],
+  [/^\/espace\/nouveau/, "Lancer un audit : l'agent tente d'acheter sur la boutique choisie, sans payer ; en option, un test de paiement réel avec la carte de démo.", "Run an audit: the agent tries to buy on the chosen store, without paying; optionally, a real payment test with the demo card."],
+  [/^\/espace\/classement/, "Classement : les sites mode français classés par la part des missions où l'agent atteint le paiement.", "Ranking: French fashion sites ranked by the share of missions where the agent reaches checkout."],
+  [/^\/espace\/automations/, "Automations : surveillance des pages, audits automatiques, plafond de crédits et alertes quand un score baisse.", "Automations: page monitoring, automatic audits, credit cap and alerts when a score drops."],
+  [/^\/espace\/reglages\/comptes/, "Comptes de test : des identifiants que l'agent utilise pour se connecter avant de payer.", "Test accounts: credentials the agent uses to sign in before paying."],
+  [/^\/espace\/reglages\/paiement/, "Carte : la carte de démo à solde nul utilisée pour les tests de paiement.", "Card: the zero-balance demo card used for payment tests."],
+  [/^\/espace\/reglages\/abonnement/, "Abonnement : l'offre de l'équipe et ses crédits d'audit du mois.", "Plan: the team's plan and its audit credits for the month."],
+  [/^\/espace\/reglages\/corbeille/, "Corbeille : les rapports et sites supprimés, restaurables.", "Trash: deleted reports and sites, which can be restored."],
+  [/^\/espace\/reglages/, "Réglages : l'équipe, le compte, la carte, les comptes de test et l'abonnement.", "Settings: the team, the account, the card, test accounts and the plan."],
+  [/^\/audit\//, "Rapport : le score d'achat par un agent IA, mission par mission, avec ce qui bloque et comment le corriger.", "Report: the AI-agent purchase score, mission by mission, with what blocks and how to fix it."],
+  [/^\/replay\//, "Replay : l'agent rejoué étape par étape, avec sa capture et son raisonnement à chaque action.", "Replay: the agent played back step by step, with its screenshot and reasoning at each action."],
+];
+export function JuryPageHint({ lang }: { lang: Lang }) {
+  const path = usePathname();
+  const hint = PAGE_HINTS.find(([re]) => re.test(path));
+  if (!hint) return null;
+  return <span className="basis-full text-ink-2">{lang === "en" ? hint[2] : hint[1]}</span>;
+}

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Chevron } from "@/lib/ui";
 import { Hint } from "@/lib/hint";
 import { cookies } from "next/headers";
-import { AutoSubmitSelect, Frame, JurySteps, SectionIcon, SettingsTabs } from "./controls";
+import { AutoSubmitSelect, Frame, JuryPageHint, JurySteps, SectionIcon, SettingsTabs } from "./controls";
 import { canLaunch, teamContext } from "@/lib/auth";
 import { spaceColor } from "@/lib/avatar";
 import { SideAccount } from "./side";
@@ -66,7 +66,7 @@ export async function SpaceFrame({ children }: { children: React.ReactNode }) {
         </div>
       }
     >
-      {isJury(user.email) && <JuryBanner t={await getT()} />}
+      {isJury(user.email) && <JuryBanner t={await getT()} lang={await getLang()} />}
       {children}
     </Frame>
   );
@@ -148,7 +148,7 @@ export async function SpaceShell({
 }
 
 // Jury demo (lib/jury.ts): the three things to try, above every page of the space, on the page column's gutter.
-function JuryBanner({ t }: { t: (fr: string, en: string) => string }) {
+function JuryBanner({ t, lang }: { t: (fr: string, en: string) => string; lang: "fr" | "en" }) {
   return (
     <div className="px-6 pt-4 sm:px-8 lg:px-12 xl:px-16">
       <p className="type-small mx-auto flex w-full max-w-[1200px] flex-wrap items-center gap-x-3 gap-y-1 rounded-[12px] bg-tile px-4 py-2.5 text-ink-2 shadow-[inset_0_0_0_0.5px_var(--line)]">
@@ -161,6 +161,7 @@ function JuryBanner({ t }: { t: (fr: string, en: string) => string }) {
           ]}
         />
         <Link href="/demo" className="ml-auto text-link hover:underline">{t("Le guide", "The guide")}</Link>
+        <JuryPageHint lang={lang} />
       </p>
     </div>
   );
