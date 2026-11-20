@@ -21,7 +21,7 @@ export async function RankingHeader() {
             "Out of score: out of stock, mission impossible on the catalogue, agent error. An anti-bot counts as a failure. An AI agent does not always act the same way, hence the average of 2 audits on the same device. A site's link opens the latest.",
           )}
         >
-          <Chip icon="mission_not_applicable">{t("Hors score exclus", "Out-of-score excluded")}</Chip>
+          <Chip icon="mission_not_applicable">{t("Anti-bot compté comme échec · stock et erreurs de l’agent hors score", "Anti-bot counts as a failure · stock and agent errors out of score")}</Chip>
         </Hint>
       </Chips>
     </header>

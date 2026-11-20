@@ -891,7 +891,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                 <Hint
                   tip={t(
                     "Constats : verdicts des missions ci-dessous. Hypothèses et corrections : IA open source (Hugging Face).",
-                    "Findings: verdicts of the missions below. Hypotheses and fixes: open-source AI (Hugging Face), written in French.",
+                    "Findings: verdicts of the missions below. Hypotheses and fixes: open-source AI (Hugging Face), written in French and translated automatically.",
                   )}
                 >
                   <Chip icon="sparkle">{t("Hypothèses IA · à vérifier avant d’agir", "AI hypotheses · check before acting")}</Chip>

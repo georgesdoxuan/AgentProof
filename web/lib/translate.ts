@@ -50,8 +50,10 @@ const cached = (text: string, lang: Lang) =>
 // Same length and order as `texts`; a text already in `lang`, empty, or whose translation failed comes back unchanged.
 // The page waits `waitMs` at most: what is not translated by then shows as written, and the calls finish after the
 // response (after()) to fill the cache for the next view.
-export async function translate<T extends string | null | undefined>(texts: T[], lang: Lang, waitMs = 8000): Promise<(T | string)[]> {
-  const todo = [...new Set(texts.filter((t): t is NonNullable<T> & string => !!t?.trim() && guessLang(t) !== null && guessLang(t) !== lang))];
+// `known`: the texts' language is known (a French fix plan), so short texts the guess can't place are sent too.
+export async function translate<T extends string | null | undefined>(texts: T[], lang: Lang, waitMs = 8000, known?: Lang): Promise<(T | string)[]> {
+  const foreign = (t: string) => (known ? known !== lang && guessLang(t) !== lang : guessLang(t) !== null && guessLang(t) !== lang);
+  const todo = [...new Set(texts.filter((t): t is NonNullable<T> & string => !!t?.trim() && foreign(t)))];
   if (!todo.length) return texts;
   const map = new Map<string, string>();
   const queue = [...todo];
