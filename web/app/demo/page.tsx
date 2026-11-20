@@ -42,8 +42,8 @@ export default async function Demo({ searchParams }: { searchParams: Promise<{ e
     [
       t("Lance ton propre audit", "Run your own audit"),
       t(
-        `« Lancer un audit » sur la boutique de ton choix : ${JURY_AUDITS} audits par juge, 5 à 10 minutes chacun, sans paiement ni donnée personnelle. En plus, ${JURY_PAYMENTS} test de paiement réel par juge avec la carte de démo, à solde nul : l'agent va jusqu'à la banque, qui refuse. Un compte de test (Réglages › Comptes de test) lui permet de se connecter avant de payer.`,
-        `“Run an audit” on the store of your choice: ${JURY_AUDITS} audits per judge, 5 to 10 minutes each, with no payment and no personal data. On top, ${JURY_PAYMENTS} real payment test per judge with the zero-balance demo card: the agent goes as far as the bank, which declines. A test account (Settings › Test accounts) lets it sign in before paying.`,
+        `« Lancer un audit » sur la boutique de ton choix : ${JURY_AUDITS} audits par juge, 4 à 8 minutes chacun hors file d'attente, sans paiement ni donnée personnelle. En plus, ${JURY_PAYMENTS} test de paiement réel par juge avec la carte de démo, à solde nul : l'agent va jusqu'à la banque, qui refuse. Un compte de test (Réglages › Comptes de test) lui permet de se connecter avant de payer.`,
+        `“Run an audit” on the store of your choice: ${JURY_AUDITS} audits per judge, 4 to 8 minutes each without a queue, with no payment and no personal data. On top, ${JURY_PAYMENTS} real payment test per judge with the zero-balance demo card: the agent goes as far as the bank, which declines. A test account (Settings › Test accounts) lets it sign in before paying.`,
       ),
     ],
   ];
@@ -52,10 +52,10 @@ export default async function Demo({ searchParams }: { searchParams: Promise<{ e
     <div className="bg-bg-2 pb-24 pt-20 max-[734px]:pt-12">
       <div className="mx-auto w-[min(692px,87.5%)]">
         <p className="type-small font-semibold text-ink-2">{t("Hackathon H Company × Hugging Face · Groupe 6", "H Company × Hugging Face hackathon · Group 6")}</p>
-        <h1 className="type-h1 mt-2">{t("Testez AgentProof en direct.", "Try AgentProof live.")}</h1>
+        <h1 className="type-h1 mt-2">{t("Teste AgentProof en direct.", "Try AgentProof live.")}</h1>
         <p className="type-intro mt-5 text-ink-2">
           {t(
-            "Un espace de démonstration rien que pour le jury, avec une copie de tous nos rapports. Aucun e-mail ni mot de passe : un clic et vous y êtes.",
+            "Un espace de démonstration rien que pour le jury, avec une copie de tous nos rapports. Aucun e-mail ni mot de passe : un clic et tu y es.",
             "A demo space for the jury only, with a copy of all our reports. No e-mail, no password: one click and you are in.",
           )}
         </p>

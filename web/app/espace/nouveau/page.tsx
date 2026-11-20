@@ -69,8 +69,8 @@ export default async function Nouveau({ searchParams }: { searchParams: Promise<
           <span className="font-semibold">{t("Démo jury", "Jury demo")}</span>
           {" · "}
           {t(
-            `audits restants : ${juryLeft.audits} · test de paiement réel : ${juryLeft.payments}. Un site déjà audité cette semaine (waterdrop.fr, nike.com) rouvre son rapport sans rien relancer. La carte de démo n'a pas de solde : le paiement s'arrête toujours à la banque.`,
-            `audits left: ${juryLeft.audits} · real payment test: ${juryLeft.payments}. A site already audited this week (waterdrop.fr, nike.com) reopens its report without a new run. The demo card has no balance: the payment always stops at the bank.`,
+            `audits restants : ${juryLeft.audits} · test de paiement réel : ${juryLeft.payments}. Un site déjà présent dans Rapports rouvre son rapport sans rien relancer : choisis une autre boutique. La carte de démo n'a pas de solde : le paiement s'arrête toujours à la banque.`,
+            `audits left: ${juryLeft.audits} · real payment test: ${juryLeft.payments}. A site already in Reports reopens its report without a new run: pick another store. The demo card has no balance: the payment always stops at the bank.`,
           )}
         </Note>
       )}
