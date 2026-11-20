@@ -3,7 +3,7 @@ import Image from "next/image";
 import { connection } from "next/server";
 import { db } from "@/lib/engine";
 import { currentUser } from "@/lib/auth";
-import { AgentCursor, BrowserFrame, Chip, Chips, Field, Icon, MissionBar, StatusGlyph, Verdict, blockerLabel, scoreTone } from "@/lib/ui";
+import { AgentCursor, BrowserFrame, Chip, Chips, Field, Icon, MissionBar, ScoredNote, StatusGlyph, Verdict, blockerLabel, scoreTone } from "@/lib/ui";
 import { missionTitle, tr, type Lang, type T } from "@/lib/i18n";
 import { getDict, getLang } from "@/lib/lang";
 import { Sections } from "../nav";
@@ -335,7 +335,7 @@ export default async function Home() {
                       <span className="type-headline truncate">{s.name}</span>
                     </span>
                     <span className="hidden sm:block">
-                      <MissionBar ok={s.runs_success ?? 0} done={s.runs_scored ?? 0} total={s.runs_scored ?? 0} size="sm" />
+                      <MissionBar ok={s.runs_success ?? 0} done={s.runs_scored ?? 0} total={s.runs_done ?? 0} size="sm" />
                     </span>
                     <span className="flex flex-col items-end">
                       <span className="flex items-center justify-end gap-2 type-headline tnum">
@@ -345,7 +345,9 @@ export default async function Home() {
                       {/* The mission bar is hidden on phones: keep the coverage, so 100 % on 3 missions never reads like 100 % on 10. */}
                       <span className="type-caption whitespace-nowrap text-ink-2 tnum sm:hidden">
                         {t(`${s.runs_success ?? 0}/${s.runs_scored ?? 0} missions`, `${s.runs_success ?? 0}/${s.runs_scored ?? 0} missions`)}
+                        {(s.runs_done ?? 0) > (s.runs_scored ?? 0) && t(` · ${s.runs_done - s.runs_scored} hors score`, ` · ${s.runs_done - s.runs_scored} out of score`)}
                       </span>
+                      <ScoredNote short done={s.runs_scored ?? 0} out={(s.runs_done ?? 0) - (s.runs_scored ?? 0)} className="max-sm:hidden" />
                     </span>
                   </Link>
                 </li>

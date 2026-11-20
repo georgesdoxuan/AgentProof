@@ -16,7 +16,7 @@ export type Correction = {
   site: SiteView;
   type: string; // blocker type (journey) or payment verdict (payment)
   label: string;
-  impact: 0 | 1 | 2 | 3; // 0 out of score (anti-bot, stock), then missions lost; a blocked payment is 3
+  impact: 0 | 1 | 2 | 3; // 0 out of score (stock, agent error), then missions lost; a blocked payment is 3
   missions: number; // missions lost (journey), payment runs that failed (payment)
   status: CorrectionStatus;
   at: string; // date of the audit that found it

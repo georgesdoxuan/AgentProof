@@ -9,7 +9,7 @@ import { rankText } from "@/app/espace/parts";
 import { reportSuffix } from "@/lib/space";
 import { locale, loginName, missionTitle, staticText, tr, type Lang, type T } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
-import { BlockerIcon, BrowserFrame, Chip, Chips, ExPay, Icon, MissionIcon, Chevron, Note, DeviceTag, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, hurdles, summarize } from "@/lib/ui";
+import { BlockerIcon, BrowserFrame, Chip, Chips, ExPay, Icon, MissionIcon, Chevron, Note, DeviceTag, MissionBar, Recommendations, ScoredNote, outOfScore, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, hurdles, summarize } from "@/lib/ui";
 import { Hint } from "@/lib/hint";
 import { ClampText } from "@/lib/clamp";
 import { headers } from "next/headers";
@@ -22,19 +22,22 @@ import type { AgentAccess } from "@/lib/automations";
 // One line per AI assistant, from the static check's per-agent reading (lib/automations.ts agentAccess).
 function accessText(a: AgentAccess, t: T) {
   const bots = a.robots.filter((r) => r !== "*").join(", ");
-  if (a.robots.includes("*") && a.tone === "fail") return t("robots.txt interdit tout le site aux robots, et Grok ne publie pas de nom à part.", "robots.txt bans every bot from the whole site, and Grok publishes no name of its own.");
-  if (a.tone === "fail" && a.http === null) return t(`robots.txt interdit tout le site à ${a.robots[0]}, le robot qui lit les pages pour un client en direct.`, `robots.txt bans ${a.robots[0]}, the bot that reads pages for a customer live, from the whole site.`);
+  if (a.robots.includes("*") && a.tone === "fail") return t(`robots.txt interdit tout le site aux robots, et ${a.name} ne publie pas de nom à part.`, `robots.txt bans every bot from the whole site, and ${a.name} publishes no name of its own.`);
+  // The site answering 200 means the refusal came from robots.txt.
+  if (a.tone === "fail" && (a.http === null || (a.http === 200 && !a.challenge))) return t(`robots.txt interdit tout le site à ${a.robots[0]}, le robot qui lit les pages pour un client en direct.`, `robots.txt bans ${a.robots[0]}, the bot that reads pages for a customer live, from the whole site.`);
   if (a.tone === "fail")
     return a.challenge
       ? t(`Le site lui oppose un défi anti-bot, alors qu'un navigateur passe.`, `The site answers it with an anti-bot challenge, while a browser gets through.`)
       : a.http
         ? t(`Le site lui répond ${a.http}, alors qu'il répond 200 à un navigateur.`, `The site answers it ${a.http}, while it answers 200 to a browser.`)
         : t("Le site ne lui répond pas, alors qu'il répond 200 à un navigateur.", "The site does not answer it, while it answers 200 to a browser.");
-  if (a.tone === "warn") return t(`Accès possible, mais robots.txt interdit ${bots} : le site sort des réponses de ${a.name}.`, `Access works, but robots.txt bans ${bots}: the site drops out of ${a.name}'s answers.`);
+  if (a.tone === "warn") return t(`Accès possible, mais robots.txt interdit ${bots} : le site sort des réponses de cet assistant.`, `Access works, but robots.txt bans ${bots}: the site drops out of ${a.name}'s answers.`);
   if (a.tone === "none") return t("Le site refuse toute requête sans navigateur : impossible d'isoler cet agent. L'agent AgentProof, lui, passe par un vrai navigateur.", "The site refuses every request without a browser: this agent can't be isolated. The AgentProof agent uses a real browser.");
-  return a.ownUa
-    ? t("robots.txt l'autorise et le site lui répond.", "robots.txt allows it and the site answers it.")
-    : t("Il navigue avec Chrome, comme l'agent AgentProof : le résultat des missions vaut aussi pour lui.", "It browses with Chrome, like the AgentProof agent: the missions' result applies to it too.");
+  if (a.ownUa) return t("robots.txt l'autorise et le site lui répond.", "robots.txt allows it and the site answers it.");
+  // Reports before Nov 2026 have no `browser` field: their only rows without a user agent browsed with a real browser.
+  return a.browser === false
+    ? t("robots.txt l'autorise.", "robots.txt allows it.")
+    : t("Il navigue avec un vrai navigateur, comme l'agent AgentProof : le résultat des missions vaut aussi pour lui.", "It browses with a real browser, like the AgentProof agent: the missions' result applies to it too.");
 }
 import { fixHints } from "@/lib/space";
 import { SiteLogo } from "../../site-logo";
@@ -369,6 +372,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                       <span className="text-[21px] font-semibold tnum">{x.score ?? "—"} %</span>
                     </div>
                     <MissionBar ok={x.ok} done={x.done} total={x.total} />
+                    <ScoredNote done={x.done} out={outOfScore(x)} className="block" />
                     {(modelCompare || deviceCompare) && pm && (
                       <p className="type-small text-ink-2 tnum">
                         {pm.s} s · {usd(pm.usd, 3, lang)} {t("par mission", "per mission")}
@@ -580,6 +584,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             <p className="mt-3 text-ink-2">
               {t("Entrée du checkout atteinte", "Checkout entrance reached")} · <span className="font-semibold text-ink tnum">{s.ok}/{s.done}</span>
             </p>
+            <ScoredNote done={s.done} out={outOfScore(s)} className="mt-1 block" />
             {s.exPay && (
               <p className="mt-2 text-ink-2">
                 {t("Paiement", "Payment")} ·{" "}
@@ -1076,19 +1081,54 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
               </ul>
               {statik.agents && (
                 <>
-                  <h3 className="border-t border-hairline px-6 pb-1 pt-5 font-semibold">{t("Accès par agent IA", "Access per AI agent")}</h3>
-                  <p className="type-small px-6 text-ink-2">{t("Accès seulement : l’achat, c’est le score de l’agent.", "Access only: purchase success is the agent's score.")}</p>
+                  <h3 className="border-t border-hairline px-6 pb-1 pt-5 font-semibold">
+                    {t("Accès par agent IA", "Access per AI agent")}{" "}
+                    <span className="type-small font-normal text-ink-2">{t(`${statik.agents.filter((a) => a.tone === "pass").length}/${statik.agents.length} ouverts`, `${statik.agents.filter((a) => a.tone === "pass").length}/${statik.agents.length} open`)}</span>
+                  </h3>
+                  <p className="type-small px-6 text-ink-2">
+                    {t(
+                      "Chaque assistant peut-il ouvrir le site ? robots.txt et réponse du site à son robot. Réussir l'achat, c'est le score des missions.",
+                      "Can each assistant open the site? robots.txt and the site's answer to its bot. Completing a purchase is the missions' score.",
+                    )}
+                  </p>
+                  {/* Refusals get a line each; the other groups fit on one row of names, their detail on hover or tap. */}
                   <ul className="mt-2 grid lg:grid-cols-2">
-                    {statik.agents.map((a) => (
-                      <li key={a.name} className="flex items-start gap-3 border-t border-hairline px-6 py-4 lg:odd:border-r">
-                        <StatusGlyph tone={a.tone} className="mt-0.5 h-5 w-5" />
-                        <span className="min-w-0">
-                          <span className="font-semibold">{a.name}</span>
-                          <span className="type-small block text-ink-2">{accessText(a, t)}</span>
-                        </span>
-                      </li>
-                    ))}
+                    {statik.agents
+                      .filter((a) => a.tone === "fail")
+                      .map((a) => (
+                        <li key={a.name} className="flex items-start gap-3 border-t border-hairline px-6 py-4 lg:odd:border-r lg:odd:last:col-span-2 lg:odd:last:border-r-0">
+                          <StatusGlyph tone={a.tone} className="mt-0.5 h-5 w-5" />
+                          <span className="min-w-0">
+                            <span className="font-semibold">{a.name}</span>
+                            <span className="type-small block text-ink-2">{accessText(a, t)}</span>
+                          </span>
+                        </li>
+                      ))}
                   </ul>
+                  {(
+                    [
+                      ["none", t("Impossible à isoler, le site refuse toute requête sans navigateur :", "Can't be isolated, the site refuses every request without a browser:")],
+                      ["warn", t("Accès possible, mais robots.txt les sort des réponses :", "Access works, but robots.txt drops the site from their answers:")],
+                      ["pass", t("Ouverts :", "Open:")],
+                    ] as const
+                  ).map(([tone, label]) => {
+                    const group = statik.agents!.filter((a) => a.tone === tone);
+                    return (
+                      group.length > 0 && (
+                        <div key={tone} className="flex flex-wrap items-center gap-2 border-t border-hairline px-6 py-4">
+                          <span className="type-small mr-1 text-ink-2">{label}</span>
+                          {group.map((a) => (
+                            <Hint key={a.name} tip={accessText(a, t)} side="top">
+                              <span className="type-small inline-flex items-center gap-1.5 rounded-full border border-hairline px-2.5 py-0.5 font-semibold">
+                                <StatusGlyph tone={tone} className="h-3.5 w-3.5" />
+                                {a.name}
+                              </span>
+                            </Hint>
+                          ))}
+                        </div>
+                      )
+                    );
+                  })}
                 </>
               )}
               </div>

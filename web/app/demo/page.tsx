@@ -81,6 +81,12 @@ export default async function Demo({ searchParams }: { searchParams: Promise<{ e
         <form action="/api/auth/demo" method="post" className="mt-8">
           <button className="btn min-h-[52px] w-full rounded-[12px]">{back ? t("Revenir dans la démo", "Back to the demo") : t("Entrer dans la démo", "Enter the demo")}</button>
         </form>
+        {/* Signed in with a real account: the button opens a separate judge account and signs this one out here. */}
+        {me && !back && (
+          <p className="type-small mt-4 text-ink-2">
+            {t(`Tu es connecté avec ${me.email}. Le bouton ouvre un compte juge à part, dans l'espace de démo, et te déconnecte de ce compte sur ce navigateur ; ton espace n'est pas modifié.`, `You are signed in as ${me.email}. The button opens a separate judge account in the demo space and signs this account out in this browser; your space is not changed.`)}
+          </p>
+        )}
         <p className="type-small mt-4 text-ink-2">
           {t(
             "Dans la démo, la carte, les membres, les automatisations et la corbeille ne se modifient pas. Le classement public reste ouvert à tous : ",

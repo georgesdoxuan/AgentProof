@@ -71,7 +71,6 @@ export async function Leaderboard({ device = "desktop", base }: { device?: Devic
             <ol>
               {scores.map((s, i) => {
                 const blocker = topBlocker(s.audit_id);
-                const botOnly = s.score == null && s.runs_bot_blocked > 0 && s.runs_bot_blocked === s.runs_done;
                 return (
                   <li key={s.audit_id} className="border-b border-hairline last:border-0">
                     <Link
@@ -99,20 +98,16 @@ export async function Leaderboard({ device = "desktop", base }: { device?: Devic
                       </span>
                       <span className="col-span-3 col-start-2 flex items-center gap-3 max-[400px]:col-span-2 max-[400px]:col-start-1 md:col-span-1 md:col-start-auto">
                         <span className="w-24 shrink-0">
-                          <MissionBar ok={s.runs_success ?? 0} done={s.runs_scored ?? 0} total={s.runs_scored ?? 0} size="sm" />
+                          <MissionBar ok={s.runs_success ?? 0} done={s.runs_scored ?? 0} total={s.runs_done ?? 0} size="sm" />
                         </span>
                         <span className="type-small whitespace-nowrap text-ink-2 tnum">
                           {s.runs_success} {t("sur", "of")} {s.runs_scored}
+                          {(s.runs_done ?? 0) > (s.runs_scored ?? 0) && <span className="type-caption block">{s.runs_done - s.runs_scored} {t("hors score", "out of score")}</span>}
                         </span>
                       </span>
                       <span className="type-small col-span-3 col-start-2 hidden md:col-span-1 md:col-start-auto md:block">
-                        {botOnly ? (
-                          <span className="inline-flex items-center gap-1.5 font-semibold text-ink-2">
-                            <StatusGlyph tone="none" />
-                            {t("Anti-bot : hors classement", "Anti-bot: not ranked")}
-                          </span>
-                        ) : s.score == null ? (
-                          // Nothing counted (agent errors, anti-bot, stock...): no verdict on the site until a new audit.
+                        {s.score == null ? (
+                          // Nothing counted (agent errors, stock, unverified...): no verdict on the site until a new audit.
                           <span className="inline-flex items-center gap-1.5 font-semibold text-ink-2">
                             <StatusGlyph tone="unsure" />
                             {t("À confirmer", "To be confirmed")}
@@ -128,12 +123,8 @@ export async function Leaderboard({ device = "desktop", base }: { device?: Devic
                             <BlockerIcon type={blocker} className="h-[18px] w-[18px]" />
                             {blockerLabel(blocker, lang)}
                           </span>
-                        ) : s.runs_bot_blocked > 0 ? (
-                          // Kiabi read "None · anti-bot": with no counted blocker, the anti-bot is the main one (out of score).
-                          t("Anti-bot (hors score)", "Anti-bot (outside the score)")
                         ) : t("Aucun", "None")}
-                        {!blocker && !s.runs_bot_blocked && topHurdle(s.audit_id) && ` · ${t("contourné", "got past")} : ${topHurdle(s.audit_id)!.toLowerCase()}`}
-                        {blocker && s.runs_bot_blocked > 0 && !botOnly && " · anti-bot"}
+                        {!blocker && topHurdle(s.audit_id) && ` · ${t("contourné", "got past")} : ${topHurdle(s.audit_id)!.toLowerCase()}`}
                       </span>
                     </Link>
                   </li>
@@ -154,7 +145,7 @@ export async function Leaderboard({ device = "desktop", base }: { device?: Devic
           {(
             [
               ["none", t("Succès", "Success"), t("Première page du checkout atteinte. Rien saisi, rien payé.", "First checkout page reached. Nothing entered, nothing paid.")],
-              ["ranking", "Score", t("Réussies ÷ comptées. Stock, anti-bot, mission impossible et erreurs de l’agent hors score.", "Passed ÷ counted. Stock, anti-bot, impossible mission and agent errors out of score.")],
+              ["ranking", "Score", t("Réussies ÷ comptées. Un anti-bot compte comme un échec. Stock, mission impossible et erreurs de l’agent hors score.", "Passed ÷ counted. An anti-bot counts as a failure. Stock, impossible mission and agent errors out of score.")],
               ["eye", t("Juge visuel", "Visual judge"), t("Un modèle Hugging Face relit la capture finale de chaque mission.", "A Hugging Face model reviews each mission's final screenshot.")],
             ] as const
           ).map(([icon, title, text]) => (

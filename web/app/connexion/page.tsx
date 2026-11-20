@@ -93,6 +93,13 @@ export default async function Connexion({ searchParams }: { searchParams: Promis
               </Link>
               .
             </p>
+            {/* Judges reach the demo space without an e-mail; signing in here opens your own team instead. */}
+            <p className="type-small text-center text-ink-2">
+              {t("Membre du jury ?", "On the jury?")}{" "}
+              <Link href="/demo" className="text-link hover:underline">
+                {t("Entrer dans la démo sans e-mail", "Enter the demo without an e-mail")}
+              </Link>
+            </p>
           </form>
         )}
       </div>

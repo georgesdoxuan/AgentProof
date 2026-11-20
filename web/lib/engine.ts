@@ -66,7 +66,8 @@ export const BLOCKERS_EN: Record<string, string> = {
   other: "Other",
 };
 // Outcomes that say nothing about the site's interface: shown in the report, kept out of the score.
-export const EXCLUDED = ["out_of_stock", "captcha_or_bot_block", "mission_not_applicable", "agent_out_of_steps", "agent_tool_error"];
+// Anti-bot counts against the site since 20 Nov 2026: a captcha stops a real customer's agent too.
+export const EXCLUDED = ["out_of_stock", "mission_not_applicable", "agent_out_of_steps", "agent_tool_error"];
 // Score of one audit: successful runs over verified runs, excluded outcomes left out. null when nothing counts yet.
 export function scoreOf(runs: { status: string; success: boolean | null; blocker_type: string | null }[]) {
   const scored = runs.filter((r) => r.status === "done" && r.success !== null && !EXCLUDED.includes(r.blocker_type ?? ""));
