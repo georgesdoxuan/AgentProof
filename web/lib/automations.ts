@@ -306,18 +306,32 @@ export async function runMonthlyReports(log: string[]) {
 const BROWSER_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36";
 const AI_AGENTS = ["ChatGPT-User", "Claude-User", "Perplexity-User", "GPTBot", "OAI-SearchBot", "ClaudeBot", "PerplexityBot", "Google-Extended"];
 const SHOPPING_AGENTS = ["ChatGPT-User", "Claude-User", "Perplexity-User"]; // fetch pages for a user, in real time
-// One row per assistant a shopper uses. live: the robots name of its real-time fetcher (blocking it shuts the shopper out);
-// the other names feed the assistant's answers or training. Google-Extended only controls Gemini's use of the content. ua: the user agent its fetcher announces; null = it browses with a normal Chrome
-// (Gemini in Chrome, Grok), so the plain browser request stands for it. Grok publishes no robots name: it follows "*".
-const ASSISTANTS = [
+// One row per assistant a shopper uses. live: the robots name of its real-time fetcher (blocking it shuts the shopper out),
+// listed first; the other names feed the assistant's answers or training. Names checked on each vendor's crawler page, Nov 2026.
+// ua: the user agent its fetcher announces, sent to test the site's answer; null = no HTTP test. browser: it browses with
+// a real browser (Gemini in Chrome, Copilot in Edge, Grok), so the agent's run stands for it; otherwise robots.txt only
+// (search crawlers like bingbot or Applebot get a fake-bot block from a server IP, which would read as a false refusal).
+// No published robots name (Grok, DeepSeek): it follows "*".
+const CHROME_UA = "Chrome/130.0.0.0 Safari/537.36";
+const ASSISTANTS: { name: string; live: string | null; robots: string[]; ua: string | null; browser?: boolean }[] = [
   { name: "ChatGPT", live: "ChatGPT-User", robots: ["ChatGPT-User", "OAI-SearchBot", "GPTBot"], ua: "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; ChatGPT-User/1.0; +https://openai.com/bot" },
   { name: "Claude", live: "Claude-User", robots: ["Claude-User", "Claude-SearchBot", "ClaudeBot"], ua: "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Claude-User/1.0; +Claude-User@anthropic.com)" },
+  { name: "Gemini", live: null, robots: ["Google-Agent", "Google-Extended"], ua: null, browser: true },
   { name: "Perplexity", live: "Perplexity-User", robots: ["Perplexity-User", "PerplexityBot"], ua: "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Perplexity-User/1.0; +https://perplexity.ai/perplexity-user)" },
-  { name: "Gemini", live: null, robots: ["Google-Extended"], ua: null },
-  { name: "Grok", live: "*", robots: ["*"], ua: null },
+  { name: "Microsoft Copilot", live: null, robots: ["bingbot"], ua: null, browser: true },
+  { name: "Grok", live: "*", robots: ["*"], ua: null, browser: true },
+  { name: "Meta AI", live: "meta-externalfetcher", robots: ["meta-externalfetcher", "meta-externalagent"], ua: "meta-externalfetcher/1.1 (+https://developers.facebook.com/docs/sharing/webmasters/crawler)" },
+  { name: "Mistral Le Chat", live: "MistralAI-User", robots: ["MistralAI-User"], ua: "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; MistralAI-User/1.0; +https://docs.mistral.ai/robots)" },
+  { name: "DeepSeek", live: "*", robots: ["*"], ua: null },
+  { name: "Amazon Alexa+", live: "Amzn-User", robots: ["Amzn-User", "Amzn-SearchBot", "Amazonbot"], ua: `Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Amzn-User/0.1) ${CHROME_UA}` },
+  { name: "Apple Intelligence", live: null, robots: ["Applebot", "Applebot-Extended"], ua: null },
+  { name: "ByteDance Doubao", live: null, robots: ["Bytespider"], ua: null },
+  { name: "DuckDuckGo Duck.ai", live: null, robots: ["DuckAssistBot"], ua: null },
+  { name: "You.com", live: null, robots: ["YouBot"], ua: null },
+  { name: "Cohere", live: "cohere-ai", robots: ["cohere-ai", "cohere-training-data-crawler"], ua: null },
 ];
 const CHALLENGE = /cf-chl|challenge-platform|captcha-delivery|_Incapsula_|px-captcha|Just a moment\.\.\./i;
-export type AgentAccess = { name: string; tone: "pass" | "warn" | "fail" | "none"; robots: string[]; http: number | null; challenge: boolean; ownUa: boolean };
+export type AgentAccess = { name: string; tone: "pass" | "warn" | "fail" | "none"; robots: string[]; http: number | null; challenge: boolean; ownUa: boolean; browser?: boolean };
 const ANTI_BOT: [RegExp, string][] = [
   [/google\.com\/recaptcha|recaptcha\/api|grecaptcha/i, "reCAPTCHA"],
   [/hcaptcha\.com/i, "hCaptcha"],
@@ -389,7 +403,7 @@ export async function agentAccess(url: string): Promise<AgentAccess[]> {
     const http = res && browserOk ? res.status : null;
     const refused = (http !== null && (http !== 200 || challenge)) || (!!a.live && blocked.includes(a.live));
     const tone = refused ? "fail" : blocked.length ? "warn" : a.ua && http === null ? "none" : "pass";
-    return { name: a.name, tone, robots: blocked, http, challenge, ownUa: !!a.ua };
+    return { name: a.name, tone, robots: blocked, http, challenge, ownUa: !!a.ua, browser: !!a.browser };
   });
 }
 
