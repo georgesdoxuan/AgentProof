@@ -60,7 +60,7 @@ export function LangMenu({ lang, label }: { lang: Lang; label: string }) {
   );
 }
 
-// Home page only: the source of the "63 %" figure (note 1), in the footer's fine print rather than a band of its own.
+// Home page only: the source of the "44 %" figure (note 1), in the footer's fine print rather than a band of its own.
 export function FooterNote({ text }: { text: string }) {
   if (usePathname() !== "/") return null;
   return (
