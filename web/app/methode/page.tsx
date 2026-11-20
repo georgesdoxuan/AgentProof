@@ -79,14 +79,14 @@ const FAQ = {
   fr: [
     ["Est-ce légal de tester un site sans son accord ?", <>L&apos;agent visite des pages publiques comme un client : sans créer de compte, sans payer et sans contourner de protection. Si un site le bloque, la mission est notée « anti-bot » et sort du score.</>],
     ["Quelles données collectez-vous ?", <>Ton e-mail si tu te connectes ou demandes un rapport, l&apos;adresse du site testé et les captures de l&apos;agent. L&apos;agent ne saisit aucune donnée personnelle sur les sites ; le détail est sur la page <Link href="/confidentialite" className={lk}>confidentialité</Link>.</>],
-    ["L’agent paie-t-il ?", <>Jamais pendant un audit : il s&apos;arrête à la première page du checkout, donc le paiement n&apos;est pas dans le score. On le mesure à part, voir <a href="#paiement" className={lk}>la suite</a>.</>],
+    ["L’agent paie-t-il ?", <>Jamais pendant un audit : il s&apos;arrête à la première page du checkout, donc le paiement n&apos;est pas dans le score. On le mesure à part, voir <a href="#paiement" className={lk}>le test de paiement réel</a>.</>],
     ["Le score est-il fiable ?", <>Un juge visuel indépendant relit chaque mission, chaque échec est rejoué une fois, et le classement fait la moyenne de 2 passages. Chaque mission a sa capture et son replay pour le vérifier.</>],
     ["Mon site est dans le classement : je peux contester ?", <>Oui : écris à <a href={`mailto:${LEGAL.contact}`} className={lk}>{LEGAL.contact}</a> avec le lien du rapport. On vérifie la capture et le replay à la main, puis on corrige ou on relance la mission.</>],
   ],
   en: [
     ["Is it legal to test a site without its consent?", <>The agent visits public pages like a customer: it creates no account, never pays and bypasses no protection. If a site blocks it, the mission is marked “anti-bot” and left out of the score.</>],
     ["What data do you collect?", <>Your e-mail if you sign in or ask for a report, the address of the tested site and the agent&apos;s screenshots. The agent enters no personal data on sites; details are on the <Link href="/confidentialite" className={lk}>privacy</Link> page.</>],
-    ["Does the agent pay?", <>Never during an audit: it stops at the first checkout page, so payment is not in the score. We measure it separately, see <a href="#paiement" className={lk}>what comes next</a>.</>],
+    ["Does the agent pay?", <>Never during an audit: it stops at the first checkout page, so payment is not in the score. We measure it separately, see <a href="#paiement" className={lk}>the real payment test</a>.</>],
     ["Is the score reliable?", <>An independent visual judge reviews every mission, every failure is replayed once, and the ranking averages 2 runs. Each mission has its screenshot and replay so you can check.</>],
     ["My site is in the ranking: can I dispute it?", <>Yes: write to <a href={`mailto:${LEGAL.contact}`} className={lk}>{LEGAL.contact}</a> with the report link. We check the screenshot and the replay by hand, then fix or rerun the mission.</>],
   ],
@@ -216,11 +216,11 @@ export default async function Methode() {
           </ul>
         </Section>
 
-        <Section title={t("La suite : le paiement", "Next step: the payment")} id="paiement">
+        <Section title={t("Le test de paiement réel", "The real payment test")} id="paiement">
           <p>
             {t(
-              "Le score s’arrête volontairement à l’entrée du checkout. Savoir si un agent peut vraiment payer, on a commencé à le mesurer en interne.",
-              "The score stops at the checkout entrance on purpose. Whether an agent can actually pay, we have started to measure in the lab.",
+              "Le score s’arrête volontairement à l’entrée du checkout. Savoir si un agent peut vraiment payer se mesure à part : un test de paiement réel, en option depuis ton espace, avec la carte de ton équipe (2 crédits). Nos premières mesures :",
+              "The score stops at the checkout entrance on purpose. Whether an agent can actually pay is measured separately: a real payment test, optional from your space, with your team’s card (2 credits). Our first measurements:",
             )}
           </p>
           <div className="tile p-6!">

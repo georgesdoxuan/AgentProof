@@ -69,7 +69,7 @@ export default async function Home() {
           <h1 className="type-hero ap-fade">{t("Vérifie qu’un agent IA peut acheter sur ta boutique.", "Check that an AI agent can buy from your store.")}</h1>
           <p className="type-subhead ap-fade mx-auto mt-5 max-w-[640px] text-ink-2 [animation-delay:0.2s]">
             {t(
-              "Cookies, pop-up, choix de taille ou de couleur : on te montre où il bloque, captures à l’appui, et quoi corriger. Gratuit, aucun achat réel.",
+              "Cookies, pop-up, choix de taille ou de couleur : on te montre où il bloque, captures à l’appui, et quoi corriger. Gratuit, aucun achat réel.",
               "Cookies, pop-ups, size or colour picker: we show you where it gets stuck, with screenshots, and what to fix. Free, no real purchase.",
             )}
           </p>
@@ -124,12 +124,12 @@ export default async function Home() {
               <>
                 Demain, des agents IA feront les courses à la place de tes clients.{" "}
                 <span className="text-ink">Un bandeau cookies, une pop-up ou un sélecteur d’options suffit à les arrêter.</span> Ils achètent alors ailleurs. Et{" "}
-                <span className="text-ink">63 % des responsables e-commerce</span> pensent que leur tunnel d&apos;achat ne passerait pas le test.
+                <span className="text-ink">63 % des responsables e‑commerce</span> pensent que leur tunnel d’achat ne passerait pas le test.
               </>,
               <>
                 Tomorrow, AI agents will shop on behalf of your customers.{" "}
                 <span className="text-ink">A cookie banner, a pop-up or an option picker is enough to stop them.</span> Then they buy elsewhere. And{" "}
-                <span className="text-ink">63 % of e-commerce managers</span> think their checkout funnel would not pass the test.
+                <span className="text-ink">63 % of e‑commerce managers</span> think their checkout funnel would not pass the test.
               </>,
             )}
             <sup className="ml-0.5 align-super text-[0.4em]">
@@ -144,7 +144,8 @@ export default async function Home() {
       {demo && <Demo demo={demo} lang={lang} t={t} />}
 
       {/* What you get */}
-      <section id="ce-que-tu-recois" className="section scroll-mt-[96px] lg:scroll-mt-[52px] bg-bg-2">
+      {/* Same grey as the demo just above: one section gap between them, not two. */}
+      <section id="ce-que-tu-recois" className={`section scroll-mt-[96px] lg:scroll-mt-[52px] bg-bg-2 ${demo ? "pt-0!" : ""}`}>
         <div className="wrap-wide">
           <h2 className="type-h1 mb-12 max-[734px]:mb-8">{t("Ce que tu reçois.", "What you get.")}</h2>
           <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-2">
@@ -156,6 +157,12 @@ export default async function Home() {
                   {t(
                     "L’agent cherche, filtre, choisit une variante (taille, couleur, contenance…) et remplit le panier, comme un client. Il s’arrête à la première page du checkout.",
                     "The agent searches, filters, picks a variant (size, colour, capacity…) and fills the cart, like a customer. It stops at the first checkout page.",
+                  )}
+                </p>
+                <p className="type-small mt-3 max-w-[440px] text-ink-2">
+                  {t(
+                    "Mode, maison, beauté, high-tech, sport : tout site qui vend des produits physiques. Sans variante sur le produit, l’agent saute l’étape.",
+                    "Fashion, home, beauty, electronics, sport: any site that sells physical products. When a product has no variant, the agent skips that step.",
                   )}
                 </p>
               </div>
@@ -188,7 +195,7 @@ export default async function Home() {
                   ) : (
                     <div className="aspect-[16/10] bg-bg-2" />
                   )}
-                  <Verdict success={false} label={blockerLabel(proof?.blocker_type ?? "cookie_banner", lang)} className="absolute left-4 top-4" />
+                  <Verdict success={false} label={shortLabel(blockerLabel(proof?.blocker_type ?? "cookie_banner", lang))} className="absolute left-4 top-4 max-[734px]:left-3 max-[734px]:top-3" />
                 </BrowserFrame>
               </div>
             </article>
@@ -220,7 +227,7 @@ export default async function Home() {
             <Chip icon="nopay">{t("Arrêt avant le paiement", "Stops before payment")}</Chip>
             <Chip icon="eye">{t("Observé ≠ supposé", "Observed ≠ assumed")}</Chip>
             <Link href="/methode#paiement" className="type-small ml-1 text-link hover:underline">
-              {t("La suite : le paiement", "Next step: the payment")}
+              {t("En option : le test de paiement réel", "Optional: the real payment test")}
             </Link>
           </Chips>
         </div>
@@ -239,13 +246,13 @@ export default async function Home() {
               <Field label={t("Adresse de ton site", "Your site's address")} name="url" required />
               <Field label={t("Un concurrent (facultatif)", "A competitor (optional)")} name="competitor" />
             </div>
-            <Field label={t("E-mail du rapport (par défaut : ton adresse de connexion)", "Report e-mail (default: your sign-in address)")} name="email" type="email" />
+            <Field label={t("E-mail du rapport (facultatif)", "Report e-mail (optional)")} name="email" type="email" />
             <fieldset className="mt-2 flex flex-wrap items-center justify-between gap-3">
               <legend className="sr-only">{t("Appareil", "Device")}</legend>
               <span className="text-ink-2" aria-hidden>
                 {t("Appareil", "Device")}
               </span>
-              <div className="inline-grid auto-cols-fr grid-flow-col rounded-[10px] bg-fill p-[3px]">
+              <div className="grid w-full auto-cols-fr grid-flow-col rounded-[10px] bg-fill p-[3px] sm:inline-grid sm:w-auto">
                 {[
                   ["desktop", t("Ordinateur", "Desktop")],
                   ["mobile", "Mobile"],
@@ -253,9 +260,17 @@ export default async function Home() {
                 ].map(([v, l]) => (
                   <label key={v} className="relative cursor-pointer">
                     <input type="radio" name="device" value={v} defaultChecked={v === "desktop"} className="peer sr-only" />
-                    <span className="type-small flex h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-[8px] px-4 font-semibold text-ink-2 transition-colors duration-200 peer-checked:bg-tile peer-checked:text-ink peer-checked:shadow-[0_1px_3px_rgb(0_0_0/0.12)] peer-focus-visible:outline-2 peer-focus-visible:outline-blue dark:peer-checked:bg-[#636366]">
-                      <Icon name={v} className="h-[17px] w-[17px]" />
-                      {l}
+                    <span className="type-small flex h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-[8px] px-2 font-semibold text-ink-2 sm:px-4 transition-colors duration-200 peer-checked:bg-tile peer-checked:text-ink peer-checked:shadow-[0_1px_3px_rgb(0_0_0/0.12)] peer-focus-visible:outline-2 peer-focus-visible:outline-blue dark:peer-checked:bg-[#636366]">
+                      <Icon name={v} className="h-[17px] w-[17px] max-sm:hidden" />
+                      {/* A phone has no room for « Ordinateur + Mobile »: same choice, shorter word. */}
+                      {v === "both" ? (
+                        <>
+                          <span className="sm:hidden">{t("Les deux", "Both")}</span>
+                          <span className="max-sm:hidden">{l}</span>
+                        </>
+                      ) : (
+                        l
+                      )}
                     </span>
                   </label>
                 ))}
@@ -365,7 +380,7 @@ export default async function Home() {
           </p>
           <Chips className="mt-3">
             <Chip icon="desktop">{t("2 derniers audits ordinateur", "Last 2 desktop audits")}</Chip>
-            <Chip icon="mission_not_applicable">{t("Hors missions sans lien", "Unrelated missions excluded")}</Chip>
+            <Chip icon="mission_not_applicable">{t("Missions hors score exclues", "Out-of-score missions excluded")}</Chip>
           </Chips>
         </div>
       </section>
@@ -377,6 +392,9 @@ export default async function Home() {
     </>
   );
 }
+
+// "Sélecteur de variante (taille, couleur...)" → "Sélecteur de variante": over a screenshot the long label wrapped and hid it.
+const shortLabel = (label: string) => label.replace(/\s*\(.*\)\s*$/, "");
 
 // The fix plan block that names this mission (« title »), split into its tagged lines. Null when the plan has none.
 function fixFor(plan: string | null | undefined, title: string) {
@@ -414,7 +432,7 @@ function Demo({ demo, lang, t }: { demo: DemoData; lang: Lang; t: T }) {
   const summary = (run.agent_answer as { steps_summary?: string } | null)?.steps_summary;
   const fix = fixFor(audit.recommendations, mission.title);
   const date = audit.finished_at ? new Date(audit.finished_at).toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Paris" }) : "";
-  const label = blockerLabel(run.blocker_type, lang);
+  const label = shortLabel(blockerLabel(run.blocker_type, lang));
   return (
     <section id="demo" className="section scroll-mt-[96px] lg:scroll-mt-[52px] bg-bg-2" aria-labelledby="demo-titre">
       <div className="wrap-wide">
@@ -451,8 +469,8 @@ function Demo({ demo, lang, t }: { demo: DemoData; lang: Lang; t: T }) {
                   loading="lazy"
                 />
               </BrowserFrame>
-              <Verdict success={false} label={label} className="absolute left-3 top-12" />
             </div>
+            <Verdict success={false} label={label} className="mt-4 self-start" />
             <p className="type-small mt-4 text-ink-2">{t("Le juge visuel relit cette capture avant de confirmer le verdict.", "The visual judge reviews this screenshot before confirming the verdict.")}</p>
           </DemoStep>
           <DemoStep t={t} n={3} title={t("La correction proposée", "The suggested fix")}>
@@ -460,18 +478,18 @@ function Demo({ demo, lang, t }: { demo: DemoData; lang: Lang; t: T }) {
               <dl className="type-small mt-3 space-y-2" lang="fr">
                 {fix.observed && (
                   <div>
-                    <dt className="inline font-semibold">{t("Observé", "Observed")} : </dt>
+                    <dt className="inline font-semibold">{t("Observé : ", "Observed: ")}</dt>
                     <dd className="inline text-ink-2">{fix.observed}</dd>
                   </div>
                 )}
                 {fix.hypothesis && (
                   <div>
-                    <dt className="inline font-semibold text-warn">{t("Hypothèse", "Hypothesis")} : </dt>
+                    <dt className="inline font-semibold text-warn">{t("Hypothèse : ", "Hypothesis: ")}</dt>
                     <dd className="inline text-ink-2">{fix.hypothesis}</dd>
                   </div>
                 )}
                 <div>
-                  <dt className="inline font-semibold">{t("Correction possible", "Possible fix")} : </dt>
+                  <dt className="inline font-semibold">{t("Correction possible : ", "Possible fix: ")}</dt>
                   <dd className="inline text-ink-2">{fix.fix}</dd>
                 </div>
               </dl>
@@ -587,7 +605,7 @@ function MissionsVisual({ t }: { t: T }) {
         {MISSIONS.map(([m, ok, why]) => (
           <li key={m} className="flex items-center gap-3 border-b border-hairline px-4 py-3.5 last:border-0">
             <StatusGlyph tone={ok ? "pass" : "fail"} className="h-5 w-5" />
-            <span className="min-w-0 flex-1 truncate">{m}</span>
+            <span className="min-w-0 flex-1">{m}</span>
             {why && <span className="type-small text-fail">{why}</span>}
           </li>
         ))}
@@ -702,15 +720,15 @@ function ProductMock({ t }: { t: T }) {
 type Plan = { icon: string; name: string; price: string; per?: string; pitch: string; items: string[]; cta: [string, string]; featured?: boolean };
 const PLANS: Record<Lang, Plan[]> = {
   fr: [
-    { icon: "ranking", name: "Classement", price: "Gratuit", pitch: "Ton site dans le classement public.", items: ["Score sur ordinateur", "Captures et replays des missions", "Mis à jour après chaque audit", "Pendant l’essai : 15 crédits par mois, soit jusqu’à 3 audits complets offerts"], cta: ["Voir le classement", "/classement"] },
+    { icon: "ranking", name: "Classement", price: "Gratuit", pitch: "Ton site dans le classement public.", items: ["Score sur ordinateur", "Captures et replays des missions", "Mis à jour après chaque audit", "Pendant l’essai : 15 crédits par mois, soit jusqu’à 3 audits offerts avec l’agent rapide"], cta: ["Voir le classement", "/classement"] },
     { icon: "audit", name: "Audit complet", price: "490 €", per: "par site", pitch: "Le rapport pour savoir où l’agent bloque et quoi corriger.", items: ["Cinq missions d’achat, ordinateur ou mobile", "Preuves : capture et replay de chaque mission", "Comparaison avec un concurrent", "Plan de corrections classé par impact, en PDF"], cta: ["Lancer un audit", "#tester"] },
-    { icon: "monthly", name: "Suivi mensuel", price: "149 €", per: "par mois", pitch: "La preuve, chaque mois, que les agents achètent encore chez toi.", items: ["Un audit complet automatique chaque mois, et ton rang face aux autres sites", "150 crédits par mois pour relancer des audits quand tu veux (5 crédits par audit, 8 avec l’agent précis, l’audit automatique compris)", "Pages relues chaque jour et après chaque mise en ligne, sans agent ni crédit", "Suivi de robots.txt, de l’anti-bot et des protocoles UCP, ACP, WebMCP", "Alerte Slack et e-mail quand une page change ou que le score baisse", "Le bilan du mois : vérifications, alertes, corrections prouvées"], cta: ["Lancer un audit", "#tester"], featured: true },
+    { icon: "monthly", name: "Suivi mensuel", price: "149 €", per: "par mois", pitch: "La preuve, chaque mois, que les agents achètent encore chez toi.", items: ["Un audit complet automatique chaque mois, et ton rang face aux autres sites", "150 crédits par mois, audit automatique compris : 5 par audit avec l’agent rapide, 8 avec l’agent précis", "Pages relues chaque jour et après chaque mise en ligne, sans agent ni crédit", "Suivi de robots.txt, de l’anti-bot et des protocoles UCP, ACP, WebMCP", "Alerte Slack et e-mail quand une page change ou que le score baisse", "Le bilan du mois : vérifications, alertes, corrections prouvées"], cta: ["Lancer un audit", "#tester"], featured: true },
     { icon: "agency", name: "Agences", price: "30 %", per: "de commission", pitch: "Revends l’audit à tes clients, sous ta marque.", items: ["Rapports et PDF en marque blanche", "Un espace d’équipe pour tous tes clients", "30 % de commission sur chaque audit revendu"], cta: ["Nous contacter", `mailto:${LEGAL.contact}?subject=AgentProof%20%E2%80%93%20agence`] },
   ],
   en: [
-    { icon: "ranking", name: "Ranking", price: "Free", pitch: "Your site in the public ranking.", items: ["Desktop score", "Mission screenshots and replays", "Updated after every audit", "During the trial: 15 credits a month, that is up to 3 full audits free"], cta: ["See the ranking", "/classement"] },
+    { icon: "ranking", name: "Ranking", price: "Free", pitch: "Your site in the public ranking.", items: ["Desktop score", "Mission screenshots and replays", "Updated after every audit", "During the trial: 15 credits a month, that is up to 3 free audits with the fast agent"], cta: ["See the ranking", "/classement"] },
     { icon: "audit", name: "Full audit", price: "€490", per: "per site", pitch: "The report that shows where the agent gets stuck and what to fix.", items: ["Five shopping missions, desktop or mobile", "Proof: screenshot and replay of every mission", "Comparison with a competitor", "Fix plan ranked by impact, as a PDF"], cta: ["Run an audit", "#tester"] },
-    { icon: "monthly", name: "Monthly tracking", price: "€149", per: "per month", pitch: "Proof, every month, that agents can still buy from you.", items: ["An automatic full audit every month, and your rank against other sites", "150 credits a month to rerun audits whenever you want (5 credits per audit, 8 with the precise agent, the automatic one included)", "Pages read daily and after every release, without the agent and without credits", "Tracking of robots.txt, anti-bot and the UCP, ACP, WebMCP protocols", "Slack and e-mail alert when a page changes or the score drops", "The month in review: checks, alerts, proven fixes"], cta: ["Run an audit", "#tester"], featured: true },
+    { icon: "monthly", name: "Monthly tracking", price: "€149", per: "per month", pitch: "Proof, every month, that agents can still buy from you.", items: ["An automatic full audit every month, and your rank against other sites", "150 credits a month, the automatic audit included: 5 per audit with the fast agent, 8 with the precise agent", "Pages read daily and after every release, without the agent and without credits", "Tracking of robots.txt, anti-bot and the UCP, ACP, WebMCP protocols", "Slack and e-mail alert when a page changes or the score drops", "The month in review: checks, alerts, proven fixes"], cta: ["Run an audit", "#tester"], featured: true },
     { icon: "agency", name: "Agencies", price: "30 %", per: "commission", pitch: "Resell the audit to your clients, under your brand.", items: ["White-label reports and PDFs", "One team space for all your clients", "30 % commission on every audit you resell"], cta: ["Contact us", `mailto:${LEGAL.contact}?subject=AgentProof%20%E2%80%93%20agency`] },
   ],
 };
@@ -782,12 +800,12 @@ function Pricing({ lang, t }: { lang: Lang; t: T }) {
 // the trial gives it for free, it is not a lighter version.
 const OFFER_RULES: Record<Lang, [string, string][]> = {
   fr: [
-    ["Pendant l’essai", "Le paiement en ligne n’est pas encore ouvert. L’audit lancé ici est le même que l’audit complet à 490 € (cinq missions, preuves, comparaison, plan de corrections en PDF), et il est offert : 15 crédits par mois, soit jusqu’à 3 audits. Au-delà, rien n’est bloqué ni facturé."],
+    ["Pendant l’essai", "Le paiement en ligne n’est pas encore ouvert. L’audit lancé ici est le même que l’audit complet à 490 € (cinq missions, preuves, comparaison, plan de corrections en PDF), et il est offert : 15 crédits par mois, soit jusqu’à 3 audits avec l’agent rapide (5 crédits chacun, 8 avec l’agent précis). Au-delà, rien n’est bloqué ni facturé."],
     ["Audit complet, 490 €", "Un rapport ponctuel sur un site, ordinateur ou mobile. Tu le relances toi-même si tu veux vérifier une correction."],
     ["Suivi mensuel, 149 €", "L’audit revient tout seul chaque mois et tes pages sont relues chaque jour. Les 150 crédits du mois servent aux audits, automatiques ou relancés à la main."],
   ],
   en: [
-    ["During the trial", "Online payment is not open yet. The audit you run here is the same as the €490 full audit (five missions, proof, comparison, fix plan as a PDF), and it is free: 15 credits a month, that is up to 3 audits. Beyond that, nothing is blocked or charged."],
+    ["During the trial", "Online payment is not open yet. The audit you run here is the same as the €490 full audit (five missions, proof, comparison, fix plan as a PDF), and it is free: 15 credits a month, that is up to 3 audits with the fast agent (5 credits each, 8 with the precise agent). Beyond that, nothing is blocked or charged."],
     ["Full audit, €490", "A one-off report on one site, desktop or mobile. You rerun it yourself if you want to check a fix."],
     ["Monthly tracking, €149", "The audit comes back on its own every month and your pages are read every day. The month's 150 credits pay for audits, automatic or run by hand."],
   ],
@@ -796,7 +814,7 @@ const OFFER_RULES: Record<Lang, [string, string][]> = {
 // What a team does with the report: each line maps to a feature that exists (report, replay, plan, re-audit, competitor).
 const BENEFITS: Record<Lang, [string, string][]> = {
   fr: [
-    ["Repérer les obstacles", "Mission par mission : où l'agent bloque, et ce qui fait baisser ton score."],
+    ["Repérer les obstacles", "Mission par mission : où l’agent bloque, et ce qui fait baisser ton score."],
     ["Transmettre des preuves", "Capture, replay pas à pas et plan de corrections, prêts pour tes développeurs."],
     ["Suivre les corrections", "Relance après une correction pour voir si la mission passe. Compare-toi à un concurrent."],
   ],
