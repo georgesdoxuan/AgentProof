@@ -10,7 +10,7 @@ import { loadSpace, priorities, shortDate, type SiteView } from "@/lib/space";
 import { cookies } from "next/headers";
 import { PERIOD_COOKIE, periodRecap, periods } from "@/lib/month";
 import { loadPace, estimateMinutes, minutesLabel } from "@/lib/estimate";
-import { Chevron, Chip, Chips, DeviceTag, ExPay, Field, Group, Icon, MissionBar, MissionLegend, Row, Note, Spinner, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
+import { Chevron, Chip, Chips, DeviceTag, ExPay, Field, Group, Icon, MissionBar, MissionLegend, ScoredNote, outOfScore, Row, Note, Spinner, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
 import { AutoRefresh } from "../../audit/[id]/refresh";
 import { SpaceShell } from "../shell";
 import { PeriodSection } from "../controls";
@@ -197,7 +197,7 @@ export default async function Accueil() {
                     <span className="-ml-1 text-[17px] text-ink-2">%</span>
                     {s.latest?.s.exPay && <ExPay lang={lang} className="self-end text-[13px] leading-normal" />}
                   </span>
-                  {s.latest ? <MissionBar ok={s.latest.s.ok} done={s.latest.s.done} total={s.latest.s.total} size="sm" /> : <span className="type-caption text-ink-2">{t("Premier audit en cours", "First audit running")}</span>}
+                  {s.latest ? <><MissionBar ok={s.latest.s.ok} done={s.latest.s.done} total={s.latest.s.total} size="sm" /><ScoredNote done={s.latest.s.done} out={outOfScore(s.latest.s)} className="-mt-1 block" /></> : <span className="type-caption text-ink-2">{t("Premier audit en cours", "First audit running")}</span>}
                 </Link>
               );
             })}

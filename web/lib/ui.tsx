@@ -80,6 +80,23 @@ export async function MissionBar({ ok, done, total, size = "md" }: { ok: number;
   );
 }
 
+// A score only counts the missions that were scored: say how many when some are out of score, so 100 % on 3 of 5
+// never reads like 100 % on 5. Computed from the runs at read time, so old reports get it too.
+export async function ScoredNote({ done, out, short = false, className = "" }: { done: number; out: number; short?: boolean; className?: string }) {
+  if (out <= 0) return null;
+  const t = await getT();
+  const all = done + out;
+  return (
+    <span className={`type-caption text-ink-2 tnum ${short ? "whitespace-nowrap" : ""} ${className}`}>
+      {short
+        ? t(`${done} notée${done > 1 ? "s" : ""} sur ${all}`, `${done} of ${all} scored`)
+        : t(`${done} mission${done > 1 ? "s" : ""} notée${done > 1 ? "s" : ""} sur ${all} · ${out} hors score`, `${done} of ${all} missions scored · ${out} out of score`)}
+    </span>
+  );
+}
+// Missions left out of a summarize() score: excluded blockers, unverified by the judge, errors on our side.
+export const outOfScore = (s: { excluded: number; unverified: number; errors: number }) => s.excluded + s.unverified + s.errors;
+
 // Says what the three segment colors mean, once, under a group of bars.
 export async function MissionLegend({ className = "" }: { className?: string }) {
   const t = await getT();

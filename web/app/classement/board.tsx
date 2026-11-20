@@ -99,10 +99,11 @@ export async function Leaderboard({ device = "desktop", base }: { device?: Devic
                       </span>
                       <span className="col-span-3 col-start-2 flex items-center gap-3 max-[400px]:col-span-2 max-[400px]:col-start-1 md:col-span-1 md:col-start-auto">
                         <span className="w-24 shrink-0">
-                          <MissionBar ok={s.runs_success ?? 0} done={s.runs_scored ?? 0} total={s.runs_scored ?? 0} size="sm" />
+                          <MissionBar ok={s.runs_success ?? 0} done={s.runs_scored ?? 0} total={s.runs_done ?? 0} size="sm" />
                         </span>
                         <span className="type-small whitespace-nowrap text-ink-2 tnum">
                           {s.runs_success} {t("sur", "of")} {s.runs_scored}
+                          {(s.runs_done ?? 0) > (s.runs_scored ?? 0) && <span className="type-caption block">{s.runs_done - s.runs_scored} {t("hors score", "out of score")}</span>}
                         </span>
                       </span>
                       <span className="type-small col-span-3 col-start-2 hidden md:col-span-1 md:col-start-auto md:block">

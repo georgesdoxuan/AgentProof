@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BlockerIcon, BrowserFrame, Chevron, Chip, DeviceTag, ExPay, MissionBar, StatusGlyph, blockerLabel, scoreTone } from "@/lib/ui";
+import { BlockerIcon, BrowserFrame, Chevron, Chip, DeviceTag, ExPay, MissionBar, ScoredNote, StatusGlyph, outOfScore, blockerLabel, scoreTone } from "@/lib/ui";
 import { EXCLUDED } from "@/lib/engine";
 import { deviceLabel, fixHints, shortDate, type Blocker, type SiteView } from "@/lib/space";
 import { tr, type Lang } from "@/lib/i18n";
@@ -76,6 +76,7 @@ export async function SiteCard({ site, manage = false }: { site: SiteView; manag
         <Delta site={site} className="pb-1" />
       </div>
       {s && <MissionBar ok={s.ok} done={s.done} total={s.total} size="sm" />}
+      {s && <ScoredNote done={s.done} out={outOfScore(s)} className="-mt-2 block" />}
       <dl className="type-small mt-auto grid gap-1.5 text-ink-2">
         <div className="flex justify-between gap-3">
           <dt className="shrink-0 whitespace-nowrap">{t("À corriger", "To fix")}</dt>
