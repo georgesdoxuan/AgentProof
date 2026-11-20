@@ -5,6 +5,7 @@ import { accountColor } from "./avatar";
 import { CopyButton } from "@/app/espace/controls";
 import { Hint } from "./hint";
 import { GLYPH as LINE } from "./glyphs";
+import { translate } from "./translate";
 
 // ---------- score ----------
 // Never color alone: every tone has a word and a glyph.
@@ -612,6 +613,26 @@ export async function Recommendations({ text, missions = [], ticket }: { text: s
     else if (items.length) items[items.length - 1].fix.push(line);
     else intro.push(line);
   }
+  // Missions are matched on the plan as written (their titles are French), before any translation.
+  const named = items.map((it) => [...it.problem.matchAll(/«\s*(.+?)\s*»/g)].map((m) => m[1]));
+  // The plan is written in French: shown in the interface language, like the agent's text (lib/translate.ts).
+  // Tags stay French in memory (they drive the layout) and get their label from TAG_EN; only the prose is sent.
+  const lang = await getLang();
+  if (lang !== "fr") {
+    const value = (l: string) => (TAGGED.test(l) ? l.slice(l.match(TAGGED)![1].length + 3) : l);
+    const src = [...intro, ...items.flatMap((it) => [it.problem, ...it.fix.map(value)])];
+    const out = (await translate(src, lang, 8000, "fr")) as string[];
+    let k = 0;
+    intro.forEach((_, i) => (intro[i] = out[k++]));
+    for (const it of items) {
+      it.problem = out[k++];
+      it.fix = it.fix.map((l) => {
+        const tag = l.match(TAGGED)?.[1];
+        const v = out[k++];
+        return tag ? `${tag} :\u00a0${v}` : v;
+      });
+    }
+  }
   // Free text: one paragraph per line, at reading size and measure.
   if (!items.length)
     return (
@@ -627,8 +648,7 @@ export async function Recommendations({ text, missions = [], ticket }: { text: s
       {intro.length > 0 && <p className="max-w-[720px] text-ink-2">{intro.join(" ")}</p>}
       <ol className={`grid gap-4 md:grid-cols-2 print:grid-cols-1 print:gap-[3mm] ${items.length > 2 ? "lg:grid-cols-3" : ""}`}>
         {items.map((it, i) => {
-          const named = [...it.problem.matchAll(/«\s*(.+?)\s*»/g)].map((m) => m[1]);
-          const ms = missions.filter((m) => named.includes(m.title));
+          const ms = missions.filter((m) => named[i].includes(m.title));
           return (
           <li key={i} className="tile flex flex-col p-7! print:p-[5mm]!">
             <span className="type-small text-ink-2">{it.fix.some((l) => TAGGED.test(l)) ? t("Blocage", "Blocker") : t("Correction", "Fix")} {i + 1}</span>
@@ -641,7 +661,7 @@ export async function Recommendations({ text, missions = [], ticket }: { text: s
                   const v = k ? l.slice(k.length + 3) : l;
                   return (
                     <div key={j}>
-                      {k && <dt className={`inline font-semibold ${k === "Hypothèse" ? "text-warn" : ""}`}>{t(k, TAG_EN[k] ?? k)} : </dt>}
+                      {k && <dt className={`inline font-semibold ${k === "Hypothèse" ? "text-warn" : ""}`}>{t(k, TAG_EN[k] ?? k)}{t(" : ", ": ")}</dt>}
                       <dd className="inline text-ink-2">{v}</dd>
                     </div>
                   );

@@ -388,7 +388,7 @@ export default async function Home() {
           </p>
           <Chips className="mt-3">
             <Chip icon="desktop">{t("2 derniers audits ordinateur", "Last 2 desktop audits")}</Chip>
-            <Chip icon="mission_not_applicable">{t("Missions hors score exclues", "Out-of-score missions excluded")}</Chip>
+            <Chip icon="mission_not_applicable">{t("Anti-bot compté comme échec", "Anti-bot counts as a failure")}</Chip>
           </Chips>
         </div>
       </section>
