@@ -72,7 +72,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                 ["/faq", t.footer.help],
               ]} />
               <FooterColumn title={t.footer.legal} links={LEGAL_PAGES.map((p) => [p.href, lang === "en" ? p.en : p.fr])} />
-              <FooterColumn title={t.footer.follow} links={[["https://www.instagram.com/unstock.ai/", "Instagram — Unstock", t.footer.newTab]]} />
+              <FooterColumn title={t.footer.follow} links={[["https://www.instagram.com/agent_proof1/", "Instagram — @agent_proof1", t.footer.newTab]]} />
             </div>
             <div className="flex flex-col gap-3 border-t border-line py-6 text-[12px] leading-[1.5]">
               <p className="flex items-start gap-1.5"><Icon name="shield" className="mt-px h-3.5 w-3.5" />{t.footer.rules}</p>

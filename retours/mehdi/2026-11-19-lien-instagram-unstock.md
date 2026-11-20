@@ -19,3 +19,4 @@ Depuis l’accueil et une page de rapport, le lien ouvre le bon profil @unstock.
 
 ## Réponse de Georges
 - Statut : fait. Lien « Instagram — Unstock » dans le pied de page de toutes les pages (accueil, rapports…) vers https://www.instagram.com/unstock.ai/. Nouvel onglet annoncé aux lecteurs d'écran (« nouvel onglet »), rel="noopener noreferrer". Aucun script ni widget Instagram : vérifié, l'accueil ne fait aucune requête vers instagram.com. Le produit reste nommé AgentProof. PR #68.
+- 2026-11-20 : remplacé à la demande de Georges par le compte AgentProof, « Instagram — @agent_proof1 » vers https://www.instagram.com/agent_proof1/ (paramètres de suivi retirés). Le lien Unstock n'est plus sur le site.
