@@ -812,9 +812,12 @@ async function retryFailures(a: any) {
 async function closeAudits(log: string[]) {
   const { data: audits } = await db
     .from("audits")
-    .select("id, kind, sites(domain), runs(id, status, success, blocker_type, blocker_detail, judge, attempts, session_id, screenshot_url, share_url, steps, cost_usd, error, missions(title))")
+    .select("id, kind, created_at, sites(domain), runs(id, status, success, reached_checkout, blocker_type, blocker_detail, judge, attempts, session_id, screenshot_url, share_url, steps, cost_usd, error, missions(title))")
     .eq("status", "running");
   for (const a of audits ?? []) {
+    // createAudit inserts the audit, then its runs: a tick in between saw no run and closed it as finished, with no plan
+    // (jimmyfairly.com, 20/11). An audit with no run is closed only once it is a few minutes old (payment-only audits).
+    if (!a.runs.length && Date.now() - new Date(a.created_at).getTime() < 5 * 60_000) continue;
     // A failed mission is replayed as soon as it fails, while the others still run: no extra wave at the end.
     const replayed = await retryFailures(a);
     if (replayed) log.push(`audit ${a.id}: ${replayed} failed mission(s) replayed`);
@@ -1073,7 +1076,12 @@ export async function writeRecommendations(domain: string, runs: any[]) {
   const groups = Object.entries(byBlocker).sort((a, b) => b[1].length - a[1].length).slice(0, 3);
   const facts = groups.map(([b, rs]) => ({
     head: `${BLOCKERS[b] ?? b} · ${rs.length} mission${rs.length > 1 ? "s" : ""} : ${titles(rs)}`,
-    seen: [...new Set(rs.map((r) => r.blocker_detail).filter(Boolean))]
+    // A run where the agent says it reached checkout and the judge says no: the agent's text describes a success, so it is
+    // not what blocked. The dispute is stated, and the judge's reason is the observation.
+    seen: [
+      ...new Set(rs.filter((r) => !r.reached_checkout).map((r) => r.blocker_detail).filter(Boolean)),
+      ...(rs.some((r) => r.reached_checkout) ? [`l'agent dit avoir atteint le checkout sur ${rs.filter((r) => r.reached_checkout).length} mission(s), le juge visuel le conteste`] : []),
+    ]
       .concat([...new Set(rs.map((r) => r.judge?.reason).filter(Boolean))].map((j) => `juge visuel : ${j}`))
       .join(" ; "),
   }));
@@ -1110,7 +1118,7 @@ export async function writeRecommendations(domain: string, runs: any[]) {
 
 // Rewrites an audit's plan from its stored verdicts (old audits written by the previous prompt).
 export async function regenerateRecommendations(auditId: string) {
-  const { data: a } = await db.from("audits").select("sites(domain), runs(status, success, blocker_type, blocker_detail, judge, missions(title))").eq("id", auditId).single();
+  const { data: a } = await db.from("audits").select("sites(domain), runs(status, success, reached_checkout, blocker_type, blocker_detail, judge, missions(title))").eq("id", auditId).single();
   if (!a) throw new Error("audit introuvable");
   const recommendations = await writeRecommendations((a.sites as any).domain, a.runs);
   await db.from("audits").update({ recommendations }).eq("id", auditId);
