@@ -78,7 +78,7 @@ Le classement gratuit attire, l'audit convertit, le suivi crée du récurrent.
 - **Succès** : l'agent atteint la **première page du checkout** (page où le site demande e-mail / adresse, ou page de paiement). On ne saisit aucune donnée personnelle et on ne paie jamais.
 - **Blocage** : la raison de l'échec, dans une liste fermée :
   `cookie_banner`, `popup`, `search_failed`, `filter_failed`, `size_selector`, `button_unresponsive`, `captcha_or_bot_block`, `login_required`, `out_of_stock`, `page_error_or_timeout`, `mission_not_applicable` (le catalogue ne propose pas ce que demande la mission), `agent_out_of_steps` (l'agent a épuisé ses 30 étapes sans nommer de blocage ; attribué par le moteur), `agent_tool_error` (l'agent a envoyé au moins 5 appels d'outil mal formés et attribue lui-même son échec au défilement ou à l'outil ; attribué par le moteur), `other`.
-- **Score agent** = runs réussis / runs comptés, par site. Hors score : runs non vérifiés par le juge, `out_of_stock`, `captcha_or_bot_block`, `mission_not_applicable`, `agent_out_of_steps`, `agent_tool_error`.
+- **Score agent** = runs réussis / runs comptés, par site. Hors score : runs non vérifiés par le juge, `out_of_stock`, `mission_not_applicable`, `agent_out_of_steps`, `agent_tool_error`. `captcha_or_bot_block` compte comme un échec depuis le 20 nov 2026 (décision de Georges) : un anti-bot bloque aussi l'agent d'un vrai client.
 
 ## 7. Règles de l'agent (non négociables)
 

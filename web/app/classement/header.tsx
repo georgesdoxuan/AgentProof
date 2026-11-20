@@ -17,8 +17,8 @@ export async function RankingHeader() {
         <Chip icon="refresh">{t("2 derniers audits · ≤ 10 missions", "Last 2 audits · ≤ 10 missions")}</Chip>
         <Hint
           tip={t(
-            "Hors score : rupture de stock, anti-bot, mission impossible sur le catalogue, erreur de l’agent. Un agent IA n’agit pas toujours pareil, d’où la moyenne de 2 audits sur le même appareil. Le lien d’un site ouvre le dernier.",
-            "Out of score: out of stock, anti-bot, mission impossible on the catalogue, agent error. An AI agent does not always act the same way, hence the average of 2 audits on the same device. A site's link opens the latest.",
+            "Hors score : rupture de stock, mission impossible sur le catalogue, erreur de l’agent. Un anti-bot compte comme un échec. Un agent IA n’agit pas toujours pareil, d’où la moyenne de 2 audits sur le même appareil. Le lien d’un site ouvre le dernier.",
+            "Out of score: out of stock, mission impossible on the catalogue, agent error. An anti-bot counts as a failure. An AI agent does not always act the same way, hence the average of 2 audits on the same device. A site's link opens the latest.",
           )}
         >
           <Chip icon="mission_not_applicable">{t("Hors score exclus", "Out-of-score excluded")}</Chip>

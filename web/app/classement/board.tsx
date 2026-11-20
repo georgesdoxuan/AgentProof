@@ -71,7 +71,6 @@ export async function Leaderboard({ device = "desktop", base }: { device?: Devic
             <ol>
               {scores.map((s, i) => {
                 const blocker = topBlocker(s.audit_id);
-                const botOnly = s.score == null && s.runs_bot_blocked > 0 && s.runs_bot_blocked === s.runs_done;
                 return (
                   <li key={s.audit_id} className="border-b border-hairline last:border-0">
                     <Link
@@ -107,13 +106,8 @@ export async function Leaderboard({ device = "desktop", base }: { device?: Devic
                         </span>
                       </span>
                       <span className="type-small col-span-3 col-start-2 hidden md:col-span-1 md:col-start-auto md:block">
-                        {botOnly ? (
-                          <span className="inline-flex items-center gap-1.5 font-semibold text-ink-2">
-                            <StatusGlyph tone="none" />
-                            {t("Anti-bot : hors classement", "Anti-bot: not ranked")}
-                          </span>
-                        ) : s.score == null ? (
-                          // Nothing counted (agent errors, anti-bot, stock...): no verdict on the site until a new audit.
+                        {s.score == null ? (
+                          // Nothing counted (agent errors, stock, unverified...): no verdict on the site until a new audit.
                           <span className="inline-flex items-center gap-1.5 font-semibold text-ink-2">
                             <StatusGlyph tone="unsure" />
                             {t("À confirmer", "To be confirmed")}
@@ -131,7 +125,6 @@ export async function Leaderboard({ device = "desktop", base }: { device?: Devic
                           </span>
                         ) : t("Aucun", "None")}
                         {!blocker && topHurdle(s.audit_id) && ` · ${t("contourné", "got past")} : ${topHurdle(s.audit_id)!.toLowerCase()}`}
-                        {s.runs_bot_blocked > 0 && !botOnly && " · anti-bot"}
                       </span>
                     </Link>
                   </li>
@@ -152,7 +145,7 @@ export async function Leaderboard({ device = "desktop", base }: { device?: Devic
           {(
             [
               ["none", t("Succès", "Success"), t("Première page du checkout atteinte. Rien saisi, rien payé.", "First checkout page reached. Nothing entered, nothing paid.")],
-              ["ranking", "Score", t("Réussies ÷ comptées. Stock, anti-bot, mission impossible et erreurs de l’agent hors score.", "Passed ÷ counted. Stock, anti-bot, impossible mission and agent errors out of score.")],
+              ["ranking", "Score", t("Réussies ÷ comptées. Un anti-bot compte comme un échec. Stock, mission impossible et erreurs de l’agent hors score.", "Passed ÷ counted. An anti-bot counts as a failure. Stock, impossible mission and agent errors out of score.")],
               ["eye", t("Juge visuel", "Visual judge"), t("Un modèle Hugging Face relit la capture finale de chaque mission.", "A Hugging Face model reviews each mission's final screenshot.")],
             ] as const
           ).map(([icon, title, text]) => (
