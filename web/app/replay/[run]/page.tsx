@@ -8,7 +8,8 @@ import { AutoRefresh } from "@/app/audit/[id]/refresh";
 import { AgentCursor, BrowserFrame, Chevron, StatusGlyph, Verdict, blockerLabel } from "@/lib/ui";
 import { loginName, missionTitle, tr } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
-import { ClampText } from "@/lib/clamp";
+import { ClampText, OriginalText } from "@/lib/clamp";
+import { translate } from "@/lib/translate";
 
 const ACTIONS: Record<string, [string, string]> = {
   click_web: ["Clic", "Click"],
@@ -73,6 +74,10 @@ export default async function Replay({ params, searchParams }: { params: Promise
   const last = replay.steps.length - 1;
   // Live: newest step first, page refreshes itself.
   const steps = replay.steps.map((s, i) => ({ s, i }));
+  // The agent reasons in English: shown in the interface language. Not for a payment replay, whose reasoning can
+  // quote the team's test identity (name, e-mail, address): it stays as written, never sent out. Not live either:
+  // the page refreshes every 10 s and must not wait on a translation.
+  const [objective, ...thoughts] = payment || live ? [] : await translate([replay.objective, ...replay.steps.map((s) => s.thought)], lang);
   if (live) steps.reverse();
 
   return (
@@ -121,7 +126,7 @@ export default async function Replay({ params, searchParams }: { params: Promise
               {t("Consigne donnée à l’agent", "Instructions given to the agent")}
               <Chevron dir="down" className="h-3.5 w-3.5 text-ink-2 transition-transform duration-300 group-open:rotate-180" />
             </summary>
-            <p className="type-small whitespace-pre-line border-t border-hairline px-6 py-5 text-ink-2">{replay.objective}</p>
+            <p className="type-small whitespace-pre-line border-t border-hairline px-6 py-5 text-ink-2">{objective ?? replay.objective}</p>
           </details>
         </header>
 
@@ -162,7 +167,8 @@ export default async function Replay({ params, searchParams }: { params: Promise
                 )}
                 {s.thought && (
                   <ClampText lang={lang} lines={8} fill className="mt-3">
-                    <p className="text-ink-2">« {s.thought} »</p>
+                    <p className="text-ink-2">« {thoughts[i] ?? s.thought} »</p>
+                    <OriginalText original={s.thought} shown={thoughts[i]} lang={lang} />
                   </ClampText>
                 )}
               </div>

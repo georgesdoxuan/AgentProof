@@ -981,14 +981,14 @@ export async function attachEmail(auditId: string, email: string) {
 // So: a pinned provider that honours it first, then the default route with room for reasoning.
 const HF_ATTEMPTS = [process.env.HF_PROVIDER ?? "primeintellect", ""];
 
-async function hf(messages: unknown[], max_tokens = 400) {
+export async function hf(messages: unknown[], max_tokens = 400, timeoutMs = HF_TIMEOUT_MS) {
   let last: unknown;
   for (const [i, provider] of HF_ATTEMPTS.entries()) {
     try {
       const res = await fetch("https://router.huggingface.co/v1/chat/completions", {
         method: "POST",
         headers: { Authorization: `Bearer ${process.env.HF_TOKEN}`, "Content-Type": "application/json" },
-        signal: AbortSignal.timeout(HF_TIMEOUT_MS),
+        signal: AbortSignal.timeout(timeoutMs),
         body: JSON.stringify({
           model: provider ? `${JUDGE_MODEL}:${provider}` : JUDGE_MODEL,
           messages,

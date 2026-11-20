@@ -12,6 +12,7 @@ import { LEGAL } from "@/lib/legal";
 import { loadPace, estimateMinutes, minutesLabel } from "@/lib/estimate";
 import { SiteLogo } from "../site-logo";
 import { FORM_FAQ } from "@/lib/faq";
+import { translate } from "@/lib/translate";
 
 // Report opened by "Voir un exemple de rapport": real counted blockers, captures, replays and a plan. Env var to swap it without code.
 const EXAMPLE_AUDIT = process.env.EXAMPLE_AUDIT_ID ?? "8c843d3f-3d95-4834-aace-21880a85f499"; // Promod, 78 %
@@ -427,12 +428,18 @@ function DemoStep({ t, n, title, children }: { t: T; n: number; title: string; c
 
 // A real mission, its screenshot, then the fix the report proposes: three still screens from one finished audit.
 // No video, no autoplay, no sound; the screenshot has a text alternative and every step is plain text.
-function Demo({ demo, lang, t }: { demo: DemoData; lang: Lang; t: T }) {
+async function Demo({ demo, lang, t }: { demo: DemoData; lang: Lang; t: T }) {
   const { run, audit } = demo;
   const mission = run.missions as { title: string; position: number };
   const site = audit.sites as { domain: string; name: string };
-  const summary = (run.agent_answer as { steps_summary?: string } | null)?.steps_summary;
-  const fix = fixFor(audit.recommendations, mission.title);
+  const raw = fixFor(audit.recommendations, mission.title);
+  // The agent's report and the fix, in the interface language (translated once, then cached).
+  const said = (run.agent_answer as { steps_summary?: string } | null)?.steps_summary;
+  const [summary, observed, hypothesis, fixText] = await translate(
+    [said, raw?.observed, raw?.hypothesis, raw?.fix],
+    lang,
+  );
+  const fix = raw && { observed, hypothesis, fix: fixText ?? raw.fix };
   const date = audit.finished_at ? new Date(audit.finished_at).toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Paris" }) : "";
   const label = shortLabel(blockerLabel(run.blocker_type, lang));
   return (
@@ -454,11 +461,11 @@ function Demo({ demo, lang, t }: { demo: DemoData; lang: Lang; t: T }) {
           <DemoStep t={t} n={1} title={t("La mission", "The mission")}>
             <p className="mt-3 font-semibold">{missionTitle(mission.title, lang)}</p>
             {summary && (
-              <blockquote className="type-small mt-3 border-l-2 border-line pl-3 text-ink-2" lang="fr">
+              <blockquote className="type-small mt-3 border-l-2 border-line pl-3 text-ink-2">
                 {summary}
               </blockquote>
             )}
-            <p className="type-caption mt-3 text-ink-2">{t("Le compte rendu de l’agent, mot pour mot.", "The agent’s own account, word for word.")}</p>
+            <p className="type-caption mt-3 text-ink-2">{summary !== said ? t("Le compte rendu de l’agent, traduit automatiquement.", "The agent’s own account, machine translated.") : t("Le compte rendu de l’agent, mot pour mot.", "The agent’s own account, word for word.")}</p>
           </DemoStep>
           <DemoStep t={t} n={2} title={t("La capture", "The screenshot")}>
             <div className="relative mt-4">
@@ -477,7 +484,7 @@ function Demo({ demo, lang, t }: { demo: DemoData; lang: Lang; t: T }) {
           </DemoStep>
           <DemoStep t={t} n={3} title={t("La correction proposée", "The suggested fix")}>
             {fix ? (
-              <dl className="type-small mt-3 space-y-2" lang="fr">
+              <dl className="type-small mt-3 space-y-2">
                 {fix.observed && (
                   <div>
                     <dt className="inline font-semibold">{t("Observé : ", "Observed: ")}</dt>
@@ -500,7 +507,6 @@ function Demo({ demo, lang, t }: { demo: DemoData; lang: Lang; t: T }) {
             )}
             <p className="type-caption mt-auto pt-4 text-ink-2">
               {t("Hypothèse et correction sont générées par IA : à vérifier avant d’agir.", "Hypothesis and fix are AI-generated: check them before acting.")}
-              {lang === "en" && " Report text in French."}
             </p>
           </DemoStep>
         </ol>

@@ -11,12 +11,13 @@ import { locale, loginName, missionTitle, staticText, tr, type Lang, type T } fr
 import { getLang } from "@/lib/lang";
 import { BlockerIcon, BrowserFrame, Chip, Chips, ExPay, Icon, MissionIcon, Chevron, Note, DeviceTag, MissionBar, Recommendations, ScoredNote, outOfScore, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, hurdles, summarize } from "@/lib/ui";
 import { Hint } from "@/lib/hint";
-import { ClampText } from "@/lib/clamp";
+import { ClampText, OriginalText } from "@/lib/clamp";
 import { headers } from "next/headers";
 import { CopyField } from "@/app/espace/controls";
 import { Mark, Wordmark, StatusGlyph, scoreTone, toneWords } from "@/lib/ui";
 import { AutoRefresh, HashLanding, MarkSeen, PrintButton } from "./refresh";
 import { PaymentResult } from "./payment-result";
+import { translateRuns } from "@/lib/translate";
 import type { AgentAccess } from "@/lib/automations";
 
 // One line per AI assistant, from the static check's per-agent reading (lib/automations.ts agentAccess).
@@ -329,6 +330,9 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
   const trend = audit.kind === "checkout" && audit.status === "done" && !audit.proof_of ? await trendOf(audit) : null;
 
   const runs = [...audit.runs].sort((a: any, b: any) => a.missions.position - b.missions.position);
+  // The agent's and judge's free text, in the interface language (original kept on r, shown on demand).
+  // Not the payment tests: their report is asked in French and can quote the team's test identity, never sent out.
+  await translateRuns(runs, lang);
   const s = summarize(runs, pays.map((p) => ({ status: p.status, verdict: p.payment_verdict })));
   const c = competitor ? summarize(competitor.runs) : null;
   const running = audit.status === "running" || competitor?.status === "running" || pays.some((p) => p.status !== "done");
@@ -949,10 +953,11 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                     </div>
                   )}
                   {r.status === "done" && r.reached_checkout && !r.success && r.judge?.reason && (
-                    <p className="type-small mt-4 rounded-[12px] bg-bg-2 px-4 py-3 dark:bg-[#2c2c2e]">
+                    <div className="type-small mt-4 rounded-[12px] bg-bg-2 px-4 py-3 dark:bg-[#2c2c2e]">
                       <span className="font-semibold text-warn">{t("Juge visuel. ", "Visual judge. ")}</span>
-                      {r.judge.reason}
-                    </p>
+                      {r.tr?.judge ?? r.judge.reason}
+                      <OriginalText original={r.judge.reason} shown={r.tr?.judge} lang={lang} />
+                    </div>
                   )}
                   {r.first_attempt && (
                     <p className="type-small mt-4 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-ink-2">
@@ -978,12 +983,17 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                     <details className="type-small group mt-4 text-ink-2">
                       <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 text-link [&::-webkit-details-marker]:hidden">
                         <Chevron className="h-2.5 w-2.5 transition-transform duration-200 group-open:rotate-90" />
-                        {t("Réponse originale de l’agent", "The agent's original answer")}
+                        {t("Réponse de l’agent", "The agent's answer")}
                       </summary>
                       <ClampText lang={lang} lines={6} className="mt-2">
-                        {r.blocker_detail && <p>{r.blocker_detail}</p>}
-                        {r.agent_answer?.steps_summary && r.agent_answer.steps_summary !== r.blocker_detail && <p className={r.blocker_detail ? "mt-2" : ""}>{r.agent_answer.steps_summary}</p>}
+                        {r.blocker_detail && <p>{r.tr?.detail ?? r.blocker_detail}</p>}
+                        {r.agent_answer?.steps_summary && r.agent_answer.steps_summary !== r.blocker_detail && <p className={r.blocker_detail ? "mt-2" : ""}>{r.tr?.summary ?? r.agent_answer.steps_summary}</p>}
                       </ClampText>
+                      <OriginalText
+                        original={[r.blocker_detail, r.agent_answer?.steps_summary !== r.blocker_detail && r.agent_answer?.steps_summary].filter(Boolean).join("\n\n")}
+                        shown={[r.tr?.detail ?? r.blocker_detail, r.agent_answer?.steps_summary !== r.blocker_detail && (r.tr?.summary ?? r.agent_answer?.steps_summary)].filter(Boolean).join("\n\n")}
+                        lang={lang}
+                      />
                     </details>
                   )}
                   {r.status === "launched" && r.session_id && (

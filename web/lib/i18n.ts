@@ -160,7 +160,7 @@ const fr = {
     createField: "Nom de la nouvelle équipe",
     create: "Créer",
     language: "Langue",
-    languageNote: "La langue de l'interface, retenue sur ce navigateur. Les rapports d'audit restent en français pour l'instant.",
+    languageNote: "La langue de l'interface, retenue sur ce navigateur. Les textes de l'agent sont traduits automatiquement, l'original reste consultable.",
     signOut: "Se déconnecter",
   },
 };
@@ -318,7 +318,7 @@ const en: Dict = {
     createField: "Name of the new team",
     create: "Create",
     language: "Language",
-    languageNote: "The interface language, remembered on this browser. Audit reports stay in French for now.",
+    languageNote: "The interface language, remembered on this browser. The agent's texts are machine translated; the original stays one click away.",
     signOut: "Sign out",
   },
 };
