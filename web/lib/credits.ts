@@ -28,7 +28,7 @@ export const PLANS = {
   monthly: { credits: 150, fr: "Suivi mensuel", en: "Monthly tracking", price: 149 }, // a daily automatic audit on one site
   agency: { credits: 600, fr: "Agences", en: "Agencies", price: null }, // several client sites
   demo: { credits: 5000, fr: "Démo", en: "Demo", price: null }, // the demo space: the limit never shows on stage
-  jury: { credits: 48, fr: "Démo jury", en: "Jury demo", price: null }, // the judges' space (lib/jury.ts): 2 audits per judge
+  jury: { credits: 1000, fr: "Démo jury", en: "Jury demo", price: null }, // the judges' space (lib/jury.ts): limits are per judge (2 audits, 1 payment test, JURY_DAILY), so the month never runs out on stage
 } as const;
 export type PlanId = keyof typeof PLANS;
 export const planOf = (p: string | null | undefined): PlanId => (p && p in PLANS ? (p as PlanId) : "free");

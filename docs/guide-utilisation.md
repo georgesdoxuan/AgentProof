@@ -74,7 +74,7 @@ AgentProof fonctionne pour **tout site e-commerce qui vend des produits physique
 | **Succès** | L'agent atteint la première page du checkout (page qui demande connexion, e-mail, adresse ou paiement) **et** un juge visuel le confirme sur la capture. Le panier seul ne compte pas. |
 | **Blocage** | La raison de l'échec : bandeau cookies, pop-up, recherche ou filtre qui échoue, sélecteur de variante (taille, couleur…), bouton qui ne réagit pas, compte obligatoire, erreur de page, etc. |
 | **Score** | Missions réussies ÷ missions comptées. |
-| **Hors score** | Une mission sans lien avec l'interface du site : rupture de stock, anti-bot ou captcha, article absent du catalogue, erreur de l'agent, ou résultat que le juge n'a pas pu vérifier. Elle est affichée à part et ne compte ni pour ni contre le site. |
+| **Hors score** | Une mission sans lien avec l'interface du site : rupture de stock, article absent du catalogue, erreur de l'agent, ou résultat que le juge n'a pas pu vérifier. Elle est affichée à part et ne compte ni pour ni contre le site. Un anti-bot ou un captcha compte comme un échec : il bloquerait aussi l'agent d'un vrai client. |
 | **Crédit** | L'unité de consommation : une mission jouée sur un site = un crédit (1,5 avec l'agent précis). |
 
 ## 4. Créer son compte
@@ -165,7 +165,7 @@ Le **score agent** est la part des missions menées jusqu'au checkout. Repères 
 
 Sous le score, le rapport affiche le nombre de missions (« 3/5 ») et ce que le score couvre. Si l'échantillon est court, il dit de combien de points un seul résultat déplace le score.
 
-Quand des missions sont hors score (anti-bot, rupture de stock…), un **taux réel** s'affiche aussi : il compte ces missions comme des échecs, comme les vivrait l'agent d'un vrai client. Le score mesure votre interface ; le taux réel mesure ce qu'un agent obtient vraiment aujourd'hui.
+Quand des missions sont hors score (rupture de stock, erreur de l'agent…), un **taux réel** s'affiche aussi : il compte ces missions comme des échecs, comme les vivrait l'agent d'un vrai client. Le score mesure votre interface ; le taux réel mesure ce qu'un agent obtient vraiment aujourd'hui.
 
 Une mission qui n'a réussi qu'au **2ᵉ essai** est marquée « Réussie au 2ᵉ essai » : elle compte comme réussie, mais le résultat est instable.
 
@@ -353,7 +353,7 @@ Le **Classement**, accessible sans compte, compare des sites, à commencer par u
 
 - Le score d'un site est la **moyenne des deux derniers audits** sur le même appareil, car un agent IA n'agit pas toujours exactement pareil.
 - Le lien d'un site ouvre son dernier rapport.
-- Les missions hors score (rupture de stock, anti-bot, mission impossible sur le catalogue, erreur de l'agent) ne comptent pas.
+- Les missions hors score (rupture de stock, mission impossible sur le catalogue, erreur de l'agent) ne comptent pas. Un anti-bot compte comme un échec.
 
 Votre site y figure et vous pensez que le résultat est faux ? Écrivez à l'équipe avec le lien du rapport : la capture et le replay sont vérifiés à la main, puis la mission est corrigée ou relancée.
 
@@ -372,7 +372,7 @@ Le seul cas où l'agent paie, c'est le [test de paiement](#11-le-test-de-paiemen
 
 ### Est-ce légal ?
 
-L'agent visite des pages publiques comme un client, sans créer de compte, sans payer et sans contourner de protection. Si un site le bloque, la mission est notée « anti-bot » et sort du score. Un concurrent n'est visité que sur ses pages publiques.
+L'agent visite des pages publiques comme un client, sans créer de compte, sans payer et sans contourner de protection. Si un site le bloque, la mission est notée « anti-bot » et compte comme un échec : un vrai agent d'achat serait bloqué aussi. Un concurrent n'est visité que sur ses pages publiques.
 
 ### Vos données
 
@@ -388,7 +388,7 @@ Holo, de H Company : il voit l'écran, clique et tape comme un humain, dans un n
 
 - Un audit est une photo à un instant donné : un site change, d'où les automations et le suivi mensuel.
 - Le mobile est un écran de téléphone simulé, pas un vrai smartphone.
-- Le navigateur de l'agent tourne dans le cloud : certains anti-bots le bloquent, comme ils bloqueraient l'agent d'un vrai client. Ces missions sortent du score.
+- Le navigateur de l'agent tourne dans le cloud : certains anti-bots le bloquent, comme ils bloqueraient l'agent d'un vrai client. Ces missions comptent comme des échecs.
 
 ## 16. Questions fréquentes
 

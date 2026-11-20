@@ -19,7 +19,8 @@ export default async function Paiement() {
   const { team } = ctx;
   const card = await cardView(team.id);
   // Jury demo: the judges see the demo card (last 4 digits) but only an admin changes it.
-  const admin = canLaunch(team.role) && !isJury(ctx.user.email);
+  const jury = isJury(ctx.user.email);
+  const admin = canLaunch(team.role) && !jury;
   const t = await getT();
 
   return (
@@ -52,19 +53,26 @@ export default async function Paiement() {
               <span className="text-ink-2 tnum">•••• {card.last4}</span>
             )}
           </Row>
-          {card.holder && (
+          {/* Jury demo: holder, e-mail and address are a real person's; judges don't need them to run a test. */}
+          {jury && (card.holder || card.email || card.address) && (
+            <Row>
+              <span className="text-ink-2">{t("Titulaire, e-mail et livraison", "Holder, e-mail and delivery")}</span>
+              <span>{t("Masqués pendant la démo", "Hidden during the demo")}</span>
+            </Row>
+          )}
+          {!jury && card.holder && (
             <Row>
               <span className="text-ink-2">{t("Titulaire", "Cardholder")}</span>
               <span>{card.holder}</span>
             </Row>
           )}
-          {card.email && (
+          {!jury && card.email && (
             <Row>
               <span className="text-ink-2">{t("E-mail de commande", "Order e-mail")}</span>
               <span className="break-all">{card.email}</span>
             </Row>
           )}
-          {card.address && (
+          {!jury && card.address && (
             <Row>
               <span className="text-ink-2">{t("Livraison", "Delivery")}</span>
               <span>{card.address}</span>

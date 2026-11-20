@@ -48,7 +48,7 @@ En cinq étapes :
 | **Agent H Holo** | Agent catalogue `agentproof-shopper` sur l'Agents API de H (modèle rapide `holo4-35b-a3b` ou précis `holo4-27b`), navigateur cloud, écran ordinateur 1024×640 ou mobile 390×844. Réponse structurée : checkout atteint, blocage (liste fermée), détail. |
 | **Règles non négociables** | Ajoutées à chaque consigne : ne jamais payer pendant un audit, aucun compte créé, aucune donnée personnelle, jamais de captcha résolu, volume faible. |
 | **Juge visuel à l'aveugle** | Un modèle de vision Hugging Face (`Qwen/Qwen3.5-9B`, Inference Providers) relit la dernière capture et l'URL, sans connaître l'avis de l'agent. Succès = l'agent dit avoir atteint le checkout **et** le juge le confirme. Juge muet = run « non vérifié », hors score. |
-| **Score honnête** | Runs réussis / runs comptés. Hors score : non vérifiés, rupture de stock, anti-bot, mission impossible sur le catalogue, agent à court d'étapes, appels d'outil mal formés. Chaque mission ratée est rejouée une fois ; le second essai fait foi. |
+| **Score honnête** | Runs réussis / runs comptés. Hors score : non vérifiés, rupture de stock, mission impossible sur le catalogue, agent à court d'étapes, appels d'outil mal formés. Un anti-bot compte comme un échec : il bloque aussi l'agent d'un vrai client. Chaque mission ratée est rejouée une fois ; le second essai fait foi. |
 | **Test de paiement réel (facultatif)** | Test à part : l'agent prend le premier article disponible et paie **une seule fois** avec la carte de l'équipe. Un refus « fonds insuffisants » ou une demande de **3D Secure** prouve que le paiement a atteint la banque. Garde-fous : case de confirmation à chaque test, plafond de 150 € livraison comprise, une seule tentative, jamais sur un concurrent, replay privé, carte masquée dans le texte et captures floutées dès la saisie, captures effacées après 4 h. Comptes de test du marchand dans un coffre-fort H : l'agent ne voit jamais le mot de passe. |
 | **Classement public** | Sans compte : sites comparés sur la moyenne des 2 derniers audits (même appareil), car un agent n'agit pas toujours pareil. |
 | **Corrections** | Page Espace › Corrections : toutes les corrections à faire, filtrables, puis « Prouver la correction ». |
@@ -65,7 +65,7 @@ En cinq étapes :
 | Durée et coût par mission | ~90 s, ~19 étapes, **0,03 $** (1,68 $ pour tout le benchmark ordinateur) |
 | Accord juge / agent | 114 / 140 runs vérifiés (81 %) |
 | Répétabilité | même verdict pour 30 / 37 missions rejouées (81 %) |
-| Accord juge / humain | **À COMPLÉTER** (vérification manuelle en cours) |
+| Accord juge / humain | en cours de mesure (vérification manuelle) |
 
 Un audit complet de 5 missions coûte moins de 50 centimes de calcul, rejeux compris.
 
@@ -119,11 +119,11 @@ Pourquoi un ordonnanceur plutôt que des webhooks : les clés Free sont limitée
 
 1. Ouvrir un rapport dans Rapports : par exemple waterdrop.fr (5 missions sur 5, test de paiement jusqu'au 3D Secure), nike.com (arrêté par l'anti-bot), promod.fr (agent précis).
 2. Dans une mission, « Voir le replay » ; puis la page Corrections, qui liste ce qu'il faut réparer site par site.
-3. « Lancer un audit » sur la boutique de son choix, ordinateur, avec ou sans test de paiement réel : le rapport se met à jour tout seul en 5 à 10 minutes (missions en cours, puis score, blocages, captures, replays et plan de corrections).
+3. « Lancer un audit » sur la boutique de son choix, ordinateur, avec ou sans test de paiement réel : le rapport se met à jour tout seul en 4 à 8 minutes hors file d'attente (missions en cours, puis score, blocages, captures, replays et plan de corrections).
 
 ## 9. Limites honnêtes
 
-- **Navigateur cloud depuis une IP de datacenter** : certains anti-bots bloquent l'agent (Kiabi 0 / 5), comme ils bloqueraient un vrai agent client. Ces missions sortent du score.
+- **Navigateur cloud depuis une IP de datacenter** : certains anti-bots bloquent l'agent (Kiabi 0 / 5), comme ils bloqueraient un vrai agent client. Ces missions comptent comme des échecs.
 - **Le juge limite les faux succès, pas tous les faux échecs** : une mission peut échouer à cause de l'agent et non du site. L'accord juge / humain est en cours de mesure ; les écarts juge / agent viennent surtout de pages panier prises pour le checkout.
 - **Mobile simulé** : taille d'écran de téléphone, sans user-agent mobile.
 - **Un agent mesuré** : Holo de H Company. Les autres agents (ChatGPT agent…) viendront ensuite.
@@ -157,7 +157,7 @@ Le classement gratuit attire, l'audit convertit, le suivi crée du récurrent.
 **AgentProof sends an AI mystery shopper to your e-commerce site.** Existing tools read a site's code and say an agent *should* be able to buy. We send a real computer-use agent (H Company's Holo) that looks at the screen and clicks like a customer, through realistic shopping missions up to the first checkout page, never paying.
 
 - **Output**: an agent-readiness score, the screenshot of the exact moment the agent gets stuck, a step-by-step replay, a competitor comparison and a prioritised fix plan.
-- **Trust**: a blind visual judge (Hugging Face, `Qwen/Qwen3.5-9B`) re-reads the last screenshot without seeing the agent's verdict; unverified runs, anti-bot blocks and out-of-stock items are excluded from the score; failed missions are replayed once.
+- **Trust**: a blind visual judge (Hugging Face, `Qwen/Qwen3.5-9B`) re-reads the last screenshot without seeing the agent's verdict; unverified runs and out-of-stock items are excluded from the score, anti-bot blocks count as failures; failed missions are replayed once.
 - **Results**: 10 French fashion brands, 69 % of desktop missions reach checkout (57 % on mobile), ~90 s and $0.03 per mission; judge/agent agreement 81 %, repeatability 81 %.
 - **Beyond audits**: optional real payment test with strict guardrails (one attempt, €150 cap, 3D Secure as proof of reaching the bank), daily page monitoring with Slack/e-mail alerts, team roles, white label for agencies.
 - **Stack**: Next.js on Vercel (Paris), Supabase (Paris), H Company Agents API, Hugging Face Inference + Hub, n8n scheduler.
