@@ -155,9 +155,9 @@ function JuryBanner({ t }: { t: (fr: string, en: string) => string }) {
         <span className="font-semibold text-ink">{t("Démo jury", "Jury demo")}</span>
         <JurySteps
           labels={[
-            t("1. Ouvrez un rapport", "1. Open a report"),
-            t("2. Regardez un replay", "2. Watch a replay"),
-            t("3. Lancez un audit ou un test de paiement", "3. Run an audit or a payment test"),
+            t("1. Ouvre un rapport", "1. Open a report"),
+            t("2. Regarde un replay", "2. Watch a replay"),
+            t("3. Lance un audit ou un test de paiement", "3. Run an audit or a payment test"),
           ]}
         />
         <Link href="/demo" className="ml-auto text-link hover:underline">{t("Le guide", "The guide")}</Link>
