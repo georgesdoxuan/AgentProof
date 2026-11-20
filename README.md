@@ -138,7 +138,7 @@ Test à part de l'audit : l'agent prend le premier article disponible et **paie 
 
 ## Fiabilité et sobriété
 
-- **Accord juge / agent** : sur 140 runs vérifiés à l'aveugle (capture + URL de la page, jamais l'avis de l'agent), le juge donne le même verdict que l'agent dans 114 cas (81 %). Les écarts sont surtout des pages panier que l'agent croyait être le checkout. Accord juge / humain : en cours de mesure (vérification manuelle).
+- **Accord juge / agent** : sur 140 runs vérifiés à l'aveugle (capture + URL de la page, jamais l'avis de l'agent), le juge donne le même verdict que l'agent dans 114 cas (81 %). Les écarts sont surtout des pages panier que l'agent croyait être le checkout.
 - **Score honnête** : seuls les runs vérifiés comptent. Rupture de stock, mission impossible sur le catalogue (ex. un site de porte-clés) et agent à court d'étapes sont affichés à part, hors score. Un blocage anti-bot compte comme un échec depuis le 20 nov : il bloquerait aussi l'agent d'un vrai client.
 - **Répétabilité** : 10 sites joués deux fois, même verdict pour 30 missions sur 37 comparables (81 %). Le classement public fait donc la moyenne des 2 derniers passages de chaque site.
 - **Échec confirmé** : chaque mission ratée est rejouée une fois avant la clôture de l'audit ; le second essai fait foi (sauf anti-bot, rupture, compte obligatoire, mission impossible, qu'un nouvel essai ne changerait pas). Le premier essai reste visible dans le rapport, et le coût affiché inclut les deux.
@@ -170,7 +170,7 @@ Depuis le 19 novembre :
 
 ## Limites et roadmap
 
-- Une mission échoue parfois à cause de l'agent et pas du site : le juge visuel limite les faux succès, pas les faux échecs. Accord juge / humain en cours de mesure.
+- Une mission échoue parfois à cause de l'agent et pas du site : le juge visuel limite les faux succès, pas les faux échecs.
 - Navigateur cloud depuis une IP de datacenter : certains sites anti-bot bloquent, comme ils bloqueraient un vrai agent (compté comme un échec).
 - Mobile = taille d'écran mobile, sans user-agent mobile.
 - Un seul agent mesuré (Holo). Paiement en ligne pas encore ouvert : rien n'est facturé pendant l'essai.

@@ -68,7 +68,6 @@ En cinq étapes :
 | Durée et coût par mission | ~90 s, ~19 étapes, **0,03 $** (1,68 $ pour tout le benchmark ordinateur) |
 | Accord juge / agent | 114 / 140 runs vérifiés (81 %) |
 | Répétabilité | même verdict pour 30 / 37 missions rejouées (81 %) |
-| Accord juge / humain | en cours de mesure (vérification manuelle) |
 
 **Coût de run** (mesuré sur 289 missions, rejeux compris) : un audit de 5 missions plus 5 chez le concurrent coûte **0,39 $** (agent H 0,37 $, juge et corrections Hugging Face 0,02 $ estimés). 100 audits par mois : **128 $** (39 $ variables + 89 $ de forfaits Vercel, Supabase, H, n8n). 1 000 audits par mois : **479 $**, moins qu'un seul audit vendu (490 €).
 
@@ -127,7 +126,7 @@ Pourquoi un ordonnanceur plutôt que des webhooks : les clés Free sont limitée
 ## 9. Limites honnêtes
 
 - **Navigateur cloud depuis une IP de datacenter** : certains anti-bots bloquent l'agent (Kiabi 0 / 5), comme ils bloqueraient un vrai agent client. Ces missions comptent comme des échecs.
-- **Le juge limite les faux succès, pas tous les faux échecs** : une mission peut échouer à cause de l'agent et non du site. L'accord juge / humain est en cours de mesure ; les écarts juge / agent viennent surtout de pages panier prises pour le checkout.
+- **Le juge limite les faux succès, pas tous les faux échecs** : une mission peut échouer à cause de l'agent et non du site. Les écarts juge / agent viennent surtout de pages panier prises pour le checkout.
 - **Mobile simulé** : taille d'écran de téléphone, sans user-agent mobile.
 - **Un agent mesuré** : Holo de H Company. Les autres agents (ChatGPT agent…) viendront ensuite.
 - **Cryptogramme de la carte** : pour le test de paiement, il est chiffré et stocké avec la carte de l'équipe. Acceptable pour une carte de test de hackathon, pas en production (PCI DSS) : il faudra un coffre-fort de cartes (Stripe, VGS) ou des cartes émises par nous.
@@ -146,7 +145,7 @@ Le classement gratuit attire, l'audit convertit, le suivi crée du récurrent.
 
 ## 11. Roadmap
 
-- **Court terme** : accord juge / humain publié, cartes de test émises par nous (Stripe Issuing, Adyen, Swan) avec refus en temps réel pour automatiser la preuve bancaire, coffre-fort de cartes.
+- **Court terme** : mesurer l'accord du juge avec une vérification humaine, cartes de test émises par nous (Stripe Issuing, Adyen, Swan) avec refus en temps réel pour automatiser la preuve bancaire, coffre-fort de cartes.
 - **Ensuite** : d'autres agents que Holo (ChatGPT agent…), vrai user-agent mobile, comptes de test et préproduction fournis par le marchand, d'autres secteurs que la mode, ouverture du paiement.
 
 ## 12. Équipe
@@ -169,7 +168,7 @@ Le classement gratuit attire, l'audit convertit, le suivi crée du récurrent.
 
 - **Output**: an agent-readiness score, the screenshot of the exact moment the agent gets stuck, a step-by-step replay, a competitor comparison and a prioritised fix plan.
 - **Trust**: a blind visual judge (Hugging Face, `Qwen/Qwen3.5-9B`) re-reads the last screenshot without seeing the agent's verdict; unverified runs and out-of-stock items are excluded from the score, anti-bot blocks count as failures; failed missions are replayed once.
-- **Results**: 10 French fashion brands, 69 % of desktop missions reach checkout (57 % on mobile), ~90 s per mission, $0.39 per full audit ($128 a month for 100 audits); judge/agent agreement 81 %, repeatability 81 %, judge/human agreement still being measured.
+- **Results**: 10 French fashion brands, 69 % of desktop missions reach checkout (57 % on mobile), ~90 s per mission, $0.39 per full audit ($128 a month for 100 audits); judge/agent agreement 81 %, repeatability 81 %.
 - **Why now**: 44 % of French shoppers already use AI to prepare a purchase (OpinionWay, Nov 2026).
 - **Beyond audits**: optional real payment test with strict guardrails (one attempt, €150 cap, 3D Secure as proof of reaching the bank), daily page monitoring with Slack/e-mail alerts, team roles, white label for agencies.
 - **Stack**: Next.js on Vercel (Paris), Supabase (Paris), H Company Agents API, Hugging Face Inference + Hub, n8n scheduler.
