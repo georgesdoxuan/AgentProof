@@ -1204,11 +1204,25 @@ async function sessionEvents(sessionId: string) {
   return all;
 }
 
-export async function getPaymentReplay(runId: number) {
+// Jury demo: the demo card's test identity (holder, e-mail, address) is a real person's: masked for judges.
+function identityMask(c: CardSecret | null) {
+  const esc = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const parts = c
+    ? [c.holder, c.email, c.address, ...(c.holder ?? "").split(/\s+/), ...(c.address ?? "").split(",")]
+        .map((x) => (x ?? "").trim())
+        .filter((x) => x.length >= 3 && !/^(paris|france)$/i.test(x))
+    : [];
+  const pats = [...new Set(parts)].sort((x, y) => y.length - x.length).map((x) => new RegExp(esc(x), "gi"));
+  return (s: string | null) => (s ? pats.reduce((t, p) => t.replace(p, "•••"), s) : s);
+}
+
+export async function getPaymentReplay(runId: number, hideIdentity = false) {
   const { data: run } = await db.from("runs").select("id, session_id, with_login, missions(slug), audits(team_id)").eq("id", runId).single();
   if (!run || !isPayment(run) || !run.session_id) return null;
   const card = await cardSecret((run as any).audits?.team_id ?? null).catch(() => null);
-  const mask = cardMask(card);
+  const digits = cardMask(card);
+  const who = hideIdentity ? identityMask(card) : (x: string | null) => x;
+  const mask = (x: string | null) => who(digits(x));
   const items = await sessionEvents(run.session_id as string);
   const raw = replaySteps(items.filter((e) => e.type === "AgentEvent").map((e) => e.data));
   // From the first step where the agent types the card, the screen may show it: those screenshots start blurred.
@@ -1223,7 +1237,7 @@ export async function getPaymentReplay(runId: number) {
   const objective =
     "Mission : achète un article et paie par carte (une seule tentative).\n" +
     (run.with_login ? "Connexion avec le compte de test enregistré si le site le demande. Ne crée jamais de compte.\n" : "") +
-    (card ? `Carte de test : •••• ${card.last4}, titulaire ${card.holder}. Numéro, expiration et CVC masqués.\n\n` : "\n") +
+    (card ? `Carte de test : •••• ${card.last4}${hideIdentity ? "" : `, titulaire ${card.holder}`}. Numéro, expiration et CVC masqués.\n\n` : "\n") +
     PAYMENT_INSTRUCTIONS;
   return { objective, answer: null, steps };
 }
