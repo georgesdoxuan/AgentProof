@@ -141,9 +141,21 @@ export function payOpen(pays: { status: string; verdict: string | null }[]) {
 }
 // A payment run as shown. Runs finished before 19/11 counted a 3D Secure request as a failure and their judge saw only
 // the last screenshot, taken after the 3D Secure page had expired: when the agent saw the bank's page, it passes.
+// Also masks the card in the agent's free text: runs stored before 20/11 only masked the number, not expiry and CVC.
 export function payShown<T extends { status: string; success: boolean | null; payment_verdict: string | null; agent_answer?: any; judge?: any }>(r: T): T {
   const legacy3ds = r.status === "done" && r.payment_verdict === "three_ds_timeout" && !!r.agent_answer?.three_ds_seen && !r.judge?.earlier_checked;
-  return legacy3ds && r.success !== true ? { ...r, success: true } : r;
+  const shown = { ...r, agent_answer: scrubCard(r.agent_answer) };
+  return legacy3ds && r.success !== true ? { ...shown, success: true } : shown;
+}
+// Card number, expiry (11/31) and CVC as the agent writes them in its free text. Strings of an object are masked one by one.
+export function scrubCard<T>(v: T): T {
+  if (typeof v === "string")
+    return v
+      .replace(/\d(?:[\s-]?\d){11,18}/g, "[carte masquée]")
+      .replace(/\b(0?[1-9]|1[0-2])\s*\/\s*(20)?\d{2}\b/g, "[expiration masquée]")
+      .replace(/\b(cvc|cvv|cvv2|cryptogramme|code de s[ée]curit[ée]|security code)(\W{0,4})\d{3,4}\b/gi, "$1$2[masqué]") as T;
+  if (v && typeof v === "object" && !Array.isArray(v)) return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, scrubCard(x)])) as T;
+  return v;
 }
 export const paymentVerdicts = (lang: "fr" | "en") => (lang === "en" ? PAYMENT_VERDICTS_EN : PAYMENT_VERDICTS);
 export const paymentStages = (lang: "fr" | "en") => (lang === "en" ? PAYMENT_STAGES_EN : PAYMENT_STAGES);
@@ -732,8 +744,7 @@ async function finalizePayment(run: any, items: Ev[], state: string, obs: Ev | u
   }
   if (answer?.result === "three_ds_timeout" && judge) judge.earlier_checked = true;
   // Never store card details: the agent sometimes repeats them in its free-text fields.
-  if (answer) for (const k of Object.keys(answer) as (keyof PaymentAnswer)[])
-    if (typeof answer[k] === "string") (answer as any)[k] = (answer[k] as string).replace(/\d[\d ]{10,}\d/g, "[carte masquée]");
+  if (answer) answer = scrubCard(answer);
   let verdict = answer?.result ?? (state === "error" ? "technical_error" : "other");
   // Out of steps before a real outcome: not a site failure, say so.
   const outOfSteps = state === "stale" || (metrics?.steps ?? 0) >= PAY_STEPS - 1;
@@ -1010,7 +1021,11 @@ async function hf(messages: unknown[], max_tokens = 400) {
 // URL of a step of placing an order (cart included): a login page there is the entry of the checkout.
 const ORDER_URL = /checkout|commande|order|panier|cart|basket|tunnel|livraison|shipping|delivery|paiement|payment/i;
 
+// The judge model sometimes answers malformed JSON (IKEA, 20/11): one more try before the run is left unverified.
 export async function judgeScreenshot(imageUrl: string, mission: string | undefined, pageUrl?: string | null) {
+  return judgeOnce(imageUrl, mission, pageUrl).catch((e) => (e instanceof SyntaxError ? judgeOnce(imageUrl, mission, pageUrl) : Promise.reject(e)));
+}
+async function judgeOnce(imageUrl: string, mission: string | undefined, pageUrl?: string | null) {
   const out = await hf(
     [
       {
@@ -1051,7 +1066,7 @@ export async function writeRecommendations(domain: string, runs: any[]) {
   ].filter(Boolean).join(" ");
 
   if (!failed.length)
-    return `Aucun blocage observé : ${ok} mission${ok > 1 ? "s" : ""} sur ${ok} atteigne${ok > 1 ? "nt" : ""} l'entrée du checkout. Une page de connexion ou d'inscription à cette étape compte comme une arrivée valide. Le paiement n'a pas été testé. ${notes}`.trim();
+    return `Aucun blocage observé : ${ok} mission${ok > 1 ? "s" : ""} sur ${ok} atteigne${ok > 1 ? "nt" : ""} l'entrée du checkout. Une page de connexion ou d'inscription à cette étape compte comme une arrivée valide. ${notes}`.trim();
 
   const byBlocker: Record<string, any[]> = {};
   for (const r of failed) (byBlocker[r.blocker_type ?? "other"] ??= []).push(r);

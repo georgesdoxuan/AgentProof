@@ -36,6 +36,11 @@ function headline(sites: SiteView[], t: T) {
       : ready
       ? t("Les agents achètent sur ton site.", "Agents can buy on your site.")
       : t(`Les agents réussissent ${scored[0].latest!.s.score}\u00a0% des achats sur ton site.`, `Agents complete ${scored[0].latest!.s.score}\u00a0% of purchases on your site.`);
+  // Sites without a score yet (a payment test only, an audit with every mission out of the score) are not in n: say so,
+  // or "tes 5 sites" sits next to a "6 sites" chip.
+  const rest = sites.length - n;
+  if (ready === n && rest)
+    return t(`Les agents achètent sur tes ${n} sites notés, ${rest} sans score.`, `Agents can buy on your ${n} scored sites, ${rest} without a score.`);
   if (ready === n) return t(`Les agents achètent sur tes ${n} sites.`, `Agents can buy on all ${n} of your sites.`);
   if (!ready) return t(`Aucun de tes ${n} sites n'est prêt pour les agents.`, `None of your ${n} sites is ready for agents.`);
   return t(`Les agents achètent sur ${ready} site${ready > 1 ? "s" : ""} sur ${n}.`, `Agents can buy on ${ready} of your ${n} sites.`);
