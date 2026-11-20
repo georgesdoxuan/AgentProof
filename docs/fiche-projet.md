@@ -20,7 +20,8 @@ Hackathon H Company × Hugging Face (Eugenia, 16–20 nov 2026) · track Creativ
 
 Les agents IA commencent à faire les courses à notre place : « trouve-moi un pull noir en M à moins de 60 € et commande-le ». Sur beaucoup de sites, l'agent bloque : bandeau cookies qui masque « Ajouter au panier », pop-up, sélecteur de taille qu'il ne sait pas cliquer, captcha, compte obligatoire. Il abandonne, achète ailleurs, et le marchand ne le voit jamais.
 
-- **63 %** des responsables e-commerce disent que leur tunnel d'achat ne peut pas être finalisé par un agent IA, et 61 % n'ont pas de budget pour ça en 2026 (Blend Commerce, 59 répondants, juillet–août 2026).
+- **44 %** des Français utilisent déjà l'IA pour préparer un achat, contre 29 % un an plus tôt (OpinionWay pour La Retail Tech, « Les Français & l'Agentic Commerce », novembre 2026, 1 045 répondants).
+- **29 boutiques sur 200** refusent l'entrée à un navigateur automatisé, avant même le panier (Blend Commerce, AI Shopping Audit 2026, 200 e-commerçants britanniques et américains).
 - Les outils existants (dont le score gratuit de Shopify) **lisent le code** du site : « en théorie, un agent devrait pouvoir acheter ». Personne ne teste en vrai.
 
 ## 2. Solution
@@ -48,11 +49,13 @@ En cinq étapes :
 | **Agent H Holo** | Agent catalogue `agentproof-shopper` sur l'Agents API de H (modèle rapide `holo4-35b-a3b` ou précis `holo4-27b`), navigateur cloud, écran ordinateur 1024×640 ou mobile 390×844. Réponse structurée : checkout atteint, blocage (liste fermée), détail. |
 | **Règles non négociables** | Ajoutées à chaque consigne : ne jamais payer pendant un audit, aucun compte créé, aucune donnée personnelle, jamais de captcha résolu, volume faible. |
 | **Juge visuel à l'aveugle** | Un modèle de vision Hugging Face (`Qwen/Qwen3.5-9B`, Inference Providers) relit la dernière capture et l'URL, sans connaître l'avis de l'agent. Succès = l'agent dit avoir atteint le checkout **et** le juge le confirme. Juge muet = run « non vérifié », hors score. |
-| **Score honnête** | Runs réussis / runs comptés. Hors score : non vérifiés, rupture de stock, mission impossible sur le catalogue, agent à court d'étapes, appels d'outil mal formés. Un anti-bot compte comme un échec : il bloque aussi l'agent d'un vrai client. Chaque mission ratée est rejouée une fois ; le second essai fait foi. |
+| **Score honnête** | Runs réussis / runs comptés, affiché avec « N missions notées sur M » quand certaines sont hors score. Hors score : non vérifiés, rupture de stock, mission impossible sur le catalogue, agent à court d'étapes, appels d'outil mal formés. Un anti-bot compte comme un échec : il bloque aussi l'agent d'un vrai client. Chaque mission ratée est rejouée une fois ; le second essai fait foi. |
 | **Test de paiement réel (facultatif)** | Test à part : l'agent prend le premier article disponible et paie **une seule fois** avec la carte de l'équipe. Un refus « fonds insuffisants » ou une demande de **3D Secure** prouve que le paiement a atteint la banque. Garde-fous : case de confirmation à chaque test, plafond de 150 € livraison comprise, une seule tentative, jamais sur un concurrent, replay privé, carte masquée dans le texte et captures floutées dès la saisie, captures effacées après 4 h. Comptes de test du marchand dans un coffre-fort H : l'agent ne voit jamais le mot de passe. |
 | **Classement public** | Sans compte : sites comparés sur la moyenne des 2 derniers audits (même appareil), car un agent n'agit pas toujours pareil. |
 | **Corrections** | Page Espace › Corrections : toutes les corrections à faire, filtrables, puis « Prouver la correction ». |
 | **Automations** | Pages relues chaque heure, 6 h, jour ou semaine (structure de la page et contrôle statique, sans IA, prix ignorés). Changement ou baisse de score : alerte e-mail, Slack ou webhook, audit relancé si demandé. Audit mensuel automatique, hook « après mise en ligne » (Vercel, Shopify, GitHub). Plafond de crédits par site. |
+| **Accès par agent IA** | Pour 15 assistants (ChatGPT, Claude, Gemini, Perplexity, Copilot, Grok, Meta AI, Le Chat, DeepSeek, Alexa+, Apple Intelligence, Doubao, Duck.ai, You.com, Cohere) : robots.txt et, pour ceux qui s'annoncent, réponse réelle du site à leur robot. Hors score. |
+| **Textes de l'agent traduits** | Holo et le juge écrivent souvent en anglais : leurs réponses, raisonnements et verdicts s'affichent dans la langue de l'interface (FR ou EN), l'original reste dépliable. Jamais pour les tests de paiement. |
 | **Contrôle statique gratuit** | Sans agent : robots.txt (GPTBot, ClaudeBot…), anti-bot connus, schema.org, `llms.txt`, protocoles d'achat pour agents (UCP, ACP, WebMCP). Affiché à côté du score, hors score. |
 | **Équipes et rôles** | Propriétaire, admin, éditeur, lecteur. Plusieurs équipes par compte, marque blanche pour les agences, rapport PDF, badge « Agent-ready ». |
 
@@ -67,7 +70,7 @@ En cinq étapes :
 | Répétabilité | même verdict pour 30 / 37 missions rejouées (81 %) |
 | Accord juge / humain | en cours de mesure (vérification manuelle) |
 
-Un audit complet de 5 missions coûte moins de 50 centimes de calcul, rejeux compris.
+**Coût de run** (mesuré sur 289 missions, rejeux compris) : un audit de 5 missions plus 5 chez le concurrent coûte **0,39 $** (agent H 0,37 $, juge et corrections Hugging Face 0,02 $ estimés). 100 audits par mois : **128 $** (39 $ variables + 89 $ de forfaits Vercel, Supabase, H, n8n). 1 000 audits par mois : **479 $**, moins qu'un seul audit vendu (490 €).
 
 ## 6. Stack
 
@@ -117,7 +120,7 @@ Pourquoi un ordonnanceur plutôt que des webhooks : les clés Free sont limitée
 > **Accès : [agentproof-iota-tawny.vercel.app/demo](https://agentproof-iota-tawny.vercel.app/demo)**, bouton « Entrer dans la démo ». Aucun e-mail ni mot de passe : chaque clic ouvre un compte juge dans l'équipe « Démo jury ».
 > Cette équipe est séparée de l'espace de travail d'AgentProof : elle contient une copie de tous nos rapports, et rien de ce que fait le jury n'atteint nos audits. Chaque juge a 2 audits et 1 test de paiement réel (carte de démo à solde nul : l'agent va jusqu'à la banque, qui refuse) ; il peut ajouter un compte de test. Membres, automatisations et corbeille y sont fermés.
 
-1. Ouvrir un rapport dans Rapports : par exemple waterdrop.fr (5 missions sur 5, test de paiement jusqu'au 3D Secure), nike.com (arrêté par l'anti-bot), promod.fr (agent précis).
+1. Ouvrir un des 11 rapports dans Rapports : par exemple waterdrop.fr (5 missions sur 5, test de paiement jusqu'au 3D Secure), nike.com (arrêté par l'anti-bot), promod.fr (agent précis).
 2. Dans une mission, « Voir le replay » ; puis la page Corrections, qui liste ce qu'il faut réparer site par site.
 3. « Lancer un audit » sur la boutique de son choix, ordinateur, avec ou sans test de paiement réel : le rapport se met à jour tout seul en 4 à 8 minutes hors file d'attente (missions en cours, puis score, blocages, captures, replays et plan de corrections).
 
@@ -148,7 +151,15 @@ Le classement gratuit attire, l'audit convertit, le suivi crée du récurrent.
 
 ## 12. Équipe
 
-Équipe 6, cinq personnes : CEO, CPO / CTO, CAIO, CAO, CDO. Rôles détaillés dans [PLAN.md](../PLAN.md).
+Équipe 6, cinq personnes :
+
+| Nom | Rôle |
+|---|---|
+| Thomas Lefebvre | CEO : projet, business, pitch |
+| Georges Do Xuan | CPO + CTO : application, architecture, démo |
+| Alexandre Marcano | CAIO : consignes de l'agent, juge, prompts |
+| Medhi Farrat | CAO : automatisations n8n, alertes |
+| Adonaï Pedrito | CDO : sites, vérification, dataset |
 
 ---
 
@@ -158,7 +169,8 @@ Le classement gratuit attire, l'audit convertit, le suivi crée du récurrent.
 
 - **Output**: an agent-readiness score, the screenshot of the exact moment the agent gets stuck, a step-by-step replay, a competitor comparison and a prioritised fix plan.
 - **Trust**: a blind visual judge (Hugging Face, `Qwen/Qwen3.5-9B`) re-reads the last screenshot without seeing the agent's verdict; unverified runs and out-of-stock items are excluded from the score, anti-bot blocks count as failures; failed missions are replayed once.
-- **Results**: 10 French fashion brands, 69 % of desktop missions reach checkout (57 % on mobile), ~90 s and $0.03 per mission; judge/agent agreement 81 %, repeatability 81 %.
+- **Results**: 10 French fashion brands, 69 % of desktop missions reach checkout (57 % on mobile), ~90 s per mission, $0.39 per full audit ($128 a month for 100 audits); judge/agent agreement 81 %, repeatability 81 %, judge/human agreement still being measured.
+- **Why now**: 44 % of French shoppers already use AI to prepare a purchase (OpinionWay, Nov 2026).
 - **Beyond audits**: optional real payment test with strict guardrails (one attempt, €150 cap, 3D Secure as proof of reaching the bank), daily page monitoring with Slack/e-mail alerts, team roles, white label for agencies.
 - **Stack**: Next.js on Vercel (Paris), Supabase (Paris), H Company Agents API, Hugging Face Inference + Hub, n8n scheduler.
-- **Try it**: public leaderboard at https://agentproof-iota-tawny.vercel.app/classement (no account needed); judges' demo access in [How to test](#8-comment-tester).
+- **Try it**: judges' demo at https://agentproof-iota-tawny.vercel.app/demo (one click, no e-mail or password, 11 reports, 2 audits and 1 payment test per judge, interface in French or English); public leaderboard at https://agentproof-iota-tawny.vercel.app/classement.

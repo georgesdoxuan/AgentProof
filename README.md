@@ -35,7 +35,7 @@ Contexte complet : [CONTEXT.md](CONTEXT.md) · Plan d'action : [PLAN.md](PLAN.md
 
 ## Problème
 
-Les agents IA commencent à faire les courses à notre place. Sur beaucoup de sites, l'agent bloque (bandeau cookies, pop-up, sélecteur de taille, captcha, compte obligatoire), abandonne et achète ailleurs, sans que le marchand le voie. 63 % des responsables e-commerce disent que leur tunnel d'achat ne peut pas être finalisé par un agent IA (Blend Commerce, 2026). Les outils existants lisent le code du site. Personne ne teste en vrai.
+Les agents IA commencent à faire les courses à notre place. Sur beaucoup de sites, l'agent bloque (bandeau cookies, pop-up, sélecteur de taille, captcha, compte obligatoire), abandonne et achète ailleurs, sans que le marchand le voie. 44 % des Français utilisent déjà l'IA pour préparer un achat (OpinionWay pour La Retail Tech, novembre 2026, 1 045 répondants). Les outils existants lisent le code du site. Personne ne teste en vrai.
 
 ## Solution
 
