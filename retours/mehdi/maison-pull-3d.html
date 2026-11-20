@@ -1,0 +1,87 @@
+<!doctype html><html lang=fr><meta charset=utf-8><meta name=viewport content="width=device-width, initial-scale=1"><title>MAISON — aperçu pull 3D</title><style>body{margin:0;padding:24px;max-width:960px;margin-inline:auto;background:#f5f5f5}</style><div id="ap-shirt-preview" class="viz-dotted-background">
+  <section class="shirt-product" aria-label="Aperçu MAISON avec pull noir en 3D">
+    <div class="shirt-heading"><strong>M A I S O N</strong><span>Femme · Homme · Nouveautés</span></div>
+    <div class="shirt-layout"><div><div class="shirt-stage" role="img" aria-label="Pull noir à manches longues en volume, en rotation. La rotation peut être mise en pause."><p class="shirt-loading" role="status">Chargement du pull…</p></div><div class="shirt-actions"><span>Fais glisser pour le tourner</span><button type="button" class="shirt-toggle" disabled>Pause</button></div></div>
+    <div class="shirt-details"><p>Mailles · Pulls</p><h3>Pull col rond en laine</h3><p class="shirt-price">49,90 €</p><fieldset><legend>Taille</legend><div class="shirt-sizes"><button type="button" aria-pressed="false">XS</button><button type="button" aria-pressed="false">S</button><button type="button" aria-pressed="true">M</button><button type="button" aria-pressed="false">L</button><button type="button" aria-pressed="false">XL</button></div></fieldset><p class="shirt-note">Aperçu produit · aucune commande réelle</p></div></div>
+  </section>
+</div>
+<style>
+#ap-shirt-preview{padding:24px 0;display:flex;justify-content:center;color-scheme:light dark}
+#ap-shirt-preview .shirt-product{width:100%;box-sizing:border-box;background:light-dark(#fff,#151920);color:light-dark(#202020,#eef1f8);border:1px solid light-dark(#e7eaf0,#303641);border-radius:12px;padding:22px;font-family:Arial,sans-serif}
+#ap-shirt-preview .shirt-layout{display:grid;grid-template-columns:1.1fr 1fr;gap:30px;margin-top:28px}
+#ap-shirt-preview .shirt-heading strong{font-weight:500;color:light-dark(#202020,#eef1f8);font-size:16px}
+#ap-shirt-preview .shirt-stage{background:light-dark(#ececed,#252930);border-radius:8px}
+#ap-shirt-preview .shirt-details{padding-top:12px}
+#ap-shirt-preview .shirt-details p{font-size:13px;color:light-dark(#747478,#b3b7c2);margin:0 0 16px}
+#ap-shirt-preview .shirt-details h3{font-size:26px;line-height:1.2;margin-bottom:14px}
+#ap-shirt-preview .shirt-details .shirt-price{font-size:21px}
+#ap-shirt-preview fieldset{border:0;margin:32px 0 22px;padding:0;min-width:0}
+#ap-shirt-preview legend{font-size:14px;margin-bottom:12px}
+#ap-shirt-preview .shirt-sizes{display:flex;gap:7px;flex-wrap:wrap}
+#ap-shirt-preview .shirt-sizes button{min-width:42px;min-height:44px;border:1px solid light-dark(#d4d4da,#505561);border-radius:6px;background:transparent;color:inherit;cursor:pointer;font:inherit;font-size:13px}
+#ap-shirt-preview .shirt-sizes button[aria-pressed=true]{border:2px solid currentColor}
+#ap-shirt-preview .shirt-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px;font-size:11px;color:light-dark(#747478,#b3b7c2)}
+@media(max-width:570px){#ap-shirt-preview .shirt-layout{grid-template-columns:1fr;gap:12px}#ap-shirt-preview .shirt-heading span{font-size:10px}#ap-shirt-preview .shirt-details h3{font-size:23px}}
+#ap-shirt-preview .shirt-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:light-dark(#626c7d,#a9b3c4)}
+#ap-shirt-preview .shirt-tag{padding:5px 9px;border-radius:20px;background:light-dark(#edf3ff,#203457);color:light-dark(#2256ba,#a5c4ff)}
+#ap-shirt-preview .shirt-stage{height:350px;position:relative;touch-action:pan-y;cursor:grab}
+#ap-shirt-preview .shirt-stage:active{cursor:grabbing}
+#ap-shirt-preview canvas{display:block;width:100%;height:100%}
+#ap-shirt-preview .shirt-loading{position:absolute;inset:45% 0 auto;text-align:center;font-size:14px}
+#ap-shirt-preview .shirt-footer{display:flex;justify-content:space-between;align-items:center;gap:16px}
+#ap-shirt-preview h3{font-size:19px;font-weight:500;margin:0 0 6px}
+#ap-shirt-preview .shirt-footer p,#ap-shirt-preview .shirt-help{font-size:12px;color:light-dark(#626c7d,#a9b3c4);margin:0}
+#ap-shirt-preview .shirt-help{text-align:center;margin-top:18px}
+#ap-shirt-preview .shirt-toggle{font:inherit;font-size:13px;min-height:44px;padding:10px 18px;border:1px solid light-dark(#dce1eb,#485062);border-radius:24px;background:light-dark(#f7f9fc,#202733);color:inherit;cursor:pointer}
+@media(max-width:400px){#ap-shirt-preview .shirt-product{padding:16px}#ap-shirt-preview .shirt-stage{height:300px}}
+</style>
+<script type="module">
+const root=document.getElementById('ap-shirt-preview');
+const stage=root.querySelector('.shirt-stage'),button=root.querySelector('.shirt-toggle'),loading=root.querySelector('.shirt-loading');
+root.querySelectorAll('.shirt-sizes button').forEach(size=>size.addEventListener('click',()=>{root.querySelectorAll('.shirt-sizes button').forEach(b=>b.setAttribute('aria-pressed',String(b===size)));}));
+try {
+ const THREE=await import('https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js');
+ const renderer=new THREE.WebGLRenderer({alpha:true,antialias:true});
+ renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.setClearColor(0,0);
+ renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.3;
+ stage.appendChild(renderer.domElement);
+ const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(35,1,.1,30);
+ camera.position.set(0,.05,6.5);camera.lookAt(0,0,0);
+ scene.add(new THREE.HemisphereLight(0xdce9ff,0x697386,2.5));
+ const key=new THREE.DirectionalLight(0xffffff,3.3);key.position.set(-3,4,5);scene.add(key);
+ const rim=new THREE.DirectionalLight(0xb5ceff,2.3);rim.position.set(3,1,-4);scene.add(rim);
+ const shirt=new THREE.Group();shirt.rotation.set(.06,-.35,0);scene.add(shirt);
+ const shape=new THREE.Shape();
+ shape.moveTo(-.66,-1.12);shape.quadraticCurveTo(0,-1.18,.66,-1.12);
+ shape.lineTo(.71,.25);shape.lineTo(1.02,-.56);shape.lineTo(1.42,-.36);
+ shape.lineTo(.66,1.12);shape.lineTo(.3,1.2);
+ shape.bezierCurveTo(.27,.88,-.27,.88,-.3,1.2);
+ shape.lineTo(-.66,1.12);shape.lineTo(-1.42,-.36);shape.lineTo(-1.02,-.56);shape.lineTo(-.71,.25);shape.closePath();
+ const outline=shape.getPoints(12);if(outline[0].distanceTo(outline[outline.length-1])<1e-6)outline.pop();
+ const triangles=THREE.ShapeUtils.triangulateShape(outline,[]);
+ const vertices=outline.map(p=>[p.x,p.y]);let faces=triangles;
+ for(let pass=0;pass<4;pass++){
+   const cache=new Map(),next=[];
+   function midpoint(a,b){const k=a<b?a+':'+b:b+':'+a;if(cache.has(k))return cache.get(k);const i=vertices.length;vertices.push([(vertices[a][0]+vertices[b][0])/2,(vertices[a][1]+vertices[b][1])/2]);cache.set(k,i);return i;}
+   for(const [a,b,c] of faces){const ab=midpoint(a,b),bc=midpoint(b,c),ca=midpoint(c,a);next.push([a,ab,ca],[ab,b,bc],[ca,bc,c],[ab,bc,ca]);}faces=next;
+ }
+ function depth(x,y){let distance=Infinity;for(let i=0;i<outline.length;i++){const a=outline[i],b=outline[(i+1)%outline.length],dx=b.x-a.x,dy=b.y-a.y;const t=Math.max(0,Math.min(1,((x-a.x)*dx+(y-a.y)*dy)/(dx*dx+dy*dy)));distance=Math.min(distance,Math.hypot(x-a.x-t*dx,y-a.y-t*dy));}const puff=Math.sin(Math.min(1,distance/.33)*Math.PI/2);return .055+puff*(.15+.018*Math.sin(14*x+3*y)+.012*Math.sin(24*x-6*y));}
+ const material=new THREE.MeshStandardMaterial({color:0x202023,roughness:.97,metalness:0,side:THREE.DoubleSide});
+ for(const side of [1,-1]){const positions=[];for(const [x,y] of vertices)positions.push(x,y,side*depth(x,y));const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setIndex(faces.flatMap(([a,b,c])=>side===1?[a,b,c]:[c,b,a]));geometry.computeVertexNormals();shirt.add(new THREE.Mesh(geometry,material));}
+ const sidePositions=[],sideIndices=[];outline.forEach((p,i)=>{sidePositions.push(p.x,p.y,.055,p.x,p.y,-.055);const n=(i+1)%outline.length;sideIndices.push(i*2,n*2,i*2+1,n*2,n*2+1,i*2+1);});
+ const edge=new THREE.BufferGeometry();edge.setAttribute('position',new THREE.Float32BufferAttribute(sidePositions,3));edge.setIndex(sideIndices);edge.computeVertexNormals();shirt.add(new THREE.Mesh(edge,material));
+ const seamMaterial=new THREE.MeshStandardMaterial({color:0x38383b,roughness:1});
+ const collar=[];for(let i=0;i<=40;i++){const t=i/40;const x=.3*(1-2*t),y=1.2-.24*Math.sin(Math.PI*t);collar.push(new THREE.Vector3(x,y,.062));}
+ shirt.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(collar),48,.022,6,false),seamMaterial));
+ function resize(){const w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}new ResizeObserver(resize).observe(stage);resize();
+ let playing=!matchMedia('(prefers-reduced-motion: reduce)').matches,dragging=false,lastX=0,lastTime=0;
+ function update(){button.textContent=playing?'Pause':'Lancer la rotation';button.setAttribute('aria-pressed',String(playing));}
+ button.disabled=false;update();loading.remove();
+ button.addEventListener('click',()=>{playing=!playing;update();});
+ stage.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;stage.setPointerCapture(e.pointerId);playing=false;update();});
+ stage.addEventListener('pointermove',e=>{if(dragging){shirt.rotation.y+=(e.clientX-lastX)*.012;lastX=e.clientX;}});
+ for(const name of ['pointerup','pointercancel','lostpointercapture'])stage.addEventListener(name,()=>{dragging=false;});
+ renderer.setAnimationLoop(time=>{const delta=Math.min((time-lastTime)/1000,.05);lastTime=time;if(document.hidden)return;if(playing&&!dragging)shirt.rotation.y+=delta*.52;renderer.render(scene,camera);});
+}catch(error){loading.textContent='Aperçu 3D indisponible : recharge la vue avec WebGL activé.';button.hidden=true;console.error(error);}
+</script>
+</html>
