@@ -696,11 +696,14 @@ async function finalize(run: any, items: Ev[], state: string) {
 // Anti-bot: once a site blocks the agent, the other missions of the audit would end the same way. Skip them.
 async function skipIfBotBlocked(run: any, blocker: string | null) {
   if (blocker !== "captcha_or_bot_block") return;
-  await db
+  const { data: skipped } = await db
     .from("runs")
     .update({ status: "done", h_status: "skipped", success: false, blocker_type: "captcha_or_bot_block", blocker_detail: "Mission non lancée : le site a bloqué l'agent (anti-bot) sur une mission précédente.", finished_at: new Date().toISOString() })
     .eq("audit_id", run.audit_id)
-    .eq("status", "todo");
+    .eq("status", "todo")
+    .select("id, attempts");
+  // Never launched: their credit goes back, as when an audit is cancelled (cancelAudit).
+  for (const r of skipped ?? []) await db.from("credit_usage").delete().eq("run_id", r.id).eq("attempt", r.attempts ?? 1);
 }
 
 // Payment runs: the screenshot may show the card, so it is judged inline and never stored.

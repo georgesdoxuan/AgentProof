@@ -128,9 +128,12 @@ export async function Leaderboard({ device = "desktop", base }: { device?: Devic
                             <BlockerIcon type={blocker} className="h-[18px] w-[18px]" />
                             {blockerLabel(blocker, lang)}
                           </span>
+                        ) : s.runs_bot_blocked > 0 ? (
+                          // Kiabi read "None · anti-bot": with no counted blocker, the anti-bot is the main one (out of score).
+                          t("Anti-bot (hors score)", "Anti-bot (outside the score)")
                         ) : t("Aucun", "None")}
-                        {!blocker && topHurdle(s.audit_id) && ` · ${t("contourné", "got past")} : ${topHurdle(s.audit_id)!.toLowerCase()}`}
-                        {s.runs_bot_blocked > 0 && !botOnly && " · anti-bot"}
+                        {!blocker && !s.runs_bot_blocked && topHurdle(s.audit_id) && ` · ${t("contourné", "got past")} : ${topHurdle(s.audit_id)!.toLowerCase()}`}
+                        {blocker && s.runs_bot_blocked > 0 && !botOnly && " · anti-bot"}
                       </span>
                     </Link>
                   </li>
