@@ -498,21 +498,25 @@ export function PeriodSection({ id, value, label, options, icon, aside, children
 // in this tab (kept in sessionStorage), else of a sample report: /api/jury/replay picks the run and checks the team.
 export function JurySteps({ labels: [open, watch, launch] }: { labels: [string, string, string] }) {
   const path = usePathname();
-  const [audit, setAudit] = useState("");
+  // Remember the report on screen; the link reads it at click time, so no state and no re-render.
   useEffect(() => {
     const id = path.match(/^\/audit\/([0-9a-f-]{36})/)?.[1] ?? new URLSearchParams(location.search).get("a");
     try {
       if (id) sessionStorage.setItem("ap_jury_audit", id);
-      setAudit(id ?? sessionStorage.getItem("ap_jury_audit") ?? "");
-    } catch {
-      setAudit(id ?? "");
-    }
+    } catch {}
   }, [path]);
+  const toReplay = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    let id = path.match(/^\/audit\/([0-9a-f-]{36})/)?.[1] ?? null;
+    try {
+      id ??= sessionStorage.getItem("ap_jury_audit");
+    } catch {}
+    if (id) e.currentTarget.href = `/api/jury/replay?a=${id}`;
+  };
   return (
     <span>
       <Link href="/espace/rapports" className="text-link hover:underline">{open}</Link>
       {" · "}
-      <a href={`/api/jury/replay${audit ? `?a=${audit}` : ""}`} className="text-link hover:underline">{watch}</a>
+      <a href="/api/jury/replay" onClick={toReplay} className="text-link hover:underline">{watch}</a>
       {" · "}
       <Link href="/espace/nouveau" className="text-link hover:underline">{launch}</Link>
     </span>
