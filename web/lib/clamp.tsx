@@ -73,3 +73,19 @@ export function ClampText({
     </div>
   );
 }
+
+// Under a translated agent or judge text: the original, folded, for whoever wants the agent's own words.
+export function OriginalText({ original, shown, lang }: { original?: string | null; shown?: string | null; lang: Lang }) {
+  const t = tr(lang);
+  if (!original || !shown || original === shown) return null;
+  return (
+    <details className="type-caption group mt-1.5 text-ink-2">
+      <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-link [&::-webkit-details-marker]:hidden">
+        {t("Texte original (traduit automatiquement)", "Original text (machine translated)")}
+      </summary>
+      <ClampText lang={lang} lines={6} className="mt-1">
+        <p className="whitespace-pre-line">{original}</p>
+      </ClampText>
+    </details>
+  );
+}

@@ -5,6 +5,8 @@ import { deviceLabel, fixHints, shortDate, type Blocker, type SiteView } from "@
 import { tr, type Lang } from "@/lib/i18n";
 import { getLang, getT } from "@/lib/lang";
 import { SiteLogo } from "../site-logo";
+import { OriginalText } from "@/lib/clamp";
+import { translate } from "@/lib/translate";
 
 export const sitePath = (v: SiteView) => `/espace/sites/${v.key}`;
 
@@ -150,6 +152,7 @@ export async function BlockerItem({ site, b, canEdit }: { site: SiteView; b: Blo
   const t = tr(lang);
   const FIX_HINT = fixHints(lang);
   const state = STATE[b.state];
+  const [detail] = await translate([b.run?.blocker_detail], lang);
   return (
     <article className="tile grid min-w-0 gap-7 p-7! md:grid-cols-[1fr_minmax(0,360px)]">
       <div className="flex flex-col">
@@ -165,14 +168,15 @@ export async function BlockerItem({ site, b, canEdit }: { site: SiteView; b: Blo
           <BlockerIcon type={b.type} className="mt-[0.15em] h-[0.9em] w-[0.9em]" />
           {blockerLabel(b.type, lang)}
         </h3>
-        {/* The agent writes in whatever language it likes: its raw note stays folded, as on the report. */}
+        {/* The agent's note, folded as on the report, in the interface language (original one click away). */}
         {b.run?.blocker_detail && (
           <details className="type-small group mt-3 text-ink-2">
             <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 text-link [&::-webkit-details-marker]:hidden">
               <Chevron className="h-2.5 w-2.5 transition-transform duration-200 group-open:rotate-90" />
-              {t("Réponse originale de l’agent", "The agent's original answer")}
+              {t("Réponse de l’agent", "The agent's answer")}
             </summary>
-            <p className="mt-2">« {b.run.blocker_detail} »</p>
+            <p className="mt-2">« {detail ?? b.run.blocker_detail} »</p>
+            <OriginalText original={b.run.blocker_detail} shown={detail} lang={lang} />
           </details>
         )}
         <p className="mt-4 flex gap-2">
