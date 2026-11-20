@@ -412,7 +412,14 @@ const STATIC_EN: [RegExp, string][] = [
 ];
 export const staticText = (text: string, lang: Lang) => {
   if (lang !== "en") return text;
-  for (const [re, en] of STATIC_EN) if (re.test(text)) return text.replace(re, en);
+  for (const [re, en] of STATIC_EN)
+    if (re.test(text))
+      // French words the captured lists carry ("… ou Google-Extended", "frais de port (shippingDetails)").
+      return text
+        .replace(re, en)
+        .replace(/ ou /g, " or ")
+        .replace("frais de port", "shipping costs")
+        .replace("politique de retour", "return policy");
   return text;
 };
 

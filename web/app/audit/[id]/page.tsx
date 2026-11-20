@@ -29,7 +29,9 @@ function accessText(a: AgentAccess, t: T) {
   if (a.tone === "fail")
     return a.challenge
       ? t(`Le site lui oppose un défi anti-bot, alors qu'un navigateur passe.`, `The site answers it with an anti-bot challenge, while a browser gets through.`)
-      : t(`Le site lui répond ${a.http || "rien"}, alors qu'il répond 200 à un navigateur.`, `The site answers it ${a.http || "nothing"}, while it answers 200 to a browser.`);
+      : a.http
+        ? t(`Le site lui répond ${a.http}, alors qu'il répond 200 à un navigateur.`, `The site answers it ${a.http}, while it answers 200 to a browser.`)
+        : t("Le site ne lui répond pas, alors qu'il répond 200 à un navigateur.", "The site does not answer it, while it answers 200 to a browser.");
   if (a.tone === "warn") return t(`Accès possible, mais robots.txt interdit ${bots} : le site sort des réponses de cet assistant.`, `Access works, but robots.txt bans ${bots}: the site drops out of ${a.name}'s answers.`);
   if (a.tone === "none") return t("Le site refuse toute requête sans navigateur : impossible d'isoler cet agent. L'agent AgentProof, lui, passe par un vrai navigateur.", "The site refuses every request without a browser: this agent can't be isolated. The AgentProof agent uses a real browser.");
   if (a.ownUa) return t("robots.txt l'autorise et le site lui répond.", "robots.txt allows it and the site answers it.");
@@ -857,7 +859,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
               intro={
                 <Chips>
                   <Hint tip={t("Un client pressé ou un agent moins tenace peut s’y arrêter. Relevé dans le compte rendu de l’agent.", "A hurried shopper or a less persistent agent may stop there. Read from the agent's own report.")}>
-                    <Chip icon="none" tone="pass">{t(`${got.passed} missions réussies`, `${got.passed} passed missions`)}</Chip>
+                    <Chip icon="none" tone="pass">{t(`${got.passed} mission${got.passed > 1 ? "s" : ""} réussie${got.passed > 1 ? "s" : ""}`, `${got.passed} passed mission${got.passed > 1 ? "s" : ""}`)}</Chip>
                   </Hint>
                   <Chip icon="mission_not_applicable">{t("Hors score", "Outside the score")}</Chip>
                 </Chips>

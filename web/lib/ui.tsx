@@ -595,7 +595,8 @@ export async function Recommendations({ text, missions = [], ticket }: { text: s
   const TAG_EN: Record<string, string> = { Observé: "Observed", Hypothèse: "Hypothesis", "À vérifier": "To check", "Correction possible": "Possible fix" };
   const intro: string[] = [];
   const items: { problem: string; fix: string[] }[] = [];
-  for (const raw of text.split("\n")) {
+  // Plans written before 20/11 said "payment not tested" even next to a payment test: the score's scope line says it right.
+  for (const raw of text.replace(/ ?Le paiement n'a pas été testé\./g, "").split("\n")) {
     const line = raw.trim();
     if (!line) continue;
     const p = line.match(/^\d+[.)]\s*(?:\*\*)?(?:Probl[eè]me\s*(?:\*\*)?\s*:\s*(?:\*\*)?)?(.*)$/i);
