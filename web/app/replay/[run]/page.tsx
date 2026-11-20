@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { PAY_REACHED_BANK, db, getPaymentReplay, getReplay, paymentVerdicts } from "@/lib/engine";
 import { BlurredShot } from "./blurred";
-import { canSeePayment } from "@/lib/auth";
+import { canSeePayment, currentUser } from "@/lib/auth";
+import { isJury } from "@/lib/jury";
 import { AutoRefresh } from "@/app/audit/[id]/refresh";
 import { AgentCursor, BrowserFrame, Chevron, StatusGlyph, Verdict, blockerLabel } from "@/lib/ui";
 import { loginName, missionTitle, tr } from "@/lib/i18n";
@@ -55,7 +56,7 @@ export default async function Replay({ params, searchParams }: { params: Promise
   const live = !first && (run as any).status === "launched";
   let replay: Awaited<ReturnType<typeof getReplay>> = null;
   try {
-    replay = payment ? await getPaymentReplay(id) : await getReplay(id, live, first);
+    replay = payment ? await getPaymentReplay(id, isJury((await currentUser())?.email)) : await getReplay(id, live, first);
   } catch {
     return (
       <div className="bg-bg-2 py-32">
@@ -67,6 +68,22 @@ export default async function Replay({ params, searchParams }: { params: Promise
       </div>
     );
   }
+  // A payment test whose steps are no longer kept (jury demo copies are scrubbed): say so, never a bare 404.
+  if (!replay && payment)
+    return (
+      <div className="bg-bg-2 py-32">
+        <div className="tile mx-auto w-[min(480px,87.5%)] text-center">
+          <p className="type-headline">{t("Replay du test de paiement non conservé.", "Payment test replay not kept.")}</p>
+          <p className="mt-2 text-ink-2">
+            {t(
+              "Un test de paiement reste privé : ses étapes ne sont pas copiées hors de l'équipe qui l'a lancé, et ses captures sont effacées 4 h après. Le verdict reste dans le rapport.",
+              "A payment test stays private: its steps are not copied outside the team that ran it, and its screenshots are deleted 4 h later. The verdict stays in the report.",
+            )}
+          </p>
+          <Link href={back} className="mt-4 inline-block text-link hover:underline">{t("Retour au rapport", "Back to the report")}</Link>
+        </div>
+      </div>
+    );
   if (!replay) notFound();
   // The first attempt shows its own verdict, kept when the mission was replayed.
   // A payment test passes once the payment reached the bank (3D Secure request included), whatever older runs stored.
