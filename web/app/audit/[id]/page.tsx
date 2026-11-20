@@ -9,7 +9,7 @@ import { rankText } from "@/app/espace/parts";
 import { reportSuffix } from "@/lib/space";
 import { locale, loginName, missionTitle, staticText, tr, type Lang, type T } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
-import { BlockerIcon, BrowserFrame, Chip, Chips, ExPay, Icon, MissionIcon, Chevron, Note, DeviceTag, MissionBar, Recommendations, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, hurdles, summarize } from "@/lib/ui";
+import { BlockerIcon, BrowserFrame, Chip, Chips, ExPay, Icon, MissionIcon, Chevron, Note, DeviceTag, MissionBar, Recommendations, ScoredNote, outOfScore, Spinner, StatusBadge, ToneLabel, Verdict, blockerLabel, hurdles, summarize } from "@/lib/ui";
 import { Hint } from "@/lib/hint";
 import { ClampText } from "@/lib/clamp";
 import { headers } from "next/headers";
@@ -370,6 +370,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
                       <span className="text-[21px] font-semibold tnum">{x.score ?? "—"} %</span>
                     </div>
                     <MissionBar ok={x.ok} done={x.done} total={x.total} />
+                    <ScoredNote done={x.done} out={outOfScore(x)} className="block" />
                     {(modelCompare || deviceCompare) && pm && (
                       <p className="type-small text-ink-2 tnum">
                         {pm.s} s · {usd(pm.usd, 3, lang)} {t("par mission", "per mission")}
@@ -581,6 +582,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
             <p className="mt-3 text-ink-2">
               {t("Entrée du checkout atteinte", "Checkout entrance reached")} · <span className="font-semibold text-ink tnum">{s.ok}/{s.done}</span>
             </p>
+            <ScoredNote done={s.done} out={outOfScore(s)} className="mt-1 block" />
             {s.exPay && (
               <p className="mt-2 text-ink-2">
                 {t("Paiement", "Payment")} ·{" "}

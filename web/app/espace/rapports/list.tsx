@@ -7,7 +7,7 @@ import { PAY_REACHED_BANK, paymentVerdicts } from "@/lib/engine";
 import { locale, tr, type Dict, type Lang } from "@/lib/i18n";
 import { getDict, getLang } from "@/lib/lang";
 import { loadSpace, siteKey, type SpaceAudit } from "@/lib/space";
-import { Chevron, Chip, DeviceTag, ExPay, Icon, MissionBar, Spinner, StatusGlyph, scoreTone } from "@/lib/ui";
+import { Chevron, Chip, DeviceTag, ExPay, Icon, MissionBar, ScoredNote, Spinner, outOfScore, StatusGlyph, scoreTone } from "@/lib/ui";
 import { CloseMenu, ConfirmButton, ReportsLayout } from "../controls";
 import { SpaceShell } from "../shell";
 import { TrashTabs } from "../parts";
@@ -243,6 +243,7 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
                   <span className="font-semibold">{a.s.score} %</span>
                 </span>
                 {a.s.exPay && <ExPay lang={lang} className="type-small leading-tight" />}
+                <ScoredNote short done={a.s.done} out={outOfScore(a.s)} />
               </span>
             ) : (
               <span className="type-small flex items-center gap-2 font-semibold text-live">
@@ -492,6 +493,7 @@ export async function ReportsList({ view, vue, q = "" }: { view: View; vue?: str
                                   <ExPay lang={lang} className="type-small max-md:hidden" />
                                 </>
                               )}
+                              <ScoredNote short done={last.s.done} out={outOfScore(last.s)} className="max-md:hidden" />
                             </>
                           )}
                         </span>

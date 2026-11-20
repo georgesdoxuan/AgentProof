@@ -5,7 +5,7 @@ import { canLaunch, teamContext } from "@/lib/auth";
 import { deviceLabel, loadSpace, shortDate } from "@/lib/space";
 import { locale, tr } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
-import { BlockerIcon, Chevron, Chip, Chips, Empty, ExPay, Group, Icon, MissionBar, Recommendations, Spinner, StatusGlyph, ToneLabel, blockerLabel, scoreTone } from "@/lib/ui";
+import { BlockerIcon, Chevron, Chip, Chips, Empty, ExPay, Group, Icon, MissionBar, Recommendations, ScoredNote, outOfScore, Spinner, StatusGlyph, ToneLabel, blockerLabel, scoreTone } from "@/lib/ui";
 import { AutoRefresh } from "../../../audit/[id]/refresh";
 import { SpaceShell } from "../../shell";
 import { BlockerItem, Delta, RelaunchForm, rankText } from "../../parts";
@@ -89,6 +89,7 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
             </p>
             <div className="mt-6">
               <MissionBar ok={s.ok} done={s.done} total={s.total} />
+              <ScoredNote done={s.done} out={outOfScore(s)} className="mt-2 block" />
             </div>
             <span className="more mt-auto pt-5 group-hover:underline">
               {t("Rapport du", "Report of")} {shortDate(site.latest.created_at, lang)}
@@ -200,6 +201,7 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
                   <span className="text-[21px] font-semibold tnum">{x.score ?? "—"} %</span>
                 </div>
                 <MissionBar ok={x.ok} done={x.done} total={x.total} />
+                <ScoredNote done={x.done} out={outOfScore(x)} className="block" />
               </div>
             ))}
           </div>
@@ -234,6 +236,7 @@ export default async function Site({ params }: { params: Promise<{ key: string[]
                       {a.s.exPay && <ExPay lang={lang} short className="sm:hidden" />}
                     </span>
                     {a.s.exPay && <ExPay lang={lang} className="type-small leading-tight max-sm:hidden" />}
+                    <ScoredNote short done={a.s.done} out={outOfScore(a.s)} className="font-normal" />
                   </span>
                 ) : (
                   <span className="type-small flex items-center gap-2 font-normal text-ink-2">

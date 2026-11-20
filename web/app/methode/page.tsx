@@ -25,7 +25,7 @@ function Legend({ lang }: { lang: "fr" | "en" }) {
   const statuses = [
     ["pass", en ? "Passed" : "Réussie", en ? "the agent reached the first checkout page." : "l’agent a atteint la première page du checkout."],
     ["fail", en ? "Blocked" : "Bloquée", en ? "the site stopped the agent: counts against the score." : "le site a arrêté l’agent : compte contre le score."],
-    ["none", en ? "Out of score" : "Hors score", en ? "nothing to do with the site’s interface (stock, anti-bot, agent)." : "sans lien avec l’interface du site (stock, anti-bot, agent)."],
+    ["none", en ? "Out of score" : "Hors score", en ? "nothing to do with the site’s interface (stock, agent)." : "sans lien avec l’interface du site (stock, agent)."],
     ["unsure", en ? "Unverified / to be confirmed" : "Non vérifiée / à confirmer", en ? "the judge could not decide: left out of the score." : "le juge n’a pas pu trancher : sort du score."],
   ] as const;
   return (
@@ -77,14 +77,14 @@ function Legend({ lang }: { lang: "fr" | "en" }) {
 // FAQ and team (retours Adonaï, 18 nov). Prénoms only, no surnames or photos.
 const FAQ = {
   fr: [
-    ["Est-ce légal de tester un site sans son accord ?", <>L&apos;agent visite des pages publiques comme un client : sans créer de compte, sans payer et sans contourner de protection. Si un site le bloque, la mission est notée « anti-bot » et sort du score.</>],
+    ["Est-ce légal de tester un site sans son accord ?", <>L&apos;agent visite des pages publiques comme un client : sans créer de compte, sans payer et sans contourner de protection. Si un site le bloque, la mission est notée « anti-bot » et compte comme un échec : un vrai agent d&apos;achat serait bloqué aussi.</>],
     ["Quelles données collectez-vous ?", <>Ton e-mail si tu te connectes ou demandes un rapport, l&apos;adresse du site testé et les captures de l&apos;agent. L&apos;agent ne saisit aucune donnée personnelle sur les sites ; le détail est sur la page <Link href="/confidentialite" className={lk}>confidentialité</Link>.</>],
     ["L’agent paie-t-il ?", <>Jamais pendant un audit : il s&apos;arrête à la première page du checkout, donc le paiement n&apos;est pas dans le score. On le mesure à part, voir <a href="#paiement" className={lk}>le test de paiement réel</a>.</>],
     ["Le score est-il fiable ?", <>Un juge visuel indépendant relit chaque mission, chaque échec est rejoué une fois, et le classement fait la moyenne de 2 passages. Chaque mission a sa capture et son replay pour le vérifier.</>],
     ["Mon site est dans le classement : je peux contester ?", <>Oui : écris à <a href={`mailto:${LEGAL.contact}`} className={lk}>{LEGAL.contact}</a> avec le lien du rapport. On vérifie la capture et le replay à la main, puis on corrige ou on relance la mission.</>],
   ],
   en: [
-    ["Is it legal to test a site without its consent?", <>The agent visits public pages like a customer: it creates no account, never pays and bypasses no protection. If a site blocks it, the mission is marked “anti-bot” and left out of the score.</>],
+    ["Is it legal to test a site without its consent?", <>The agent visits public pages like a customer: it creates no account, never pays and bypasses no protection. If a site blocks it, the mission is marked “anti-bot” and counts as a failure: a real shopping agent would be blocked too.</>],
     ["What data do you collect?", <>Your e-mail if you sign in or ask for a report, the address of the tested site and the agent&apos;s screenshots. The agent enters no personal data on sites; details are on the <Link href="/confidentialite" className={lk}>privacy</Link> page.</>],
     ["Does the agent pay?", <>Never during an audit: it stops at the first checkout page, so payment is not in the score. We measure it separately, see <a href="#paiement" className={lk}>the real payment test</a>.</>],
     ["Is the score reliable?", <>An independent visual judge reviews every mission, every failure is replayed once, and the ranking averages 2 runs. Each mission has its screenshot and replay so you can check.</>],
@@ -187,7 +187,7 @@ export default async function Methode() {
         <Section title={t("Le score", "The score")}>
           <ul className="grid gap-3">
             <Fact icon="out_of_stock">
-              {t("Rupture de stock et anti-bot : affichés à part, hors score.", "Out of stock and anti-bot: shown apart, out of score.")}
+              {t("Rupture de stock : affichée à part, hors score. Anti-bot : compte comme un échec.", "Out of stock: shown apart, out of score. Anti-bot: counts as a failure.")}
             </Fact>
             <Fact icon="refresh">
               {t(

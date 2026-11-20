@@ -205,8 +205,8 @@ export const FAQ: Faq[] = [
     cat: "score",
     q: { fr: "Que veut dire « hors score » ?", en: "What does “out of score” mean?" },
     a: {
-      fr: "Une mission sans lien avec l'interface du site : rupture de stock, anti-bot, article absent du catalogue, ou erreur de l'agent. Elle est affichée à part et ne compte pas dans le score, comme une mission que le juge n'a pas pu vérifier. Le rapport affiche aussi un taux réel, qui compte ces missions comme des échecs.",
-      en: "A mission unrelated to the site's interface: out of stock, anti-bot, item not in the catalogue, or an agent error. It is shown separately and does not count in the score, like a mission the judge could not verify. The report also shows a real rate, which counts these missions as failures.",
+      fr: "Une mission sans lien avec l'interface du site : rupture de stock, article absent du catalogue, ou erreur de l'agent. Elle est affichée à part et ne compte pas dans le score, comme une mission que le juge n'a pas pu vérifier. Le rapport affiche aussi un taux réel, qui compte ces missions comme des échecs.",
+      en: "A mission unrelated to the site's interface: out of stock, item not in the catalogue, or an agent error. It is shown separately and does not count in the score, like a mission the judge could not verify. The report also shows a real rate, which counts these missions as failures.",
     },
     keys: "exclu exclue gris non verifiee rupture stock anti bot captcha excluded grey unverified",
   },
@@ -237,8 +237,8 @@ export const FAQ: Faq[] = [
     cat: "score",
     q: { fr: "Que veut dire une mission bloquée ?", en: "What does a blocked mission mean?" },
     a: {
-      fr: "L'agent n'a pas atteint la première page du checkout, et le juge visuel a relu la dernière capture. Le rapport montre où et pourquoi, avec la capture et le replay. Ce n'est pas la preuve qu'un client humain bloquerait aussi. Ce qui ne dépend pas de ton site (rupture de stock, anti-bot, erreur de notre côté) est mis à part, hors score.",
-      en: "The agent did not reach the first checkout page, and the visual judge reviewed the last screenshot. The report shows where and why, with the screenshot and the replay. It does not prove a human customer would get stuck too. What does not depend on your site (out of stock, anti-bot, an error on our side) is set apart, out of the score.",
+      fr: "L'agent n'a pas atteint la première page du checkout, et le juge visuel a relu la dernière capture. Le rapport montre où et pourquoi, avec la capture et le replay. Ce n'est pas la preuve qu'un client humain bloquerait aussi. Ce qui ne dépend pas de ton site (rupture de stock, erreur de notre côté) est mis à part, hors score. Un anti-bot, lui, compte : il bloquerait aussi l'agent d'un vrai client.",
+      en: "The agent did not reach the first checkout page, and the visual judge reviewed the last screenshot. The report shows where and why, with the screenshot and the replay. It does not prove a human customer would get stuck too. What does not depend on your site (out of stock, an error on our side) is set apart, out of the score. An anti-bot does count: it would block a real customer's agent too.",
     },
     keys: "bloque bloquee echec rate signifie veut dire erreur faute blocked failed failure mean meaning",
   },
@@ -529,8 +529,8 @@ export const FAQ: Faq[] = [
     cat: "data",
     q: { fr: "Est-ce légal de tester un site ?", en: "Is it legal to test a site?" },
     a: {
-      fr: "L'agent visite des pages publiques comme un client : sans créer de compte, sans payer et sans contourner de protection. Si un site le bloque, la mission est notée « anti-bot » et sort du score.",
-      en: "The agent visits public pages like a customer: it creates no account, never pays and bypasses no protection. If a site blocks it, the mission is marked “anti-bot” and left out of the score.",
+      fr: "L'agent visite des pages publiques comme un client : sans créer de compte, sans payer et sans contourner de protection. Si un site le bloque, la mission est notée « anti-bot » et compte comme un échec : un vrai agent d'achat serait bloqué aussi.",
+      en: "The agent visits public pages like a customer: it creates no account, never pays and bypasses no protection. If a site blocks it, the mission is marked “anti-bot” and counts as a failure: a real shopping agent would be blocked too.",
     },
     keys: "legal legalite loi droit rgpd scraping autorise law legality gdpr allowed",
   },
